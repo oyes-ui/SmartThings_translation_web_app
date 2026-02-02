@@ -1,0 +1,4 @@
+openpyxl
+google-genai
+python-dotenv
+httpx

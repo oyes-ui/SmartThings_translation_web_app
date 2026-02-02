@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAMSUNG Translation Checker AI</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <!-- SheetJS for preview -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="logo">
+                <span class="logo-icon">✨</span>
+                <h1>Translation Checker AI</h1>
+            </div>
+            <div class="status-indicators">
+                <div class="api-status online" id="apiStatus">
+                    <span class="dot"></span> Gemini API Ready
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN LAYOUT -->
+        <main class="main-content">
+
+            <!-- LEFT PANEL: CONFIG -->
+            <section class="panel config-panel">
+                <div class="panel-header">
+                    <h2>Configuration</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="config-item">
+                        <label>Glossary CSV Upload</label>
+                        <div class="dropzone small-dropzone" id="glossaryDropzone">
+                            <div class="icon">📖</div>
+                            <p>Drag & Drop <strong>Glossary CSV</strong></p>
+                            <input type="file" id="glossaryInput" accept=".csv" hidden>
+                            <div class="file-info" id="glossaryInfo">No file selected</div>
+                        </div>
+                    </div>
+
+                    <div class="config-item">
+                        <label>Sheet-Language Mapping (JSON)</label>
+                        <textarea id="sheetConfig" class="code-editor" spellcheck="false">{
+  "KR(한국)":    { "lang": "Korean",      "code": "한국어" },
+  "US(미국)":    { "lang": "English",     "code": "영어_미국" },
+  "UK(영국)":    { "lang": "English_UK",     "code": "영어_영국" },
+  "AU(호주)":    { "lang": "English_AU",     "code": "영어_호주" },
+  "SG(싱가포르)": { "lang": "English_SG",     "code": "영어_싱가폴" },
+  "FR(프랑스)":  { "lang": "French",      "code": "프랑스어_프랑스" },
+  "BE(벨기에)":  { "lang": "French_Belgium",      "code": "프랑스어_벨기에" },
+  "CA(캐나다)":  { "lang": "French_Canada",      "code": "프랑스어_캐나다" },
+  "DE(독일)":    { "lang": "German",      "code": "독어_독일" },
+  "IT(이탈리아)": { "lang": "Italian",     "code": "이탈리아" },
+  "ES(스페인)":  { "lang": "Spanish",     "code": "스페인어_스페인" },
+  "NL(네덜란드)": { "lang": "Dutch",       "code": "네덜란드어_네덜란드" },
+  "SE(스웨덴)":  { "lang": "Swedish",     "code": "스웨덴" },
+  "AE(아랍에메리트)": { "lang": "Arabic", "code": "아랍에미리트" },
+  "PT(포르투갈)": { "lang": "Portuguese",  "code": "포르투갈_포르투갈" },
+  "BR(브라질)":  { "lang": "Portuguese",  "code": "포루투갈_브라질" },
+  "RU(러시아)":  { "lang": "Russian",     "code": "러시아" },
+  "TR(터키)":    { "lang": "Turkish",     "code": "터키" },
+  "CN(중국)":    { "lang": "Chinese",     "code": "간체_중국어" },
+  "TW(대만)":    { "lang": "Chinese",     "code": "번체_대만" },
+  "JA(일본)":    { "lang": "Japanese",    "code": "일본" },
+  "PL(폴란드)":  { "lang": "Polish",      "code": "폴란드" },
+  "VN(베트남)":  { "lang": "Vietnamese",  "code": "베트남" },
+  "TH(태국)":    { "lang": "Thai",        "code": "태국" },
+  "ID(인도네시아)": { "lang": "Indonesian","code": "인도네시아" }
+}</textarea>
+                    </div>
+
+                    <div class="config-actions">
+                        <button id="saveConfigBtn" class="btn secondary">Validate Config</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CENTER PANEL: UPLOAD & CONTROL -->
+            <section class="panel upload-panel">
+                <div class="panel-header">
+                    <h2>Files & Execution</h2>
+                </div>
+                <div class="panel-body">
+
+                    <div class="dropzone-container">
+                        <div class="dropzone" id="sourceDropzone">
+                            <div class="icon">📂</div>
+                            <p>Drag & Drop <strong>Source Excel</strong></p>
+                            <input type="file" id="sourceInput" accept=".xlsx" hidden>
+                            <div class="file-info" id="sourceInfo"></div>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="dropzone" id="targetDropzone">
+                            <div class="icon">🎯</div>
+                            <p>Drag & Drop <strong>Target Excel</strong></p>
+                            <input type="file" id="targetInput" accept=".xlsx" hidden>
+                            <div class="file-info" id="targetInfo"></div>
+                        </div>
+                    </div>
+
+                    <div id="sheetSelectionArea" class="hidden">
+                        <div class="sheet-selection-header">
+                            <h3>Select Sheets to Inspect</h3>
+                            <div class="sheet-controls">
+                                <button type="button" id="selectAllSheets" class="text-btn">Select All</button>
+                                <span class="sep">|</span>
+                                <button type="button" id="deselectAllSheets" class="text-btn">Deselect All</button>
+                            </div>
+                        </div>
+                        <div class="sheet-list" id="sheetList">
+                            <!-- Checkboxes injected here -->
+                        </div>
+                    </div>
+
+                    <div class="config-item">
+                        <label>Cell Range (e.g., A2:C100 or C:C)</label>
+                        <div class="input-group">
+                            <input type="text" id="cellRange" value="C7:C28" placeholder="C7:C28">
+                        </div>
+                    </div>
+
+                    <div class="action-area">
+                        <button id="startBtn" class="btn primary large" disabled>Start Inspection</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT PANEL: MONITORING -->
+            <section class="panel monitor-panel">
+                <div class="panel-header">
+                    <h2>Live Progress</h2>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="panel-body">
+
+                    <div class="progress-container">
+                        <div class="progress-bar-track">
+                            <div class="progress-bar-fill" id="progressBar" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-stats">
+                            <span id="progressCount">0 / 0</span> items
+                        </div>
+                    </div>
+
+                    <div class="terminal-window" id="terminal">
+                        <div class="terminal-line system">Waiting for tasks...</div>
+                    </div>
+
+                    <div class="download-area hidden" id="downloadArea">
+                        <a id="downloadLink" href="#" class="btn success full-width">Download Review Report (.txt)</a>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
