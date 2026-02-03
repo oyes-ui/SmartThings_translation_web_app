@@ -158,64 +158,74 @@ class TranslationChecker:
 
     async def load_glossary_from_file(self, file_path: str, source_lang_code: str):
         """
-        사용자 JSON의 'code' 필드(한글 명칭)를 기준으로 용어집 1행(Index 0)을 매칭합니다.
+        3행 구조의 용어집 CSV를 로드합니다.
+        1행: 한국어, 영어_미국 등 (JSON 'code'와 매칭)
+        2행: ko_KR, en_US 등
+        3행: Lng 행
         """
         try:
             if not os.path.exists(file_path):
                 return f"Glossary file not found: {file_path}"
 
-            # [핵심] 1행(Index 0)을 헤더로 지정 (한국어, 영어_미국 등)
+            # 1. 헤더 3개 행을 먼저 읽어서 컬럼 인덱스 파악
             import pandas as pd
-            df = pd.read_csv(file_path, header=0, encoding='utf-8-sig')
-            df = df.fillna("")
+            df_headers = pd.read_csv(file_path, header=None, nrows=3, encoding='utf-8-sig').fillna("")
             
-            # 컬럼명 정리
-            df.columns = [str(c).strip() for c in df.columns]
+            num_cols = df_headers.shape[1]
+            source_col_idx = -1
+            rule_col_idx = -1
             
-            # JSON에서 넘어온 'code' 값이 용어집 헤더에 있는지 확인
-            # 예: source_lang_code가 "영어_미국"인 경우
-            if source_lang_code not in df.columns:
-                # [개선] 대소문자 무시 혹은 부분 일치 검색 (English <-> 영어_미국 대응 등)
-                found = False
-                for col in df.columns:
-                    if source_lang_code.lower() in col.lower() or col.lower() in source_lang_code.lower():
-                        source_lang_code = col
-                        found = True
+            # 소스 언어 컬럼 찾기 (1~3행 모두 검색)
+            for c in range(num_cols):
+                for r in range(3):
+                    val = str(df_headers.iloc[r, c]).strip()
+                    if val == source_lang_code or source_lang_code.lower() in val.lower() or val.lower() in source_lang_code.lower():
+                        source_col_idx = c
                         break
-                
-                if not found:
-                    return f"⚠ Warning: 용어집 1행에서 '{source_lang_code}' 컬럼을 찾을 수 없습니다. (제공된 JSON 'code' 값 확인 필요)"
-
-            self.glossary_headers = list(df.columns)
-            self.source_lang_code = source_lang_code
+                if source_col_idx != -1: break
             
+            if source_col_idx == -1:
+                return f"⚠ Warning: 용어집에서 '{source_lang_code}' 컬럼을 찾을 수 없습니다. (헤더 1~3행 확인 필요)"
+
             # 설명/규칙 컬럼 찾기
-            rule_header = None
-            for col in df.columns:
-                if "설명" in col or "규칙" in col:
-                    rule_header = col
-                    break
+            for c in range(num_cols):
+                for r in range(3):
+                    val = str(df_headers.iloc[r, c]).strip()
+                    if "설명" in val or "규칙" in val or "rule" in val.lower():
+                        rule_col_idx = c
+                        break
+                if rule_col_idx != -1: break
+
+            # 2. 데이터 로드 (4행부터)
+            df_data = pd.read_csv(file_path, header=None, skiprows=3, encoding='utf-8-sig').fillna("")
+            
+            self.source_lang_code = source_lang_code
 
             count = 0
-            # 실제 데이터는 Lng 행(Index 2)을 지나 4행(Index 3)부터 시작하므로
-            # 데이터프레임 기준으로는 Index 2부터 읽습니다.
-            for i in range(2, len(df)):
-                row = df.iloc[i]
-                source_term = str(row[source_lang_code]).strip()
-                if not source_term or source_term.lower() == 'lng': # 'Lng' 행 방어 로직
+            for _, row in df_data.iterrows():
+                source_term = str(row[source_col_idx]).strip()
+                if not source_term or source_term.lower() == 'lng':
                     continue
 
-                rule = str(row[rule_header]).strip() if rule_header and pd.notna(row[rule_header]) else ""
+                rule = str(row[rule_col_idx]).strip() if rule_col_idx != -1 else ""
 
                 targets = {}
-                for col in df.columns:
-                    # 원문 컬럼, 규칙 컬럼, key 컬럼 제외하고 모두 타겟으로 저장
-                    if col in [source_lang_code, rule_header, 'key'] or not col.strip():
+                for c in range(num_cols):
+                    if c == source_col_idx or c == rule_col_idx:
                         continue
                     
-                    val = str(row[col]).strip() if pd.notna(row[col]) else ""
+                    # 타겟 키는 1행(영어_미국 등) 또는 2행(en_US 등)에서 가져옴
+                    header_key = str(df_headers.iloc[0, c]).strip() or str(df_headers.iloc[1, c]).strip()
+                    if not header_key or header_key.lower() in ['key', 'lng']:
+                        continue
+                        
+                    val = str(row[c]).strip()
                     if val:
-                        targets[col] = val
+                        targets[header_key] = val
+                        # 2행의 코드값도 키로 추가 (en_US 등)
+                        code_key = str(df_headers.iloc[1, c]).strip()
+                        if code_key and code_key != header_key:
+                            targets[code_key] = val
                 
                 if targets:
                     self.glossary[source_term] = {"targets": targets, "rule": rule}
@@ -230,8 +240,9 @@ class TranslationChecker:
     def load_excel_files(self, source_path, target_path, selected_sheets=None):
         pass
 
-    def load_excel_data(self, source_path, target_path, cell_range="A:Z", selected_sheets=None):
+    def load_excel_data(self, source_path, target_path, cell_range="A:Z", selected_sheets=None, log_func=None):
         all_data = []
+        if log_func: log_func(f"데이터 추출 범위: {cell_range}")
         try:
             wb_source = openpyxl.load_workbook(source_path, data_only=True)
             wb_target = openpyxl.load_workbook(target_path, data_only=True)
@@ -292,6 +303,9 @@ class TranslationChecker:
             
             if extracted_count > 0:
                 processed_sheets.append(sheet_name)
+                if log_func: log_func(f"✓ [{sheet_name}] {extracted_count}개 항목 추출 완료")
+            else:
+                if log_func: log_func(f"⚠ [{sheet_name}] 해당 범위({cell_range})에 유효한 데이터가 없습니다.")
         
         return all_data, processed_sheets
 
@@ -557,9 +571,14 @@ class TranslationChecker:
             # Use explicit selected_sheets if provided, otherwise fallback to map keys
             sel_sheets = selected_sheets if selected_sheets else (list(sheet_lang_map.keys()) if sheet_lang_map else None)
             
+            log_messages = []
+            def collect_log(m): log_messages.append(m)
+
             all_data, processed_sheets = self.load_excel_data(
-                source_file_path, target_file_path, cell_range=cell_range, selected_sheets=sel_sheets
+                source_file_path, target_file_path, cell_range=cell_range, selected_sheets=sel_sheets, log_func=collect_log
             )
+            for m in log_messages:
+                yield {"type": "log", "message": m}
         except Exception as e:
             yield {"type": "error", "message": str(e)}
             return
