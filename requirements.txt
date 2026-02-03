@@ -1,4 +1,10 @@
-openpyxl
-google-genai
+fastapi
+uvicorn
+google-generativeai
 python-dotenv
-httpx
+python-multipart
+openpyxl
+pandas
+requests
+jinja2
+aiohttp

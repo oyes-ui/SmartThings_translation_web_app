@@ -23,6 +23,10 @@ if not os.path.exists(UPLOAD_DIR):
 
 app = FastAPI()
 
+# 1. 현재 main.py 파일이 있는 실제 경로를 계산합니다.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+static_dir = os.path.join(current_dir, "static")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -219,8 +223,13 @@ async def download_result(task_id: str):
     path = TASK_STORE[task_id]["result_path"]
     return FileResponse(path, filename=f"translation_review_{task_id}.txt", media_type="text/plain")
 
-# Mount Frontend (Static) - Order matters: API first, then Static
-app.mount("/", StaticFiles(directory="../frontend", html=True), name="static")
+# 1. 'static' 폴더를 웹에 연결
+app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+
+# 2. 접속 시 첫 화면(index.html) 보내주기
+@app.get("/")
+async def read_index():
+    return FileResponse('static/index.html')
 
 if __name__ == "__main__":
     import uvicorn

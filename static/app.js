@@ -256,7 +256,7 @@ function connectSSE(taskId) {
             startBtn.textContent = "Start New Inspection";
 
             // Setup Download
-            downloadLink.href = `http://localhost:8000${data.download_url}`;
+            downloadLink.href = `${window.location.origin}${data.download_url}`;
             downloadArea.classList.remove('hidden');
         } else if (data.type === 'error') {
             evtSource.close();
