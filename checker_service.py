@@ -175,7 +175,16 @@ class TranslationChecker:
             # JSON에서 넘어온 'code' 값이 용어집 헤더에 있는지 확인
             # 예: source_lang_code가 "영어_미국"인 경우
             if source_lang_code not in df.columns:
-                return f"⚠ Warning: 용어집 1행에서 '{source_lang_code}' 컬럼을 찾을 수 없습니다. (제공된 JSON 'code' 값 확인 필요)"
+                # [개선] 대소문자 무시 혹은 부분 일치 검색 (English <-> 영어_미국 대응 등)
+                found = False
+                for col in df.columns:
+                    if source_lang_code.lower() in col.lower() or col.lower() in source_lang_code.lower():
+                        source_lang_code = col
+                        found = True
+                        break
+                
+                if not found:
+                    return f"⚠ Warning: 용어집 1행에서 '{source_lang_code}' 컬럼을 찾을 수 없습니다. (제공된 JSON 'code' 값 확인 필요)"
 
             self.glossary_headers = list(df.columns)
             self.source_lang_code = source_lang_code
