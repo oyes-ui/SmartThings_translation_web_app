@@ -1,12 +1,14 @@
 ---
 title: Antigravity Translation Checker
-emoji: 
-colorFrom: indigo
-colorTo: blue
-sdk: docker
-app_port: 7860
+emoji: "🔍"
+colorFrom: "blue"
+colorTo: "indigo"
+sdk: "docker"
 pinned: false
 ---
+
+# 🔍 안티그래비티 번역 검수 웹앱
+Gemini API를 활용한 자동 번역 검수 도구입니다.
 
 # SAMSUNG Translation Checker AI (Antigravity)
 
