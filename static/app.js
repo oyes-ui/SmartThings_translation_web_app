@@ -256,8 +256,31 @@ function connectSSE(taskId) {
             startBtn.textContent = "Start New Inspection";
 
             // Setup Download
-            downloadLink.href = `${window.location.origin}${data.download_url}`;
-            downloadLink.setAttribute('download', `translation_review_${taskId}.txt`);
+            const downloadUrl = `${window.location.origin}${data.download_url}`;
+            const fileName = `translation_review_${taskId}.txt`;
+
+            downloadLink.onclick = async (e) => {
+                e.preventDefault();
+                log("Downloading report...", "system");
+                try {
+                    const res = await fetch(downloadUrl);
+                    if (!res.ok) throw new Error("Download failed");
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    log("Download started.", "success");
+                } catch (err) {
+                    log(`Download failed: ${err.message}`, "error");
+                }
+            };
+
             downloadArea.classList.remove('hidden');
         } else if (data.type === 'error') {
             evtSource.close();

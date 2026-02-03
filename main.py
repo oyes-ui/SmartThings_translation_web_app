@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+# Load environment variables FIRST before other imports
+load_dotenv()
+
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse
@@ -9,12 +13,8 @@ import uuid
 import asyncio
 import json
 import openpyxl
-from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 from checker_service import TranslationChecker
-
-# Load environment variables
-load_dotenv()
 
 # Directory for temp files
 UPLOAD_DIR = "uploads"
@@ -47,7 +47,7 @@ class StartRequest(BaseModel):
     sheets: list[str] = None
     sheet_langs: dict = {} # {"Sheet1": {"lang": "Korean", "code": "ko_KR"}}
     glossary_url: str = "https://docs.google.com/spreadsheets/d/1kVEdSTqZcFHLK8tK6IsF3Jb5ks-42RQgDimZ-rziKxU/gviz/tq?tqx=out:csv&sheet=용어집%20DB"
-    source_lang: str = "English"
+    source_lang: str = "영어_미국"
     target_lang: str = "Korean"
     target_code: str = "ko_KR"
     max_concurrency: int = 5
@@ -55,20 +55,20 @@ class StartRequest(BaseModel):
 
 async def background_inspection_task(task_id, params):
     queue = TASK_STORE[task_id]["queue"]
-    checker = TranslationChecker(
-        max_concurrency=params.max_concurrency,
-        skip_llm_when_glossary_mismatch=True,
-        no_backtranslation=True # Disabled as per user request
-    )
-    
-    source_path = os.path.join(UPLOAD_DIR, params.source_file_id)
-    target_path = os.path.join(UPLOAD_DIR, params.target_file_id)
-    
-    glossary_path = None
-    if params.glossary_file_id:
-        glossary_path = os.path.join(UPLOAD_DIR, params.glossary_file_id)
-
     try:
+        checker = TranslationChecker(
+            max_concurrency=params.max_concurrency,
+            skip_llm_when_glossary_mismatch=True,
+            no_backtranslation=True # Disabled as per user request
+        )
+        
+        source_path = os.path.join(UPLOAD_DIR, params.source_file_id)
+        target_path = os.path.join(UPLOAD_DIR, params.target_file_id)
+        
+        glossary_path = None
+        if params.glossary_file_id:
+            glossary_path = os.path.join(UPLOAD_DIR, params.glossary_file_id)
+
         # Run generator
         gen = checker.run_inspection_async_generator(
             source_file_path=source_path,
@@ -98,7 +98,8 @@ async def background_inspection_task(task_id, params):
                 await queue.put(event)
                 
     except Exception as e:
-        await queue.put({"type": "error", "message": str(e)})
+        print(f"Background Task Error: {e}")
+        await queue.put({"type": "error", "message": f"검수 시작 중 오류 발생: {str(e)}"})
     finally:
         # cleanup files maybe? or keep them for now.
         pass
@@ -221,7 +222,14 @@ async def download_result(task_id: str):
         raise HTTPException(status_code=404, detail="Result not ready or task not found")
     
     path = TASK_STORE[task_id]["result_path"]
-    return FileResponse(path, filename=f"translation_review_{task_id}.txt", media_type="text/plain")
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Result file missing from server")
+    
+    return FileResponse(
+        path, 
+        filename=f"translation_review_{task_id}.txt", 
+        media_type="application/octet-stream"
+    )
 
 # 1. 'static' 폴더를 웹에 연결
 app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
@@ -230,6 +238,12 @@ app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 @app.get("/")
 async def read_index():
     return FileResponse('static/index.html')
+
+# 3. 브라우저 favicon.ico 404 에러 방지
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    from fastapi.responses import Response
+    return Response(status_code=204)
 
 if __name__ == "__main__":
     import uvicorn
