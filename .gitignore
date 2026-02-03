@@ -1,5 +1,21 @@
+# 1. 가상환경 및 로컬 설정
+venv/
 .env
-uploads/
 __pycache__/
+*.pyc
+
+# 2. 맥 전용 시스템 파일 및 앱 (Hugging Face 배포 금지 품목)
+.DS_Store
+Mac_ui.app/
+*.car
+*.app/
+*.icns
+*.rsrc
+*.scpt
+
+# 3. 윈도우/기타 실행 파일
+*.exe
+*.bat
+uploads/
 *.xlsx
 *.csv
