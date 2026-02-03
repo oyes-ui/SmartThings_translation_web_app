@@ -13,7 +13,12 @@ jobs:
           lfs: true
       - name: Push to hub
         env:
-          # 금고 이름(OYES_GITHUB)을 정확히 일치시켰습니다.
           HF_TOKEN: ${{ secrets.OYES_GITHUB }}
-        # x-token 키워드를 사용하여 Hugging Face 인증 방식을 명확히 전달합니다.
-        run: git push --force https://x-token:$HF_TOKEN@huggingface.co/spaces/oyes-ui/translation_checker_gemini_web main
+        run: |
+          # 업로드에서 Mac_ui.app 폴더를 제외하는 과정입니다.
+          git rm -r --cached Mac_ui.app || echo "No Mac_ui.app found"
+          git config user.email "oyes-ui@users.noreply.github.com"
+          git config user.name "oyes-ui"
+          git add .
+          git commit -m "Remove binary files for HF deployment" || echo "Nothing to commit"
+          git push --force https://x-token:$HF_TOKEN@huggingface.co/spaces/oyes-ui/translation_checker_gemini_web main
