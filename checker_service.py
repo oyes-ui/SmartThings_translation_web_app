@@ -38,7 +38,7 @@ class TranslationChecker:
 
     def __init__(
         self,
-        model_name: str = "gemini-2.0-flash", # Updated to 2.0-flash as per user mention
+        model_name: str = "gemini-2.5-pro",
         max_concurrency: int = 10,
         short_text_whitelist=None,
         skip_llm_when_glossary_mismatch: bool = False,
@@ -50,7 +50,16 @@ class TranslationChecker:
         # API Setup
         genai.configure(api_key=GEMINI_API_KEY)
         self.model_name = model_name
-        self.qa_model = genai.GenerativeModel(model_name)
+        
+        # In the future, we can add provider detection logic here
+        # For now, we assume all models are Gemini models
+        self.provider = "google" 
+        if "gpt" in model_name.lower():
+            self.provider = "openai"
+            # OpenAI initialization would go here
+            
+        if self.provider == "google":
+            self.qa_model = genai.GenerativeModel(self.model_name)
         
         self.no_backtranslation = no_backtranslation
         

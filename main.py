@@ -47,16 +47,18 @@ class StartRequest(BaseModel):
     sheets: list[str] = None
     sheet_langs: dict = {} # {"Sheet1": {"lang": "Korean", "code": "ko_KR"}}
     glossary_url: str = "https://docs.google.com/spreadsheets/d/1kVEdSTqZcFHLK8tK6IsF3Jb5ks-42RQgDimZ-rziKxU/gviz/tq?tqx=out:csv&sheet=용어집%20DB"
-    source_lang: str = "영어_미국"
+    source_lang: str = "English"
     target_lang: str = "Korean"
     target_code: str = "ko_KR"
     max_concurrency: int = 5
     cell_range: str = "C7:C28" # Default range
+    model_name: str
 
 async def background_inspection_task(task_id, params):
     queue = TASK_STORE[task_id]["queue"]
     try:
         checker = TranslationChecker(
+            model_name=params.model_name,
             max_concurrency=params.max_concurrency,
             skip_llm_when_glossary_mismatch=True,
             no_backtranslation=True # Disabled as per user request

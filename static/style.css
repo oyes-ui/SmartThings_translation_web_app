@@ -152,6 +152,36 @@ body {
     font-size: 13px;
 }
 
+.styled-select {
+    width: 100%;
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.styled-select:focus {
+    border-color: var(--accent-color);
+}
+
+.styled-select optgroup {
+    background: var(--bg-color);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.styled-select option {
+    background: var(--panel-bg);
+    color: var(--text-primary);
+    padding: 8px;
+}
+
 .badge.success {
     background: rgba(16, 185, 129, 0.2);
     color: var(--success-color);
