@@ -60,7 +60,7 @@ async def background_inspection_task(task_id, params):
         checker = TranslationChecker(
             model_name=params.model_name,
             max_concurrency=params.max_concurrency,
-            skip_llm_when_glossary_mismatch=True,
+            skip_llm_when_glossary_mismatch=False,
             no_backtranslation=True # Disabled as per user request
         )
         
