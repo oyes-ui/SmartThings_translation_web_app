@@ -15,6 +15,7 @@ import json
 import openpyxl
 from contextlib import asynccontextmanager
 from checker_service import TranslationChecker
+import zipfile
 
 # Directory for temp files
 UPLOAD_DIR = "uploads"
@@ -42,17 +43,20 @@ TASK_STORE = {}
 
 class StartRequest(BaseModel):
     source_file_id: str
-    target_file_id: str
+    target_file_id: str = None
     glossary_file_id: str = None
-    sheets: list[str] = None
+    source_sheet: str = None # Added for explicit source sheet selection
+    sheets: list[str] = None # Used as target sheets in integrated mode
     sheet_langs: dict = {} # {"Sheet1": {"lang": "Korean", "code": "ko_KR"}}
-    glossary_url: str = "https://docs.google.com/spreadsheets/d/1kVEdSTqZcFHLK8tK6IsF3Jb5ks-42RQgDimZ-rziKxU/gviz/tq?tqx=out:csv&sheet=용어집%20DB"
     source_lang: str = "English"
     target_lang: str = "Korean"
     target_code: str = "ko_KR"
     max_concurrency: int = 5
     cell_range: str = "C7:C28" # Default range
     model_name: str
+    translation_model: str = "gemini-2.0-flash-exp"
+    audit_model: str = "gpt-5.2"
+    bx_style_enabled: bool = False
 
 async def background_inspection_task(task_id, params):
     queue = TASK_STORE[task_id]["queue"]
@@ -80,9 +84,9 @@ async def background_inspection_task(task_id, params):
             target_lang=params.target_lang,
             target_lang_code=params.target_code,
             sheet_lang_map=params.sheet_langs,
-            glossary_url=params.glossary_url,
             glossary_file_path=glossary_path,
-            selected_sheets=params.sheets
+            selected_sheets=params.sheets, # These are the sheets to inspect
+            source_sheet_name=params.source_sheet
         )
         
         async for event in gen:
@@ -105,6 +109,64 @@ async def background_inspection_task(task_id, params):
     finally:
         # cleanup files maybe? or keep them for now.
         pass
+
+async def integrated_translation_task(task_id, params):
+    queue = TASK_STORE[task_id]["queue"]
+    try:
+        checker = TranslationChecker(
+            model_name=params.audit_model,
+            max_concurrency=params.max_concurrency
+        )
+        
+        source_path = os.path.join(UPLOAD_DIR, params.source_file_id)
+        
+        glossary_path = None
+        if params.glossary_file_id:
+            glossary_path = os.path.join(UPLOAD_DIR, params.glossary_file_id)
+
+        await queue.put({"type": "log", "message": "Starting integrated translation and audit pipeline..."})
+        
+        # Run generator
+        gen = checker.run_integrated_pipeline_generator(
+            source_file_path=source_path,
+            cell_range=params.cell_range,
+            bx_style_on=params.bx_style_enabled,
+            sheet_lang_map=params.sheet_langs,
+            translation_model=params.translation_model,
+            audit_model=params.audit_model,
+            glossary_file_path=glossary_path,
+            selected_sheets=params.sheets,
+            source_sheet_name=params.source_sheet
+        )
+        
+        async for event in gen:
+            if event["type"] == "complete":
+                output_filename = f"translation_review_{task_id}.txt"
+                output_path = os.path.join(UPLOAD_DIR, output_filename)
+                with open(output_path, "w", encoding="utf-8") as f:
+                    f.write(event["output_data"])
+                
+                excel_out = event.get("excel_path")
+                
+                # Create ZIP
+                zip_name = f"result_{task_id}.zip"
+                zip_path = os.path.join(UPLOAD_DIR, zip_name)
+                
+                with zipfile.ZipFile(zip_path, 'w') as zipf:
+                    if output_path and os.path.exists(output_path): 
+                        zipf.write(output_path, os.path.basename(output_path))
+                    if excel_out and os.path.exists(excel_out): 
+                        zipf.write(excel_out, os.path.basename(excel_out))
+                
+                TASK_STORE[task_id]["result_path"] = zip_path
+                await queue.put({"type": "log", "message": "Processing complete. Generating ZIP..."})
+                await queue.put({"type": "complete", "download_url": f"/api/download/{task_id}"})
+            else:
+                await queue.put(event)
+                
+    except Exception as e:
+        print(f"Integrated Task Error: {e}")
+        await queue.put({"type": "error", "message": f"작업 중 오류 발생: {str(e)}"})
 
 @app.post("/api/upload")
 async def upload_files(
@@ -185,12 +247,9 @@ class GlossaryCheckRequest(BaseModel):
 
 @app.post("/api/check_glossary")
 async def check_glossary(req: GlossaryCheckRequest):
-    checker = TranslationChecker(max_concurrency=1)
-    msg = await checker.load_glossary_from_url(req.url, req.source_lang)
-    # msg format is "Glossary loaded: N entries." or "Glossary load failed: ..."
-    if "failed" in msg.lower():
-        raise HTTPException(status_code=400, detail=msg)
-    return {"message": msg}
+    # This endpoint is mostly for testing Google Sheets support which we removed
+    # We'll just return an error or disable it.
+    raise HTTPException(status_code=400, detail="Google Sheets glossary support has been removed. Please upload a CSV file.")
 
 @app.post("/api/start")
 async def start_inspection(req: StartRequest, background_tasks: BackgroundTasks):
@@ -200,7 +259,10 @@ async def start_inspection(req: StartRequest, background_tasks: BackgroundTasks)
         "result_path": None
     }
     
-    background_tasks.add_task(background_inspection_task, task_id, req)
+    if req.bx_style_enabled:
+        background_tasks.add_task(integrated_translation_task, task_id, req)
+    else:
+        background_tasks.add_task(background_inspection_task, task_id, req)
     
     return {"task_id": task_id}
 
@@ -228,9 +290,10 @@ async def download_result(task_id: str):
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Result file missing from server")
     
+    filename = f"translation_result_{task_id}.zip" if path.endswith('.zip') else f"translation_review_{task_id}.txt"
     return FileResponse(
         path, 
-        filename=f"translation_review_{task_id}.txt", 
+        filename=filename, 
         media_type="application/octet-stream"
     )
 
