@@ -54,9 +54,10 @@ class StartRequest(BaseModel):
     max_concurrency: int = 5
     cell_range: str = "C7:C28" # Default range
     model_name: str
-    translation_model: str = "gemini-2.0-flash-exp"
-    audit_model: str = "gpt-5.2"
+    translation_model: str = "gemini-2.5-flash"
+    audit_model: str = "gpt-5-mini"
     bx_style_enabled: bool = False
+    task_mode: str = "integrated"
 
 async def background_inspection_task(task_id, params):
     queue = TASK_STORE[task_id]["queue"]
@@ -99,7 +100,11 @@ async def background_inspection_task(task_id, params):
                 
                 TASK_STORE[task_id]["result_path"] = output_path
                 # Notify completion without large data payload
-                await queue.put({"type": "complete", "download_url": f"/api/download/{task_id}"})
+                await queue.put({
+                    "type": "complete", 
+                    "download_url": f"/api/download/{task_id}",
+                    "is_zip": False
+                })
             else:
                 await queue.put(event)
                 
@@ -136,7 +141,8 @@ async def integrated_translation_task(task_id, params):
             audit_model=params.audit_model,
             glossary_file_path=glossary_path,
             selected_sheets=params.sheets,
-            source_sheet_name=params.source_sheet
+            source_sheet_name=params.source_sheet,
+            skip_audit=(params.task_mode == "translate_only")
         )
         
         async for event in gen:
@@ -160,7 +166,12 @@ async def integrated_translation_task(task_id, params):
                 
                 TASK_STORE[task_id]["result_path"] = zip_path
                 await queue.put({"type": "log", "message": "Processing complete. Generating ZIP..."})
-                await queue.put({"type": "complete", "download_url": f"/api/download/{task_id}"})
+                await queue.put({
+                    "type": "complete", 
+                    "download_url": f"/api/download/{task_id}",
+                    "result_file_id": os.path.basename(excel_out) if excel_out else None,
+                    "is_zip": True
+                })
             else:
                 await queue.put(event)
                 
@@ -259,10 +270,11 @@ async def start_inspection(req: StartRequest, background_tasks: BackgroundTasks)
         "result_path": None
     }
     
-    if req.bx_style_enabled:
-        background_tasks.add_task(integrated_translation_task, task_id, req)
-    else:
+    if req.task_mode == "inspect_only":
         background_tasks.add_task(background_inspection_task, task_id, req)
+    else:
+        # For 'integrated' and 'translate_only', we use integrated_translation_task
+        background_tasks.add_task(integrated_translation_task, task_id, req)
     
     return {"task_id": task_id}
 
@@ -290,12 +302,8 @@ async def download_result(task_id: str):
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Result file missing from server")
     
-    filename = f"translation_result_{task_id}.zip" if path.endswith('.zip') else f"translation_review_{task_id}.txt"
-    return FileResponse(
-        path, 
-        filename=filename, 
-        media_type="application/octet-stream"
-    )
+    filename = os.path.basename(path)
+    return FileResponse(path, filename=filename)
 
 # 1. 'static' 폴더를 웹에 연결
 app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")

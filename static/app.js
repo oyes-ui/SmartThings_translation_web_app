@@ -192,8 +192,45 @@ function checkStartReadiness() {
 const checkGlossaryBtn = null;
 // ... logic for checkGlossaryBtn removed ...
 
+// --- Task Mode Visibility ---
+const taskModeRadios = document.querySelectorAll('input[name="taskMode"]');
+const aiModelItem = document.getElementById('aiModelItem');
+const auditModelItem = document.getElementById('auditModelItem');
+const bxStyleItem = document.getElementById('bxStyleItem');
+
+function updateModeVisibility() {
+    const mode = document.querySelector('input[name="taskMode"]:checked').value;
+    if (mode === 'integrated') {
+        aiModelItem.classList.remove('hidden');
+        auditModelItem.classList.remove('hidden');
+        bxStyleItem.classList.remove('hidden');
+    } else if (mode === 'translate_only') {
+        aiModelItem.classList.remove('hidden');
+        auditModelItem.classList.add('hidden');
+        bxStyleItem.classList.remove('hidden');
+    } else if (mode === 'inspect_only') {
+        aiModelItem.classList.add('hidden');
+        auditModelItem.classList.remove('hidden');
+        bxStyleItem.classList.add('hidden');
+    }
+
+    // Update Button Text
+    if (mode === 'integrated') {
+        startBtn.textContent = "Start Integrated Task";
+    } else if (mode === 'translate_only') {
+        startBtn.textContent = "Start Translation Only";
+    } else if (mode === 'inspect_only') {
+        startBtn.textContent = "Start Inspection Only";
+    }
+}
+
+taskModeRadios.forEach(radio => {
+    radio.addEventListener('change', updateModeVisibility);
+});
+
 // --- Execution ---
 startBtn.addEventListener('click', async () => {
+    const taskMode = document.querySelector('input[name="taskMode"]:checked').value;
     // Collect Config
     const configStr = document.getElementById('sheetConfig').value;
     let sheetConfig = {};
@@ -229,7 +266,7 @@ startBtn.addEventListener('click', async () => {
     try {
         const payload = {
             source_file_id: uploadedFileIds.source,
-            target_file_id: uploadedFileIds.source,
+            target_file_id: uploadedFileIds.target || uploadedFileIds.source,
             source_sheet: sourceSheet,
             sheets: targetSheets,
             sheet_langs: sheetConfig,
@@ -239,7 +276,8 @@ startBtn.addEventListener('click', async () => {
             translation_model: document.getElementById('modelSelect').value,
             audit_model: document.getElementById('auditModelSelect').value,
             bx_style_enabled: document.getElementById('bxStyleToggle').checked,
-            source_lang: document.getElementById('sourceLangSelect').value
+            source_lang: document.getElementById('sourceLangSelect').value,
+            task_mode: taskMode
         };
 
         const res = await fetch(`${API_BASE}/start`, {
@@ -275,18 +313,24 @@ function connectSSE(taskId) {
             if (data.log) log(data.log, "system");
         } else if (data.type === 'complete') {
             evtSource.close();
-            log("Inspection Complete!", "success");
+            log("Task Complete!", "success");
             startBtn.disabled = false;
-            startBtn.textContent = "Start New Inspection";
+            updateModeVisibility(); // Reset button text based on mode
+
+            // NEW: Continuity logic - store the translated result as the potential target for next inspection
+            if (data.result_file_id) {
+                uploadedFileIds.target = data.result_file_id;
+                log(`Result file saved. You can now run "Only Inspect" with a different model.`, "system");
+            }
 
             // Setup Download
             const downloadUrl = `${window.location.origin}${data.download_url}`;
-            const isZip = data.download_url.includes('zip') || document.getElementById('bxStyleToggle').checked;
+            const isZip = data.is_zip;
             const fileName = isZip ? `translation_result_${taskId}.zip` : `translation_review_${taskId}.txt`;
             downloadLink.textContent = isZip ? "Download Integrated Result (.zip)" : "Download Review Report (.txt)";
 
-            downloadLink.onclick = async (e) => {
-                e.preventDefault();
+            downloadLink.onclick = async (event) => {
+                event.preventDefault();
                 log("Downloading report...", "system");
                 try {
                     const res = await fetch(downloadUrl);

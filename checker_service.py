@@ -42,30 +42,20 @@ class TranslationChecker:
 
     def __init__(
         self,
-        model_name: str = "gpt-5.2",
+        model_name: str = "gpt-5-mini",
         max_concurrency: int = 10,
         short_text_whitelist=None,
         skip_llm_when_glossary_mismatch: bool = False,
         no_backtranslation: bool = False
     ):
-        if not GEMINI_API_KEY:
-            raise ValueError("API Key is missing.")
-
         # API Setup
-        self.client = genai.Client(api_key=GEMINI_API_KEY)
         self.model_name = model_name
         
-        # In the future, we can add provider detection logic here
-        # For now, we assume all models are Gemini models
-        self.provider = "google" 
-        if "gpt" in model_name.lower() or "o1" in model_name.lower():
-            self.provider = "openai"
-            from openai import AsyncOpenAI
-            self.openai_client = None
-            if OPENAI_API_KEY:
-                self.openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-            else:
-                print("Warning: OPENAI_API_KEY is missing but a GPT model was selected.")
+        # Concurrency
+        if max_concurrency < 1:
+            max_concurrency = 1
+        self.max_concurrency = max_concurrency
+        self._sem = asyncio.Semaphore(self.max_concurrency)
             
         self.no_backtranslation = no_backtranslation
         
@@ -381,32 +371,9 @@ class TranslationChecker:
 "최종 평가: 우수, 주요 문제 없음."
 """
         try:
-            if self.provider == "openai":
-                if not self.openai_client:
-                    return "[Error]: OpenAI API Client not initialized."
-                
-                response = await self.openai_client.chat.completions.create(
-                    model=self.model_name,
-                    messages=[
-                        {"role": "system", "content": "당신은 전문 번역 검수 전문가입니다."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0.2
-                )
-                return response.choices[0].message.content.strip()
-            else:
-                config = types.GenerateContentConfig(
-                    temperature=0.2,
-                    system_instruction="당신은 전문 번역 검수 전문가입니다."
-                )
-                response = await self.client.aio.models.generate_content(
-                    model=self.model_name,
-                    contents=prompt,
-                    config=config
-                )
-                return response.text.strip() if response.text else "[응답 비어있음]"
+            return await self.model_handler.generate_content(prompt, model_name=self.model_name, system_instruction="당신은 전문 번역 검수 전문가입니다.")
         except Exception as e:
-            return f"[{self.provider.upper()} QA 오류]: {e}"
+            return f"[QA 오류]: {e}"
 
     async def get_back_translation(self, target_text, target_lang, source_lang):
         prompt = (
@@ -414,25 +381,9 @@ class TranslationChecker:
             f"오직 번역된 텍스트만 제공해야 합니다. 다른 설명이나 텍스트는 포함하지 마세요.\n\n{target_text}"
         )
         try:
-            if self.provider == "openai":
-                if not self.openai_client:
-                    return "[Error]: OpenAI API Client not initialized."
-                response = await self.openai_client.chat.completions.create(
-                    model=self.model_name,
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.1
-                )
-                return response.choices[0].message.content.strip()
-            else:
-                config = types.GenerateContentConfig(temperature=0.1)
-                response = await self.client.aio.models.generate_content(
-                    model=self.model_name,
-                    contents=prompt,
-                    config=config
-                )
-                return response.text.strip() if response.text else "[응답 비어있음]"
+            return await self.model_handler.generate_content(prompt, model_name=self.model_name)
         except Exception as e:
-            return f"[{self.provider.upper()} 역번역 오류]: {e}"
+            return f"[역번역 오류]: {e}"
 
     # ----------------- Process Single Item -----------------
     async def process_item(self, item, source_lang, default_target_lang, sheet_lang_map, default_target_lang_code):
@@ -648,7 +599,8 @@ class TranslationChecker:
         audit_model="gpt-5.2",
         glossary_file_path=None,
         selected_sheets=None,
-        source_sheet_name=None
+        source_sheet_name=None,
+        skip_audit=False
     ):
         """
         Translates source text, audits it, and saves it to a NEW Excel file.
@@ -707,71 +659,87 @@ class TranslationChecker:
         yield {"type": "log", "message": f"Plan: {len(target_sheets)} sheets, Total {total_cells} cells."}
         yield {"type": "progress", "current": 0, "total": total_cells, "percent": 0}
 
-        # 5. Process in parallel (sheets, then cells)
+        # 5. Process in parallel (cells)
         completed_count = 0
-        all_audit_results = []
-
-
-        # Loop through sheets
         summary_lines = []
+        
+        async def cell_worker(ws, item, target_lang, target_lang_code):
+            nonlocal completed_count
+            source_text = item['text']
+            coord = item['coord']
+            
+            # Step 1: Translate
+            glossary_context = self._build_glossary_lines_for_code(target_lang_code)
+            if glossary_context and ("용어집에" in glossary_context or "용어집 없음" in glossary_context):
+                glossary_context = None
+
+            translation = await self.model_handler.translate(
+                source_text, 
+                target_lang, 
+                model_name=translation_model,
+                bx_handler=self.bx_engine,
+                bx_style_on=bx_style_on,
+                glossary_context=glossary_context
+            )
+            
+            ws[coord].value = translation
+
+            item_data = {"cell_ref": coord,"sheet_name": ws.title,"source": source_text,"target": translation}
+            
+            if skip_audit:
+                res = {
+                    "sheet_name": ws.title,
+                    "cell_ref": coord,
+                    "source": source_text,
+                    "target": translation,
+                    "case_section": "[Bypassed]",
+                    "glossary_section": "[Bypassed]",
+                    "back_translation": "[Bypassed]",
+                    "ai_review": "[Bypassed: Translate Only Mode]"
+                }
+            else:
+                res = await self.process_item(item_data, source_lang, target_lang, sheet_lang_map, target_lang_code)
+            
+            return res
+
+        # Flatten all cells into a list of tasks
+        tasks = []
         for sheet_name in target_sheets:
             ws = wb[sheet_name]
             sheet_info = sheet_lang_map[sheet_name]
             target_lang = sheet_info['lang']
             target_lang_code = sheet_info['code']
             
-            summary_lines.append(f"--- Sheet: {sheet_name} ({target_lang}) ---")
-            
-            
-            async def cell_worker(ws, item, target_lang, target_lang_code):
-                nonlocal completed_count
-                source_text = item['text']
-                coord = item['coord']
-                
-                # Step 1: Translate
-                glossary_context = self._build_glossary_lines_for_code(target_lang_code)
-                if "용어집에" in glossary_context or "용어집 없음" in glossary_context:
-                    glossary_context = None
+            for item in source_data:
+                tasks.append(cell_worker(ws, item, target_lang, target_lang_code))
 
-                translation = await self.model_handler.translate(
-                    source_text, 
-                    target_lang, 
-                    model_name=translation_model,
-                    bx_handler=self.bx_engine,
-                    bx_style_on=bx_style_on,
-                    glossary_context=glossary_context
-                )
-                
-                ws[coord].value = translation
-
-                item_data = {"cell_ref": coord,"sheet_name": ws.title,"source": source_text,"target": translation}
-                res = await self.process_item(item_data, source_lang, target_lang, sheet_lang_map, target_lang_code)
-                
+        # Yield per-cell progress
+        for future in asyncio.as_completed(tasks):
+            try:
+                res = await future
                 completed_count += 1
-                return res
-
-            # Run cell tasks for this sheet
-            sheet_item_results = await asyncio.gather(*[cell_worker(ws, item, target_lang, target_lang_code) for item in source_data])
-            
-            # Update progress after each sheet (or more granularly if we use a different structure)
-            # For now, let's just assemble the report
-            for res in sheet_item_results:
+                
                 fmt_result = (
                     f"\n\n{'='*90}\n"
                     f"[시트] {res['sheet_name']} | [셀] {res['cell_ref']}\n"
                     f"{'-'*90}\n\n"
                     f"[상세 - 원문]\n{res['source']}\n\n"
                     f"[상세 - 번역문]\n{res['target']}\n\n"
-                    f"[상세 - 대소문자 점검]\n{res['case_section']}\n\n"
-                    f"[상세 - 용어집 점검]\n{res['glossary_section']}\n\n"
-                    f"[상세 - 역번역]\n{res['back_translation']}\n\n"
                     f"[상세 - ai 검수 결과]\n{res['ai_review']}\n"
                     f"{'='*90}\n"
                 )
                 summary_lines.append(fmt_result)
                 
-            percent = int((completed_count / total_cells) * 100)
-            yield {"type": "progress", "current": completed_count, "total": total_cells, "percent": percent, "log": f"{sheet_name} 처리 완료"}
+                percent = int((completed_count / total_cells) * 100)
+                yield {
+                    "type": "progress", 
+                    "current": completed_count, 
+                    "total": total_cells, 
+                    "percent": percent, 
+                    "log": f"[{res['sheet_name']}] {res['cell_ref']} 처리 완료"
+                }
+            except Exception as e:
+                yield {"type": "log", "message": f"Cell processing error: {str(e)}"}
 
         # 6. Save results
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
