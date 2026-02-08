@@ -79,6 +79,8 @@ class TranslationChecker:
 
         # Glossary Structure: { source_term: { 'targets': {code: term, ...}, 'rule': ... } }
         self.glossary = {}
+        self.glossary_re = None # Pre-compiled regex for fast lookup
+        self.glossary_map = {}  # {lower_case_term: original_case_term}
         self.glossary_headers = []
         self.source_lang_code = None
 
@@ -162,10 +164,59 @@ class TranslationChecker:
                     self.glossary[source_term] = {"targets": targets, "rule": rule}
                     count += 1
             
+            self._compile_glossary_re()
             return f"✓ 용어집 로드 성공: {count}개 항목 (매칭 기준: {source_lang_code})"
 
         except Exception as e:
             return f"Glossary load failed: {str(e)}"
+
+    def _compile_glossary_re(self):
+        """
+        용어집의 소스어들을 하나의 정규표현식으로 컴파일하여 검색 성능을 최적화합니다.
+        길이가 긴 단어부터 매칭되도록 정렬하여 부분 일치 오류를 방지합니다.
+        """
+        if not self.glossary:
+            self.glossary_re = None
+            return
+
+        # 단어 길이가 긴 순서대로 정렬 (긴 단어가 우선 매칭되도록)
+        sorted_terms = sorted(self.glossary.keys(), key=len, reverse=True)
+        self.glossary_map = {t.lower(): t for t in sorted_terms}
+        patterns = []
+        
+        for term in sorted_terms:
+            escaped = re.escape(term)
+            # 영어/숫자로 시작/종료되는 경우 단어 경계(\b)와 유사한 로직 적용 
+            # (단, 한국어 조사가 붙는 경우를 고려하여 앞뒤가 영문/숫자인 경우만 경계 체크)
+            pattern = escaped
+            if term[0].isalnum():
+                pattern = r'(?<![a-zA-Z0-9])' + pattern
+            if term[-1].isalnum():
+                pattern = pattern + r'(?![a-zA-Z0-9])'
+            patterns.append(f"({pattern})")
+            
+        # 모든 패턴을 OR(|)로 결합
+        try:
+            self.glossary_re = re.compile('|'.join(patterns), re.IGNORECASE)
+        except Exception as e:
+            print(f"Regex compilation failed: {e}")
+            self.glossary_re = None
+
+    def _get_relevant_glossary_terms(self, source_text: str):
+        """
+        원문에서 용어집에 포함된 단어들을 추출합니다.
+        """
+        if not self.glossary or not self.glossary_re or not source_text:
+            return []
+            
+        found_terms = set()
+        for match in self.glossary_re.finditer(source_text):
+            # 매칭된 텍스트를 소문자로 변환하여 원래 용어집 키 찾기
+            matched_text = match.group(0).lower()
+            original_term = self.glossary_map.get(matched_text)
+            if original_term:
+                found_terms.add(original_term)
+        return list(found_terms)
 
     # ----------------- Excel Loader -----------------
     def load_excel_files(self, source_path, target_path, selected_sheets=None):
@@ -252,43 +303,88 @@ class TranslationChecker:
         async with self._sem:
             return await coro
 
-    def _build_glossary_lines_for_code(self, target_lang_code: str):
+    def _build_glossary_lines_for_code(self, target_lang_code: str, source_text: str = None):
         if not self.glossary:
             return "용어집 없음"
+        
+        # 원문이 주어지면 관련 용어만 필터링, 아니면 전체 (하위 호환성)
+        if source_text:
+            relevant_terms = self._get_relevant_glossary_terms(source_text)
+        else:
+            relevant_terms = list(self.glossary.keys())
+            
+        if not relevant_terms:
+            return "관련 용어 없음"
+
         out = []
-        for source_term, meta in self.glossary.items():
+        for term in relevant_terms:
+            meta = self.glossary[term]
             tgt = meta["targets"].get(target_lang_code)
             if not tgt:
                 continue
             rule = meta.get("rule")
             rule_info = f" (규칙: {rule})" if rule else ""
-            out.append(f"- 원어: {source_term} → 대상어({target_lang_code}): {tgt}{rule_info}")
+            out.append(f"- 원어: {term} → 대상어({target_lang_code}): {tgt}{rule_info}")
+        
         return "\n".join(out) if out else f"용어집에 '{target_lang_code}' 타겟 항목 없음"
+
+    def _get_glossary_context_as_dict(self, target_lang_code: str, source_text: str | None = None):
+        """
+        용어집 데이터를 JSON/Dict 형태로 반환합니다. (프롬프트 최적화용)
+        """
+        if not self.glossary:
+            return {}
+        
+        # 정규표현식이 컴파일되지 않은 경우 컴파일 시도
+        if not self.glossary_re:
+            self._compile_glossary_re()
+            
+        relevant_terms = self._get_relevant_glossary_terms(source_text) if source_text else list(self.glossary.keys())
+        
+        context = {}
+        for term in relevant_terms:
+            tgt = self.glossary[term]["targets"].get(target_lang_code)
+            if tgt:
+                context[term] = tgt
+        return context
 
     def _precheck_glossary_mismatch(self, source_text: str, target_text: str, target_lang_code: str):
         if not self.glossary or not target_lang_code:
             return []
+        
+        relevant_terms = self._get_relevant_glossary_terms(source_text)
+        if not relevant_terms:
+            return []
+
         mismatches = []
-        src_lower = source_text.lower()
         tgt_lower = target_text.lower()
-        for s_term, meta in self.glossary.items():
+        
+        for s_term in relevant_terms:
+            meta = self.glossary[s_term]
             t_term = meta["targets"].get(target_lang_code)
             if not t_term: continue
-            if s_term and s_term.lower() in src_lower:
-                if t_term.lower() not in tgt_lower:
-                    mismatches.append(f"'{s_term}' → '{t_term}' 미적용({target_lang_code})")
+            
+            if t_term.lower() not in tgt_lower:
+                mismatches.append(f"'{s_term}' → '{t_term}' 미적용({target_lang_code})")
         return mismatches
 
     def _check_glossary_casing(self, source_text: str, target_text: str, target_lang_code: str):
         if not self.glossary or not target_lang_code or not source_text or not target_text:
             return []
+            
+        relevant_terms = self._get_relevant_glossary_terms(source_text)
+        if not relevant_terms:
+            return []
+
         issues = []
-        src_lower = source_text.lower()
         tgt_lower = target_text.lower()
-        for s_term, meta in self.glossary.items():
+        
+        for s_term in relevant_terms:
+            meta = self.glossary[s_term]
             t_term = meta["targets"].get(target_lang_code)
             if not t_term: continue
-            if s_term.lower() in src_lower and t_term.lower() in tgt_lower:
+            
+            if t_term.lower() in tgt_lower:
                 idx = tgt_lower.find(t_term.lower())
                 if idx == -1: continue
                 actual = target_text[idx:idx + len(t_term)]
@@ -339,41 +435,144 @@ class TranslationChecker:
         if simple_fixed_text == target_text:
             simple_fixed_text = None
         return report, simple_fixed_text
+    async def _run_llm_translation(self, text, target_lang, model_name="gemini-2.5-flash", bx_style_on=False, glossary_context=None):
+        """
+        내부 전용 번역 메서드: JSON 프롬프트 생성 및 LLM 호출을 담당합니다.
+        """
+        brackets = "[]"
+        if "Japanese" in target_lang:
+            brackets = "「」"
+        elif "Chinese" in target_lang:
+            brackets = "【】"
+
+        # 입력 데이터 구조화
+        input_data = {
+            "source_text": text,
+            "target_language": target_lang,
+            "glossary": glossary_context if isinstance(glossary_context, dict) else {},
+            "formatting": {
+                "glossary_prefix": brackets[0],
+                "glossary_suffix": brackets[1]
+            }
+        }
+
+        if bx_style_on and self.bx_engine:
+            system_prompt = self.bx_engine.get_system_prompt(target_lang)
+            system_prompt += (
+                f"\nIMPORTANT: You must follow the Samsung BX style guide above.\n"
+                f"Use the provided glossary if available. CRITICAL: Any time you use a term from the glossary, you MUST wrap it in '{brackets[0]}' and '{brackets[1]}' (e.g., {brackets[0]}Term{brackets[1]}).\n"
+                "Return the response in JSON format with a 'translation' field."
+            )
+        else:
+            system_prompt = (
+                f"You are a professional {target_lang} localizer.\n"
+                f"TASK: Translate the source text naturally for a native speaker while preserving 100% of the original meaning.\n"
+                f"RULE 1: Use the provided 'glossary'.\n"
+                f"RULE 2: Wrap glossary terms in '{brackets[0]}' and '{brackets[1]}'. (CRITICAL)\n"
+                "OUTPUT: Return ONLY a JSON object with a 'translation' key."
+            )
+
+        try:
+            prompt = json.dumps(input_data, ensure_ascii=False, indent=2)
+            response_data = await self.model_handler.generate_content(
+                prompt, 
+                model_name=model_name, 
+                system_instruction=system_prompt,
+                response_json=True
+            )
+
+            if isinstance(response_data, dict):
+                return response_data.get("translation", str(response_data))
+            return str(response_data)
+        except Exception as e:
+            return f"[번역 오류] {str(e)}"
+
+    async def _run_llm_audit(self, source_text, translated_text, target_lang, model_name="gpt-5-mini"):
+        """
+        내부 전용 감사 메서드: JSON 구조화된 프롬프트를 사용하여 품질 검수합니다.
+        """
+        input_data = {
+            "source_text": source_text,
+            "translated_text": translated_text,
+            "language": target_lang
+        }
+
+        system_instruction = "당신은 원문과 번역문을 대조하여 언어적 정확성과 품질을 평가하는 전문 검수자입니다. 분석 결과를 한국어 의견으로 반환하세요."
+        
+        try:
+            prompt = json.dumps(input_data, ensure_ascii=False, indent=2)
+            response = await self.model_handler.generate_content(
+                prompt,
+                model_name=model_name,
+                system_instruction=system_instruction + "\nReturn a JSON object with 'reasoning' and 'is_accurate' (bool) keys.",
+                response_json=True
+            )
+            
+            if isinstance(response, dict):
+                return response.get("reasoning", str(response))
+            return str(response)
+        except Exception as e:
+            return f"[감사 오류] {str(e)}"
+
 
     # ----------------- LLM Calls -----------------
     async def check_with_llm_qa(self, source_text, target_text, source_lang, target_lang, target_lang_code):
-        glossary_text = self._build_glossary_lines_for_code(target_lang_code)
+        glossary_dict = self._get_glossary_context_as_dict(target_lang_code, source_text=source_text)
         
-        prompt = f"""당신은 전문 번역 검수 전문가입니다.
+        # QA용 구조화된 프롬프트 데이터
+        input_data = {
+            "source": {"lang": source_lang, "text": source_text},
+            "translation": {"lang": f"{target_lang}/{target_lang_code}", "text": target_text},
+            "glossary": glossary_dict
+        }
 
-[Context]
-- 원문({source_lang}): {source_text}
-- 번역문({target_lang}/{target_lang_code}): {target_text}
+        prompt = f"""당신은 전문 번역 검수 전문가입니다. 아래 JSON 데이터를 분석하여 상세한 검수 결과를 반환하세요.
 
-[용어집({target_lang_code})]
-{glossary_text}
+[Input Data]
+{json.dumps(input_data, ensure_ascii=False, indent=2)}
 
-다음 항목에 대해 상세하고 객관적인 검수 결과를 **한국어 불렛 포인트**로 정리해 주세요:
-1. **문법/유창성**: 번역문의 어색한 표현이나 문법 오류.
-2. **문화/문맥 적절성**: 뉘앙스 손실, 문화적으로 부적절한 요소. **(참고: 'German for Casual Audience (Du-form mandatory)' 등 언어 지정이 있는 경우, 호칭(Du/Sie) 일관성 확인)**
-3. **대소문자(Casing) 및 문장형**:
-   - 각 문장에서 첫 단어만 대문자이고 나머지는 소문자인지(문장형) 평가하세요.
-   - 문장 중간에 등장하는 대문자·ALL CAPS 단어가 고유명/브랜드명/기능명/약어인지 여부를 설명하세요.
-4. **용어집 및 규칙 준수**:
-   - 용어집에 있는 용어가 올바르게 번역되었는지뿐만 아니라,
-   - 용어집에 명시된 대소문자 표기(SmartThings, Galaxy Watch 등)가 그대로 지켜졌는지도 평가하세요.
-5. **수정 제안**:
-   - 문제가 있다고 판단되는 부분이 있을 경우,
-   - 문장형(첫 글자만 대문자) 기준을 해치지 않으면서
-   - 고유명/기능명/약어/용어집 표기를 그대로 유지하는 **안전한 수정안**을 제시하세요.
+[검수 가이드라인]
+1. 문법/유창성: 오타, 문법 오류, 성수 일치, 관용구 사용 등 정밀 점검. 
+2. 정확성: 원문의 뉘앙스(예: 공손함의 정도)와 정보가 정확히 전달되었는지 확인.
+3. 용어집 준수: 제공된 glossary 데이터와 100% 일치하는지 확인 (대소문자, 띄어쓰기 포함).
+4. 대소문자(Casing): 해당 언어의 문장형(Sentence case) 또는 타이틀형(Title case) 등 일반 규칙 준수 여부.
+5. 품질 등급 평가: 번역의 품질을 다각도로 분석하여 기술하세요.
 
-문제 없다면 마지막 줄에:
-"최종 평가: 우수, 주요 문제 없음."
+[출력 형식]
+JSON 형식으로 반환하세요:
+{{
+  "evaluation": "항목별 상세 점검 결과 (한국어 불렛 포인트로 풍부하게 작성)",
+  "is_excellent": true/false (중대한 결함이 없을 경우 true),
+  "suggested_fix": "가장 자연스럽고 정확한 수정 제안 (필요 시)"
+}}
 """
         try:
-            return await self.model_handler.generate_content(prompt, model_name=self.model_name, system_instruction="당신은 전문 번역 검수 전문가입니다.")
+            # ModelHandler가 JSON 모드를 지원하므로 딕셔너리로 바로 받을 수 있음
+            response = await self.model_handler.generate_content(
+                prompt, 
+                model_name=self.model_name, 
+                system_instruction="당신은 언어별 문법과 문맥을 정밀하게 분석하는 전문 번역 검수자입니다. 반드시 JSON 형식으로만 응답합니다.",
+                response_json=True
+            )
+            
+            if isinstance(response, str):
+                 return f"[QA 결과]\n{response}"
+            
+            eval_text = response.get("evaluation", "검수 결과 파싱 실패")
+            if response.get("is_excellent"):
+                eval_text += "\n\n최종 평가: 우수, 주요 문제 없음."
+            
+            if response.get("suggested_fix"):
+                eval_text += f"\n\n[수정안 제안]:\n{response['suggested_fix']}"
+                
+            return eval_text
         except Exception as e:
             return f"[QA 오류]: {e}"
+
+
+
+
+
 
     async def get_back_translation(self, target_text, target_lang, source_lang):
         prompt = (
@@ -449,7 +648,7 @@ class TranslationChecker:
             )
             
             if self.no_backtranslation:
-                res["gemini_review"] = await qa_task
+                res["ai_review"] = await qa_task
                 res["back_translation"] = "[역번역 비활성화됨]"
             else:
                 bt_task = self._with_semaphore(
@@ -661,25 +860,23 @@ class TranslationChecker:
 
         # 5. Process in parallel (cells)
         completed_count = 0
-        summary_lines = []
         
-        async def cell_worker(ws, item, target_lang, target_lang_code):
+        async def cell_worker(ws, index, item, target_lang, target_lang_code):
             nonlocal completed_count
             source_text = item['text']
             coord = item['coord']
             
             # Step 1: Translate
-            glossary_context = self._build_glossary_lines_for_code(target_lang_code)
-            if glossary_context and ("용어집에" in glossary_context or "용어집 없음" in glossary_context):
-                glossary_context = None
+            glossary_dict = self._get_glossary_context_as_dict(target_lang_code, source_text=source_text)
+            if not glossary_dict:
+                glossary_dict = None
 
-            translation = await self.model_handler.translate(
+            translation = await self._run_llm_translation(
                 source_text, 
                 target_lang, 
                 model_name=translation_model,
-                bx_handler=self.bx_engine,
                 bx_style_on=bx_style_on,
-                glossary_context=glossary_context
+                glossary_context=glossary_dict
             )
             
             ws[coord].value = translation
@@ -700,10 +897,11 @@ class TranslationChecker:
             else:
                 res = await self.process_item(item_data, source_lang, target_lang, sheet_lang_map, target_lang_code)
             
-            return res
+            return index, res
 
         # Flatten all cells into a list of tasks
         tasks = []
+        idx = 0
         for sheet_name in target_sheets:
             ws = wb[sheet_name]
             sheet_info = sheet_lang_map[sheet_name]
@@ -711,12 +909,15 @@ class TranslationChecker:
             target_lang_code = sheet_info['code']
             
             for item in source_data:
-                tasks.append(cell_worker(ws, item, target_lang, target_lang_code))
+                tasks.append(cell_worker(ws, idx, item, target_lang, target_lang_code))
+                idx += 1
 
+        ordered_results = [None] * len(tasks)
+        
         # Yield per-cell progress
         for future in asyncio.as_completed(tasks):
             try:
-                res = await future
+                index, res = await future
                 completed_count += 1
                 
                 fmt_result = (
@@ -725,10 +926,13 @@ class TranslationChecker:
                     f"{'-'*90}\n\n"
                     f"[상세 - 원문]\n{res['source']}\n\n"
                     f"[상세 - 번역문]\n{res['target']}\n\n"
+                    f"[상세 - 대소문자 점검]\n{res['case_section']}\n\n"
+                    f"[상세 - 용어집 점검]\n{res['glossary_section']}\n\n"
+                    f"[상세 - 역번역]\n{res['back_translation']}\n\n"
                     f"[상세 - ai 검수 결과]\n{res['ai_review']}\n"
                     f"{'='*90}\n"
                 )
-                summary_lines.append(fmt_result)
+                ordered_results[index] = fmt_result
                 
                 percent = int((completed_count / total_cells) * 100)
                 yield {
@@ -751,7 +955,8 @@ class TranslationChecker:
             f"생성일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
             f"총 항목: {completed_count}개\n\n"
         )
-        report_text = header + "\n".join(summary_lines)
+        valid_results = [r for r in ordered_results if r is not None]
+        report_text = header + "".join(valid_results)
         
         yield {
             "type": "complete", 

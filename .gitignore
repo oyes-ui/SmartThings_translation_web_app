@@ -6,6 +6,7 @@ __pycache__/
 
 # 2. 맥 전용 시스템 파일 및 앱 (Hugging Face 배포 금지 품목)
 .DS_Store
+._*
 Mac_ui.app/
 *.car
 *.app/
