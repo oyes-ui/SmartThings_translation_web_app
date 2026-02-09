@@ -559,6 +559,15 @@ JSON 형식으로 반환하세요:
                  return f"[QA 결과]\n{response}"
             
             eval_text = response.get("evaluation", "검수 결과 파싱 실패")
+            if isinstance(eval_text, list):
+                # Ensure all items are strings (e.g., handle if AI returns a list of dicts)
+                eval_text = "\n".join(
+                    json.dumps(item, ensure_ascii=False) if isinstance(item, dict) else str(item)
+                    for item in eval_text
+                )
+            elif isinstance(eval_text, dict):
+                eval_text = json.dumps(eval_text, ensure_ascii=False, indent=2)
+            
             if response.get("is_excellent"):
                 eval_text += "\n\n최종 평가: 우수, 주요 문제 없음."
             

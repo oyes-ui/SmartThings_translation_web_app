@@ -120,7 +120,8 @@ async def integrated_translation_task(task_id, params):
     try:
         checker = TranslationChecker(
             model_name=params.audit_model,
-            max_concurrency=params.max_concurrency
+            max_concurrency=params.max_concurrency,
+            no_backtranslation=True # Disabled as per user request
         )
         
         source_path = os.path.join(UPLOAD_DIR, params.source_file_id)

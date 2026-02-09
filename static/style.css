@@ -601,6 +601,7 @@ body {
 .terminal-line {
     word-break: break-all;
     line-height: 1.4;
+    white-space: pre-wrap;
 }
 
 .terminal-line.system {
