@@ -35,6 +35,16 @@ def _is_case_sensitive_language(lang_name: str) -> bool:
         return False
     return any(lang_name.startswith(pref) for pref in CASE_APPLICABLE_LANG_PREFIXES)
 
+# ----------------- Language Specific Nuance Hints -----------------
+LANGUAGE_HINTS = {
+    "German": "독일어 호칭(Du/Sie)의 일관성을 점검하세요. (특히 Casual Audience 대상 시 Du-form 권장/Sie-form 혼용 주의)",
+    "Japanese": "일본어 경어(Desu/Masu) 및 어조의 일관성을 점검하세요.",
+    "French": "프랑스어 존칭(Tu/Vous)의 일관성을 확인하세요.",
+    "Spanish": "스페인어 존칭(Tú/Usted)의 사용이 적절하고 일관적인지 확인하세요.",
+    "Portuguese": "포르투갈어(브라질/유럽)의 특성에 따른 호칭 및 문법 일관성을 확인하세요.",
+    "Chinese": "중국어 번체/간체 구분이 되어 있다면 해당 지역의 문구 관습을 따랐는지 확인하세요.",
+}
+
 class TranslationChecker:
     """
     Excel Translation Checker (Gemini Single Model) - Service Version
@@ -526,11 +536,18 @@ class TranslationChecker:
             "glossary": glossary_dict
         }
 
+        # Get language specific hint
+        lang_hint = ""
+        for lang_key, hint_text in LANGUAGE_HINTS.items():
+            if lang_key.lower() in target_lang.lower():
+                lang_hint = f"\n[언어별 특이사항 지침]\n- {hint_text}\n"
+                break
+
         prompt = f"""당신은 전문 번역 검수 전문가입니다. 아래 JSON 데이터를 분석하여 상세한 검수 결과를 반환하세요.
 
 [Input Data]
 {json.dumps(input_data, ensure_ascii=False, indent=2)}
-
+{lang_hint}
 [검수 가이드라인]
 1. 문법/유창성: 오타, 문법 오류, 성수 일치, 관용구 사용 등 정밀 점검. 
 2. 정확성: 원문의 뉘앙스(예: 공손함의 정도)와 정보가 정확히 전달되었는지 확인.
