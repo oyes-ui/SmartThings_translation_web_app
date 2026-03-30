@@ -13,9 +13,17 @@ import uuid
 import asyncio
 import json
 import openpyxl
+from datetime import datetime
 from contextlib import asynccontextmanager
 from checker_service import TranslationChecker
 import zipfile
+
+# RAG 모듈 임포트 (DB 없으면 graceful fallback)
+try:
+    import rag_db_builder as _rag_builder
+    _rag_builder_available = True
+except ImportError:
+    _rag_builder_available = False
 
 # Directory for temp files
 UPLOAD_DIR = "uploads"
@@ -43,6 +51,7 @@ TASK_STORE = {}
 
 class StartRequest(BaseModel):
     source_file_id: str
+    source_file_name: str = None
     target_file_id: str = None
     glossary_file_id: str = None
     source_sheet: str = None # Added for explicit source sheet selection
@@ -93,16 +102,20 @@ async def background_inspection_task(task_id, params):
         async for event in gen:
             # If complete, save output
             if event["type"] == "complete":
-                output_filename = f"translation_review_{task_id}.txt"
+                base_name = os.path.splitext(params.source_file_name)[0] if params.source_file_name else f"review_{task_id}"
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                output_filename = f"{base_name}_review_report_{timestamp}.txt"
                 output_path = os.path.join(UPLOAD_DIR, output_filename)
                 with open(output_path, "w", encoding="utf-8") as f:
                     f.write(event["output_data"])
                 
                 TASK_STORE[task_id]["result_path"] = output_path
+                TASK_STORE[task_id]["txt_path"] = output_path
                 # Notify completion without large data payload
                 await queue.put({
                     "type": "complete", 
                     "download_url": f"/api/download/{task_id}",
+                    "download_file_name": output_filename,
                     "is_zip": False
                 })
             else:
@@ -148,7 +161,10 @@ async def integrated_translation_task(task_id, params):
         
         async for event in gen:
             if event["type"] == "complete":
-                output_filename = f"translation_review_{task_id}.txt"
+                base_name = os.path.splitext(params.source_file_name)[0] if params.source_file_name else f"result_{task_id}"
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                
+                output_filename = f"{base_name}_review_{timestamp}.txt"
                 output_path = os.path.join(UPLOAD_DIR, output_filename)
                 with open(output_path, "w", encoding="utf-8") as f:
                     f.write(event["output_data"])
@@ -156,7 +172,7 @@ async def integrated_translation_task(task_id, params):
                 excel_out = event.get("excel_path")
                 
                 # Create ZIP
-                zip_name = f"result_{task_id}.zip"
+                zip_name = f"{base_name}_result_{timestamp}.zip"
                 zip_path = os.path.join(UPLOAD_DIR, zip_name)
                 
                 with zipfile.ZipFile(zip_path, 'w') as zipf:
@@ -166,11 +182,13 @@ async def integrated_translation_task(task_id, params):
                         zipf.write(excel_out, os.path.basename(excel_out))
                 
                 TASK_STORE[task_id]["result_path"] = zip_path
+                TASK_STORE[task_id]["txt_path"] = output_path
                 await queue.put({"type": "log", "message": "Processing complete. Generating ZIP..."})
                 await queue.put({
                     "type": "complete", 
                     "download_url": f"/api/download/{task_id}",
                     "result_file_id": os.path.basename(excel_out) if excel_out else None,
+                    "download_file_name": zip_name,
                     "is_zip": True
                 })
             else:
@@ -219,6 +237,7 @@ async def upload_files(
                     raise Exception(f"Failed to read Excel sheets: {str(e2)}")
                 
             result["source_file_id"] = s_id
+            result["source_file_name"] = source.filename
             result["sheets"] = sheets
 
         # Handle Target Upload
@@ -294,8 +313,9 @@ async def stream_progress(task_id: str):
     
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
+@app.get("/api/download/{task_id}/{filename:path}")
 @app.get("/api/download/{task_id}")
-async def download_result(task_id: str):
+async def download_result(task_id: str, filename: str = None):
     if task_id not in TASK_STORE or not TASK_STORE[task_id]["result_path"]:
         raise HTTPException(status_code=404, detail="Result not ready or task not found")
     
@@ -305,6 +325,172 @@ async def download_result(task_id: str):
     
     filename = os.path.basename(path)
     return FileResponse(path, filename=filename)
+
+@app.get("/api/report/{task_id}")
+async def get_report_txt(task_id: str):
+    if task_id not in TASK_STORE or not TASK_STORE[task_id].get("txt_path"):
+        raise HTTPException(status_code=404, detail="Report not ready or task not found")
+    
+    path = TASK_STORE[task_id]["txt_path"]
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Report file missing from server")
+    
+    return FileResponse(path, media_type="text/plain")
+
+# ─── RAG 엔드포인트 ──────────────────────────────────────────────────────────
+
+@app.get("/api/rag_status")
+async def rag_status():
+    """RAG DB 현황 조회"""
+    if not _rag_builder_available:
+        return {"available": False, "message": "rag_db_builder 모듈 미설정"}
+    try:
+        conn = _rag_builder.get_sqlite_conn()
+        _, col_kr, col_us = _rag_builder.get_chroma_collections()
+        total = conn.execute("SELECT COUNT(*) FROM rag_pairs").fetchone()[0]
+        files = conn.execute("SELECT COUNT(*) FROM processed_files").fetchone()[0]
+        return {
+            "available": True,
+            "total_pairs": total,
+            "processed_files": files,
+            "kr_vectors": col_kr.count(),
+            "us_vectors": col_us.count(),
+        }
+    except Exception as e:
+        return {"available": False, "message": str(e)}
+
+
+@app.get("/api/rag_browse")
+async def rag_browse(
+    story_id: str = None,
+    target_lang: str = None,
+    search: str = None,
+    page: int = 1,
+    page_size: int = 30
+):
+    """RAG DB 레코드 조회 (필터 + 페이지네이션)"""
+    if not _rag_builder_available:
+        raise HTTPException(status_code=500, detail="rag_db_builder 모듈 미설정")
+    try:
+        conn = _rag_builder.get_sqlite_conn()
+
+        # 스토리/언어 목록
+        stories = [r[0] for r in conn.execute(
+            "SELECT DISTINCT story_id FROM rag_pairs ORDER BY story_id"
+        ).fetchall()]
+        langs = [r[0] for r in conn.execute(
+            "SELECT DISTINCT target_lang FROM rag_pairs ORDER BY target_lang"
+        ).fetchall()]
+
+        # 필터 쿼리
+        where_clauses, params = [], []
+        if story_id:
+            where_clauses.append("story_id = ?"); params.append(story_id)
+        if target_lang:
+            where_clauses.append("target_lang = ?"); params.append(target_lang)
+        if search:
+            where_clauses.append("(source_text LIKE ? OR target_text LIKE ?)")
+            params += [f"%{search}%", f"%{search}%"]
+
+        where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+        total_count = conn.execute(
+            f"SELECT COUNT(*) FROM rag_pairs {where_sql}", params
+        ).fetchone()[0]
+
+        offset = (page - 1) * page_size
+        rows = conn.execute(
+            f"""SELECT story_id, section_code, source_group, source_text,
+                       target_lang, target_text, original_file
+                FROM rag_pairs {where_sql}
+                ORDER BY story_id, target_lang, section_code
+                LIMIT ? OFFSET ?""",
+            params + [page_size, offset]
+        ).fetchall()
+
+        return {
+            "stories": stories,
+            "langs": langs,
+            "total": total_count,
+            "page": page,
+            "page_size": page_size,
+            "records": [dict(r) for r in rows]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/rag_similar")
+async def rag_similar(query: str, target_lang: str, n: int = 5):
+    """유사도 검색 테스트 (뷰어용)"""
+    if not _rag_builder_available:
+        raise HTTPException(status_code=500, detail="rag_db_builder 모듈 미설정")
+    try:
+        from rag_retriever import get_retriever
+        retriever = get_retriever()
+        if not retriever.is_available():
+            return {"results": [], "message": "RAG DB가 비어있습니다"}
+        results = retriever.retrieve(query, target_lang, n_results=n, exclude_same_source=False)
+        return {"results": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@app.post("/api/build_rag")
+async def build_rag(background_tasks: BackgroundTasks):
+    """RAG DB 빌드 (SSE 스트리밍 진행률 제공)"""
+    if not _rag_builder_available:
+        raise HTTPException(status_code=500, detail="rag_db_builder 모듈 미설정")
+
+    task_id = str(uuid.uuid4())
+    TASK_STORE[task_id] = {"queue": asyncio.Queue(), "result_path": None}
+
+    async def rag_build_task(task_id):
+        queue = TASK_STORE[task_id]["queue"]
+        loop = asyncio.get_event_loop()  # async 컨텍스트에서 미리 캡처
+
+        def log_fn(msg):
+            loop.call_soon_threadsafe(
+                queue.put_nowait, {"type": "log", "message": msg}
+            )
+
+        try:
+            total = await _rag_builder.build_all_async(log_fn)
+            await queue.put({"type": "complete", "total": total})
+        except Exception as e:
+            await queue.put({"type": "error", "message": str(e)})
+
+    background_tasks.add_task(rag_build_task, task_id)
+    return {"task_id": task_id}
+
+
+@app.post("/api/update_rag_story")
+async def update_rag_story(story_id: str, background_tasks: BackgroundTasks):
+    """RAG DB 특정 스토리 증분 업데이트"""
+    if not _rag_builder_available:
+        raise HTTPException(status_code=500, detail="rag_db_builder 모듈 미설정")
+
+    task_id = str(uuid.uuid4())
+    TASK_STORE[task_id] = {"queue": asyncio.Queue(), "result_path": None}
+
+    async def rag_update_task(task_id, story_id):
+        queue = TASK_STORE[task_id]["queue"]
+        loop = asyncio.get_event_loop()  # async 컨텍스트에서 미리 캡처
+
+        def log_fn(msg):
+            loop.call_soon_threadsafe(
+                queue.put_nowait, {"type": "log", "message": msg}
+            )
+
+        try:
+            total = await _rag_builder.update_story_async(story_id, log_fn)
+            await queue.put({"type": "complete", "total": total})
+        except Exception as e:
+            await queue.put({"type": "error", "message": str(e)})
+
+    background_tasks.add_task(rag_update_task, task_id, story_id)
+    return {"task_id": task_id}
+
 
 # 1. 'static' 폴더를 웹에 연결
 app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")

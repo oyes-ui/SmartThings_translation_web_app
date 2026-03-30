@@ -25,6 +25,8 @@
                 <span class="logo-icon">✨</span>
                 <h1>SmartThings translation web app</h1>
             </div>
+            <a href="/rag_viewer.html" target="_blank" style="font-size:13px; color: #94a3b8; text-decoration:none; background:rgba(255,255,255,0.05); padding:6px 14px; border-radius:20px; border:1px solid rgba(255,255,255,0.1);">🧠 RAG DB Viewer</a>
+            <a href="/viewer/index.html" target="_blank" style="font-size:13px; color: #94a3b8; text-decoration:none; background:rgba(255,255,255,0.05); padding:6px 14px; border-radius:20px; border:1px solid rgba(255,255,255,0.1); margin-left:8px;">👀 Report HTML Viewer</a>
         </header>
 
         <!-- MAIN LAYOUT -->
@@ -170,6 +172,26 @@
                     <div class="config-actions">
                         <button id="saveConfigBtn" class="btn secondary">Validate Config</button>
                     </div>
+
+                    <!-- RAG Knowledge Base Panel -->
+                    <div class="config-item rag-section">
+                        <label>🧠 RAG Knowledge Base <span class="rag-badge" id="ragBadge">Loading...</span></label>
+                        <p class="description">번역 시 유사 과거 사례 2건을 자동 참조합니다. (오프라인 전용)</p>
+                        <div class="rag-status-box" id="ragStatusBox">
+                            <span id="ragStatusText">DB 상태 확인 중...</span>
+                        </div>
+                        <div class="rag-actions">
+                            <button id="buildRagBtn" class="btn secondary">🔨 Build RAG DB</button>
+                        </div>
+                        <div class="rag-update-row">
+                            <input type="text" id="ragStoryInput" placeholder="story_001" class="story-input">
+                            <button id="updateRagBtn" class="btn secondary small">↻ Update Story</button>
+                        </div>
+                    </div>
+                    <div class="version-info" style="margin-top: 30px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 11px; color: #64748b; display: flex; justify-content: space-between;">
+                        <span>Version v1.2.5</span>
+                        <span>Updated: 2026.03.30</span>
+                    </div>
                 </div>
             </section>
 
@@ -251,8 +273,10 @@
                     </div>
 
                     <div class="download-area hidden" id="downloadArea">
-                        <a id="downloadLink" href="#" download class="btn success full-width">Download Review Report
-                            (.txt)</a>
+                        <a id="downloadLink" href="#" class="btn success full-width">Download Review Report (.txt)</a>
+                        <a id="viewReportLink" href="#" target="_blank" class="btn primary full-width" style="margin-top: 10px; display: none;">
+                            <span style="margin-right: 5px;">👀</span> HTML 리포트 뷰어로 열기
+                        </a>
                     </div>
                 </div>
             </section>

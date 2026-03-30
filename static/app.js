@@ -114,6 +114,7 @@ async function uploadSingleFile(type, file, zone) {
 
         if (type === 'source') {
             uploadedFileIds.source = data.source_file_id;
+            uploadedFileIds.source_name = data.source_file_name;
             console.log("Source Sheets received:", data.sheets);
             if (data.sheets && data.sheets.length > 0) {
                 renderSheetList(data.sheets);
@@ -266,6 +267,7 @@ startBtn.addEventListener('click', async () => {
     try {
         const payload = {
             source_file_id: uploadedFileIds.source,
+            source_file_name: uploadedFileIds.source_name,
             target_file_id: uploadedFileIds.target || uploadedFileIds.source,
             source_sheet: sourceSheet,
             sheets: targetSheets,
@@ -324,32 +326,53 @@ function connectSSE(taskId) {
             }
 
             // Setup Download
-            const downloadUrl = `${window.location.origin}${data.download_url}`;
+            const baseUrl = `${window.location.origin}${data.download_url}`;
             const isZip = data.is_zip;
-            const fileName = isZip ? `translation_result_${taskId}.zip` : `translation_review_${taskId}.txt`;
+            
             downloadLink.textContent = isZip ? "Download Integrated Result (.zip)" : "Download Review Report (.txt)";
-
+            
+            // Safari 버그 완벽 제압 & 캐싱 우회: 메모리로 Blob을 다운받아 로컬 파일로 브라우저에 강제로 먹임
+            const safeFilename = encodeURIComponent(data.download_file_name);
+            const downloadUrl = `${baseUrl}/${safeFilename}`;
+            
             downloadLink.onclick = async (event) => {
                 event.preventDefault();
-                log("Downloading report...", "system");
+                log("Downloading result...", "system");
+                const ogText = downloadLink.textContent;
+                downloadLink.textContent = "Downloading...";
+                downloadLink.style.pointerEvents = "none";
                 try {
                     const res = await fetch(downloadUrl);
-                    if (!res.ok) throw new Error("Download failed");
+                    if (!res.ok) throw new Error("Download failed from server");
                     const blob = await res.blob();
                     const url = window.URL.createObjectURL(blob);
+                    
                     const a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = fileName;
+                    a.download = data.download_file_name;
                     document.body.appendChild(a);
                     a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                    log("Download started.", "success");
+                    
+                    setTimeout(() => {
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    }, 500);
+                    log("Download complete.", "success");
                 } catch (err) {
-                    log(`Download failed: ${err.message}`, "error");
+                    log(`Download error: ${err.message}`, "error");
+                } finally {
+                    downloadLink.textContent = ogText;
+                    downloadLink.style.pointerEvents = "auto";
                 }
             };
+
+            const viewReportLink = document.getElementById('viewReportLink');
+            if (viewReportLink) {
+                const viewerUrl = `${window.location.origin}/viewer/index.html?file=/api/report/${taskId}`;
+                viewReportLink.href = viewerUrl;
+                viewReportLink.style.display = 'flex';
+            }
 
             downloadArea.classList.remove('hidden');
         } else if (data.type === 'error') {
@@ -367,3 +390,95 @@ function connectSSE(taskId) {
         startBtn.textContent = "Retry";
     };
 }
+
+// ─── RAG Knowledge Base UI ────────────────────────────────────────────────────
+
+async function fetchRagStatus() {
+    const badge = document.getElementById('ragBadge');
+    const statusText = document.getElementById('ragStatusText');
+    try {
+        const res = await fetch(`${API_BASE}/rag_status`);
+        const data = await res.json();
+        if (data.available && data.total_pairs > 0) {
+            badge.textContent = '✅ Active';
+            badge.className = 'rag-badge active';
+            statusText.innerHTML = `
+                <strong>${data.total_pairs}</strong> 번역 쌍 |
+                KR 벡터: <strong>${data.kr_vectors}</strong> |
+                US 벡터: <strong>${data.us_vectors}</strong> |
+                처리 파일: <strong>${data.processed_files}</strong>개
+            `;
+        } else {
+            badge.textContent = '⬜ Empty';
+            badge.className = 'rag-badge empty';
+            statusText.textContent = 'DB가 비어 있습니다. Build RAG DB를 실행하세요.';
+        }
+    } catch (e) {
+        badge.textContent = '❌ Error';
+        badge.className = 'rag-badge error';
+        statusText.textContent = '상태 조회 실패: ' + e.message;
+    }
+}
+
+function connectRagSSE(taskId, onComplete) {
+    const evtSource = new EventSource(`${API_BASE}/stream/${taskId}`);
+    const buildBtn = document.getElementById('buildRagBtn');
+    evtSource.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        if (data.type === 'log') {
+            log(`[RAG] ${data.message}`, 'system');
+        } else if (data.type === 'complete') {
+            evtSource.close();
+            log(`[RAG] 빌드 완료: ${data.total || 0}건 저장`, 'success');
+            buildBtn.disabled = false;
+            buildBtn.textContent = '🔨 Build RAG DB';
+            fetchRagStatus();
+            if (onComplete) onComplete();
+        } else if (data.type === 'error') {
+            evtSource.close();
+            log(`[RAG] 오류: ${data.message}`, 'error');
+            buildBtn.disabled = false;
+            buildBtn.textContent = '🔨 Build RAG DB';
+        }
+    };
+    evtSource.onerror = () => {
+        evtSource.close();
+        log('[RAG] 스트림 연결 끊어짐', 'error');
+        buildBtn.disabled = false;
+        buildBtn.textContent = '🔨 Build RAG DB';
+    };
+}
+
+document.getElementById('buildRagBtn')?.addEventListener('click', async () => {
+    const buildBtn = document.getElementById('buildRagBtn');
+    buildBtn.disabled = true;
+    buildBtn.textContent = '⏳ Building...';
+    log('[RAG] DB 빌드 시작...', 'system');
+    try {
+        const res = await fetch(`${API_BASE}/build_rag`, { method: 'POST' });
+        if (!res.ok) throw new Error(await res.text());
+        const { task_id } = await res.json();
+        connectRagSSE(task_id, null);
+    } catch (e) {
+        log('[RAG] 빌드 실패: ' + e.message, 'error');
+        buildBtn.disabled = false;
+        buildBtn.textContent = '🔨 Build RAG DB';
+    }
+});
+
+document.getElementById('updateRagBtn')?.addEventListener('click', async () => {
+    const storyId = document.getElementById('ragStoryInput').value.trim();
+    if (!storyId) { log('[RAG] story_id를 입력하세요.', 'error'); return; }
+    log(`[RAG] ${storyId} 증분 업데이트 시작...`, 'system');
+    try {
+        const res = await fetch(`${API_BASE}/update_rag_story?story_id=${encodeURIComponent(storyId)}`, { method: 'POST' });
+        if (!res.ok) throw new Error(await res.text());
+        const { task_id } = await res.json();
+        connectRagSSE(task_id, null);
+    } catch (e) {
+        log('[RAG] 업데이트 실패: ' + e.message, 'error');
+    }
+});
+
+// 페이지 로드 시 RAG 상태 자동 조회
+fetchRagStatus();

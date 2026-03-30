@@ -19,6 +19,12 @@ import urllib.parse
 from model_handler import ModelHandler
 from bx_guideline_engine import BXGuidelineEngine
 
+# RAG 연동 (DB가 없우면 graceful fallback)
+try:
+    from rag_retriever import get_retriever as _get_rag_retriever
+except ImportError:
+    _get_rag_retriever = None
+
 # API Keys from Environment
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -97,6 +103,16 @@ class TranslationChecker:
         # Integrated components
         self.model_handler = ModelHandler()
         self.bx_engine = BXGuidelineEngine()
+
+        # RAG Retriever (오프라인 전용, DB 없으면 None)
+        self.rag_retriever = None
+        if _get_rag_retriever:
+            try:
+                self.rag_retriever = _get_rag_retriever()
+                if not self.rag_retriever.is_available():
+                    self.rag_retriever = None
+            except Exception:
+                self.rag_retriever = None
     
 
     async def load_glossary_from_file(self, file_path: str, source_lang_code: str):
@@ -117,12 +133,22 @@ class TranslationChecker:
             num_cols = df_headers.shape[1]
             source_col_idx = -1
             rule_col_idx = -1
-            
             # 소스 언어 컬럼 찾기 (1~3행 모두 검색)
+            search_terms = [source_lang_code.lower()]
+            # 한국어/영어 등 주요 언어 매칭 보강
+            lang_alias = {
+                "korean": ["한국어", "ko_kr", "ko-kr", "kr", "ko"],
+                "한국어": ["korean", "ko_kr", "ko-kr", "kr", "ko"],
+                "english": ["영어", "en_us", "en-us", "us", "en_gb", "en-gb", "uk", "en"],
+                "영어": ["english", "en_us", "en-us", "us", "en_gb", "en-gb", "uk", "en"]
+            }
+            if source_lang_code.lower() in lang_alias:
+                search_terms.extend(lang_alias[source_lang_code.lower()])
+
             for c in range(num_cols):
                 for r in range(3):
-                    val = str(df_headers.iloc[r, c]).strip()
-                    if val == source_lang_code or source_lang_code.lower() in val.lower() or val.lower() in source_lang_code.lower():
+                    val = str(df_headers.iloc[r, c]).strip().lower()
+                    if any(term == val or term in val or val in term for term in search_terms):
                         source_col_idx = c
                         break
                 if source_col_idx != -1: break
@@ -445,15 +471,20 @@ class TranslationChecker:
         if simple_fixed_text == target_text:
             simple_fixed_text = None
         return report, simple_fixed_text
-    async def _run_llm_translation(self, text, target_lang, model_name="gemini-2.5-flash", bx_style_on=False, glossary_context=None):
+    async def _run_llm_translation(self, text, target_lang, model_name="gemini-2.5-flash", bx_style_on=False, glossary_context=None, rag_context=None):
         """
         내부 전용 번역 메서드: JSON 프롬프트 생성 및 LLM 호출을 담당합니다.
         """
         brackets = "[]"
         if "Japanese" in target_lang:
             brackets = "「」"
-        elif "Chinese" in target_lang:
-            brackets = "【】"
+
+        # Get language specific hint
+        lang_hint = ""
+        for lang_key, hint_text in LANGUAGE_HINTS.items():
+            if lang_key.lower() in target_lang.lower():
+                lang_hint = f"\n[LANGUAGE SPECIFIC RULE]\n- {hint_text}\n"
+                break
 
         # 입력 데이터 구조화
         input_data = {
@@ -470,6 +501,8 @@ class TranslationChecker:
             system_prompt = self.bx_engine.get_system_prompt(target_lang)
             system_prompt += (
                 f"\nIMPORTANT: You must follow the Samsung BX style guide above.\n"
+                f"{lang_hint}"
+                f"{rag_context + chr(10) if rag_context else ''}"
                 f"Use the provided glossary if available. CRITICAL: Any time you use a term from the glossary, you MUST wrap it in '{brackets[0]}' and '{brackets[1]}' (e.g., {brackets[0]}Term{brackets[1]}).\n"
                 "Return the response in JSON format with a 'translation' field."
             )
@@ -477,10 +510,21 @@ class TranslationChecker:
             system_prompt = (
                 f"You are a professional {target_lang} localizer.\n"
                 f"TASK: Translate the source text naturally for a native speaker while preserving 100% of the original meaning.\n"
+                f"{lang_hint}"
+                f"{rag_context + chr(10) if rag_context else ''}"
                 f"RULE 1: Use the provided 'glossary'.\n"
                 f"RULE 2: Wrap glossary terms in '{brackets[0]}' and '{brackets[1]}'. (CRITICAL)\n"
                 "OUTPUT: Return ONLY a JSON object with a 'translation' key."
             )
+
+        # RAG 예시 주입: 유사 번역 사례 최대 2건을 시스템 프롬프트에 첨부
+        if self.rag_retriever:
+            try:
+                rag_context = self.rag_retriever.format_for_prompt(text, target_lang, n_results=2)
+                if rag_context:
+                    system_prompt = system_prompt + f"\n\n{rag_context}\n\nUse these examples as style and terminology reference to maintain consistency."
+            except Exception:
+                pass  # RAG 실패해도 번역은 정상 진행
 
         try:
             prompt = json.dumps(input_data, ensure_ascii=False, indent=2)
@@ -496,6 +540,7 @@ class TranslationChecker:
             return str(response_data)
         except Exception as e:
             return f"[번역 오류] {str(e)}"
+
 
     async def _run_llm_audit(self, source_text, translated_text, target_lang, model_name="gpt-5-mini"):
         """
@@ -558,9 +603,15 @@ class TranslationChecker:
 [출력 형식]
 JSON 형식으로 반환하세요:
 {{
-  "evaluation": "항목별 상세 점검 결과 (한국어 불렛 포인트로 풍부하게 작성)",
-  "is_excellent": true/false (중대한 결함이 없을 경우 true),
-  "suggested_fix": "가장 자연스럽고 정확한 수정 제안 (필요 시)"
+  "evaluation": [
+    {{"category": "문법/유창성", "comment": "상세한 분석 결과"}},
+    {{"category": "정확성", "comment": "상세한 분석 결과"}},
+    {{"category": "용어집 준수", "comment": "상세한 분석 결과"}},
+    {{"category": "대소문자 표기", "comment": "상세한 분석 결과"}},
+    {{"category": "기타 특이사항", "comment": "상세한 분석 결과"}}
+  ],
+  "is_excellent": true/false (결함이 없을 경우 true),
+  "suggested_fix": "가장 자연스럽고 정확한 전체 문장 수정안 (수정 불필요 시 빈 문자열)"
 }}
 """
         try:
@@ -573,27 +624,37 @@ JSON 형식으로 반환하세요:
             )
             
             if isinstance(response, str):
-                 return f"[QA 결과]\n{response}"
+                 eval_text = f"[QA 분석 결과]\n{response}"
+                 eval_json = json.dumps({"evaluation": [{"category": "결과", "comment": response}], "is_excellent": False, "suggested_fix": ""}, ensure_ascii=False)
+                 return (eval_text, eval_json)
             
-            eval_text = response.get("evaluation", "검수 결과 파싱 실패")
-            if isinstance(eval_text, list):
-                # Ensure all items are strings (e.g., handle if AI returns a list of dicts)
-                eval_text = "\n".join(
-                    json.dumps(item, ensure_ascii=False) if isinstance(item, dict) else str(item)
-                    for item in eval_text
-                )
-            elif isinstance(eval_text, dict):
-                eval_text = json.dumps(eval_text, ensure_ascii=False, indent=2)
+            # 1. Build beautiful human-readable text
+            eval_list = response.get("evaluation", [])
+            lines = []
+            for item in eval_list:
+                cat = item.get("category", "")
+                com = item.get("comment", "")
+                if cat and com:
+                   lines.append(f"- {cat}: {com}")
             
+            eval_text = "\n".join(lines) if lines else "검수 결과 없음."
             if response.get("is_excellent"):
                 eval_text += "\n\n최종 평가: 우수, 주요 문제 없음."
-            
             if response.get("suggested_fix"):
                 eval_text += f"\n\n[수정안 제안]:\n{response['suggested_fix']}"
-                
-            return eval_text
+
+            # 2. Extract JSON payload
+            eval_json = json.dumps({
+                "evaluation": eval_list,
+                "is_excellent": response.get("is_excellent", False),
+                "suggested_fix": response.get("suggested_fix", "")
+            }, ensure_ascii=False)
+            
+            return (eval_text, eval_json)
         except Exception as e:
-            return f"[QA 오류]: {e}"
+            err_text = f"[QA 오류]: {str(e)}"
+            err_json = json.dumps({"evaluation": [{"category": "에러", "comment": str(e)}], "is_excellent": False, "suggested_fix": ""}, ensure_ascii=False)
+            return (err_text, err_json)
 
 
 
@@ -645,6 +706,37 @@ JSON 형식으로 반환하세요:
         if glossary_case_issues: glossary_parts.append("용어집 대소문자 표기 점검:\n" + "\n".join(f"- {msg}" for msg in glossary_case_issues))
         glossary_section = "\n\n".join(glossary_parts) if glossary_parts else "별도 지적 사항 없음."
 
+        # RAG consistency check (Post-translation/audit, does not use LLM)
+        rag_text = "별도 설정 없음."
+        rag_json = "[]"
+        if getattr(self, "rag_retriever", None) and self.rag_retriever.is_available():
+            try:
+                results = self.rag_retriever.retrieve(source, sheet_name, n_results=2, exclude_same_source=False)
+                if results:
+                    # 1. Human-readable text
+                    text_lines = []
+                    for i, r in enumerate(results, 1):
+                        text_lines.append(f"[사례 {i}] 유사도 {r['similarity_score']*100:.1f}% | {r.get('story_id','')} | {r['section_code']}\n- 번역: {r['target']}")
+                    rag_text = "\n\n".join(text_lines)
+                    
+                    # 2. JSON payload
+                    rag_data = []
+                    for r in results:
+                        rag_data.append({
+                            "score": round(r['similarity_score'] * 100, 1),
+                            "story_id": r.get('story_id', ''),
+                            "section": r.get('section_code', ''),
+                            "source": r.get('source', ''),
+                            "target": r.get('target', '')
+                        })
+                    rag_json = json.dumps(rag_data, ensure_ascii=False)
+                else:
+                    rag_text = "유사 과거 사례 없음."
+                    rag_json = "[]"
+            except Exception as e:
+                rag_text = f"RAG 조회 오류: {str(e)}"
+                rag_json = json.dumps([{"error": str(e)}], ensure_ascii=False)
+
         # Result container
         res = {
             "sheet_name": sheet_name,
@@ -653,20 +745,25 @@ JSON 형식으로 반환하세요:
             "target": target,
             "case_section": case_section,
             "glossary_section": glossary_section,
+            "rag_text": rag_text,
+            "rag_json": rag_json,
             "back_translation": "",
-            "ai_review": ""
+            "ai_text": "",
+            "ai_json": ""
         }
 
         # Skip Logic
         if is_placeholder and not pre_mismatch:
             res["back_translation"] = "[건너뜀: 짧은/무의미]"
-            res["ai_review"] = "[건너뜀: 짧은/무의미]"
+            res["ai_text"] = "[건너뜀: 짧은/무의미]"
+            res["ai_json"] = "[]"
             return res
 
         # LLM Logic
         if skip_llm:
             res["back_translation"] = "[사전 감지로 LLM 호출 생략]"
-            res["ai_review"] = "※ 용어집 사전 감지 결과를 우선 검토하세요."
+            res["ai_text"] = "※ 용어집 사전 감지 결과를 우선 검토하세요."
+            res["ai_json"] = "[]"
         else:
             # LLM Calls
             qa_task = self._with_semaphore(
@@ -674,14 +771,15 @@ JSON 형식으로 반환하세요:
             )
             
             if self.no_backtranslation:
-                res["ai_review"] = await qa_task
+                ai_tuple = await qa_task
+                res["ai_text"], res["ai_json"] = ai_tuple
                 res["back_translation"] = "[역번역 비활성화됨]"
             else:
                 bt_task = self._with_semaphore(
                     self.get_back_translation(target, tgt_lang, source_lang)
                 )
-                review, bt = await asyncio.gather(qa_task, bt_task)
-                res["ai_review"] = review
+                ai_tuple, bt = await asyncio.gather(qa_task, bt_task)
+                res["ai_text"], res["ai_json"] = ai_tuple
                 res["back_translation"] = bt
         
         return res
@@ -718,8 +816,15 @@ JSON 형식으로 반환하세요:
         
         # Load Glossary
         if glossary_file_path:
-             yield {"type": "log", "message": f"용어집 파일 로드 중: {os.path.basename(glossary_file_path)}"}
-             msg = await self.load_glossary_from_file(glossary_file_path, source_lang)
+             # Try to get more descriptive source lang for matching
+             src_lookup = source_lang
+             if source_sheet_name and sheet_lang_map:
+                 s_info = sheet_lang_map.get(source_sheet_name)
+                 if s_info:
+                     src_lookup = s_info.get('code', s_info.get('lang', source_lang))
+
+             yield {"type": "log", "message": f"용어집 파일 로드 중: {os.path.basename(glossary_file_path)} (기준: {src_lookup})"}
+             msg = await self.load_glossary_from_file(glossary_file_path, src_lookup)
              yield {"type": "log", "message": msg}
         
         yield {"type": "log", "message": "엑셀 파일 및 시트 분석 중..."}
@@ -770,16 +875,18 @@ JSON 형식으로 반환하세요:
                 
                 # Format result
                 fmt_result = (
-                    f"\n\n{'='*90}\n"
+                    f"==========================================================================================\n"
                     f"[시트] {res['sheet_name']} | [셀] {res['cell_ref']}\n"
-                    f"{'-'*90}\n\n"
+                    f"------------------------------------------------------------------------------------------\n\n"
                     f"[상세 - 원문]\n{res['source']}\n\n"
                     f"[상세 - 번역문]\n{res['target']}\n\n"
                     f"[상세 - 대소문자 점검]\n{res['case_section']}\n\n"
                     f"[상세 - 용어집 점검]\n{res['glossary_section']}\n\n"
+                    f"[상세 - RAG 일관성 참고]\n{res.get('rag_text', '[별도 지적 사항 없음]')}\n\n"
                     f"[상세 - 역번역]\n{res['back_translation']}\n\n"
-                    f"[상세 - ai 검수 결과]\n{res['ai_review']}\n"
-                    f"{'='*90}\n"
+                    f"[상세 - AI 검수 결과]\n{res['ai_text']}\n\n"
+                    f"[상세 - RAG Payload]\n{res.get('rag_json', '[]')}\n\n"
+                    f"[상세 - AI Payload]\n{res['ai_json']}\n"
                 )
                 
                 # Store in the correct slot
@@ -853,8 +960,13 @@ JSON 형식으로 반환하세요:
 
         # 2. Load Glossary
         if glossary_file_path:
-            yield {"type": "log", "message": f"Loading glossary (Source: {source_lang})..."}
-            msg = await self.load_glossary_from_file(glossary_file_path, source_lang)
+            src_lookup = source_lang
+            if source_sheet_name in sheet_lang_map:
+                s_info = sheet_lang_map[source_sheet_name]
+                src_lookup = s_info.get('code', s_info.get('lang', source_lang))
+
+            yield {"type": "log", "message": f"Loading glossary (Match Base: {src_lookup})..."}
+            msg = await self.load_glossary_from_file(glossary_file_path, src_lookup)
             yield {"type": "log", "message": msg}
 
         source_ws = wb[source_sheet_name]
@@ -897,12 +1009,25 @@ JSON 형식으로 반환하세요:
             if not glossary_dict:
                 glossary_dict = None
 
+            # RAG Injection
+            rag_context_str = None
+            logs = []
+            if getattr(self, "rag_retriever", None) and self.rag_retriever.is_available():
+                try:
+                    results = self.rag_retriever.retrieve(source_text, ws.title, n_results=2, exclude_same_source=False)
+                    if results:
+                        rag_context_str = self.rag_retriever.format_for_prompt(source_text, ws.title, n_results=2)
+                        logs.append(f"[RAG] 유사 사례 {len(results)}건 적용됨 (시트: {ws.title}, 셀: {coord})")
+                except Exception as e:
+                    logs.append(f"[RAG] 검색 오류: {e}")
+
             translation = await self._run_llm_translation(
                 source_text, 
                 target_lang, 
                 model_name=translation_model,
                 bx_style_on=bx_style_on,
-                glossary_context=glossary_dict
+                glossary_context=glossary_dict,
+                rag_context=rag_context_str
             )
             
             ws[coord].value = translation
@@ -917,11 +1042,16 @@ JSON 형식으로 반환하세요:
                     "target": translation,
                     "case_section": "[Bypassed]",
                     "glossary_section": "[Bypassed]",
+                    "rag_text": "[Bypassed]",
+                    "rag_json": "[]",
                     "back_translation": "[Bypassed]",
-                    "ai_review": "[Bypassed: Translate Only Mode]"
+                    "ai_text": "[Bypassed: Translate Only Mode]",
+                    "ai_json": "{}",
+                    "logs": logs
                 }
             else:
                 res = await self.process_item(item_data, source_lang, target_lang, sheet_lang_map, target_lang_code)
+                res["logs"] = logs
             
             return index, res
 
@@ -946,17 +1076,23 @@ JSON 형식으로 반환하세요:
                 index, res = await future
                 completed_count += 1
                 
+                # yield UI logs from cell_worker
+                for msg in res.get("logs", []):
+                    yield {"type": "log", "message": msg}
+
                 fmt_result = (
-                    f"\n\n{'='*90}\n"
+                    f"==========================================================================================\n"
                     f"[시트] {res['sheet_name']} | [셀] {res['cell_ref']}\n"
-                    f"{'-'*90}\n\n"
+                    f"------------------------------------------------------------------------------------------\n\n"
                     f"[상세 - 원문]\n{res['source']}\n\n"
                     f"[상세 - 번역문]\n{res['target']}\n\n"
                     f"[상세 - 대소문자 점검]\n{res['case_section']}\n\n"
                     f"[상세 - 용어집 점검]\n{res['glossary_section']}\n\n"
+                    f"[상세 - RAG 일관성 참고]\n{res.get('rag_text', '[별도 지적 사항 없음]')}\n\n"
                     f"[상세 - 역번역]\n{res['back_translation']}\n\n"
-                    f"[상세 - ai 검수 결과]\n{res['ai_review']}\n"
-                    f"{'='*90}\n"
+                    f"[상세 - AI 검수 결과]\n{res['ai_text']}\n\n"
+                    f"[상세 - RAG Payload]\n{res.get('rag_json', '[]')}\n\n"
+                    f"[상세 - AI Payload]\n{res['ai_json']}\n"
                 )
                 ordered_results[index] = fmt_result
                 
