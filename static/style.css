@@ -715,3 +715,14 @@ body {
     padding: 6px 12px;
     font-size: 12px;
 }
+
+/* ─── Print / PDF Export Page Break Prevention ──────────────────────── */
+.card-wrapper,
+.review-card,
+.action-card,
+.diff-viewer,
+.stat-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    display: block; /* Some browsers require block for page breaks */
+}

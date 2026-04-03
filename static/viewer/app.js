@@ -511,33 +511,46 @@ document.addEventListener('DOMContentLoaded', () => {
         return res;
     }
 
-    // --- Export PDF ---
+    // --- Export PDF (Restored html2pdf/Canvas snapshot method) ---
     exportBtn.addEventListener('click', () => {
-        const dashboard = document.getElementById('dashboard');
-        const report = document.getElementById('report-content');
+        const contentArea = document.querySelector('.content-area');
+        const header = document.querySelector('.app-header');
+        const sidebar = document.getElementById('sidebar');
 
         const isDark = body.getAttribute('data-theme') === 'dark';
         if (isDark) body.removeAttribute('data-theme');
 
-        // Note: we only clone the main content areas, ignoring the sidebar completely.
-        const printContainer = document.createElement('div');
-        printContainer.style.width = '100%';
-        printContainer.style.maxWidth = '1100px';
-        printContainer.style.margin = '0 auto';
-        printContainer.style.background = 'white';
-        printContainer.appendChild(dashboard.cloneNode(true));
-        printContainer.appendChild(report.cloneNode(true));
+        const origSidebarDisplay = sidebar.style.display;
+        const origHeaderDisplay = header.style.display;
+        const origWidth = contentArea.style.width;
+        const origMargin = contentArea.style.margin;
 
+        // 화면 요소 감추기 및 모바일 뷰(.pdf-mode) 강제 적용
+        sidebar.style.display = 'none';
+        header.style.display = 'none';
+        
+        contentArea.classList.add('pdf-mode'); 
+        contentArea.style.width = '100%'; 
+        contentArea.style.maxWidth = '900px';
+        contentArea.style.margin = '0 auto';
+        
         const opt = {
-            margin: 0.5,
+            margin: 0, // 상하 여백 제거
             filename: 'Translation_Review_Report.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            image: { type: 'jpeg', quality: 1.0 },
+            html2canvas: { scale: 2, useCORS: true }, 
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        html2pdf().set(opt).from(printContainer).save().then(() => {
+        html2pdf().set(opt).from(contentArea).save().then(() => {
             if (isDark) body.setAttribute('data-theme', 'dark');
+            sidebar.style.display = origSidebarDisplay;
+            header.style.display = origHeaderDisplay;
+            contentArea.classList.remove('pdf-mode');
+            contentArea.style.width = origWidth;
+            contentArea.style.maxWidth = '';
+            contentArea.style.margin = origMargin;
         });
     });
 });

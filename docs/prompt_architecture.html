@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Translation Prompt Architecture</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Fira+Code:wght@400;500&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #1a1a1f;
+      color: #e5e7eb;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 24px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f0f0f5;
+      margin-bottom: 6px;
+      letter-spacing: -0.3px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 56px;
+    }
+
+    /* Main layout container */
+    .diagram {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    /* Left: stacked module cards */
+    .modules {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+      position: relative;
+    }
+
+    .module-card {
+      background: #26262e;
+      border: 1px solid #3a3a46;
+      border-radius: 14px;
+      padding: 18px 22px;
+      position: relative;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .module-card:hover {
+      border-color: #5b5b7a;
+      box-shadow: 0 0 20px rgba(100, 100, 200, 0.08);
+    }
+
+    .module-card .tag {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .module-card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f3f4f6;
+      margin-bottom: 6px;
+    }
+
+    .module-card p {
+      font-size: 12.5px;
+      color: #9ca3af;
+      line-height: 1.65;
+    }
+
+    .module-card .badge {
+      display: inline-block;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-top: 7px;
+      font-weight: 600;
+      font-family: 'Fira Code', monospace;
+    }
+
+    /* Connector line — right side of cards → center node */
+    .connector-area {
+      width: 60px;
+      align-self: stretch;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    /* SVG lines drawn via JS */
+    #connector-svg {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      overflow: visible;
+    }
+
+    /* Right: center node */
+    .center-node {
+      width: 110px;
+      height: 110px;
+      flex-shrink: 0;
+      background: #2f2f3a;
+      border: 1.5px solid #4a4a60;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #d1d5db;
+      box-shadow: 0 0 32px rgba(120, 120, 255, 0.10);
+      line-height: 1.4;
+    }
+
+    /* Color accents per module */
+    .m1 .tag { color: #6ee7b7; }
+    .m1 { border-left: 3px solid #6ee7b7; }
+
+    .m2 .tag { color: #93c5fd; }
+    .m2 { border-left: 3px solid #93c5fd; }
+
+    .m3 .tag { color: #fbbf24; }
+    .m3 { border-left: 3px solid #fbbf24; }
+
+    .m4 .tag { color: #c084fc; }
+    .m4 { border-left: 3px solid #c084fc; }
+
+    .m5 .tag { color: #f87171; }
+    .m5 { border-left: 3px solid #f87171; }
+
+    .m6 .tag { color: #fb923c; }
+    .m6 { border-left: 3px solid #fb923c; }
+
+    .m7 .tag { color: #a3e635; }
+    .m7 { border-left: 3px solid #a3e635; }
+
+    .badge-conditional { background: #3b3b4f; color: #c084fc; }
+    .badge-always     { background: #1e3a2a; color: #6ee7b7; }
+    .badge-data       { background: #3a2e1e; color: #fbbf24; }
+
+    /* Bottom note */
+    .note {
+      margin-top: 44px;
+      font-size: 11.5px;
+      color: #4b5563;
+      text-align: center;
+      max-width: 680px;
+      line-height: 1.7;
+    }
+
+    .note code {
+      font-family: 'Fira Code', monospace;
+      background: #26262e;
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Translation Prompt Architecture</h1>
+<p class="subtitle">checker_service.py › _run_llm_translation() — 실제 구현 기반 모듈 구조</p>
+
+<div class="diagram">
+
+  <!-- ① Module Cards (Left) -->
+  <div class="modules" id="modules">
+
+    <div class="module-card m1" id="card0">
+      <div class="tag">01 · Always Active</div>
+      <h3>Persona_and_Task</h3>
+      <p>"You are a professional {target_lang} localizer.<br>
+      TASK: Translate the source text naturally for a native speaker<br>
+      while preserving 100% of the original meaning."</p>
+      <span class="badge badge-always">ALWAYS</span>
+    </div>
+
+    <div class="module-card m2" id="card1">
+      <div class="tag">02 · BX Mode Active</div>
+      <h3>Samsung_BX_Guidelines</h3>
+      <p>"You must follow the Samsung BX style guide.<br>
+      Confident Explorer tone — active, precise, brand-consistent.<br>
+      Injected from <code>bx_guideline_engine.get_system_prompt(target_lang)</code>"</p>
+      <span class="badge badge-conditional">CONDITIONAL (bx_style_on=True)</span>
+    </div>
+
+    <div class="module-card m3" id="card2">
+      <div class="tag">03 · Language-Aware</div>
+      <h3>Language_Specific_Hints</h3>
+      <p>"[LANGUAGE SPECIFIC RULE]<br>
+      DE: 독일어 호칭(Du/Sie) 일관성 점검<br>
+      JA: 일본어 경어(Desu/Masu) 및 어조 일관성<br>
+      FR: Tu/Vous 일관성 / ES: Tú/Usted 일관성"</p>
+      <span class="badge badge-conditional">CONDITIONAL (lang match)</span>
+    </div>
+
+    <div class="module-card m4" id="card3">
+      <div class="tag">04 · RAG Module</div>
+      <h3>RAG_Reference_Examples</h3>
+      <p>"[TRANSLATION MEMORY — 유사 사례 참조]<br>
+      사례 1: Exact (100%) | story_001 | ID_ENERGY_TITLE<br>
+      → 번역: 스마트 에너지 절약<br>
+      Use these examples as style and terminology reference."</p>
+      <span class="badge badge-conditional">CONDITIONAL (rag_retriever available)</span>
+    </div>
+
+    <div class="module-card m5" id="card4">
+      <div class="tag">05 · Glossary</div>
+      <h3>Glossary_Rule_1</h3>
+      <p>"RULE 1: Use the provided 'glossary'.<br>
+      Apply exact glossary terms to maintain translation consistency<br>
+      across the product."</p>
+      <span class="badge badge-always">ALWAYS</span>
+    </div>
+
+    <div class="module-card m6" id="card5">
+      <div class="tag">06 · Context-Aware Branching</div>
+      <h3>Bracket_Rule_2</h3>
+      <p><strong>Title/Button context</strong> (row_key contains 'title', 'button', or ends in digit):<br>
+      "Do NOT wrap terms in brackets."<br><br>
+      <strong>Description/Message context:</strong><br>
+      "Wrap glossary terms in [ ] — CRITICAL.<br>
+      Exception 1: Nav paths (A > B) — no brackets.<br>
+      Exception 2: Terms marked EXCEPTION — skip brackets."</p>
+      <span class="badge badge-conditional">BRANCH (row_key analysis)</span>
+    </div>
+
+    <div class="module-card m7" id="card6">
+      <div class="tag">07 · Output</div>
+      <h3>Format_Constraint</h3>
+      <p>"OUTPUT: Return ONLY a JSON object with a 'translation' key.<br>
+      → { \"translation\": \"...\" }<br>
+      No extra text, explanation, or markdown."</p>
+      <span class="badge badge-always">ALWAYS</span>
+    </div>
+
+  </div>
+
+  <!-- ② Connector SVG -->
+  <div class="connector-area" id="connectorArea">
+    <svg id="connector-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <!-- ③ Center Node (Right) -->
+  <div class="center-node" id="centerNode">
+    Prompt<br>Structure
+  </div>
+
+</div>
+
+<p class="note">
+  각 모듈은 독립적이며, 런타임에 동적으로 조립됩니다.<br>
+  BX Engine & RAG는 조건부 활성화, 나머지는 항상 포함됩니다.<br>
+  User Input JSON: <code>{ context_key, source_text, target_language, glossary, formatting }</code>
+</p>
+
+<script>
+  // Draw connecting lines from each card's right edge to the center node's left edge
+  function drawLines() {
+    const svg = document.getElementById('connector-svg');
+    svg.innerHTML = '';
+
+    const connArea = document.getElementById('connectorArea');
+    const centerNode = document.getElementById('centerNode');
+    const areaRect = connArea.getBoundingClientRect();
+    const nodeRect  = centerNode.getBoundingClientRect();
+
+    const cards = document.querySelectorAll('.module-card');
+    const colors = ['#6ee7b7','#93c5fd','#fbbf24','#c084fc','#f87171','#fb923c','#a3e635'];
+
+    // Target X: left edge of center node, relative to connArea
+    const targetX = nodeRect.left - areaRect.left;
+    // Target Y: center of node, relative to connArea
+    const targetY = nodeRect.top + nodeRect.height / 2 - areaRect.top;
+
+    cards.forEach((card, i) => {
+      const cardRect = card.getBoundingClientRect();
+      // Start X: 0 (left edge of connector area, which touches card's right side)
+      const startX = 0;
+      const startY = cardRect.top + cardRect.height / 2 - areaRect.top;
+
+      const midX = targetX * 0.6;
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${targetY}, ${targetX} ${targetY}`);
+      path.setAttribute('stroke', colors[i]);
+      path.setAttribute('stroke-width', '1.5');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('opacity', '0.55');
+      svg.appendChild(path);
+    });
+  }
+
+  window.addEventListener('load', drawLines);
+  window.addEventListener('resize', drawLines);
+</script>
+
+</body>
+</html>

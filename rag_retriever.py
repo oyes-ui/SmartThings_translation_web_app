@@ -20,9 +20,9 @@ load_dotenv()
 
 # ─── rag_db_builder 상수 재사용 ──────────────────────────────────────────────
 from rag_db_builder import (
+    normalize_text,
+    get_collection_name,
     GROUP_A_SHEETS,
-    GROUP_A_KEY,
-    GROUP_B_KEY,
     COLLECTION_KR,
     COLLECTION_US,
     EMBEDDING_MODEL,
@@ -75,9 +75,10 @@ class RagRetriever:
         return response.embeddings[0].values
 
 
-    def _get_collection(self, target_lang: str) -> chromadb.Collection:
-        """타겟 언어에 따라 KR 또는 US 컬렉션 선택"""
-        if target_lang in GROUP_A_SHEETS:
+    def _get_collection(self, source_lang: str) -> chromadb.Collection:
+        """source_lang에 따라 KR 또는 US 컬렉션 선택"""
+        col_name = get_collection_name(source_lang)
+        if col_name == COLLECTION_KR:
             return self._col_kr
         return self._col_us
 
@@ -85,62 +86,83 @@ class RagRetriever:
         self,
         source_text: str,
         target_lang: str,
+        source_lang: str = "English",
         n_results: int = 2,
-        exclude_same_source: bool = True
+        exclude_same_source: bool = False,
+        identity_match_enabled: bool = True
     ) -> list[dict]:
         """
-        유사 번역 사례 검색.
-
-        Args:
-            source_text: 현재 번역할 원문 텍스트
-            target_lang: 타겟 언어 시트명 (예: "DE(독일)", "JA(일본)")
-            n_results: 반환할 사례 수 (기본 2)
-            exclude_same_source: 원문이 동일한 결과 제외
-
-        Returns:
-            [{"source": ..., "target": ..., "section_code": ..., "story_id": ...}, ...]
+        유사 번역 사례 검색 (2단계: Exact Match -> Semantic Fallback)
         """
         if not self._available:
             return []
 
         try:
-            col = self._get_collection(target_lang)
-            query_embedding = self._embed_query(source_text)
-
-            results = col.query(
-                query_embeddings=[query_embedding],
-                n_results=min(n_results + 2, col.count()),  # 여유분 확보
-                where={"target_lang": target_lang} if col.count() > 0 else None,
-                include=["documents", "metadatas", "distances"]
-            )
-
-            if not results["ids"][0]:
-                return []
-
+            col = self._get_collection(source_lang)
+            norm_query = normalize_text(source_text)
             examples = []
-            for i, doc_id in enumerate(results["ids"][0]):
-                meta = results["metadatas"][0][i]
-                source = results["documents"][0][i]
-                distance = results["distances"][0][i]
 
-                # 동일 원문 제외 (self-match)
-                if exclude_same_source and source.strip() == source_text.strip():
-                    continue
+            # Stage 1: Exact Match (Metadata Filter)
+            if identity_match_enabled:
+                # note: source_text_norm 필드는 신규 인덱싱 시에만 존재함
+                exact_results = col.get(
+                    where={"$and": [{"source_text_norm": norm_query}, {"target_lang": target_lang}]},
+                    limit=n_results,
+                    include=["documents", "metadatas"]
+                )
 
-                # 거리가 너무 먼 경우 제외 (유사도 임계값: 코사인 거리 < 0.8)
-                if distance > 0.8:
-                    continue
+                if exact_results["ids"]:
+                    for i, doc_id in enumerate(exact_results["ids"]):
+                        meta = exact_results["metadatas"][i]
+                        source = exact_results["documents"][i]
+                        examples.append({
+                            "source": source,
+                            "target": meta.get("target_text", ""),
+                            "section_code": meta.get("section_code", ""),
+                            "story_id": meta.get("story_id", ""),
+                            "match_type": "exact",
+                            "similarity_score": 1.0
+                        })
 
-                examples.append({
-                    "source": source,
-                    "target": meta.get("target_text", ""),
-                    "section_code": meta.get("section_code", ""),
-                    "story_id": meta.get("story_id", ""),
-                    "similarity_score": round(1 - distance, 3)
-                })
+            # Stage 2: Semantic Fallback (만약 결과가 부족하면)
+            if len(examples) < n_results:
+                query_embedding = self._embed_query(norm_query)
+                
+                query_where = None
+                if col.count() > 0:
+                    query_where = {"target_lang": target_lang}
+                
+                results = col.query(
+                    query_embeddings=[query_embedding],
+                    n_results=n_results + 2,
+                    where=query_where,
+                    include=["documents", "metadatas", "distances"]
+                )
 
-                if len(examples) >= n_results:
-                    break
+                if results["ids"][0]:
+                    for i, doc_id in enumerate(results["ids"][0]):
+                        if len(examples) >= n_results: break
+                        
+                        # 이미 exact match로 찾은 건 스킵 (ID 중복 방지)
+                        if any(ex.get("source") == results["documents"][0][i] for ex in examples):
+                            continue
+                            
+                        meta = results["metadatas"][0][i]
+                        source = results["documents"][0][i]
+                        distance = results["distances"][0][i]
+
+                        # 거리가 너무 먼 경우 제외 (유사도 임계값: 코사인 거리 < 0.8)
+                        if distance > 0.8:
+                            continue
+
+                        examples.append({
+                            "source": source,
+                            "target": meta.get("target_text", ""),
+                            "section_code": meta.get("section_code", ""),
+                            "story_id": meta.get("story_id", ""),
+                            "match_type": "semantic",
+                            "similarity_score": round(1 - distance, 3)
+                        })
 
             return examples
 
@@ -152,30 +174,31 @@ class RagRetriever:
         self,
         source_text: str,
         target_lang: str,
-        n_results: int = 2
+        source_lang: str = "English",
+        n_results: int = 2,
+        identity_match_enabled: bool = True
     ) -> str:
         """
         프롬프트에 주입할 형식으로 RAG 예시 포맷팅.
-
-        반환 예:
-        [Translation Memory Examples]
-        Example 1 (similarity: 0.92, section: //section_001_1):
-          Source: "AI가 관리해 주는 전기 요금"
-          Translation: "Von KI verwaltete Stromrechnungen"
-
-        Example 2 (similarity: 0.87, section: //section_001_2):
-          Source: "에너지를 더 똑똑하게"
-          Translation: "Energie intelligenter nutzen"
         """
-        examples = self.retrieve(source_text, target_lang, n_results)
+        examples = self.retrieve(
+            source_text, 
+            target_lang, 
+            source_lang=source_lang, 
+            n_results=n_results,
+            identity_match_enabled=identity_match_enabled
+        )
         if not examples:
             return ""
 
         lines = ["[Translation Memory Examples]"]
         for i, ex in enumerate(examples, 1):
+            match_info = f"match: {ex['match_type']}"
+            if ex['match_type'] == "semantic":
+                match_info += f", similarity: {ex['similarity_score']}"
+            
             lines.append(
-                f"Example {i} (similarity: {ex['similarity_score']}, "
-                f"section: {ex['section_code']}):"
+                f"Example {i} ({match_info}, section: {ex['section_code']}):"
             )
             lines.append(f'  Source: "{ex["source"]}"')
             lines.append(f'  Translation: "{ex["target"]}"')

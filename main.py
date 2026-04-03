@@ -67,6 +67,7 @@ class StartRequest(BaseModel):
     audit_model: str = "gpt-5-mini"
     bx_style_enabled: bool = False
     task_mode: str = "integrated"
+    rag_identity_match: bool = True
 
 async def background_inspection_task(task_id, params):
     queue = TASK_STORE[task_id]["queue"]
@@ -96,7 +97,8 @@ async def background_inspection_task(task_id, params):
             sheet_lang_map=params.sheet_langs,
             glossary_file_path=glossary_path,
             selected_sheets=params.sheets, # These are the sheets to inspect
-            source_sheet_name=params.source_sheet
+            source_sheet_name=params.source_sheet,
+            rag_identity_match=params.rag_identity_match
         )
         
         async for event in gen:
@@ -156,7 +158,9 @@ async def integrated_translation_task(task_id, params):
             glossary_file_path=glossary_path,
             selected_sheets=params.sheets,
             source_sheet_name=params.source_sheet,
-            skip_audit=(params.task_mode == "translate_only")
+            skip_audit=(params.task_mode == "translate_only"),
+            source_lang=params.source_lang,
+            rag_identity_match=params.rag_identity_match
         )
         
         async for event in gen:
@@ -436,8 +440,10 @@ async def rag_similar(query: str, target_lang: str, n: int = 5):
 
 
 
+from fastapi import Query
+
 @app.post("/api/build_rag")
-async def build_rag(background_tasks: BackgroundTasks):
+async def build_rag(background_tasks: BackgroundTasks, force: bool = Query(False)):
     """RAG DB 빌드 (SSE 스트리밍 진행률 제공)"""
     if not _rag_builder_available:
         raise HTTPException(status_code=500, detail="rag_db_builder 모듈 미설정")
@@ -445,9 +451,9 @@ async def build_rag(background_tasks: BackgroundTasks):
     task_id = str(uuid.uuid4())
     TASK_STORE[task_id] = {"queue": asyncio.Queue(), "result_path": None}
 
-    async def rag_build_task(task_id):
+    async def rag_build_task(task_id, force_val):
         queue = TASK_STORE[task_id]["queue"]
-        loop = asyncio.get_event_loop()  # async 컨텍스트에서 미리 캡처
+        loop = asyncio.get_event_loop()
 
         def log_fn(msg):
             loop.call_soon_threadsafe(
@@ -455,12 +461,12 @@ async def build_rag(background_tasks: BackgroundTasks):
             )
 
         try:
-            total = await _rag_builder.build_all_async(log_fn)
+            total = await _rag_builder.build_all_async(log_fn, force=force_val)
             await queue.put({"type": "complete", "total": total})
         except Exception as e:
             await queue.put({"type": "error", "message": str(e)})
 
-    background_tasks.add_task(rag_build_task, task_id)
+    background_tasks.add_task(rag_build_task, task_id, force)
     return {"task_id": task_id}
 
 

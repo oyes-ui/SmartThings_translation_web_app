@@ -38,28 +38,61 @@ SQLITE_PATH = RAG_DB_DIR / "rag_store.db"
 RAG_DB_DIR.mkdir(parents=True, exist_ok=True)
 CHROMA_DIR.mkdir(parents=True, exist_ok=True)
 
-# ─── Source 분기 정의 ─────────────────────────────────────────────────────────
-# Group A: KR(한국) 시트를 Source로 사용하는 언어
-GROUP_A_SOURCE_SHEETS = {"JA(일본)", "CN(중국)", "TW(대만)"}
-GROUP_A_SHEETS = GROUP_A_SOURCE_SHEETS  # 별칭 (build_file 등에서 사용)
-GROUP_A_KEY = "KR(한국)"   # Group A의 Source 시트명
-GROUP_B_KEY = "US(미국)"   # Group B의 Source 시트명
-
-
 # ChromaDB 컬렉션명
 COLLECTION_KR = "smartthings_kr_source"  # Group A용 (KR 기준)
 COLLECTION_US = "smartthings_us_source"  # Group B용 (US 기준)
 
-# 임베딩 모델 (현재 API 키로 지원 확인된 모델)
-EMBEDDING_MODEL = "gemini-embedding-001"  # 다국어 지원 (768차원)
-EMBED_BATCH_SIZE = 50  # API 배치 제한 (100개 미만 안전)
+# ─── Source 분기 정의 ─────────────────────────────────────────────────────────
+# Group A: KR(한국) 시트를 Source로 사용하는 언어
+GROUP_A_SOURCE_SHEETS = {"JA(일본)", "CN(중국)", "TW(대만)"}
+GROUP_A_SHEETS = GROUP_A_SOURCE_SHEETS
+GROUP_A_KEY = "KR(한국)"   # Group A의 Source 시트명
+GROUP_B_KEY = "US(미국)"   # Group B의 Source 시트명
+
+# 임베딩 모델
+EMBEDDING_MODEL = "gemini-embedding-001"
+EMBED_BATCH_SIZE = 50
 
 # 파싱 범위
 STORY_ID_CELL = "C5"
 CONTENT_ROW_START = 7
 CONTENT_ROW_END = 28
-SECTION_COL = 2   # B열 (1-indexed)
-CONTENT_COL = 3   # C열 (1-indexed)
+SECTION_COL = 2   # B열
+CONTENT_COL = 3   # C열
+
+# ─── 정규화 & 매핑 유틸리티 ────────────────────────────────────────────────────────
+def normalize_text(text: str) -> str:
+    """
+    RAG 검색의 정확도를 위해 텍스트를 정규화합니다.
+    - Unicode 정규화 (NFKC)
+    - 공백 압축 및 양끝 공백 제거
+    - 스마트 따옴표를 일반 따옴표로 변환
+    - 전각 문자를 반각으로 변환 (NFKC에서 대부분 처리됨)
+    """
+    if not text:
+        return ""
+    import unicodedata
+    import re
+    # 1. Unicode 정규화
+    text = unicodedata.normalize('NFKC', text)
+    # 2. 스마트 따옴표 공통화
+    text = text.replace('“', '"').replace('”', '"').replace('‘', "'").replace('’', "'")
+    # 3. 연속된 공백 서포트 (하나로 압축)
+    text = re.sub(r'\s+', ' ', text)
+    return text.strip()
+
+
+def get_collection_name(source_lang: str) -> str:
+    """
+    source_lang에 따라 검색/저장할 ChromaDB 컬렉션 이름을 반환합니다.
+    기본적으로 'Korean'일 경우 KR 컬렉션을, 그 외(English 등)는 US 컬렉션을 사용합니다.
+    """
+    if not source_lang:
+        return COLLECTION_US
+    sl = source_lang.lower()
+    if "korea" in sl or "ko" == sl:
+        return COLLECTION_KR
+    return COLLECTION_US
 
 
 # ─── Gemini 임베딩 클라이언트 ──────────────────────────────────────────────────
@@ -235,6 +268,7 @@ def build_file(
             if not src_row:
                 continue  # 매칭되는 source 없으면 skip
             source_text = src_row["text"]
+            source_text_norm = normalize_text(source_text)
 
             rec_id = f"{filename}::{sheet_name}::{row_num}"
             records.append({
@@ -242,7 +276,9 @@ def build_file(
                 "story_id": story_id,
                 "section_code": section_code,
                 "source_group": source_group,
-                "source_text": source_text,
+                "source_lang": "Korean" if source_group == "kr" else "English",
+                "source_text_raw": source_text,
+                "source_text_norm": source_text_norm,
                 "target_lang": sheet_name,
                 "target_sheet": sheet_name,
                 "target_text": target_text,
@@ -260,7 +296,9 @@ def build_file(
     def upsert_to_collection(col, recs):
         if not recs:
             return
-        texts = [r["source_text"] for r in recs]
+        # 임베딩은 원본 텍스트(raw)를 사용거나 정규화된 텍스트를 사용할 수 있음. 
+        # 여기서는 좀 더 정제된 정규화 텍스트를 임베딩에 사용하여 유사도를 높임.
+        texts = [r["source_text_norm"] for r in recs]
         try:
             embeddings = embed_texts(gemini_client, texts)
         except Exception as e:
@@ -270,10 +308,12 @@ def build_file(
         col.upsert(
             ids=[r["id"] for r in recs],
             embeddings=embeddings,
-            documents=[r["source_text"] for r in recs],
+            documents=[r["source_text_raw"] for r in recs],
             metadatas=[{
                 "story_id": r["story_id"],
                 "section_code": r["section_code"],
+                "source_lang": r["source_lang"],
+                "source_text_norm": r["source_text_norm"],
                 "target_lang": r["target_lang"],
                 "target_text": r["target_text"],
                 "original_file": r["original_file"]
@@ -291,7 +331,7 @@ def build_file(
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, [(
         r["id"], r["story_id"], r["section_code"], r["source_group"],
-        r["source_text"], r["target_lang"], r["target_sheet"],
+        r["source_text_raw"], r["target_lang"], r["target_sheet"],
         r["target_text"], r["original_file"], now
     ) for r in records])
 
@@ -376,8 +416,13 @@ def run_pilot(log_fn=print) -> dict:
     return summary
 
 
-def run_build_all(log_fn=print) -> int:
-    """전체 파일 빌드 (이미 처리된 파일 skip)"""
+def run_build_all(log_fn=print, force: bool = False) -> int:
+    """전체 파일 빌드 (force=False면 mtime 체크하여 skip)"""
+    if force:
+        log_fn("🚀 [강제 재빌드 모드] 모든 파일을 처음부터 다시 색인합니다.")
+    else:
+        log_fn("📂 [증분 빌드 모드] 수정된 파일만 색인합니다.")
+
     files = get_excel_files()
     if not files:
         log_fn("❌ @translation_data/@excel 폴더에 엑셀 파일이 없습니다.")
@@ -386,7 +431,7 @@ def run_build_all(log_fn=print) -> int:
     gemini_client = get_gemini_client()
     _, col_kr, col_us = get_chroma_collections()
     conn = get_sqlite_conn()
-    already = get_already_processed(conn)
+    already = get_already_processed(conn) if not force else {}
 
     total = 0
     skipped = 0
@@ -468,10 +513,10 @@ def run_status(log_fn=print):
 
 
 # ─── 비동기 래퍼 (SSE용) ──────────────────────────────────────────────────────
-async def build_all_async(log_fn):
+async def build_all_async(log_fn, force: bool = False):
     """FastAPI SSE에서 호출하기 위한 비동기 래퍼"""
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, run_build_all, log_fn)
+    return await loop.run_in_executor(None, lambda: run_build_all(log_fn, force=force))
 
 
 async def update_story_async(story_id: str, log_fn):
@@ -485,6 +530,7 @@ if __name__ == "__main__":
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--pilot", action="store_true", help="파일럿: 첫 파일 1개만 빌드")
     group.add_argument("--build-all", action="store_true", help="전체 파일 빌드")
+    parser.add_argument("--force", action="store_true", help="이미 처리된 파일도 강제 재빌드")
     group.add_argument("--update-story", metavar="STORY_ID", help="특정 스토리 증분 업데이트")
     group.add_argument("--status", action="store_true", help="DB 현황 조회")
     args = parser.parse_args()
@@ -492,7 +538,7 @@ if __name__ == "__main__":
     if args.pilot:
         run_pilot()
     elif args.build_all:
-        run_build_all()
+        run_build_all(force=args.force)
     elif args.update_story:
         run_update_story(args.update_story)
     elif args.status:

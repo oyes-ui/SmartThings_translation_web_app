@@ -728,7 +728,6 @@ body {
     .review-card {
         box-shadow: none !important;
         border: 1px solid #ccc !important;
-        page-break-inside: avoid;
         margin-bottom: 2rem !important;
         background: white !important;
     }
@@ -742,4 +741,46 @@ body {
     .review-card::before {
         display: none;
     }
+}
+
+/* ─── Print / PDF Export Page Break Prevention ─── */
+.card-wrapper,
+.review-card,
+.action-card,
+.diff-viewer,
+.stat-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    display: block; 
+}
+
+/* ─── PDF / Mobile Print Mode (A4 Layout Opt-in) ─── */
+.pdf-mode {
+    padding: 0 10px !important;
+}
+
+/* 통계 대시보드: 폭이 좁은 A4에 맞게 한 줄에 2개씩 배치 */
+.pdf-mode .dashboard-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 15px !important;
+}
+
+/* 원문 / 번역문 비교: 상하(세로) 배치로 강제 변경 */
+.pdf-mode .diff-viewer {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+}
+
+/* 텍스트 가독성 확대 (배율 최적화) */
+.pdf-mode .diff-content {
+    font-size: 1.05rem !important; 
+    min-height: auto !important;
+}
+
+.pdf-mode .action-title {
+    font-size: 0.95rem !important;
+}
+
+.pdf-mode .action-content {
+    font-size: 0.95rem !important;
 }

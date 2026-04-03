@@ -14,6 +14,90 @@
         rel="stylesheet">
     <!-- SheetJS for preview -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        /* ── Layout overrides ── */
+        .main-content {
+            grid-template-columns: 220px 1fr 300px !important;
+        }
+
+        /* Header button cluster */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .header-btn {
+            font-size: 12px;
+            color: #94a3b8;
+            text-decoration: none;
+            background: rgba(255,255,255,0.05);
+            padding: 5px 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: background 0.2s, color 0.2s;
+            white-space: nowrap;
+        }
+        .header-btn:hover { background: rgba(255,255,255,0.1); color: #e2e8f0; }
+
+        /* Left: narrow preset panel */
+        .config-panel .panel-body { gap: 12px; }
+        .config-panel .config-item { margin-bottom: 0; }
+
+        /* Center: two-column sub-grid for file + DB side by side */
+        .center-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        /* File upload area smaller */
+        .premium-dropzone {
+            min-height: 130px !important;
+            padding: 20px 16px !important;
+        }
+        .icon-orb {
+            width: 44px !important;
+            height: 44px !important;
+            font-size: 20px !important;
+            margin-bottom: 8px !important;
+        }
+        .dropzone-text h3 { font-size: 15px !important; }
+        .dropzone-text p  { font-size: 12px !important; }
+        .dropzone-text .sub-text { font-size: 11px !important; }
+
+        /* Glossary dropzone smaller in center */
+        .small-dropzone { padding: 12px 14px !important; }
+        .small-dropzone .icon { font-size: 18px !important; }
+
+        /* RAG section in center — card style */
+        .rag-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+        .rag-card label { font-size: 12px !important; font-weight: 600; }
+        .rag-card .description { font-size: 11px !important; color: #64748b; margin: 3px 0 8px; }
+        .rag-card .rag-status-box { font-size: 11px !important; padding: 6px 10px !important; margin-bottom: 8px; }
+
+        /* Sheet mapping textarea shorter */
+        .code-editor { min-height: 160px !important; max-height: 200px !important; font-size: 11px !important; }
+
+        /* Action button row */
+        .action-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .action-row .btn.primary { flex: 1; }
+
+        /* Version footer inside center */
+        .version-info-center {
+            font-size: 10.5px;
+            color: #475569;
+            text-align: right;
+            padding-top: 6px;
+        }
+    </style>
 </head>
 
 <body>
@@ -25,19 +109,22 @@
                 <span class="logo-icon">✨</span>
                 <h1>SmartThings translation web app</h1>
             </div>
-            <a href="/rag_viewer.html" target="_blank" style="font-size:13px; color: #94a3b8; text-decoration:none; background:rgba(255,255,255,0.05); padding:6px 14px; border-radius:20px; border:1px solid rgba(255,255,255,0.1);">🧠 RAG DB Viewer</a>
-            <a href="/viewer/index.html" target="_blank" style="font-size:13px; color: #94a3b8; text-decoration:none; background:rgba(255,255,255,0.05); padding:6px 14px; border-radius:20px; border:1px solid rgba(255,255,255,0.1); margin-left:8px;">👀 Report HTML Viewer</a>
+            <div class="header-actions">
+                <a href="/rag_viewer.html" target="_blank" class="header-btn">🧠 RAG DB Viewer</a>
+                <a href="/viewer/index.html" target="_blank" class="header-btn">👀 Report HTML Viewer</a>
+            </div>
         </header>
 
         <!-- MAIN LAYOUT -->
         <main class="main-content">
 
-            <!-- LEFT PANEL: CONFIG -->
+            <!-- ═══ LEFT PANEL: Pre-settings ═══ -->
             <section class="panel config-panel">
                 <div class="panel-header">
-                    <h2>Configuration</h2>
+                    <h2>Pre-settings</h2>
                 </div>
                 <div class="panel-body">
+
                     <div class="config-item">
                         <label>Operation Mode</label>
                         <div class="radio-group">
@@ -57,25 +144,32 @@
                     </div>
 
                     <div id="aiModelItem" class="config-item">
-                        <label>AI Model Selection</label>
+                        <label>AI Model</label>
                         <select id="modelSelect" class="styled-select">
+                            <optgroup label="Gemini 3.x Series">
+                                <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
+                                <option value="gemini-3.1-flash-lite-preview">Gemini 3.1 Flash Lite</option>
+                                <option value="gemini-3-flash-preview">Gemini 3 Flash Preview</option>
+                                <option value="gemini-3-pro-preview">Gemini 3 Pro Preview</option>
+                            </optgroup>
                             <optgroup label="Gemini 2.5 Series">
                                 <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                                <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash</option>
+                                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                                 <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
                             </optgroup>
-                            <optgroup label="Gemini 2.0 Series">
-                                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                                <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
+                            <optgroup label="GPT-5.x Series">
+                                <option value="gpt-5.4-pro">GPT-5.4 Pro</option>
+                                <option value="gpt-5.4">GPT-5.4</option>
+                                <option value="gpt-5.4-mini" selected>GPT-5.4 Mini</option>
                             </optgroup>
-                            <optgroup label="Gemini 3.0 Series">
-                                <option value="gemini-3-pro-preview">Gemini 3.0 Pro Preview</option>
-                                <option value="gemini-3-flash-preview">Gemini 3.0 Flash Preview</option>
-                            </optgroup>
-                            <optgroup label="GPT Models">
+                            <optgroup label="GPT-5.0 Series">
                                 <option value="gpt-5-pro">GPT-5 Pro</option>
                                 <option value="gpt-5">GPT-5</option>
                                 <option value="gpt-5-mini">GPT-5 Mini</option>
+                            </optgroup>
+                            <optgroup label="Legacy &amp; Reasoning">
+                                <option value="o3">OpenAI o3</option>
+                                <option value="o1-pro">OpenAI o1-pro</option>
                                 <option value="gpt-4.1">GPT-4.1</option>
                                 <option value="gpt-4o">GPT-4o</option>
                                 <option value="gpt-4o-mini">GPT-4o Mini</option>
@@ -84,18 +178,19 @@
                     </div>
 
                     <div id="auditModelItem" class="config-item">
-                        <label>Audit Model (Reasoning)</label>
+                        <label>Audit Model</label>
                         <select id="auditModelSelect" class="styled-select">
-                            <optgroup label="OpenAI GPT">
-                                <option value="gpt-5-pro">GPT-5 Pro (Reasoning)</option>
-                                <option value="gpt-5">GPT-5</option>
-                                <option value="gpt-5-mini" selected>GPT-5 Mini</option>
-                                <option value="gpt-4.1">GPT-4.1</option>
-                                <option value="gpt-4o">GPT-4o</option>
+                            <optgroup label="Reasoning (Recommended)">
+                                <option value="o3">OpenAI o3</option>
+                                <option value="o3-mini">OpenAI o3-mini</option>
+                                <option value="o1-pro">OpenAI o1-pro</option>
+                                <option value="gpt-5.4-pro">GPT-5.4 Pro</option>
                             </optgroup>
-                            <optgroup label="Google Gemini">
+                            <optgroup label="Standard">
+                                <option value="gpt-5.4-mini" selected>GPT-5.4 Mini</option>
+                                <option value="gpt-5-mini">GPT-5 Mini</option>
+                                <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
                                 <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
                             </optgroup>
                         </select>
                     </div>
@@ -103,12 +198,12 @@
                     <div id="bxStyleItem" class="config-item">
                         <label class="toggle-label">
                             <input type="checkbox" id="bxStyleToggle">
-                            <span class="toggle-text">Samsung BX Style Transcreation</span>
+                            <span class="toggle-text">Samsung BX Style</span>
                         </label>
-                        <p class="description">ON: Apply Persona (Confident Explorer) and Voice Attributes.</p>
+                        <p class="description">ON: Confident Explorer persona &amp; voice attributes</p>
                     </div>
 
-                    <div class="config-item hidden">
+                    <div class="config-item">
                         <label>Source Language</label>
                         <select id="sourceLangSelect" class="styled-select">
                             <option value="English" selected>English</option>
@@ -128,19 +223,80 @@
                         </select>
                     </div>
 
-                    <div class="config-item">
-                        <label>Glossary CSV Upload</label>
-                        <div class="dropzone small-dropzone" id="glossaryDropzone">
-                            <div class="icon">📖</div>
-                            <p>Drag & Drop <strong>Glossary CSV</strong></p>
-                            <input type="file" id="glossaryInput" accept=".csv" hidden>
-                            <div class="file-info" id="glossaryInfo">No file selected</div>
-                        </div>
+                    <div class="version-info" style="margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 10.5px; color: #475569; display: flex; justify-content: space-between;">
+                        <span>v1.3.2</span>
+                        <span>2026.04.03</span>
                     </div>
 
-                    <div class="config-item">
-                        <label>Sheet-Language Mapping (JSON)</label>
-                        <textarea id="sheetConfig" class="code-editor" spellcheck="false">{
+                </div>
+            </section>
+
+            <!-- ═══ CENTER PANEL: Files & DB ═══ -->
+            <section class="panel upload-panel">
+                <div class="panel-header">
+                    <h2>Files &amp; Execution</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="center-grid">
+
+                        <!-- Source Excel Upload -->
+                        <div class="main-dropzone-container">
+                            <div class="dropzone premium-dropzone" id="sourceDropzone">
+                                <div class="glass-overlay"></div>
+                                <div class="icon-orb">✨</div>
+                                <div class="dropzone-text">
+                                    <h3>Upload Workbook</h3>
+                                    <p>Drag &amp; Drop your <strong>Source Excel (.xlsx)</strong></p>
+                                    <span class="sub-text">All sheets will be auto-mapped and translated.</span>
+                                </div>
+                                <input type="file" id="sourceInput" accept=".xlsx" hidden>
+                                <div class="file-info" id="sourceInfo"></div>
+                            </div>
+                        </div>
+
+                        <!-- Sheet Selection (shown after upload) -->
+                        <div id="sheetSelectionArea" class="hidden">
+                            <div class="sheet-selection-header">
+                                <h3>Sheet Mapping (Select Source &amp; Targets)</h3>
+                                <div class="sheet-controls">
+                                    <button type="button" id="selectAllSheets" class="text-btn">Select All Targets</button>
+                                    <span class="sep">|</span>
+                                    <button type="button" id="deselectAllSheets" class="text-btn">Deselect All Targets</button>
+                                </div>
+                            </div>
+                            <div class="sheet-list-header">
+                                <span class="header-col src">Source</span>
+                                <span class="header-col tgt">Target</span>
+                                <span class="header-col name">Sheet Name</span>
+                                <span class="header-col lang">Language Info</span>
+                            </div>
+                            <div class="sheet-list" id="sheetList"></div>
+                        </div>
+
+                        <!-- Two-column: Glossary + Cell Range -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div class="config-item" style="margin:0;">
+                                <label>Glossary CSV</label>
+                                <div class="dropzone small-dropzone" id="glossaryDropzone">
+                                    <div class="icon">📖</div>
+                                    <p>Drag &amp; Drop <strong>Glossary CSV</strong></p>
+                                    <input type="file" id="glossaryInput" accept=".csv" hidden>
+                                    <div class="file-info" id="glossaryInfo">No file selected</div>
+                                </div>
+                            </div>
+                            <div class="config-item" style="margin:0;">
+                                <label>Cell Range</label>
+                                <div class="input-group">
+                                    <input type="text" id="cellRange" value="C7:C28" placeholder="C7:C28">
+                                </div>
+                                <p class="description" style="margin-top:6px;">e.g., A2:C100 or C:C</p>
+                            </div>
+                        </div>
+
+                        <!-- Sheet-Language Mapping -->
+                        <div class="config-item" style="margin:0;">
+                            <label>Sheet–Language Mapping (JSON)</label>
+                            <textarea id="sheetConfig" class="code-editor" spellcheck="false">{
   "KR(한국)":    { "lang": "Korean",      "code": "한국어" },
   "US(미국)":    { "lang": "English",     "code": "영어_미국" },
   "UK(영국)":    { "lang": "English_UK",     "code": "영어_영국" },
@@ -167,91 +323,41 @@
   "TH(태국)":    { "lang": "Thai",        "code": "태국" },
   "ID(인도네시아)": { "lang": "Indonesian","code": "인도네시아" }
 }</textarea>
-                    </div>
+                        </div>
 
-                    <div class="config-actions">
-                        <button id="saveConfigBtn" class="btn secondary">Validate Config</button>
-                    </div>
+                        <!-- RAG Knowledge Base -->
+                        <div class="rag-card">
+                            <label>🧠 RAG Knowledge Base &nbsp;<span class="rag-badge" id="ragBadge">Loading...</span></label>
+                            <p class="description">번역 시 유사 과거 사례 2건을 자동 참조합니다. (오프라인 전용)</p>
+                            <div class="rag-status-box" id="ragStatusBox">
+                                <span id="ragStatusText">DB 상태 확인 중...</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap;">
+                                <button id="buildRagBtn" class="btn secondary">🔨 Build RAG DB</button>
+                                <label style="font-size: 11px; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" id="forceRagCheck"> Force
+                                </label>
+                                <label style="font-size: 11px; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 4px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 10px;">
+                                    <input type="checkbox" id="identityMatchCheck" checked> Identity Match (100%)
+                                </label>
+                            </div>
+                            <div class="rag-update-row">
+                                <input type="text" id="ragStoryInput" placeholder="story_001" class="story-input">
+                                <button id="updateRagBtn" class="btn secondary small">↻ Update Story</button>
+                            </div>
+                        </div>
 
-                    <!-- RAG Knowledge Base Panel -->
-                    <div class="config-item rag-section">
-                        <label>🧠 RAG Knowledge Base <span class="rag-badge" id="ragBadge">Loading...</span></label>
-                        <p class="description">번역 시 유사 과거 사례 2건을 자동 참조합니다. (오프라인 전용)</p>
-                        <div class="rag-status-box" id="ragStatusBox">
-                            <span id="ragStatusText">DB 상태 확인 중...</span>
+                        <!-- Validate + Start Row -->
+                        <div class="action-row">
+                            <button id="saveConfigBtn" class="btn secondary">✓ Validate Config</button>
+                            <button id="startBtn" class="btn primary large" disabled>Start Inspection</button>
                         </div>
-                        <div class="rag-actions">
-                            <button id="buildRagBtn" class="btn secondary">🔨 Build RAG DB</button>
-                        </div>
-                        <div class="rag-update-row">
-                            <input type="text" id="ragStoryInput" placeholder="story_001" class="story-input">
-                            <button id="updateRagBtn" class="btn secondary small">↻ Update Story</button>
-                        </div>
-                    </div>
-                    <div class="version-info" style="margin-top: 30px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 11px; color: #64748b; display: flex; justify-content: space-between;">
-                        <span>Version v1.2.5</span>
-                        <span>Updated: 2026.03.30</span>
+
                     </div>
                 </div>
             </section>
 
-            <!-- CENTER PANEL: UPLOAD & CONTROL -->
-            <section class="panel upload-panel">
-                <div class="panel-header">
-                    <h2>Files & Execution</h2>
-                </div>
-                <div class="panel-body">
-
-                    <div class="main-dropzone-container">
-                        <div class="dropzone premium-dropzone" id="sourceDropzone">
-                            <div class="glass-overlay"></div>
-                            <div class="icon-orb">✨</div>
-                            <div class="dropzone-text">
-                                <h3>Upload Workbook</h3>
-                                <p>Drag & Drop your <strong>Source Excel (.xlsx)</strong></p>
-                                <span class="sub-text">The system will automatically map and translate all
-                                    sheets.</span>
-                            </div>
-                            <input type="file" id="sourceInput" accept=".xlsx" hidden>
-                            <div class="file-info" id="sourceInfo"></div>
-                        </div>
-                    </div>
-
-                    <div id="sheetSelectionArea" class="hidden">
-                        <div class="sheet-selection-header">
-                            <h3>Sheet Mapping (Select Source & Targets)</h3>
-                            <div class="sheet-controls">
-                                <button type="button" id="selectAllSheets" class="text-btn">Select All Targets</button>
-                                <span class="sep">|</span>
-                                <button type="button" id="deselectAllSheets" class="text-btn">Deselect All
-                                    Targets</button>
-                            </div>
-                        </div>
-                        <div class="sheet-list-header">
-                            <span class="header-col src">Source</span>
-                            <span class="header-col tgt">Target</span>
-                            <span class="header-col name">Sheet Name</span>
-                            <span class="header-col lang">Language Info</span>
-                        </div>
-                        <div class="sheet-list" id="sheetList">
-                            <!-- Checkboxes injected here -->
-                        </div>
-                    </div>
-
-                    <div class="config-item">
-                        <label>Cell Range (e.g., A2:C100 or C:C)</label>
-                        <div class="input-group">
-                            <input type="text" id="cellRange" value="C7:C28" placeholder="C7:C28">
-                        </div>
-                    </div>
-
-                    <div class="action-area">
-                        <button id="startBtn" class="btn primary large" disabled>Start Inspection</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- RIGHT PANEL: MONITORING -->
+            <!-- ═══ RIGHT PANEL: Live Progress ═══ -->
             <section class="panel monitor-panel">
                 <div class="panel-header">
                     <h2>Live Progress</h2>

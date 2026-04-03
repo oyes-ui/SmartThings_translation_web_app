@@ -10,7 +10,7 @@ pinned: false
 
 # ✨ SmartThings Translation Web App
 
-**Gemini Pro & GPT-4o(Audit)를 활용한 다국어 번역 정합성 검수 자동화 도구**
+**Gemini Pro & GPT-5.4(Audit)를 활용한 다국어 번역 정합성 검수 자동화 도구**
 
 이 웹 애플리케이션은 다국어 엑셀 파일(.xlsx)을 분석하여 번역의 일관성, 용어집(Glossary) 준수 여부, 문맥 상의 오류를 AI로 진단하고 리포트를 생성합니다.
 
@@ -18,11 +18,25 @@ pinned: false
 
 ## 🚀 주요 기능 (Key Features)
 
-- **AI 기반 정밀 검수**: Gemini 2.5/2.0 Pro 및 GPT-4o 모델을 활용한 고성능 번역 검수
-- **다국어 시트 자동 매핑**: 국가 코드(US, KR, DE 등)를 인식하여 언어별 시트 자동 처리
-- **용어집(Glossary) 검증**: 업로드된 CSV 용어집을 기반으로 필수 용어 준수 여부 확인
-- **Samsung BX Style Transcreation**: 'Persona' 및 'Voice & Tone' 설정을 통한 브랜드 톤앤매너 검수
-- **실시간 로그 & 리포트**: 웹 터미널을 통한 진행 상황 모니터링 및 결과 파일(.txt/.zip) 다운로드
+- **AI 기반 정밀 검수**: Gemini 3.1/3.0 및 GPT-5.4 모델을 포함한 고성능 번역 검수 지원
+- **하이브리드 RAG (Retrieval-Augmented Generation)**: 100% 일치(Identity Match) 및 의미적 유사도 검색을 통한 번역 일관성 확보
+- **다국어 시트 자동 매핑**: 국가 코드(US, KR, DE 등)를 인식하여 시트별 언어 설정 자동화
+- **용어집(Glossary) 검증**: CSV 용어집 기반 정밀 매칭 및 괄호(Bracket) 자동 처리 규칙 적용
+- **Samsung BX Style Transcreation**: 'Confident Explorer' 페르소나 및 브랜드 보이스 가이드라인 반영
+- **모듈형 프롬프트 아키텍처**: 맥락 인식(Context-aware) 및 언어별 특수 규칙이 결합된 고도화된 프롬프트 엔진
+- **실시간 UI 데이터 보드**: 실시간 진행 상황 모니터링 및 HTML 시각화 리포트 제공
+
+---
+
+## 🏗️ 프롬프트 아키텍처 (Prompt Architecture)
+
+이 프로젝트는 고도로 모듈화된 프롬프트 시스템을 사용합니다. 상세 구조는 [Prompt Architecture Document](docs/prompt_architecture.html)에서 확인할 수 있습니다.
+
+- **Persona_and_Task**: 기본 번역가 페르소나 설정
+- **Samsung_BX_Guidelines**: 브랜드 가이드라인 동적 주입
+- **Language_Specific_Hints**: 언어별 문법/문화적 뉘앙스 처리
+- **RAG_Reference**: 유사 사례 참조 (Identity/Semantic)
+- **Bracket_Rule_2**: 맥락(Title/Button vs Description)에 따른 괄호 처리 자동 분기
 
 ---
 
@@ -92,10 +106,11 @@ docker run -p 7860:7860 -e GOOGLE_API_KEY="your_key_here" translation-checker
 
 ## 📝 사용 가이드 (User Guide)
 
-1. **Upload Workbook**: 번역 검수를 진행할 원본 엑셀 파일(.xlsx)을 업로드합니다.
-2. **Configuration**: 
-    - **AI Model**: 검수에 사용할 모델(Gemini 2.5 Pro 등)을 선택합니다.
-    - **Sheet Mapping**: 시트 이름과 언어 코드가 올바르게 매핑되어 있는지 JSON 설정을 확인합니다.
-3. **Glossary (Optional)**: 용어집(.csv)이 있다면 업로드하여 정확도를 높입니다.
-4. **Start Inspection**: [Start Inspection] 버튼을 눌러 검수를 시작합니다.
-5. **Download**: 우측 패널에서 진행 상황을 확인하고, 완료 시 결과 리포트를 다운로드합니다.
+1. **Configurations (좌측 패널)**: 검수 모드, 사용할 AI 모델(Gemini/GPT), BX 스타일 적용 여부를 설정합니다.
+2. **Files & Execution (중앙 패널)**: 
+    - **Upload Workbook**: 번역할 엑셀 파일(.xlsx)을 업로드합니다.
+    - **Glossary (Optional)**: 용어집(.csv)을 업로드합니다.
+    - **Sheet Mapping**: 업로드 후 생성된 시트 리스트에서 원본 및 타겟 시트를 선택합니다.
+    - **RAG DB**: 필요한 경우 RAG DB를 빌드하거나 특정 스토리 데이터를 업데이트합니다.
+3. **Start Inspection**: 설정을 검증([Validate Config])한 후 검수를 시작합니다.
+4. **Live Progress & Download (우측 패널)**: 터미널에서 진행 상황을 확인하고, 완료 시 리포트를 다운로드하거나 HTML 뷰어로 확인합니다.

@@ -5,6 +5,8 @@ Refactored for Web API usage (FastAPI + SSE)
 """
 
 import openpyxl
+from openpyxl.cell.rich_text import CellRichText, TextBlock
+from openpyxl.cell.text import InlineFont
 import os
 from google import genai
 from google.genai import types
@@ -134,36 +136,44 @@ class TranslationChecker:
             source_col_idx = -1
             rule_col_idx = -1
             # 소스 언어 컬럼 찾기 (1~3행 모두 검색)
-            search_terms = [source_lang_code.lower()]
-            # 한국어/영어 등 주요 언어 매칭 보강
-            lang_alias = {
-                "korean": ["한국어", "ko_kr", "ko-kr", "kr", "ko"],
-                "한국어": ["korean", "ko_kr", "ko-kr", "kr", "ko"],
-                "english": ["영어", "en_us", "en-us", "us", "en_gb", "en-gb", "uk", "en"],
-                "영어": ["english", "en_us", "en-us", "us", "en_gb", "en-gb", "uk", "en"]
-            }
-            if source_lang_code.lower() in lang_alias:
-                search_terms.extend(lang_alias[source_lang_code.lower()])
+            search_terms = []
+            if source_lang_code:
+                search_terms.append(source_lang_code.lower())
+                # 한국어/영어 등 주요 언어 매칭 보강
+                lang_alias = {
+                    "korean": ["한국어", "ko_kr", "ko-kr", "kr", "ko"],
+                    "한국어": ["korean", "ko_kr", "ko-kr", "kr", "ko"],
+                    "english": ["영어", "en_us", "en-us", "us", "en_gb", "en-gb", "uk", "en"],
+                    "영어": ["english", "en_us", "en-us", "us", "en_gb", "en-gb", "uk", "en"]
+                }
+                if source_lang_code.lower() in lang_alias:
+                    search_terms.extend(lang_alias[source_lang_code.lower()])
 
+            if search_terms:
+                for c in range(num_cols):
+                    for r in range(3):
+                        val = str(df_headers.iloc[r, c]).strip().lower()
+                        if any(term == val or term in val or val in term for term in search_terms):
+                            source_col_idx = c
+                            break
+                    if source_col_idx != -1: break
+            
+            if source_col_idx == -1:
+                # Fallback: 만약 못 찾으면 0번 컬럼(A열)을 원문으로 가정 (대부분의 용어집 구조)
+                source_col_idx = 0
+                print(f"ℹ Glossary: '{source_lang_code}' 컬럼을 찾지 못해 0번 컬럼을 기본값으로 사용합니다.")
+
+            # 설명/규칙/비고 컬럼 찾기
             for c in range(num_cols):
                 for r in range(3):
                     val = str(df_headers.iloc[r, c]).strip().lower()
-                    if any(term == val or term in val or val in term for term in search_terms):
-                        source_col_idx = c
-                        break
-                if source_col_idx != -1: break
-            
-            if source_col_idx == -1:
-                return f"⚠ Warning: 용어집에서 '{source_lang_code}' 컬럼을 찾을 수 없습니다. (헤더 1~3행 확인 필요)"
-
-            # 설명/규칙 컬럼 찾기
-            for c in range(num_cols):
-                for r in range(3):
-                    val = str(df_headers.iloc[r, c]).strip()
-                    if "설명" in val or "규칙" in val or "rule" in val.lower():
+                    if any(kw in val for kw in ["설명", "규칙", "rule", "비고", "note", "remark", "desc"]):
                         rule_col_idx = c
                         break
                 if rule_col_idx != -1: break
+            
+            if rule_col_idx == -1:
+                print("⚠ Glossary: '규칙/비고' 컬럼을 찾지 못했습니다. 규칙이 적용되지 않을 수 있습니다.")
 
             # 2. 데이터 로드 (4행부터)
             df_data = pd.read_csv(file_path, header=None, skiprows=3, encoding='utf-8-sig').fillna("")
@@ -364,7 +374,7 @@ class TranslationChecker:
         
         return "\n".join(out) if out else f"용어집에 '{target_lang_code}' 타겟 항목 없음"
 
-    def _get_glossary_context_as_dict(self, target_lang_code: str, source_text: str | None = None):
+    def _get_glossary_context_as_dict(self, target_lang_code: str, source_text: str | None = None, skip_deactivated: bool = False):
         """
         용어집 데이터를 JSON/Dict 형태로 반환합니다. (프롬프트 최적화용)
         """
@@ -380,8 +390,18 @@ class TranslationChecker:
         context = {}
         for term in relevant_terms:
             tgt = self.glossary[term]["targets"].get(target_lang_code)
+            rule = self.glossary[term].get("rule", "").lower()
+            clean_rule = rule.replace(" ", "")
+            
+            if skip_deactivated and ("비활성화" in clean_rule or "deactivate" in clean_rule or "disable" in clean_rule):
+                continue
+            
             if tgt:
-                context[term] = tgt
+                exempt_markers = ["no bracket", "대괄호 생략", "대괄호 제외", "대괄호 없음"]
+                if any(m in rule for m in exempt_markers):
+                    context[term] = f"{tgt} (EXCEPTION: Do NOT wrap '{tgt}' in brackets)"
+                else:
+                    context[term] = tgt
         return context
 
     def _precheck_glossary_mismatch(self, source_text: str, target_text: str, target_lang_code: str):
@@ -471,7 +491,7 @@ class TranslationChecker:
         if simple_fixed_text == target_text:
             simple_fixed_text = None
         return report, simple_fixed_text
-    async def _run_llm_translation(self, text, target_lang, model_name="gemini-2.5-flash", bx_style_on=False, glossary_context=None, rag_context=None):
+    async def _run_llm_translation(self, text, target_lang, model_name="gemini-2.5-flash", bx_style_on=False, glossary_context=None, rag_context=None, row_key="", rag_identity_match=True):
         """
         내부 전용 번역 메서드: JSON 프롬프트 생성 및 LLM 호출을 담당합니다.
         """
@@ -488,6 +508,7 @@ class TranslationChecker:
 
         # 입력 데이터 구조화
         input_data = {
+            "context_key": row_key,
             "source_text": text,
             "target_language": target_lang,
             "glossary": glossary_context if isinstance(glossary_context, dict) else {},
@@ -497,13 +518,31 @@ class TranslationChecker:
             }
         }
 
+        # Python 단에서 키워드를 파악하여 프롬프트의 복잡도를 낮춥니다.
+        skip_brackets = False
+        k = row_key.strip().lower()
+        import re
+        if "title" in k or "button" in k or bool(re.search(r'\d+$', k)):
+            if "description" not in k and "disclaimer" not in k:
+                skip_brackets = True
+
+        if skip_brackets:
+            bracket_rules = f"\nRULE 2: Use glossary for translation. Do NOT wrap terms in brackets for this text (Title/Button context).\n"
+        else:
+            bracket_rules = (
+                f"\nRULE 2: Use glossary and wrap terms in '{brackets[0]}' and '{brackets[1]}'. (CRITICAL)\n"
+                f"-> EXCEPTION 1: Do NOT wrap terms used in navigation paths (e.g., A > B).\n"
+                f"-> EXCEPTION 2: If a glossary term specifically says \"(EXCEPTION...)\", apply the exception ONLY to that term.\n"
+            )
+
         if bx_style_on and self.bx_engine:
             system_prompt = self.bx_engine.get_system_prompt(target_lang)
             system_prompt += (
                 f"\nIMPORTANT: You must follow the Samsung BX style guide above.\n"
                 f"{lang_hint}"
                 f"{rag_context + chr(10) if rag_context else ''}"
-                f"Use the provided glossary if available. CRITICAL: Any time you use a term from the glossary, you MUST wrap it in '{brackets[0]}' and '{brackets[1]}' (e.g., {brackets[0]}Term{brackets[1]}).\n"
+                f"Use the provided glossary if available.\n"
+                f"{bracket_rules}"
                 "Return the response in JSON format with a 'translation' field."
             )
         else:
@@ -513,14 +552,14 @@ class TranslationChecker:
                 f"{lang_hint}"
                 f"{rag_context + chr(10) if rag_context else ''}"
                 f"RULE 1: Use the provided 'glossary'.\n"
-                f"RULE 2: Wrap glossary terms in '{brackets[0]}' and '{brackets[1]}'. (CRITICAL)\n"
+                f"{bracket_rules}"
                 "OUTPUT: Return ONLY a JSON object with a 'translation' key."
             )
 
         # RAG 예시 주입: 유사 번역 사례 최대 2건을 시스템 프롬프트에 첨부
         if self.rag_retriever:
             try:
-                rag_context = self.rag_retriever.format_for_prompt(text, target_lang, n_results=2)
+                rag_context = self.rag_retriever.format_for_prompt(text, target_lang, n_results=2, identity_match_enabled=rag_identity_match)
                 if rag_context:
                     system_prompt = system_prompt + f"\n\n{rag_context}\n\nUse these examples as style and terminology reference to maintain consistency."
             except Exception:
@@ -623,6 +662,11 @@ JSON 형식으로 반환하세요:
                 response_json=True
             )
             
+            if isinstance(response, dict) and response.get("error") == "parsing_failed":
+                 err_msg = f"[파싱/서버 오류]: Gemini가 유효한 JSON을 반환하지 않았거나 서버가 응답하지 않습니다. (원문: {str(response.get('original_text', ''))[:100]}...)"
+                 eval_json = json.dumps({"evaluation": [{"category": "에러", "comment": err_msg}], "is_excellent": False, "suggested_fix": ""}, ensure_ascii=False)
+                 return (err_msg, eval_json)
+
             if isinstance(response, str):
                  eval_text = f"[QA 분석 결과]\n{response}"
                  eval_json = json.dumps({"evaluation": [{"category": "결과", "comment": response}], "is_excellent": False, "suggested_fix": ""}, ensure_ascii=False)
@@ -671,8 +715,37 @@ JSON 형식으로 반환하세요:
         except Exception as e:
             return f"[역번역 오류]: {e}"
 
+    def _apply_rich_text(self, text: str, keywords: list):
+        if not text or not keywords:
+            return text
+            
+        sorted_keywords = sorted([k.strip() for k in keywords if k.strip()], key=len, reverse=True)
+        if not sorted_keywords:
+            return text
+
+        matches = list(re.finditer('|'.join(re.escape(k) for k in sorted_keywords), text, flags=re.IGNORECASE))
+        if not matches:
+            return text
+
+        parts = []
+        last_end = 0
+        for m in matches:
+            start, end = m.span()
+            if start > last_end:
+                parts.append((text[last_end:start], InlineFont(color="000000")))
+            parts.append((text[start:end], InlineFont(color="0000FF")))
+            last_end = end
+            
+        if last_end < len(text):
+            parts.append((text[last_end:], InlineFont(color="000000")))
+
+        rt = CellRichText()
+        for segment_text, segment_font in parts:
+            rt.append(TextBlock(text=segment_text, font=segment_font))
+        return rt
+
     # ----------------- Process Single Item -----------------
-    async def process_item(self, item, source_lang, default_target_lang, sheet_lang_map, default_target_lang_code):
+    async def process_item(self, item, source_lang, default_target_lang, sheet_lang_map, default_target_lang_code, rag_identity_match=True):
         cell_ref = item["cell_ref"]
         sheet_name = item["sheet_name"]
         source = item["source"]
@@ -709,20 +782,36 @@ JSON 형식으로 반환하세요:
         # RAG consistency check (Post-translation/audit, does not use LLM)
         rag_text = "별도 설정 없음."
         rag_json = "[]"
-        if getattr(self, "rag_retriever", None) and self.rag_retriever.is_available():
+        
+        # Skip RAG for placeholder or very short/empty text
+        if is_placeholder and not pre_mismatch:
+            rag_text = "[건너뜀: 짧은/무의미]"
+        elif getattr(self, "rag_retriever", None) and self.rag_retriever.is_available():
             try:
-                results = self.rag_retriever.retrieve(source, sheet_name, n_results=2, exclude_same_source=False)
+                results = self.rag_retriever.retrieve(
+                    source, 
+                    sheet_name, 
+                    source_lang=source_lang, 
+                    n_results=2, 
+                    exclude_same_source=False,
+                    identity_match_enabled=rag_identity_match
+                )
                 if results:
                     # 1. Human-readable text
                     text_lines = []
                     for i, r in enumerate(results, 1):
-                        text_lines.append(f"[사례 {i}] 유사도 {r['similarity_score']*100:.1f}% | {r.get('story_id','')} | {r['section_code']}\n- 번역: {r['target']}")
+                        match_info = f"{r['match_type'].upper()}"
+                        if r['match_type'] == "semantic":
+                            match_info += f" ({r['similarity_score']*100:.1f}%)"
+                        
+                        text_lines.append(f"[사례 {i}] {match_info} | {r.get('story_id','')} | {r['section_code']}\n- 번역: {r['target']}")
                     rag_text = "\n\n".join(text_lines)
                     
                     # 2. JSON payload
                     rag_data = []
                     for r in results:
                         rag_data.append({
+                            "type": r['match_type'],
                             "score": round(r['similarity_score'] * 100, 1),
                             "story_id": r.get('story_id', ''),
                             "section": r.get('section_code', ''),
@@ -797,7 +886,8 @@ JSON 형식으로 반환하세요:
         glossary_url=None,
         selected_sheets: list = None,
         glossary_file_path: str = None,
-        source_sheet_name: str = None
+        source_sheet_name: str = None,
+        rag_identity_match: bool = True
     ):
         """
         Yields events:
@@ -854,7 +944,7 @@ JSON 형식으로 반환하세요:
 
         # Wrapper to track index
         async def process_with_index(index, item):
-            res = await self.process_item(item, source_lang, target_lang, sheet_lang_map, target_lang_code)
+            res = await self.process_item(item, source_lang, target_lang, sheet_lang_map, target_lang_code, rag_identity_match=rag_identity_match)
             return index, res
 
         # Create tasks with index
@@ -932,7 +1022,9 @@ JSON 형식으로 반환하세요:
         glossary_file_path=None,
         selected_sheets=None,
         source_sheet_name=None,
-        skip_audit=False
+        skip_audit=False,
+        source_lang="English",
+        rag_identity_match=True
     ):
         """
         Translates source text, audits it, and saves it to a NEW Excel file.
@@ -979,7 +1071,9 @@ JSON 형식으로 반환하세요:
         for row in rows:
             for cell in row:
                 if cell.value:
-                    source_data.append({'text': str(cell.value).strip(), 'coord': cell.coordinate})
+                    row_idx = cell.row
+                    row_key = str(source_ws[f"B{row_idx}"].value).strip() if source_ws[f"B{row_idx}"].value else ""
+                    source_data.append({'text': str(cell.value).strip(), 'coord': cell.coordinate, 'row_key': row_key})
 
         if not source_data:
             yield {"type": "error", "message": "No source text found in range."}
@@ -1005,7 +1099,8 @@ JSON 형식으로 반환하세요:
             coord = item['coord']
             
             # Step 1: Translate
-            glossary_dict = self._get_glossary_context_as_dict(target_lang_code, source_text=source_text)
+            # Translating: filter out terms explicitly deactivated to save tokens and not force LLM behavior
+            glossary_dict = self._get_glossary_context_as_dict(target_lang_code, source_text=source_text, skip_deactivated=True)
             if not glossary_dict:
                 glossary_dict = None
 
@@ -1014,23 +1109,70 @@ JSON 형식으로 반환하세요:
             logs = []
             if getattr(self, "rag_retriever", None) and self.rag_retriever.is_available():
                 try:
-                    results = self.rag_retriever.retrieve(source_text, ws.title, n_results=2, exclude_same_source=False)
+                    results = self.rag_retriever.retrieve(
+                        source_text, 
+                        ws.title, 
+                        source_lang=source_lang, 
+                        n_results=2, 
+                        exclude_same_source=False,
+                        identity_match_enabled=rag_identity_match
+                    )
                     if results:
-                        rag_context_str = self.rag_retriever.format_for_prompt(source_text, ws.title, n_results=2)
+                        rag_context_str = self.rag_retriever.format_for_prompt(
+                            source_text, 
+                            ws.title, 
+                            source_lang=source_lang, 
+                            n_results=2,
+                            identity_match_enabled=rag_identity_match
+                        )
                         logs.append(f"[RAG] 유사 사례 {len(results)}건 적용됨 (시트: {ws.title}, 셀: {coord})")
                 except Exception as e:
                     logs.append(f"[RAG] 검색 오류: {e}")
 
-            translation = await self._run_llm_translation(
-                source_text, 
-                target_lang, 
-                model_name=translation_model,
-                bx_style_on=bx_style_on,
-                glossary_context=glossary_dict,
-                rag_context=rag_context_str
-            )
+                translation = await self._run_llm_translation(
+                    source_text, 
+                    target_lang, 
+                    model_name=translation_model,
+                    bx_style_on=bx_style_on,
+                    glossary_context=glossary_dict,
+                    rag_context=rag_context_str,
+                    row_key=item.get('row_key', ''),
+                    rag_identity_match=rag_identity_match
+                )
             
-            ws[coord].value = translation
+            # Extract plain glossary targets (removing EXCEPTION strings if any)
+            # Use case-insensitive target language code matching
+            original_target_terms = []
+            
+            relevant_terms_for_highlight = self._get_relevant_glossary_terms(source_text)
+            if relevant_terms_for_highlight:
+                for s_term in relevant_terms_for_highlight:
+                    meta = self.glossary.get(s_term)
+                    if meta:
+                        t_meta = meta["targets"]
+                        # Try exact match, then case-insensitive match
+                        target_val = t_meta.get(target_lang_code)
+                        if not target_val:
+                            # Search by lowercase key
+                            for k, v in t_meta.items():
+                                if k.lower() == target_lang_code.lower():
+                                    target_val = v
+                                    break
+                        
+                        if target_val:
+                            # 괄호()가 포함된 경우 제외 조건일 수 있으므로 순수 텍스트만 추출하거나 전체 포함
+                            clean_val = re.sub(r'\(.*?\)', '', target_val).strip()
+                            
+                            # 반점(,)이나 슬래시(/)로 여러 단어가 기재된 경우(예: "단어1, 단어2") 각각 하이라이트 되도록 분리
+                            for extract_str in (clean_val, target_val):
+                                if not extract_str: continue
+                                original_target_terms.append(extract_str.strip())
+                                # 정규식으로 분리 (콤마 또는 슬래시 기준, 양옆 공백까지 같이 잡아냄)
+                                split_terms = [x.strip() for x in re.split(r'[,/]', extract_str) if x.strip()]
+                                if len(split_terms) > 1:
+                                    original_target_terms.extend(split_terms)
+
+            ws[coord].value = self._apply_rich_text(translation, original_target_terms)
 
             item_data = {"cell_ref": coord,"sheet_name": ws.title,"source": source_text,"target": translation}
             

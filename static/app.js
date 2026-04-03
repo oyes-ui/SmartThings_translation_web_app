@@ -279,7 +279,8 @@ startBtn.addEventListener('click', async () => {
             audit_model: document.getElementById('auditModelSelect').value,
             bx_style_enabled: document.getElementById('bxStyleToggle').checked,
             source_lang: document.getElementById('sourceLangSelect').value,
-            task_mode: taskMode
+            task_mode: taskMode,
+            rag_identity_match: document.getElementById('identityMatchCheck')?.checked ?? true
         };
 
         const res = await fetch(`${API_BASE}/start`, {
@@ -451,11 +452,14 @@ function connectRagSSE(taskId, onComplete) {
 
 document.getElementById('buildRagBtn')?.addEventListener('click', async () => {
     const buildBtn = document.getElementById('buildRagBtn');
+    const forceCheck = document.getElementById('forceRagCheck');
+    const isForce = forceCheck ? forceCheck.checked : false;
+
     buildBtn.disabled = true;
     buildBtn.textContent = '⏳ Building...';
-    log('[RAG] DB 빌드 시작...', 'system');
+    log(`[RAG] DB 빌드 시작...${isForce ? ' (강제 재빌드 모드)' : ''}`, 'system');
     try {
-        const res = await fetch(`${API_BASE}/build_rag`, { method: 'POST' });
+        const res = await fetch(`${API_BASE}/build_rag?force=${isForce}`, { method: 'POST' });
         if (!res.ok) throw new Error(await res.text());
         const { task_id } = await res.json();
         connectRagSSE(task_id, null);
