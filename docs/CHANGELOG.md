@@ -1,5 +1,20 @@
 # Changelog - SmartThings Translation Checker
 
+## [v1.3.3] - 2026-04-06
+### Added
+- **Korean RAG Auto-Detection**: Implemented automatic language detection for RAG similarity searches. If the query contains Korean characters, it defaults to the Korean source collection (`COLLECTION_KR`).
+- **Global RAG Search**: Added an "All" option to the RAG Knowledge Base Viewer, allowing semantic searches across all languages simultaneously without a mandatory target filter.
+
+### Fixed
+- **Glossary Detection Logic**: Fixed a critical bug where empty header cells in the glossary CSV were incorrectly matched as the source language column (Python's `"" in "any_string"` issue).
+- **Korean Glossary Matching**: Implemented dual-key registration for Korean source text. Glossary entries now map both the English key and the Korean term to the target translation, enabling correct matching for Korean source files.
+- **Skip Logic Enhancement**: Updated the glossary mismatch skip logic to properly handle "x" (lowercase) in the rule/remark column, ensuring consistent behavior for deactivated terms.
+
+### Changed
+- **RAG Viewer UI**: Updated the similarity search tab to support optional target language selection and improved input validation.
+
+---
+
 ## [v1.3.2] - 2026-04-03
 ### Added
 - **Hybrid RAG Logic**: Implemented a 2-stage retrieval process (Identity Match -> Semantic Similarity) with a user-configurable toggle to bypass 100% matches.

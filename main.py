@@ -424,7 +424,7 @@ async def rag_browse(
 
 
 @app.get("/api/rag_similar")
-async def rag_similar(query: str, target_lang: str, n: int = 5):
+async def rag_similar(query: str, target_lang: str = None, n: int = 5):
     """유사도 검색 테스트 (뷰어용)"""
     if not _rag_builder_available:
         raise HTTPException(status_code=500, detail="rag_db_builder 모듈 미설정")
@@ -433,7 +433,14 @@ async def rag_similar(query: str, target_lang: str, n: int = 5):
         retriever = get_retriever()
         if not retriever.is_available():
             return {"results": [], "message": "RAG DB가 비어있습니다"}
-        results = retriever.retrieve(query, target_lang, n_results=n, exclude_same_source=False)
+        
+        # 쿼리 언어 자동 감지 (한글 포함 시 Korean 소스 DB 검색)
+        import re
+        source_lang = "English"
+        if re.search(r'[가-힣]', query):
+            source_lang = "Korean"
+            
+        results = retriever.retrieve(query, target_lang, source_lang=source_lang, n_results=n, exclude_same_source=False)
         return {"results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

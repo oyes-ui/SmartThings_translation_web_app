@@ -153,7 +153,7 @@ class TranslationChecker:
                 for c in range(num_cols):
                     for r in range(3):
                         val = str(df_headers.iloc[r, c]).strip().lower()
-                        if any(term == val or term in val or val in term for term in search_terms):
+                        if val and any(term == val or term in val or val in term for term in search_terms):
                             source_col_idx = c
                             break
                     if source_col_idx != -1: break
@@ -179,6 +179,21 @@ class TranslationChecker:
             df_data = pd.read_csv(file_path, header=None, skiprows=3, encoding='utf-8-sig').fillna("")
             
             self.source_lang_code = source_lang_code
+
+            # 소스 언어가 한국어인 경우 한국어 컬럼도 찾아서 이중 키 등록에 사용
+            is_korean_source = any(
+                t in source_lang_code.lower() for t in ["korean", "한국어", "ko_kr", "ko-kr"]
+            )
+            kr_col_idx = -1
+            if is_korean_source:
+                for c in range(num_cols):
+                    for r in range(3):
+                        val = str(df_headers.iloc[r, c]).strip().lower()
+                        if val in ["한국어", "ko_kr", "ko-kr", "korean"]:
+                            kr_col_idx = c
+                            break
+                    if kr_col_idx != -1:
+                        break
 
             count = 0
             for _, row in df_data.iterrows():
@@ -207,11 +222,21 @@ class TranslationChecker:
                             targets[code_key] = val
                 
                 if targets:
+                    # 영문 key 컬럼 값으로 등록 (항상)
                     self.glossary[source_term] = {"targets": targets, "rule": rule}
                     count += 1
-            
+
+                    # 🔑 소스 언어가 한국어면 한국어 컬럼 값도 소스 키로 이중 등록
+                    # 예) 'SmartThings' 키와 함께 '스마트싱스'도 키로 등록 → 한국어 원문 검수 시 매칭 가능
+                    if is_korean_source and kr_col_idx != -1:
+                        kr_term = str(row[kr_col_idx]).strip()
+                        if kr_term and kr_term.lower() not in ("lng", "") and kr_term != source_term:
+                            if kr_term not in self.glossary:
+                                self.glossary[kr_term] = {"targets": targets, "rule": rule}
+
             self._compile_glossary_re()
-            return f"✓ 용어집 로드 성공: {count}개 항목 (매칭 기준: {source_lang_code})"
+            kr_note = " (한국어 원문 키 이중 등록 적용)" if is_korean_source and kr_col_idx != -1 else ""
+            return f"✓ 용어집 로드 성공: {len(self.glossary)}개 항목 (매칭 기준: {source_lang_code}){kr_note}"
 
         except Exception as e:
             return f"Glossary load failed: {str(e)}"
@@ -324,7 +349,7 @@ class TranslationChecker:
                         s_val = str(s_cell.value).strip() if s_cell.value is not None else ""
                         t_val = str(t_cell.value).strip() if t_cell.value is not None else ""
                         
-                        if s_val and t_val:
+                        if s_val and t_val and s_val.lower() != "x" and t_val.lower() != "x":
                             all_data.append({
                                 "cell_ref": s_cell.coordinate,
                                 "sheet_name": sheet_name,
@@ -756,6 +781,8 @@ JSON 형식으로 반환하세요:
         
         # Skip detection
         is_placeholder = (
+            source.strip().lower() == "x" or
+            target.strip().lower() == "x" or
             (len(source) <= 2 and len(target) <= 2 and source.lower() == target.lower()) or
             (not source.strip() and not target.strip()) or
             (source.strip().lower() == target.strip().lower() and len(source.strip()) < 10)
@@ -1070,7 +1097,8 @@ JSON 형식으로 반환하세요:
             rows = ((rows,),)
         for row in rows:
             for cell in row:
-                if cell.value:
+                val = str(cell.value).strip() if cell.value is not None else ""
+                if val and val.lower() != "x":
                     row_idx = cell.row
                     row_key = str(source_ws[f"B{row_idx}"].value).strip() if source_ws[f"B{row_idx}"].value else ""
                     source_data.append({'text': str(cell.value).strip(), 'coord': cell.coordinate, 'row_key': row_key})

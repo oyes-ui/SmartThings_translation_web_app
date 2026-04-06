@@ -154,7 +154,7 @@
       </div>
       <div class="field" style="max-width:220px">
         <label>타겟 언어</label>
-        <select id="simLang"><option value="">선택하세요</option></select>
+        <select id="simLang"><option value="all">전체 검색 (All)</option></select>
       </div>
       <div class="field" style="max-width:100px">
         <label>결과 수</label>
@@ -227,7 +227,15 @@ async function loadRecords(page = 1) {
 
       // Also populate similar lang select
       const ssel = document.getElementById('simLang');
-      data.langs.forEach(l => { const o = document.createElement('option'); o.value=l; o.textContent=l; ssel.appendChild(o); });
+      // "All" is already there, append the rest
+      data.langs.forEach(l => { 
+          if(l) {
+            const o = document.createElement('option'); 
+            o.value=l; 
+            o.textContent=l; 
+            ssel.appendChild(o); 
+          }
+      });
     }
 
     // Filter by group client-side if needed
@@ -314,7 +322,7 @@ async function runSimilar() {
   const n     = document.getElementById('simN').value;
   const el    = document.getElementById('simResults');
 
-  if (!query || !lang) { el.innerHTML = '<div class="empty">원문과 타겟 언어를 모두 입력하세요.</div>'; return; }
+  if (!query) { el.innerHTML = '<div class="empty">검색할 원문을 입력하세요.</div>'; return; }
 
   el.innerHTML = '<div class="loading">검색 중...</div>';
 

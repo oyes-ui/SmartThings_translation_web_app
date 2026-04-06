@@ -104,9 +104,13 @@ class RagRetriever:
 
             # Stage 1: Exact Match (Metadata Filter)
             if identity_match_enabled:
-                # note: source_text_norm 필드는 신규 인덱싱 시에만 존재함
+                # Build where clause based on target_lang
+                where_clause = {"source_text_norm": norm_query}
+                if target_lang and target_lang.lower() != "all":
+                    where_clause = {"$and": [where_clause, {"target_lang": target_lang}]}
+
                 exact_results = col.get(
-                    where={"$and": [{"source_text_norm": norm_query}, {"target_lang": target_lang}]},
+                    where=where_clause,
                     limit=n_results,
                     include=["documents", "metadatas"]
                 )
@@ -129,7 +133,7 @@ class RagRetriever:
                 query_embedding = self._embed_query(norm_query)
                 
                 query_where = None
-                if col.count() > 0:
+                if col.count() > 0 and target_lang and target_lang.lower() != "all":
                     query_where = {"target_lang": target_lang}
                 
                 results = col.query(
