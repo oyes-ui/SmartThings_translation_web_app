@@ -1,5 +1,18 @@
 # Changelog - SmartThings Translation Checker
 
+## [v1.4.0] - 2026-04-15
+### Added
+- **General Chat Prompts**: Created a comprehensive master prompt collection (`docs/prompts_for_chat.md`) allowing users to execute the translation inspection logic manually in ChatGPT or Gemini.
+- **Persistent Version History**: Integrated a "Recent Updates" summary into the README while maintaining the full historical log in the docs.
+
+### Fixed
+- **Critical Syntax Error**: Resolved a `SyntaxError` in `checker_service.py` (line 1665) caused by a bracket mismatch (`]`) within the keyword filtering logic that prevented the app from starting.
+
+### Improved
+- **Prompt Engine Documentation**: Re-organized and clarified the modular prompt architecture documentation for better developer onboarding.
+
+---
+
 ## [v1.3.3] - 2026-04-06
 ### Added
 - **Korean RAG Auto-Detection**: Implemented automatic language detection for RAG similarity searches. If the query contains Korean characters, it defaults to the Korean source collection (`COLLECTION_KR`).

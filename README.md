@@ -104,6 +104,23 @@ docker run -p 7860:7860 -e GOOGLE_API_KEY="your_key_here" translation-checker
 
 ---
 
+---
+
+## 📦 Release History (최근 주요 업데이트)
+
+상세한 변경 내역은 [CHANGELOG.md](docs/CHANGELOG.md)에서 확인할 수 있습니다.
+
+### [v1.4.0] - 2026-04-15
+- **Fixed**: `checker_service.py` 구문 오류(SyntaxError) 수정 및 앱 실행 불가 이슈 해결
+- **Added**: 일반 채팅(ChatGPT, Gemini)용 프롬프트 마스터 문서 추가 (`docs/prompts_for_chat.md`)
+- **Docs**: 프롬프트 아키텍처 및 검수 엔진 가이드 최적화
+
+### [v1.3.3] - 2026-04-06
+- **Added**: 한국어 RAG 자동 감지 및 용어집 이중 매칭(EN/KR) 로직 강화
+- **Fixed**: 용어집 CSV 로드 시 빈 헤더 컬럼 인식 오류 수정
+
+---
+
 ## 📝 사용 가이드 (User Guide)
 
 1. **Configurations (좌측 패널)**: 검수 모드, 사용할 AI 모델(Gemini/GPT), BX 스타일 적용 여부를 설정합니다.

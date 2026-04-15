@@ -330,36 +330,42 @@ class TranslationChecker:
             ws_target = wb_target[sheet_name]
             
             extracted_count = 0
-            try:
-                # Handle full range like "A:Z" or specific "A1:C10"
-                src_rows = ws_source[cell_range]
-                tgt_rows = ws_target[cell_range]
-                
-                # Normalize to list of rows if single cell
-                if not isinstance(src_rows, tuple) and not isinstance(src_rows, list): 
-                    # it might be a single cell if range is "A1"
-                    src_rows = ((src_rows,),)
-                    tgt_rows = ((tgt_rows,),)
-                elif isinstance(src_rows, tuple) and not isinstance(src_rows[0], tuple): 
-                     # Single column/row tuple structure variation check
-                     pass
+            extracted_coords = set()
+            # 쉼표로 구분된 범위를 나누고, 개별 셀(c16)이나 범위(c10:c20) 모두 지원
+            range_parts = [r.strip() for r in cell_range.split(',') if r.strip()]
+            
+            for current_range in range_parts:
+                try:
+                    # Handle full range like "A:Z" or specific "A1:C10"
+                    src_rows = ws_source[current_range]
+                    tgt_rows = ws_target[current_range]
+                    
+                    # Normalize to list of rows if single cell
+                    if not isinstance(src_rows, tuple) and not isinstance(src_rows, list): 
+                        # it might be a single cell if range is "A1"
+                        src_rows = ((src_rows,),)
+                        tgt_rows = ((tgt_rows,),)
 
-                for source_row, target_row in zip(src_rows, tgt_rows):
-                    for s_cell, t_cell in zip(source_row, target_row):
-                        s_val = str(s_cell.value).strip() if s_cell.value is not None else ""
-                        t_val = str(t_cell.value).strip() if t_cell.value is not None else ""
-                        
-                        if s_val and t_val and s_val.lower() != "x" and t_val.lower() != "x":
-                            all_data.append({
-                                "cell_ref": s_cell.coordinate,
-                                "sheet_name": sheet_name,
-                                "source": s_val,
-                                "target": t_val,
-                            })
-                            extracted_count += 1
-            except Exception as e:
-                print(f"Error accessing range {cell_range} in {sheet_name}: {e}")
-                continue
+                    for source_row, target_row in zip(src_rows, tgt_rows):
+                        for s_cell, t_cell in zip(source_row, target_row):
+                            if s_cell.coordinate in extracted_coords: 
+                                continue
+                            extracted_coords.add(s_cell.coordinate)
+                            
+                            s_val = str(s_cell.value).strip() if s_cell.value is not None else ""
+                            t_val = str(t_cell.value).strip() if t_cell.value is not None else ""
+                            
+                            if s_val and t_val and s_val.lower() != "x" and t_val.lower() != "x":
+                                all_data.append({
+                                    "cell_ref": s_cell.coordinate,
+                                    "sheet_name": sheet_name,
+                                    "source": s_val,
+                                    "target": t_val,
+                                })
+                                extracted_count += 1
+                except Exception as e:
+                    print(f"Error accessing range {current_range} in {sheet_name}: {e}")
+                    continue
             
             if extracted_count > 0:
                 processed_sheets.append(sheet_name)
@@ -442,11 +448,17 @@ class TranslationChecker:
         
         for s_term in relevant_terms:
             meta = self.glossary[s_term]
+            
+            rule = meta.get("rule", "").lower()
+            clean_rule = rule.replace(" ", "")
+            if "비활성화" in clean_rule or "deactivate" in clean_rule or "disable" in clean_rule:
+                continue
+
             t_term = meta["targets"].get(target_lang_code)
             if not t_term: continue
             
             if t_term.lower() not in tgt_lower:
-                mismatches.append(f"'{s_term}' → '{t_term}' 미적용({target_lang_code})")
+                mismatches.append(f"[미적용] '{s_term}' → '{t_term}' 미적용")
         return mismatches
 
     def _check_glossary_casing(self, source_text: str, target_text: str, target_lang_code: str):
@@ -462,6 +474,12 @@ class TranslationChecker:
         
         for s_term in relevant_terms:
             meta = self.glossary[s_term]
+
+            rule = meta.get("rule", "").lower()
+            clean_rule = rule.replace(" ", "")
+            if "비활성화" in clean_rule or "deactivate" in clean_rule or "disable" in clean_rule:
+                continue
+
             t_term = meta["targets"].get(target_lang_code)
             if not t_term: continue
             
@@ -470,7 +488,69 @@ class TranslationChecker:
                 if idx == -1: continue
                 actual = target_text[idx:idx + len(t_term)]
                 if actual.lower() == t_term.lower() and actual != t_term:
-                    issues.append(f"용어집 '{t_term}'의 대소문자 표기가 '{actual}'로 사용됨")
+                    issues.append(f"[대소문자] 용어집 '{t_term}'의 표기가 '{actual}'로 사용됨")
+        return issues
+
+    def _check_glossary_brackets(self, source_text: str, target_text: str, target_lang_code: str, target_lang: str):
+        if not self.glossary or not target_lang_code or not source_text or not target_text:
+            return []
+            
+        relevant_terms = self._get_relevant_glossary_terms(source_text)
+        if not relevant_terms:
+            return []
+
+        issues = []
+        brackets = "[]"
+        if target_lang and ("Japanese" in target_lang or "일본" in target_lang):
+            brackets = "「」"
+        b_left, b_right = brackets[0], brackets[1]
+
+        for s_term in relevant_terms:
+            meta = self.glossary[s_term]
+            
+            rule = meta.get("rule", "").lower()
+            clean_rule = rule.replace(" ", "")
+            if "비활성화" in clean_rule or "deactivate" in clean_rule or "disable" in clean_rule:
+                continue
+                
+            t_meta = meta["targets"]
+            target_val = t_meta.get(target_lang_code)
+            if not target_val:
+                for k, v in t_meta.items():
+                    if k.lower() == target_lang_code.lower():
+                        target_val = v
+                        break
+            if not target_val: 
+                continue
+                
+            clean_val = re.sub(r'\(.*?\)', '', target_val).strip()
+            if not clean_val:
+                continue
+
+            exempt_markers = ["nobracket", "대괄호생략", "대괄호제외", "대괄호없음"]
+            should_exclude_bracket = any(m in clean_rule for m in exempt_markers)
+            
+            # Check all occurrences in target_text
+            pattern = re.escape(clean_val)
+            matches = list(re.finditer(pattern, target_text, re.IGNORECASE))
+            
+            if not matches:
+                continue
+                
+            for m in matches:
+                idx = m.start()
+                has_left = (idx > 0 and target_text[idx-1] == b_left)
+                idx_end = m.end()
+                has_right = (idx_end < len(target_text) and target_text[idx_end] == b_right)
+                has_brackets = has_left and has_right
+                
+                if should_exclude_bracket and has_brackets:
+                    issues.append(f"[괄호 오류] '{clean_val}'는 규칙상 괄호 제외 대상이나 괄호({brackets})가 사용됨")
+                    break # Report once per term per cell
+                elif not should_exclude_bracket and not has_brackets:
+                    issues.append(f"[괄호 오류] '{clean_val}'에 괄호({brackets})가 누락되었을 수 있습니다 (내비게이션 경로 제외)")
+                    break # Report once per term per cell
+                    
         return issues
 
     def _analyze_sentence_case(self, target_text: str, target_lang: str):
@@ -740,29 +820,65 @@ JSON 형식으로 반환하세요:
         except Exception as e:
             return f"[역번역 오류]: {e}"
 
-    def _apply_rich_text(self, text: str, keywords: list):
-        if not text or not keywords:
-            return text
+    def _apply_rich_text(self, text: str, keywords: list, base_font=None):
+        """
+        텍스트 내의 키워드를 파란색으로 하이라이트하되, 나머지 텍스트는 base_font의 스타일을 유지합니다.
+        """
+        if not text:
+            return ""
+        if not keywords:
+            return text # 키워드가 없으면 일반 문자열 반환 (교체하지 않음으로써 기존 스타일 보존)
             
         sorted_keywords = sorted([k.strip() for k in keywords if k.strip()], key=len, reverse=True)
         if not sorted_keywords:
             return text
 
-        matches = list(re.finditer('|'.join(re.escape(k) for k in sorted_keywords), text, flags=re.IGNORECASE))
+        # 정규표현식으로 키워드 위치 찾기
+        pattern = '|'.join(re.escape(k) for k in sorted_keywords)
+        matches = list(re.finditer(pattern, text, flags=re.IGNORECASE))
         if not matches:
             return text
+
+        # 베이스 폰트 정보 추출 (없으면 기본값)
+        # InlineFont는 Font와 달리 'name' 대신 'rFont' 사용
+        font_params = {}
+        if base_font:
+            font_params = {
+                "rFont": base_font.name,
+                "sz": base_font.sz,
+                "b": base_font.b,
+                "i": base_font.i,
+                "u": base_font.u,
+                "strike": base_font.strike,
+                "family": base_font.family,
+                "charset": base_font.charset,
+                "outline": base_font.outline,
+                "shadow": base_font.shadow,
+                "condense": base_font.condense,
+                "extend": base_font.extend,
+                "vertAlign": base_font.vertAlign,
+                "scheme": base_font.scheme,
+            }
+
+        def get_font(is_keyword=False):
+            params = font_params.copy()
+            if is_keyword:
+                params["color"] = "0000FF"  # 키워드만 파란색 명시, 나머지는 셀 기본 색상 상속
+            # is_keyword=False 시 color 미설정 → Excel 셀 레벨 스타일에서 색상 상속
+            return InlineFont(**params)
+
 
         parts = []
         last_end = 0
         for m in matches:
             start, end = m.span()
             if start > last_end:
-                parts.append((text[last_end:start], InlineFont(color="000000")))
-            parts.append((text[start:end], InlineFont(color="0000FF")))
+                parts.append((text[last_end:start], get_font(False)))
+            parts.append((text[start:end], get_font(True)))
             last_end = end
             
         if last_end < len(text):
-            parts.append((text[last_end:], InlineFont(color="000000")))
+            parts.append((text[last_end:], get_font(False)))
 
         rt = CellRichText()
         for segment_text, segment_font in parts:
@@ -795,6 +911,7 @@ JSON 형식으로 반환하세요:
         
         case_report, simple_case_fix = self._analyze_sentence_case(target, tgt_lang)
         glossary_case_issues = self._check_glossary_casing(source, target, tgt_code)
+        glossary_bracket_issues = self._check_glossary_brackets(source, target, tgt_code, tgt_lang)
         
         # Construct Partial Report Sections
         case_section = "대소문자 하드룰(문장형) 점검:\n" + case_report if case_report else "별도 지적 사항 없음."
@@ -804,6 +921,7 @@ JSON 형식으로 반환하세요:
         glossary_parts = []
         if pre_mismatch: glossary_parts.append("용어집 사전 감지:\n- " + "\n- ".join(pre_mismatch))
         if glossary_case_issues: glossary_parts.append("용어집 대소문자 표기 점검:\n" + "\n".join(f"- {msg}" for msg in glossary_case_issues))
+        if glossary_bracket_issues: glossary_parts.append("용어집 괄호 규정 점검:\n" + "\n".join(f"- {msg}" for msg in glossary_bracket_issues))
         glossary_section = "\n\n".join(glossary_parts) if glossary_parts else "별도 지적 사항 없음."
 
         # RAG consistency check (Post-translation/audit, does not use LLM)
@@ -1061,7 +1179,7 @@ JSON 형식으로 반환하세요:
         
         # 1. Load Excel
         try:
-            wb = openpyxl.load_workbook(source_file_path)
+            wb = openpyxl.load_workbook(source_file_path, rich_text=True)
         except Exception as e:
             yield {"type": "error", "message": f"Excel Load Error: {str(e)}"}
             return
@@ -1092,16 +1210,29 @@ JSON 형식으로 반환하세요:
         
         # 3. Extract source data
         source_data = []
-        rows = source_ws[cell_range]
-        if not isinstance(rows, tuple) and not isinstance(rows, list):
-            rows = ((rows,),)
-        for row in rows:
-            for cell in row:
-                val = str(cell.value).strip() if cell.value is not None else ""
-                if val and val.lower() != "x":
-                    row_idx = cell.row
-                    row_key = str(source_ws[f"B{row_idx}"].value).strip() if source_ws[f"B{row_idx}"].value else ""
-                    source_data.append({'text': str(cell.value).strip(), 'coord': cell.coordinate, 'row_key': row_key})
+        extracted_coords = set()
+        # 콤마로 구분된 여러 범위나 단일 셀(c16, c21)을 모두 지원합니다.
+        range_parts = [r.strip() for r in cell_range.split(',') if r.strip()]
+        
+        for current_range in range_parts:
+            try:
+                rows = source_ws[current_range]
+                if not isinstance(rows, tuple) and not isinstance(rows, list):
+                    rows = ((rows,),)
+                for row in rows:
+                    for cell in row:
+                        if cell.coordinate in extracted_coords:
+                            continue
+                        extracted_coords.add(cell.coordinate)
+                        
+                        val = str(cell.value).strip() if cell.value is not None else ""
+                        if val and val.lower() != "x":
+                            row_idx = cell.row
+                            row_key = str(source_ws[f"B{row_idx}"].value).strip() if source_ws[f"B{row_idx}"].value else ""
+                            source_data.append({'text': str(cell.value).strip(), 'coord': cell.coordinate, 'row_key': row_key})
+            except Exception as e:
+                yield {"type": "error", "message": f"Error accessing range {current_range}: {e}"}
+                continue
 
         if not source_data:
             yield {"type": "error", "message": "No source text found in range."}
@@ -1177,6 +1308,12 @@ JSON 형식으로 반환하세요:
                 for s_term in relevant_terms_for_highlight:
                     meta = self.glossary.get(s_term)
                     if meta:
+                        # Skip deactivated terms for highlighting
+                        rule = meta.get("rule", "").lower()
+                        clean_rule = rule.replace(" ", "")
+                        if "비활성화" in clean_rule or "deactivate" in clean_rule or "disable" in clean_rule:
+                            continue
+
                         t_meta = meta["targets"]
                         # Try exact match, then case-insensitive match
                         target_val = t_meta.get(target_lang_code)
@@ -1200,7 +1337,8 @@ JSON 형식으로 반환하세요:
                                 if len(split_terms) > 1:
                                     original_target_terms.extend(split_terms)
 
-            ws[coord].value = self._apply_rich_text(translation, original_target_terms)
+            target_cell = ws[coord]
+            target_cell.value = self._apply_rich_text(translation, original_target_terms, base_font=target_cell.font)
 
             item_data = {"cell_ref": coord,"sheet_name": ws.title,"source": source_text,"target": translation}
             
@@ -1289,6 +1427,250 @@ JSON 형식으로 반환하세요:
         )
         valid_results = [r for r in ordered_results if r is not None]
         report_text = header + "".join(valid_results)
+        
+        yield {
+            "type": "complete", 
+            "output_data": report_text, 
+            "excel_path": out_excel_path
+        }
+
+
+    async def run_highlight_only_pipeline_generator(
+        self,
+        source_file_path,
+        cell_range,
+        sheet_lang_map,
+        glossary_file_path=None,
+        selected_sheets=None,
+        source_sheet_name=None,
+        source_lang="English"
+    ):
+        """
+        Highlights glossary terms in target sheets without translating.
+        Relies on the target text already being present in the Excel file.
+        """
+        yield {"type": "log", "message": "Starting Highlight Only Pipeline..."}
+        
+        try:
+            wb = openpyxl.load_workbook(source_file_path, rich_text=True)
+        except Exception as e:
+            yield {"type": "error", "message": f"Excel Load Error: {str(e)}"}
+            return
+
+        if not source_sheet_name:
+            source_sheet_name = "KR(한국)"
+        if source_sheet_name not in wb.sheetnames:
+            yield {"type": "error", "message": f"Source sheet '{source_sheet_name}' not found."}
+            return
+
+        if source_sheet_name in sheet_lang_map:
+            source_lang = sheet_lang_map[source_sheet_name].get("lang", source_lang)
+
+        # Load Glossary
+        if glossary_file_path:
+            src_lookup = source_lang
+            if source_sheet_name in sheet_lang_map:
+                s_info = sheet_lang_map[source_sheet_name]
+                src_lookup = s_info.get('code', s_info.get('lang', source_lang))
+
+            yield {"type": "log", "message": f"Loading glossary (Match Base: {src_lookup})..."}
+            msg = await self.load_glossary_from_file(glossary_file_path, src_lookup)
+            yield {"type": "log", "message": msg}
+            
+        if not self.glossary:
+            yield {"type": "error", "message": "No glossary data mapped. Skipping highlight."}
+            return
+
+        source_ws = wb[source_sheet_name]
+        source_data = []
+        extracted_coords = set()
+        range_parts = [r.strip() for r in cell_range.split(',') if r.strip()]
+        
+        for current_range in range_parts:
+            try:
+                rows = source_ws[current_range]
+                if not isinstance(rows, tuple) and not isinstance(rows, list):
+                    rows = ((rows,),)
+                for row in rows:
+                    for cell in row:
+                        if cell.coordinate in extracted_coords:
+                            continue
+                        extracted_coords.add(cell.coordinate)
+                        val = str(cell.value).strip() if cell.value is not None else ""
+                        if val and val.lower() != "x":
+                            row_idx = cell.row
+                            row_key = str(source_ws[f"B{row_idx}"].value).strip() if source_ws[f"B{row_idx}"].value else ""
+                            source_data.append({'text': val, 'coord': cell.coordinate, 'row_key': row_key})
+            except Exception as e:
+                yield {"type": "error", "message": f"Error accessing range {current_range}: {e}"}
+                continue
+
+        if not source_data:
+            yield {"type": "error", "message": "No source text found in range."}
+            return
+
+        available_sheets = wb.sheetnames
+        if selected_sheets:
+            target_sheets = [s for s in selected_sheets if s in available_sheets and s != source_sheet_name]
+        else:
+            target_sheets = [s for s in available_sheets if s in sheet_lang_map and s != source_sheet_name]
+
+        total_cells = len(source_data) * len(target_sheets)
+        yield {"type": "log", "message": f"Plan: {len(target_sheets)} sheets, Total {total_cells} cells."}
+        yield {"type": "progress", "current": 0, "total": total_cells, "percent": 0}
+
+        completed_count = 0
+        highlight_stats = {} # Count of highlights per sheet
+
+        import asyncio
+
+        async def highlight_cell_worker(ws, index, item, target_lang, target_lang_code):
+            nonlocal completed_count
+            source_text = item['text']
+            coord = item['coord']
+            
+            target_cell = ws[coord]
+            target_text = str(target_cell.value).strip() if target_cell.value is not None else ""
+            logs = []
+            highlight_count = 0
+            bracket_issues = []
+
+            # If target has text, calculate highlights based on source
+            if target_text and target_text.lower() != "x":
+                # 1. Bracket Check
+                bracket_issues = self._check_glossary_brackets(source_text, target_text, target_lang_code, target_lang)
+                if bracket_issues:
+                    logs.extend(bracket_issues)
+                
+                # 2. Mismatch Check
+                mismatch_issues = self._precheck_glossary_mismatch(source_text, target_text, target_lang_code)
+                if mismatch_issues:
+                    logs.extend(mismatch_issues)
+                
+                # 3. Casing Check
+                casing_issues = self._check_glossary_casing(source_text, target_text, target_lang_code)
+                if casing_issues:
+                    logs.extend(casing_issues)
+
+                original_target_terms = []
+                relevant_terms = self._get_relevant_glossary_terms(source_text)
+                if relevant_terms:
+                    for s_term in relevant_terms:
+                        meta = self.glossary.get(s_term)
+                        if meta:
+                            # Skip deactivated terms
+                            rule = meta.get("rule", "").lower()
+                            clean_rule = rule.replace(" ", "")
+                            if "비활성화" in clean_rule or "deactivate" in clean_rule or "disable" in clean_rule:
+                                continue
+
+                            t_meta = meta["targets"]
+                            target_val = t_meta.get(target_lang_code)
+                            if not target_val:
+                                for k, v in t_meta.items():
+                                    if k.lower() == target_lang_code.lower():
+                                        target_val = v
+                                        break
+                            
+                            if target_val:
+                                clean_val = re.sub(r'\(.*?\)', '', target_val).strip()
+                                for extract_str in (clean_val, target_val):
+                                    if not extract_str: continue
+                                    original_target_terms.append(extract_str.strip())
+                                    split_terms = [x.strip() for x in re.split(r'[,/]', extract_str) if x.strip()]
+                                    if len(split_terms) > 1:
+                                        original_target_terms.extend(split_terms)
+                
+                # Apply rich text
+                if original_target_terms:
+                    # We inject the current target cell text instead of a generated translation
+                    target_cell.value = self._apply_rich_text(target_text, original_target_terms, base_font=target_cell.font)
+                    
+                    # Estimate highlights by checking string occurrences
+                    sorted_kw = sorted([k.strip() for k in original_target_terms if k.strip()], key=len, reverse=True)
+                    if sorted_kw:
+                        pattern = '|'.join(re.escape(k) for k in sorted_kw)
+                        matches = list(re.finditer(pattern, target_text, flags=re.IGNORECASE))
+                        highlight_count = len(matches)
+                        if matches:
+                            logs.append(f"[{ws.title}] 셀 {coord}: {highlight_count}개 키워드 하이라이트 적용")
+
+            res = {
+                "sheet_name": ws.title,
+                "cell_ref": coord,
+                "highlight_count": highlight_count,
+                "logs": logs
+            }
+            return index, res
+
+        tasks = []
+        idx = 0
+        for sheet_name in target_sheets:
+            ws = wb[sheet_name]
+            sheet_info = sheet_lang_map[sheet_name]
+            target_lang = sheet_info['lang']
+            target_lang_code = sheet_info['code']
+            highlight_stats[sheet_name] = {"cells_processed": 0, "total_highlights": 0}
+            
+            for item in source_data:
+                tasks.append(highlight_cell_worker(ws, idx, item, target_lang, target_lang_code))
+                idx += 1
+
+        ordered_results = [None] * len(tasks)
+
+        for future in asyncio.as_completed(tasks):
+            try:
+                index, res = await future
+                completed_count += 1
+                ordered_results[index] = res # CRITICAL FIX: Populate result list
+                
+                s_name = res["sheet_name"]
+                highlight_stats[s_name]["cells_processed"] += 1
+                highlight_stats[s_name]["total_highlights"] += res["highlight_count"]
+
+                for msg in res.get("logs", []):
+                    yield {"type": "log", "message": msg}
+
+                percent = int((completed_count / total_cells) * 100)
+                yield {
+                    "type": "progress", 
+                    "current": completed_count, 
+                    "total": total_cells, 
+                    "percent": percent, 
+                    "log": f"[{res['sheet_name']}] {res['cell_ref']} 검토 완료"
+                }
+            except Exception as e:
+                yield {"type": "log", "message": f"Cell processing error: {str(e)}"}
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        out_excel_path = source_file_path.replace(".xlsx", f"_highlighted_{timestamp}.xlsx")
+        wb.save(out_excel_path)
+        
+        # Build Report Text
+        header = (
+            f"--- 하이라이트 전용 검수 보고서 ---\n"
+            f"생성일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"총 대상 셀 수: {total_cells}개\n\n"
+        )
+        
+        # Highlight Only 모드에서도 괄호 오류 등을 기록하기 위해 ordered_results 활용
+        report_lines = []
+        for s_name, stats in highlight_stats.items():
+            report_lines.append(f"시트: {s_name} | 처리 완료 셀: {stats['cells_processed']} | 총 적용된 하이라이트: {stats['total_highlights']} 개")
+        
+        detail_lines = []
+        for res in ordered_results:
+            if res and res.get("logs"):
+                # logs에 [괄호 오류], [미적용], [대소문자] 등이 있으면 상세 기록에 추가
+                issue_logs = [log for log in res["logs"] if any(k in log for k in ["[오류", "[미적용", "[대소문자"])]
+                if issue_logs:
+                    detail_lines.append(f"\n[{res['sheet_name']} 시트 | {res['cell_ref']} 셀]")
+                    for log in issue_logs:
+                        detail_lines.append(f"  - {log}")
+        
+        report_text = header + "\n".join(report_lines)
+        if detail_lines:
+            report_text += "\n\n[주요 용어집 준수여부 점검 알림]" + "\n".join(detail_lines)
         
         yield {
             "type": "complete", 

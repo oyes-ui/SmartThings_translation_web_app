@@ -213,6 +213,10 @@ function updateModeVisibility() {
         aiModelItem.classList.add('hidden');
         auditModelItem.classList.remove('hidden');
         bxStyleItem.classList.add('hidden');
+    } else if (mode === 'highlight_only') {
+        aiModelItem.classList.add('hidden');
+        auditModelItem.classList.add('hidden');
+        bxStyleItem.classList.add('hidden');
     }
 
     // Update Button Text
@@ -222,6 +226,8 @@ function updateModeVisibility() {
         startBtn.textContent = "Start Translation Only";
     } else if (mode === 'inspect_only') {
         startBtn.textContent = "Start Inspection Only";
+    } else if (mode === 'highlight_only') {
+        startBtn.textContent = "Start Highlighting Only";
     }
 }
 

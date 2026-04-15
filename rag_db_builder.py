@@ -44,10 +44,11 @@ COLLECTION_US = "smartthings_us_source"  # Group B용 (US 기준)
 
 # ─── Source 분기 정의 ─────────────────────────────────────────────────────────
 # Group A: KR(한국) 시트를 Source로 사용하는 언어
+# US(미국)는 원어민 첨삭 영어로, KR 소스의 타겟으로도 함께 인덱싱됨 (KR→US 쌍)
 GROUP_A_SOURCE_SHEETS = {"JA(일본)", "CN(중국)", "TW(대만)"}
-GROUP_A_SHEETS = GROUP_A_SOURCE_SHEETS
+GROUP_A_SHEETS = GROUP_A_SOURCE_SHEETS | {"US(미국)"}  # US를 KR 타겟으로 추가
 GROUP_A_KEY = "KR(한국)"   # Group A의 Source 시트명
-GROUP_B_KEY = "US(미국)"   # Group B의 Source 시트명
+GROUP_B_KEY = "US(미국)"   # Group B의 Source 시트명 (다른 언어들의 영어 소스)
 
 # 임베딩 모델
 EMBEDDING_MODEL = "gemini-embedding-001"
@@ -247,8 +248,9 @@ def build_file(
     records = []  # (id, source_group, source_text, target_lang, target_sheet, target_text, section_code)
 
     for sheet_name, rows in sheets.items():
-        # Source 시트 자체는 target으로 저장하지 않음
-        if sheet_name in (GROUP_A_KEY, GROUP_B_KEY):
+        # KR 소스 시트 자체는 target으로 저장하지 않음
+        # US(미국)는 KR의 원어민 첨삭 번역본이므로 KR→US 쌍으로 저장 (skip 제외)
+        if sheet_name == GROUP_A_KEY:
             continue
 
         # Group 분기
@@ -296,28 +298,34 @@ def build_file(
     def upsert_to_collection(col, recs):
         if not recs:
             return
-        # 임베딩은 원본 텍스트(raw)를 사용거나 정규화된 텍스트를 사용할 수 있음. 
-        # 여기서는 좀 더 정제된 정규화 텍스트를 임베딩에 사용하여 유사도를 높임.
-        texts = [r["source_text_norm"] for r in recs]
+            
+        # 중복 제거: source_text_norm을 기준으로 고유한 원문 벡터 1개만 생성
+        unique_recs = []
+        seen = set()
+        for r in recs:
+            if r["source_text_norm"] not in seen:
+                seen.add(r["source_text_norm"])
+                unique_recs.append(r)
+
+        # 임베딩은 가장 먼저 발견된 대표 원문 텍스트를 대상
+        texts = [r["source_text_norm"] for r in unique_recs]
         try:
             embeddings = embed_texts(gemini_client, texts)
         except Exception as e:
             log_fn(f"  ⚠ 임베딩 오류: {e}")
             embeddings = [[0.0] * 768] * len(texts)  # fallback 더미
 
+        # Chroma에는 target 정보 무시 (SQLite가 처리)
         col.upsert(
-            ids=[r["id"] for r in recs],
+            ids=[r["id"] for r in unique_recs],
             embeddings=embeddings,
-            documents=[r["source_text_raw"] for r in recs],
+            documents=[r["source_text_raw"] for r in unique_recs],
             metadatas=[{
                 "story_id": r["story_id"],
                 "section_code": r["section_code"],
                 "source_lang": r["source_lang"],
-                "source_text_norm": r["source_text_norm"],
-                "target_lang": r["target_lang"],
-                "target_text": r["target_text"],
-                "original_file": r["original_file"]
-            } for r in recs]
+                "source_text_norm": r["source_text_norm"]
+            } for r in unique_recs]
         )
 
     upsert_to_collection(col_kr, kr_recs)

@@ -145,23 +145,33 @@ async def integrated_translation_task(task_id, params):
         if params.glossary_file_id:
             glossary_path = os.path.join(UPLOAD_DIR, params.glossary_file_id)
 
-        await queue.put({"type": "log", "message": "Starting integrated translation and audit pipeline..."})
-        
-        # Run generator
-        gen = checker.run_integrated_pipeline_generator(
-            source_file_path=source_path,
-            cell_range=params.cell_range,
-            bx_style_on=params.bx_style_enabled,
-            sheet_lang_map=params.sheet_langs,
-            translation_model=params.translation_model,
-            audit_model=params.audit_model,
-            glossary_file_path=glossary_path,
-            selected_sheets=params.sheets,
-            source_sheet_name=params.source_sheet,
-            skip_audit=(params.task_mode == "translate_only"),
-            source_lang=params.source_lang,
-            rag_identity_match=params.rag_identity_match
-        )
+        if params.task_mode == "highlight_only":
+            await queue.put({"type": "log", "message": "Starting highlight only pipeline..."})
+            gen = checker.run_highlight_only_pipeline_generator(
+                source_file_path=source_path,
+                cell_range=params.cell_range,
+                sheet_lang_map=params.sheet_langs,
+                glossary_file_path=glossary_path,
+                selected_sheets=params.sheets,
+                source_sheet_name=params.source_sheet,
+                source_lang=params.source_lang
+            )
+        else:
+            await queue.put({"type": "log", "message": "Starting integrated translation and audit pipeline..."})
+            gen = checker.run_integrated_pipeline_generator(
+                source_file_path=source_path,
+                cell_range=params.cell_range,
+                bx_style_on=params.bx_style_enabled,
+                sheet_lang_map=params.sheet_langs,
+                translation_model=params.translation_model,
+                audit_model=params.audit_model,
+                glossary_file_path=glossary_path,
+                selected_sheets=params.sheets,
+                source_sheet_name=params.source_sheet,
+                skip_audit=(params.task_mode == "translate_only"),
+                source_lang=params.source_lang,
+                rag_identity_match=params.rag_identity_match
+            )
         
         async for event in gen:
             if event["type"] == "complete":
@@ -297,7 +307,7 @@ async def start_inspection(req: StartRequest, background_tasks: BackgroundTasks)
     if req.task_mode == "inspect_only":
         background_tasks.add_task(background_inspection_task, task_id, req)
     else:
-        # For 'integrated' and 'translate_only', we use integrated_translation_task
+        # For 'integrated', 'translate_only', and 'highlight_only', we use integrated_translation_task
         background_tasks.add_task(integrated_translation_task, task_id, req)
     
     return {"task_id": task_id}
@@ -368,6 +378,7 @@ async def rag_status():
 async def rag_browse(
     story_id: str = None,
     target_lang: str = None,
+    source_group: str = None,
     search: str = None,
     page: int = 1,
     page_size: int = 30
@@ -392,6 +403,8 @@ async def rag_browse(
             where_clauses.append("story_id = ?"); params.append(story_id)
         if target_lang:
             where_clauses.append("target_lang = ?"); params.append(target_lang)
+        if source_group:
+            where_clauses.append("source_group = ?"); params.append(source_group)
         if search:
             where_clauses.append("(source_text LIKE ? OR target_text LIKE ?)")
             params += [f"%{search}%", f"%{search}%"]

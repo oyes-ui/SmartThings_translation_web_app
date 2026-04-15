@@ -29,7 +29,10 @@ from rag_db_builder import (
     CHROMA_DIR,
     get_gemini_client,
     get_chroma_collections,
+    SQLITE_PATH,
+    get_sqlite_conn
 )
+import sqlite3
 import chromadb
 from google.genai import types
 
@@ -102,44 +105,43 @@ class RagRetriever:
             norm_query = normalize_text(source_text)
             examples = []
 
-            # Stage 1: Exact Match (Metadata Filter)
-            if identity_match_enabled:
-                # Build where clause based on target_lang
-                where_clause = {"source_text_norm": norm_query}
-                if target_lang and target_lang.lower() != "all":
-                    where_clause = {"$and": [where_clause, {"target_lang": target_lang}]}
-
-                exact_results = col.get(
-                    where=where_clause,
-                    limit=n_results,
-                    include=["documents", "metadatas"]
-                )
-
-                if exact_results["ids"]:
-                    for i, doc_id in enumerate(exact_results["ids"]):
-                        meta = exact_results["metadatas"][i]
-                        source = exact_results["documents"][i]
-                        examples.append({
-                            "source": source,
-                            "target": meta.get("target_text", ""),
-                            "section_code": meta.get("section_code", ""),
-                            "story_id": meta.get("story_id", ""),
-                            "match_type": "exact",
-                            "similarity_score": 1.0
-                        })
+            # DB Connection directly from builder utility
+            conn = get_sqlite_conn()
+            cursor = conn.cursor()
+            
+            # Stage 1: Exact Match (SQLite)
+            if identity_match_enabled and target_lang and target_lang.lower() != "all":
+                # Check for exact equivalent in sqlite using python side comparison if needed, however 
+                # SQLite exact match requires exact text. Since `norm_query` might strip characters,
+                # let's try direct exact match using source_text. Wait, the user query might be slightly differently formatted.
+                # Actually, doing exact source match in SQLite is best.
+                cursor.execute("""
+                    SELECT source_text, target_text, section_code, story_id 
+                    FROM rag_pairs 
+                    WHERE source_group = ? AND source_text = ? AND target_lang = ?
+                    LIMIT ?
+                """, ("kr" if col.name == COLLECTION_KR else "us", source_text, target_lang, n_results))
+                
+                rows = cursor.fetchall()
+                for row in rows:
+                    source_ext, tgt_ext, sec_ext, story_ext = row
+                    examples.append({
+                        "source": source_ext,
+                        "target": tgt_ext,
+                        "section_code": sec_ext,
+                        "story_id": story_ext,
+                        "match_type": "exact",
+                        "similarity_score": 1.0
+                    })
 
             # Stage 2: Semantic Fallback (만약 결과가 부족하면)
             if len(examples) < n_results:
                 query_embedding = self._embed_query(norm_query)
                 
-                query_where = None
-                if col.count() > 0 and target_lang and target_lang.lower() != "all":
-                    query_where = {"target_lang": target_lang}
-                
+                # Fetch closest UNIQUE sources from Chroma
                 results = col.query(
                     query_embeddings=[query_embedding],
-                    n_results=n_results + 2,
-                    where=query_where,
+                    n_results=10,  # Search raw best hits globally
                     include=["documents", "metadatas", "distances"]
                 )
 
@@ -147,27 +149,48 @@ class RagRetriever:
                     for i, doc_id in enumerate(results["ids"][0]):
                         if len(examples) >= n_results: break
                         
-                        # 이미 exact match로 찾은 건 스킵 (ID 중복 방지)
-                        if any(ex.get("source") == results["documents"][0][i] for ex in examples):
+                        # 이미 exact match로 찾은 건 스킵 (ID 중복 또는 텍스트 중복 방지)
+                        source = results["documents"][0][i]
+                        meta = results["metadatas"][0][i]
+                        source_norm = meta.get("source_text_norm", normalize_text(source))
+                        
+                        if any(ex.get("source") == source for ex in examples):
                             continue
                             
-                        meta = results["metadatas"][0][i]
-                        source = results["documents"][0][i]
                         distance = results["distances"][0][i]
 
                         # 거리가 너무 먼 경우 제외 (유사도 임계값: 코사인 거리 < 0.8)
                         if distance > 0.8:
                             continue
 
+                        # Fetch target text organically from SQLite
+                        tgt_text = ""
+                        sec_code = meta.get("section_code", "")
+                        story_code = meta.get("story_id", "")
+                        
+                        if target_lang and target_lang.lower() != "all":
+                            cursor.execute("""
+                                SELECT target_text, section_code, story_id 
+                                FROM rag_pairs 
+                                WHERE source_group = ? AND source_text = ? AND target_lang = ?
+                                LIMIT 1
+                            """, ("kr" if col.name == COLLECTION_KR else "us", source, target_lang))
+                            row = cursor.fetchone()
+                            if row:
+                                tgt_text, sec_code, story_code = row
+                            else:
+                                continue # No matching target_lang translation found for this source
+                        
                         examples.append({
                             "source": source,
-                            "target": meta.get("target_text", ""),
-                            "section_code": meta.get("section_code", ""),
-                            "story_id": meta.get("story_id", ""),
+                            "target": tgt_text,
+                            "section_code": sec_code,
+                            "story_id": story_code,
                             "match_type": "semantic",
                             "similarity_score": round(1 - distance, 3)
                         })
-
+            
+            conn.close()
             return examples
 
         except Exception as e:
@@ -235,7 +258,7 @@ if __name__ == "__main__":
 
     print(f"\n🔍 검색 쿼리: \"{args.test}\" → [{args.lang}]")
     print("-" * 60)
-    prompt_text = retriever.format_for_prompt(args.test, args.lang, args.n)
+    prompt_text = retriever.format_for_prompt(args.test, args.lang, n_results=args.n)
     if prompt_text:
         print(prompt_text)
     else:
