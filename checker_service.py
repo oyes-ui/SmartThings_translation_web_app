@@ -596,7 +596,7 @@ class TranslationChecker:
         if simple_fixed_text == target_text:
             simple_fixed_text = None
         return report, simple_fixed_text
-    async def _run_llm_translation(self, text, target_lang, model_name="gemini-2.5-flash", bx_style_on=False, glossary_context=None, rag_context=None, row_key="", rag_identity_match=True):
+    async def _run_llm_translation(self, text, target_lang, model_name="gemini-2.5-flash", bx_style_on=False, glossary_context=None, rag_context=None, row_key="", source_lang="English", rag_identity_match=True):
         """
         내부 전용 번역 메서드: JSON 프롬프트 생성 및 LLM 호출을 담당합니다.
         """
@@ -662,9 +662,15 @@ class TranslationChecker:
             )
 
         # RAG 예시 주입: 유사 번역 사례 최대 2건을 시스템 프롬프트에 첨부
-        if self.rag_retriever:
+        if self.rag_retriever and not rag_context:
             try:
-                rag_context = self.rag_retriever.format_for_prompt(text, target_lang, n_results=2, identity_match_enabled=rag_identity_match)
+                rag_context = self.rag_retriever.format_for_prompt(
+                    text,
+                    target_lang,
+                    source_lang=source_lang,
+                    n_results=2,
+                    identity_match_enabled=rag_identity_match
+                )
                 if rag_context:
                     system_prompt = system_prompt + f"\n\n{rag_context}\n\nUse these examples as style and terminology reference to maintain consistency."
             except Exception:
@@ -1296,6 +1302,7 @@ JSON 형식으로 반환하세요:
                     glossary_context=glossary_dict,
                     rag_context=rag_context_str,
                     row_key=item.get('row_key', ''),
+                    source_lang=source_lang,
                     rag_identity_match=rag_identity_match
                 )
             
@@ -1358,7 +1365,7 @@ JSON 형식으로 반환하세요:
                     "logs": logs
                 }
             else:
-                res = await self.process_item(item_data, source_lang, target_lang, sheet_lang_map, target_lang_code)
+                res = await self.process_item(item_data, source_lang, target_lang, sheet_lang_map, target_lang_code, rag_identity_match=rag_identity_match)
                 res["logs"] = logs
             
             return index, res
@@ -1677,4 +1684,3 @@ JSON 형식으로 반환하세요:
             "output_data": report_text, 
             "excel_path": out_excel_path
         }
-

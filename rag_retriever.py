@@ -102,6 +102,7 @@ class RagRetriever:
 
         try:
             col = self._get_collection(source_lang)
+            source_group = "kr" if col.name == COLLECTION_KR else "us"
             norm_query = normalize_text(source_text)
             examples = []
 
@@ -120,7 +121,7 @@ class RagRetriever:
                     FROM rag_pairs 
                     WHERE source_group = ? AND source_text = ? AND target_lang = ?
                     LIMIT ?
-                """, ("kr" if col.name == COLLECTION_KR else "us", source_text, target_lang, n_results))
+                """, (source_group, source_text, target_lang, n_results))
                 
                 rows = cursor.fetchall()
                 for row in rows:
@@ -128,6 +129,7 @@ class RagRetriever:
                     examples.append({
                         "source": source_ext,
                         "target": tgt_ext,
+                        "target_lang": target_lang,
                         "section_code": sec_ext,
                         "story_id": story_ext,
                         "match_type": "exact",
@@ -167,23 +169,38 @@ class RagRetriever:
                         tgt_text = ""
                         sec_code = meta.get("section_code", "")
                         story_code = meta.get("story_id", "")
+                        matched_lang = target_lang
                         
                         if target_lang and target_lang.lower() != "all":
                             cursor.execute("""
-                                SELECT target_text, section_code, story_id 
-                                FROM rag_pairs 
+                                SELECT target_text, section_code, story_id, target_lang
+                                FROM rag_pairs
                                 WHERE source_group = ? AND source_text = ? AND target_lang = ?
                                 LIMIT 1
-                            """, ("kr" if col.name == COLLECTION_KR else "us", source, target_lang))
+                            """, (source_group, source, target_lang))
                             row = cursor.fetchone()
                             if row:
-                                tgt_text, sec_code, story_code = row
+                                tgt_text, sec_code, story_code, matched_lang = row
                             else:
                                 continue # No matching target_lang translation found for this source
+                        else:
+                            cursor.execute("""
+                                SELECT target_text, section_code, story_id, target_lang
+                                FROM rag_pairs
+                                WHERE source_group = ? AND source_text = ?
+                                ORDER BY target_lang
+                                LIMIT 1
+                            """, (source_group, source))
+                            row = cursor.fetchone()
+                            if row:
+                                tgt_text, sec_code, story_code, matched_lang = row
+                            else:
+                                continue
                         
                         examples.append({
                             "source": source,
                             "target": tgt_text,
+                            "target_lang": matched_lang,
                             "section_code": sec_code,
                             "story_id": story_code,
                             "match_type": "semantic",

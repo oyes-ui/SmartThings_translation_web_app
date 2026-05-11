@@ -295,9 +295,32 @@ def build_file(
     kr_recs = [r for r in records if r["source_group"] == "kr"]
     us_recs = [r for r in records if r["source_group"] == "us"]
 
-    def upsert_to_collection(col, recs):
+    def delete_existing_file_records():
+        for col in (col_kr, col_us):
+            stale_ids = set()
+            try:
+                existing = col.get(where={"original_file": filename})
+                stale_ids.update(existing.get("ids", []))
+            except Exception:
+                pass
+
+            try:
+                legacy = col.get()
+                stale_ids.update(
+                    item_id for item_id in legacy.get("ids", [])
+                    if item_id.startswith(f"{filename}::")
+                )
+            except Exception:
+                pass
+
+            if stale_ids:
+                col.delete(ids=list(stale_ids))
+
+        conn.execute("DELETE FROM rag_pairs WHERE original_file = ?", (filename,))
+
+    def prepare_collection_payload(recs):
         if not recs:
-            return
+            return None
             
         # 중복 제거: source_text_norm을 기준으로 고유한 원문 벡터 1개만 생성
         unique_recs = []
@@ -313,23 +336,29 @@ def build_file(
             embeddings = embed_texts(gemini_client, texts)
         except Exception as e:
             log_fn(f"  ⚠ 임베딩 오류: {e}")
-            embeddings = [[0.0] * 768] * len(texts)  # fallback 더미
+            raise
 
-        # Chroma에는 target 정보 무시 (SQLite가 처리)
-        col.upsert(
-            ids=[r["id"] for r in unique_recs],
-            embeddings=embeddings,
-            documents=[r["source_text_raw"] for r in unique_recs],
-            metadatas=[{
+        return {
+            "ids": [r["id"] for r in unique_recs],
+            "embeddings": embeddings,
+            "documents": [r["source_text_raw"] for r in unique_recs],
+            "metadatas": [{
                 "story_id": r["story_id"],
                 "section_code": r["section_code"],
                 "source_lang": r["source_lang"],
-                "source_text_norm": r["source_text_norm"]
+                "source_text_norm": r["source_text_norm"],
+                "original_file": r["original_file"]
             } for r in unique_recs]
-        )
+        }
 
-    upsert_to_collection(col_kr, kr_recs)
-    upsert_to_collection(col_us, us_recs)
+    kr_payload = prepare_collection_payload(kr_recs)
+    us_payload = prepare_collection_payload(us_recs)
+
+    delete_existing_file_records()
+    if kr_payload:
+        col_kr.upsert(**kr_payload)
+    if us_payload:
+        col_us.upsert(**us_payload)
 
     # ─── SQLite 저장 ──────────────────────────────────────────────────────
     now = datetime.now().isoformat()
