@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 # Load environment variables FIRST before other imports
 load_dotenv()
 
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
+from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -16,6 +16,7 @@ import openpyxl
 from datetime import datetime
 from contextlib import asynccontextmanager
 from checker_service import TranslationChecker
+from prompt_builder import PromptBuilder
 import zipfile
 
 # RAG 모듈 임포트 (DB 없으면 graceful fallback)
@@ -48,6 +49,7 @@ app.add_middleware(
 
 # Store for active tasks: { task_id: { "queue": asyncio.Queue, "result_path": str, "status": ... } }
 TASK_STORE = {}
+PROMPT_BUILDER = PromptBuilder()
 
 class StartRequest(BaseModel):
     source_file_id: str
@@ -351,6 +353,34 @@ async def get_report_txt(task_id: str):
     
     return FileResponse(path, media_type="text/plain")
 
+# ─── Prompt Module 엔드포인트 ─────────────────────────────────────────────────
+
+@app.get("/api/prompt_modules")
+async def prompt_modules(
+    target_lang: str = "English",
+    source_lang: str = "English",
+    bx_style_on: bool = False,
+    glossary_available: bool = False,
+    row_key: str = ""
+):
+    """현재 설정으로 적용될 프롬프트 모듈 요약을 읽기 전용으로 반환"""
+    rag_available = False
+    if _rag_builder_available:
+        try:
+            _, col_kr, col_us = _rag_builder.get_chroma_collections()
+            rag_available = (col_kr.count() + col_us.count()) > 0
+        except Exception:
+            rag_available = False
+
+    return PROMPT_BUILDER.describe_applied_modules(
+        target_lang=target_lang,
+        source_lang=source_lang,
+        bx_style_on=bx_style_on,
+        rag_available=rag_available,
+        glossary_available=glossary_available,
+        row_key=row_key
+    )
+
 # ─── RAG 엔드포인트 ──────────────────────────────────────────────────────────
 
 @app.get("/api/rag_status")
@@ -459,8 +489,6 @@ async def rag_similar(query: str, target_lang: str = None, n: int = 5):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
-from fastapi import Query
 
 @app.post("/api/build_rag")
 async def build_rag(background_tasks: BackgroundTasks, force: bool = Query(False)):

@@ -19,7 +19,7 @@ import pandas as pd
 import io
 import urllib.parse
 from model_handler import ModelHandler
-from bx_guideline_engine import BXGuidelineEngine
+from prompt_builder import PromptBuilder
 
 # RAG 연동 (DB가 없우면 graceful fallback)
 try:
@@ -42,16 +42,6 @@ def _is_case_sensitive_language(lang_name: str) -> bool:
     if not lang_name:
         return False
     return any(lang_name.startswith(pref) for pref in CASE_APPLICABLE_LANG_PREFIXES)
-
-# ----------------- Language Specific Nuance Hints -----------------
-LANGUAGE_HINTS = {
-    "German": "독일어 호칭(Du/Sie)의 일관성을 점검하세요. (특히 Casual Audience 대상 시 Du-form 권장/Sie-form 혼용 주의)",
-    "Japanese": "일본어 경어(Desu/Masu) 및 어조의 일관성을 점검하세요.",
-    "French": "프랑스어 존칭(Tu/Vous)의 일관성을 확인하세요.",
-    "Spanish": "스페인어 존칭(Tú/Usted)의 사용이 적절하고 일관적인지 확인하세요.",
-    "Portuguese": "포르투갈어(브라질/유럽)의 특성에 따른 호칭 및 문법 일관성을 확인하세요.",
-    "Chinese": "중국어 번체/간체 구분이 되어 있다면 해당 지역의 문구 관습을 따랐는지 확인하세요.",
-}
 
 class TranslationChecker:
     """
@@ -104,7 +94,7 @@ class TranslationChecker:
 
         # Integrated components
         self.model_handler = ModelHandler()
-        self.bx_engine = BXGuidelineEngine()
+        self.prompt_builder = PromptBuilder()
 
         # RAG Retriever (오프라인 전용, DB 없으면 None)
         self.rag_retriever = None
@@ -600,66 +590,14 @@ class TranslationChecker:
         """
         내부 전용 번역 메서드: JSON 프롬프트 생성 및 LLM 호출을 담당합니다.
         """
-        brackets = "[]"
-        if "Japanese" in target_lang:
-            brackets = "「」"
-
-        # Get language specific hint
-        lang_hint = ""
-        for lang_key, hint_text in LANGUAGE_HINTS.items():
-            if lang_key.lower() in target_lang.lower():
-                lang_hint = f"\n[LANGUAGE SPECIFIC RULE]\n- {hint_text}\n"
-                break
-
         # 입력 데이터 구조화
         input_data = {
             "context_key": row_key,
             "source_text": text,
             "target_language": target_lang,
             "glossary": glossary_context if isinstance(glossary_context, dict) else {},
-            "formatting": {
-                "glossary_prefix": brackets[0],
-                "glossary_suffix": brackets[1]
-            }
+            "formatting": self.prompt_builder.build_input_formatting(target_lang)
         }
-
-        # Python 단에서 키워드를 파악하여 프롬프트의 복잡도를 낮춥니다.
-        skip_brackets = False
-        k = row_key.strip().lower()
-        import re
-        if "title" in k or "button" in k or bool(re.search(r'\d+$', k)):
-            if "description" not in k and "disclaimer" not in k:
-                skip_brackets = True
-
-        if skip_brackets:
-            bracket_rules = f"\nRULE 2: Use glossary for translation. Do NOT wrap terms in brackets for this text (Title/Button context).\n"
-        else:
-            bracket_rules = (
-                f"\nRULE 2: Use glossary and wrap terms in '{brackets[0]}' and '{brackets[1]}'. (CRITICAL)\n"
-                f"-> EXCEPTION 1: Do NOT wrap terms used in navigation paths (e.g., A > B).\n"
-                f"-> EXCEPTION 2: If a glossary term specifically says \"(EXCEPTION...)\", apply the exception ONLY to that term.\n"
-            )
-
-        if bx_style_on and self.bx_engine:
-            system_prompt = self.bx_engine.get_system_prompt(target_lang)
-            system_prompt += (
-                f"\nIMPORTANT: You must follow the Samsung BX style guide above.\n"
-                f"{lang_hint}"
-                f"{rag_context + chr(10) if rag_context else ''}"
-                f"Use the provided glossary if available.\n"
-                f"{bracket_rules}"
-                "Return the response in JSON format with a 'translation' field."
-            )
-        else:
-            system_prompt = (
-                f"You are a professional {target_lang} localizer.\n"
-                f"TASK: Translate the source text naturally for a native speaker while preserving 100% of the original meaning.\n"
-                f"{lang_hint}"
-                f"{rag_context + chr(10) if rag_context else ''}"
-                f"RULE 1: Use the provided 'glossary'.\n"
-                f"{bracket_rules}"
-                "OUTPUT: Return ONLY a JSON object with a 'translation' key."
-            )
 
         # RAG 예시 주입: 유사 번역 사례 최대 2건을 시스템 프롬프트에 첨부
         if self.rag_retriever and not rag_context:
@@ -675,6 +613,15 @@ class TranslationChecker:
                     system_prompt = system_prompt + f"\n\n{rag_context}\n\nUse these examples as style and terminology reference to maintain consistency."
             except Exception:
                 pass  # RAG 실패해도 번역은 정상 진행
+
+        system_prompt = self.prompt_builder.build_translation_prompt(
+            target_lang=target_lang,
+            source_lang=source_lang,
+            bx_style_on=bx_style_on,
+            rag_context=rag_context,
+            row_key=row_key,
+            glossary_context=glossary_context
+        )
 
         try:
             prompt = json.dumps(input_data, ensure_ascii=False, indent=2)
@@ -731,45 +678,23 @@ class TranslationChecker:
             "glossary": glossary_dict
         }
 
-        # Get language specific hint
-        lang_hint = ""
-        for lang_key, hint_text in LANGUAGE_HINTS.items():
-            if lang_key.lower() in target_lang.lower():
-                lang_hint = f"\n[언어별 특이사항 지침]\n- {hint_text}\n"
-                break
-
         prompt = f"""당신은 전문 번역 검수 전문가입니다. 아래 JSON 데이터를 분석하여 상세한 검수 결과를 반환하세요.
 
 [Input Data]
 {json.dumps(input_data, ensure_ascii=False, indent=2)}
-{lang_hint}
-[검수 가이드라인]
-1. 문법/유창성: 오타, 문법 오류, 성수 일치, 관용구 사용 등 정밀 점검. 
-2. 정확성: 원문의 뉘앙스(예: 공손함의 정도)와 정보가 정확히 전달되었는지 확인.
-3. 용어집 준수: 제공된 glossary 데이터와 100% 일치하는지 확인 (대소문자, 띄어쓰기 포함).
-4. 대소문자(Casing): 해당 언어의 문장형(Sentence case) 또는 타이틀형(Title case) 등 일반 규칙 준수 여부.
-5. 품질 등급 평가: 번역의 품질을 다각도로 분석하여 기술하세요.
-
-[출력 형식]
-JSON 형식으로 반환하세요:
-{{
-  "evaluation": [
-    {{"category": "문법/유창성", "comment": "상세한 분석 결과"}},
-    {{"category": "정확성", "comment": "상세한 분석 결과"}},
-    {{"category": "용어집 준수", "comment": "상세한 분석 결과"}},
-    {{"category": "대소문자 표기", "comment": "상세한 분석 결과"}},
-    {{"category": "기타 특이사항", "comment": "상세한 분석 결과"}}
-  ],
-  "is_excellent": true/false (결함이 없을 경우 true),
-  "suggested_fix": "가장 자연스럽고 정확한 전체 문장 수정안 (수정 불필요 시 빈 문자열)"
-}}
 """
+        system_instruction = self.prompt_builder.build_audit_prompt(
+            source_lang=source_lang,
+            target_lang=target_lang,
+            target_lang_code=target_lang_code,
+            glossary_context=glossary_dict
+        )
         try:
             # ModelHandler가 JSON 모드를 지원하므로 딕셔너리로 바로 받을 수 있음
             response = await self.model_handler.generate_content(
                 prompt, 
                 model_name=self.model_name, 
-                system_instruction="당신은 언어별 문법과 문맥을 정밀하게 분석하는 전문 번역 검수자입니다. 반드시 JSON 형식으로만 응답합니다.",
+                system_instruction=system_instruction,
                 response_json=True
             )
             

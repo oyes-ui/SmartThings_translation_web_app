@@ -716,6 +716,91 @@ body {
     font-size: 12px;
 }
 
+/* ─── Prompt Modules ─────────────────────────────────── */
+.prompt-card {
+    border: 1px solid var(--border-color);
+    background: rgba(15, 23, 42, 0.38);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.prompt-card label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.prompt-module-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.prompt-module {
+    border: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.16);
+    border-radius: 6px;
+    padding: 8px 10px;
+    min-height: 72px;
+}
+
+.prompt-module.active {
+    border-color: rgba(16, 185, 129, 0.35);
+}
+
+.prompt-module.inactive {
+    opacity: 0.72;
+}
+
+.prompt-module-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+.prompt-module-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.prompt-module-status {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 2px 7px;
+}
+
+.prompt-module-status.active {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+}
+
+.prompt-module-status.inactive {
+    color: var(--text-secondary);
+    background: rgba(148, 163, 184, 0.12);
+}
+
+.prompt-module-desc,
+.prompt-module-empty {
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+}
+
+.prompt-module-empty {
+    grid-column: 1 / -1;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
 /* ─── Print / PDF Export Page Break Prevention ──────────────────────── */
 .card-wrapper,
 .review-card,

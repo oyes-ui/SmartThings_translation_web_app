@@ -26,6 +26,15 @@ function log(msg, type = "info") {
     terminal.scrollTop = terminal.scrollHeight;
 }
 
+function escapeHTML(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 // DOM Elements (Glossary)
 const glossaryDropzone = document.getElementById('glossaryDropzone');
 const glossaryInput = document.getElementById('glossaryInput');
@@ -123,6 +132,7 @@ async function uploadSingleFile(type, file, zone) {
             }
         } else if (type === 'glossary') {
             uploadedGlossaryId = data.glossary_file_id;
+            updatePromptModules();
         }
 
         log(`${type} upload complete.`, "success");
@@ -168,6 +178,7 @@ function renderSheetList(sheets) {
     });
     document.getElementById('sheetSelectionArea').classList.remove('hidden');
     log(`Source analysis complete. Found ${sheets.length} sheets.`, "success");
+    updatePromptModules();
 }
 
 // Select/Deselect All Buttons
@@ -232,8 +243,18 @@ function updateModeVisibility() {
 }
 
 taskModeRadios.forEach(radio => {
-    radio.addEventListener('change', updateModeVisibility);
+    radio.addEventListener('change', () => {
+        updateModeVisibility();
+        updatePromptModules();
+    });
 });
+
+// Keep read-only prompt module summary in sync with visible settings.
+document.getElementById('sourceLangSelect')?.addEventListener('change', updatePromptModules);
+document.getElementById('bxStyleToggle')?.addEventListener('change', updatePromptModules);
+document.getElementById('sheetConfig')?.addEventListener('input', updatePromptModules);
+document.getElementById('cellRange')?.addEventListener('input', updatePromptModules);
+sheetList?.addEventListener('change', updatePromptModules);
 
 // --- Execution ---
 startBtn.addEventListener('click', async () => {
@@ -398,6 +419,61 @@ function connectSSE(taskId) {
     };
 }
 
+// ─── Applied Prompt Modules UI ────────────────────────────────────────────────
+
+function getPromptModuleTargetLang() {
+    let sheetConfig = {};
+    try {
+        sheetConfig = JSON.parse(document.getElementById('sheetConfig').value);
+    } catch (e) {
+        sheetConfig = {};
+    }
+
+    const targetSheet = sheetList.querySelector('.target-check:checked')?.value;
+    if (targetSheet && sheetConfig[targetSheet]?.lang) {
+        return sheetConfig[targetSheet].lang;
+    }
+
+    return document.getElementById('sourceLangSelect')?.value || 'English';
+}
+
+async function updatePromptModules() {
+    const container = document.getElementById('promptModules');
+    if (!container) return;
+
+    const params = new URLSearchParams({
+        target_lang: getPromptModuleTargetLang(),
+        source_lang: document.getElementById('sourceLangSelect')?.value || 'English',
+        bx_style_on: document.getElementById('bxStyleToggle')?.checked ? 'true' : 'false',
+        glossary_available: uploadedGlossaryId ? 'true' : 'false',
+        row_key: document.getElementById('cellRange')?.value || ''
+    });
+
+    try {
+        const res = await fetch(`${API_BASE}/prompt_modules?${params}`);
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        const modules = ['common', 'language', 'bx', 'formatting', 'glossary', 'rag'];
+
+        container.innerHTML = modules.map(key => {
+            const item = data[key] || {};
+            const active = item.active ? 'active' : 'inactive';
+            const status = item.active ? 'ON' : 'OFF';
+            return `
+                <div class="prompt-module ${active}">
+                    <div class="prompt-module-head">
+                        <span class="prompt-module-name">${escapeHTML(item.name || key)}</span>
+                        <span class="prompt-module-status ${active}">${status}</span>
+                    </div>
+                    <div class="prompt-module-desc">${escapeHTML(item.description || '')}</div>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        container.innerHTML = `<div class="prompt-module-empty">프롬프트 모듈 조회 실패: ${escapeHTML(e.message)}</div>`;
+    }
+}
+
 // ─── RAG Knowledge Base UI ────────────────────────────────────────────────────
 
 async function fetchRagStatus() {
@@ -440,6 +516,7 @@ function connectRagSSE(taskId, onComplete) {
             buildBtn.disabled = false;
             buildBtn.textContent = '🔨 Build RAG DB';
             fetchRagStatus();
+            updatePromptModules();
             if (onComplete) onComplete();
         } else if (data.type === 'error') {
             evtSource.close();
@@ -492,3 +569,4 @@ document.getElementById('updateRagBtn')?.addEventListener('click', async () => {
 
 // 페이지 로드 시 RAG 상태 자동 조회
 fetchRagStatus();
+updatePromptModules();
