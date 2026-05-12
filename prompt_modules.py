@@ -9,12 +9,10 @@ documentation, and UI summaries can share the same source of truth.
 COMMON_LOCALIZATION_STANDARD = {
     "name": "Common Localization Standard",
     "rules": [
-        "Preserve 100% of the source meaning, including intent, nuance, and user benefit.",
-        "Avoid literal translation when a native local expression communicates the same intent better.",
-        "Use natural wording that feels local to the target market and product context.",
-        "Avoid culturally awkward idioms, jokes, metaphors, or references.",
-        "Keep Samsung SmartThings brand tone clear, confident, helpful, and user-centered.",
-        "Avoid forbidden or risky wording such as fear-based claims, hedging, competitor attacks, or overpromising.",
+        "Preserve the original intent, nuance, and user benefit of the source.",
+        "Avoid overly literal translation when more natural, market-appropriate wording communicates the same intent better.",
+        "Keep Samsung SmartThings brand tone clear, confident, and helpful.",
+        "Avoid culturally awkward idioms, metaphors, or risky wording (e.g., fear-based claims, hedging).",
         "Keep UI copy concise while keeping the action or benefit clear.",
     ],
 }
@@ -70,17 +68,34 @@ LANGUAGE_LOCALIZATION_RULES = {
     },
 }
 
-FORMAT_AND_GLOSSARY_RULES = {
-    "name": "Formatting and Glossary Rules",
+GLOBAL_GLOSSARY_STANDARDS = {
+    "name": "Global Glossary Standards",
     "rules": [
         "Use the provided glossary exactly, including capitalization, spacing, and market-specific terms.",
         "Apply glossary rule or remark exceptions before generic formatting rules.",
         "For Title/Button context, use glossary terms without brackets unless a term-specific rule says otherwise.",
-        "For Description context, wrap glossary terms in the configured brackets unless excluded by navigation paths or term-specific exceptions.",
-        "Use Japanese corner brackets 「」 for Japanese glossary wrapping; use square brackets [] otherwise.",
+        "For Description context, wrap glossary terms in the designated brackets unless an exception applies.",
         "Do not wrap terms used inside navigation paths such as A > B.",
     ],
 }
+
+DEFAULT_GLOSSARY_BRACKET_RULE = {
+    "name": "Default Bracket Style",
+    "rules": [
+        "Use square brackets [] for glossary term wrapping in most languages.",
+    ],
+}
+
+LANGUAGE_SPECIFIC_GLOSSARY_RULES = {
+    "Japanese": {
+        "name": "Japanese Bracket Style",
+        "rules": [
+            "Use Japanese corner brackets 「」 instead of square brackets [] for glossary wrapping.",
+        ],
+    },
+}
+
+GLOSSARY_EXEMPT_MARKERS = ["no bracket", "대괄호 제외", "괄호 제외"]
 
 BX_STYLE_RULES = {
     "system_identity": {
@@ -159,4 +174,3 @@ BX_STYLE_RULES = {
         },
     ],
 }
-

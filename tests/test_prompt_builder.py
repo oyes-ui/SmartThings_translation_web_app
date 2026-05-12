@@ -40,6 +40,50 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertIn("without brackets", prompt)
         self.assertIn('"translation"', prompt)
 
+    def test_japanese_description_context_uses_corner_brackets(self):
+        formatting = self.builder.build_input_formatting("Japanese")
+        self.assertEqual(formatting["glossary_prefix"], "「")
+        self.assertEqual(formatting["glossary_suffix"], "」")
+        self.assertTrue(self.builder.should_wrap_glossary("description_01"))
+
+        prompt = self.builder.build_translation_prompt(
+            target_lang="Japanese",
+            source_lang="Korean",
+            row_key="description_01",
+            glossary_context={"SmartThings": "SmartThings"},
+        )
+        modules = self.builder.describe_applied_modules(
+            target_lang="Japanese",
+            source_lang="Korean",
+            row_key="description_01",
+            glossary_available=True,
+        )
+
+        self.assertIn("Japanese Bracket Style", prompt)
+        self.assertIn("Use Japanese corner brackets 「」 instead of square brackets []", prompt)
+        self.assertIn("brackets: 「」", modules["formatting"]["description"])
+        self.assertIn("wrap_for_description", modules["formatting"]["description"])
+
+    def test_title_context_skips_brackets_for_japanese(self):
+        self.assertFalse(self.builder.should_wrap_glossary("hero_title"))
+
+        prompt = self.builder.build_translation_prompt(
+            target_lang="Japanese",
+            source_lang="Korean",
+            row_key="hero_title",
+            glossary_context={"SmartThings": "SmartThings"},
+        )
+        modules = self.builder.describe_applied_modules(
+            target_lang="Japanese",
+            source_lang="Korean",
+            row_key="hero_title",
+            glossary_available=True,
+        )
+
+        self.assertIn("without brackets", prompt)
+        self.assertIn("brackets: 「」", modules["formatting"]["description"])
+        self.assertIn("skip_for_title_button", modules["formatting"]["description"])
+
     def test_audit_prompt_contract(self):
         prompt = self.builder.build_audit_prompt(
             source_lang="Korean",
@@ -79,4 +123,3 @@ class PromptModuleApiTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

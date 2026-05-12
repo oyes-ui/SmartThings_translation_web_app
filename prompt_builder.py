@@ -11,7 +11,9 @@ import re
 from prompt_modules import (
     BX_STYLE_RULES,
     COMMON_LOCALIZATION_STANDARD,
-    FORMAT_AND_GLOSSARY_RULES,
+    GLOBAL_GLOSSARY_STANDARDS,
+    LANGUAGE_SPECIFIC_GLOSSARY_RULES,
+    GLOSSARY_EXEMPT_MARKERS,
     LANGUAGE_LOCALIZATION_RULES,
 )
 
@@ -31,11 +33,26 @@ class PromptBuilder:
             return "「」"
         return "[]"
 
+    def get_exempt_markers(self) -> list[str]:
+        return GLOSSARY_EXEMPT_MARKERS
+
     def should_skip_brackets(self, row_key: str) -> bool:
         key = (row_key or "").strip().lower()
         if "description" in key or "disclaimer" in key:
             return False
         return "title" in key or "button" in key or bool(re.search(r"\d+$", key))
+
+    def should_wrap_glossary(self, row_key: str, rule_text: str = "") -> bool:
+        """Single source of truth for whether a term should be wrapped in brackets."""
+        if self.should_skip_brackets(row_key):
+            return False
+        
+        if rule_text:
+            clean_rule = rule_text.lower()
+            if any(marker in clean_rule for marker in self.get_exempt_markers()):
+                return False
+                
+        return True
 
     def build_input_formatting(self, target_lang: str) -> dict:
         brackets = self.get_brackets(target_lang)
@@ -82,6 +99,7 @@ class PromptBuilder:
         source_lang: str,
         target_lang: str,
         target_lang_code: str | None = None,
+        row_key: str = "",
         glossary_context=None,
     ) -> str:
         sections = [
@@ -92,6 +110,8 @@ class PromptBuilder:
         language_section = self._build_language_section(target_lang, korean_heading=True)
         if language_section:
             sections.append(language_section)
+
+        sections.append(self._build_formatting_section(target_lang, row_key))
 
         sections.append(
             "[검수 가이드라인]\n"
@@ -174,7 +194,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
             },
             "formatting": {
                 "active": True,
-                "name": FORMAT_AND_GLOSSARY_RULES["name"],
+                "name": GLOBAL_GLOSSARY_STANDARDS["name"],
                 "description": f"Bracket mode: {bracket_mode}; brackets: {brackets}.",
             },
             "glossary": {
@@ -254,15 +274,40 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         return "[GLOSSARY RULE]\nNo glossary terms are provided for this source text."
 
     def _build_formatting_section(self, target_lang: str, row_key: str) -> str:
-        brackets = self.get_brackets(target_lang)
+        formatting_rules = []
+
+        # 1. Global standards
+        formatting_rules.append(f"[{GLOBAL_GLOSSARY_STANDARDS['name']}]")
+        formatting_rules.extend(f"- {r}" for r in GLOBAL_GLOSSARY_STANDARDS["rules"])
+
+        # 2. Bracket style (Default vs Japanese)
+        from prompt_modules import (
+            DEFAULT_GLOSSARY_BRACKET_RULE,
+            LANGUAGE_SPECIFIC_GLOSSARY_RULES
+        )
+
+        brackets = ("[", "]")
+        if target_lang == "Japanese":
+            ja_rules = LANGUAGE_SPECIFIC_GLOSSARY_RULES.get("Japanese", {})
+            formatting_rules.append(f"\n[{ja_rules.get('name', 'Japanese Bracket Style')}]")
+            formatting_rules.extend(f"- {r}" for r in ja_rules.get("rules", []))
+            brackets = ("「", "」")
+        else:
+            formatting_rules.append(f"\n[{DEFAULT_GLOSSARY_BRACKET_RULE['name']}]")
+            formatting_rules.extend(f"- {r}" for r in DEFAULT_GLOSSARY_BRACKET_RULE["rules"])
+            brackets = ("[", "]")
+
+        # 3. Dynamic context-based rule
         if self.should_skip_brackets(row_key):
-            context_rule = "Use glossary terms without brackets for this Title/Button context."
+            context_rule = f"Use glossary terms WITHOUT brackets for this {row_key} context."
         else:
             context_rule = (
                 f"Wrap glossary terms in '{brackets[0]}' and '{brackets[1]}' for Description context unless an exception applies."
             )
+        
+        formatting_rules.append(f"- {context_rule}")
+
         return (
             "[FORMAT AND GLOSSARY RULES]\n"
-            + "\n".join(f"- {rule}" for rule in FORMAT_AND_GLOSSARY_RULES["rules"])
-            + f"\n- Current context rule: {context_rule}"
+            + "\n".join(formatting_rules)
         )

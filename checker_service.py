@@ -346,11 +346,16 @@ class TranslationChecker:
                             t_val = str(t_cell.value).strip() if t_cell.value is not None else ""
                             
                             if s_val and t_val and s_val.lower() != "x" and t_val.lower() != "x":
+                                # Extract row_key from column B of the same row
+                                row_idx = s_cell.row
+                                row_key = str(ws_source[f"B{row_idx}"].value).strip() if ws_source[f"B{row_idx}"].value else ""
+                                
                                 all_data.append({
                                     "cell_ref": s_cell.coordinate,
                                     "sheet_name": sheet_name,
                                     "source": s_val,
                                     "target": t_val,
+                                    "row_key": row_key,
                                 })
                                 extracted_count += 1
                 except Exception as e:
@@ -418,8 +423,7 @@ class TranslationChecker:
                 continue
             
             if tgt:
-                exempt_markers = ["no bracket", "대괄호 생략", "대괄호 제외", "대괄호 없음"]
-                if any(m in rule for m in exempt_markers):
+                if not self.prompt_builder.should_wrap_glossary("", rule):
                     context[term] = f"{tgt} (EXCEPTION: Do NOT wrap '{tgt}' in brackets)"
                 else:
                     context[term] = tgt
@@ -481,7 +485,7 @@ class TranslationChecker:
                     issues.append(f"[대소문자] 용어집 '{t_term}'의 표기가 '{actual}'로 사용됨")
         return issues
 
-    def _check_glossary_brackets(self, source_text: str, target_text: str, target_lang_code: str, target_lang: str):
+    def _check_glossary_brackets(self, source_text: str, target_text: str, target_lang_code: str, target_lang: str, row_key: str = ""):
         if not self.glossary or not target_lang_code or not source_text or not target_text:
             return []
             
@@ -490,9 +494,7 @@ class TranslationChecker:
             return []
 
         issues = []
-        brackets = "[]"
-        if target_lang and ("Japanese" in target_lang or "일본" in target_lang):
-            brackets = "「」"
+        brackets = self.prompt_builder.get_brackets(target_lang)
         b_left, b_right = brackets[0], brackets[1]
 
         for s_term in relevant_terms:
@@ -517,8 +519,7 @@ class TranslationChecker:
             if not clean_val:
                 continue
 
-            exempt_markers = ["nobracket", "대괄호생략", "대괄호제외", "대괄호없음"]
-            should_exclude_bracket = any(m in clean_rule for m in exempt_markers)
+            should_exclude_bracket = not self.prompt_builder.should_wrap_glossary(row_key, rule)
             
             # Check all occurrences in target_text
             pattern = re.escape(clean_val)
@@ -610,7 +611,7 @@ class TranslationChecker:
                     identity_match_enabled=rag_identity_match
                 )
                 if rag_context:
-                    system_prompt = system_prompt + f"\n\n{rag_context}\n\nUse these examples as style and terminology reference to maintain consistency."
+                    pass # PromptBuilder handles injection via build_translation_prompt
             except Exception:
                 pass  # RAG 실패해도 번역은 정상 진행
 
@@ -668,14 +669,15 @@ class TranslationChecker:
 
 
     # ----------------- LLM Calls -----------------
-    async def check_with_llm_qa(self, source_text, target_text, source_lang, target_lang, target_lang_code):
+    async def check_with_llm_qa(self, source_text, target_text, source_lang, target_lang, target_lang_code, row_key: str = ""):
         glossary_dict = self._get_glossary_context_as_dict(target_lang_code, source_text=source_text)
         
         # QA용 구조화된 프롬프트 데이터
         input_data = {
             "source": {"lang": source_lang, "text": source_text},
             "translation": {"lang": f"{target_lang}/{target_lang_code}", "text": target_text},
-            "glossary": glossary_dict
+            "glossary": glossary_dict,
+            "context_key": row_key
         }
 
         prompt = f"""당신은 전문 번역 검수 전문가입니다. 아래 JSON 데이터를 분석하여 상세한 검수 결과를 반환하세요.
@@ -687,6 +689,7 @@ class TranslationChecker:
             source_lang=source_lang,
             target_lang=target_lang,
             target_lang_code=target_lang_code,
+            row_key=row_key,
             glossary_context=glossary_dict
         )
         try:
@@ -840,9 +843,11 @@ class TranslationChecker:
         pre_mismatch = self._precheck_glossary_mismatch(source, target, tgt_code)
         skip_llm = self.skip_llm_when_glossary_mismatch and bool(pre_mismatch)
         
+        row_key = item.get("row_key", "")
+        
         case_report, simple_case_fix = self._analyze_sentence_case(target, tgt_lang)
         glossary_case_issues = self._check_glossary_casing(source, target, tgt_code)
-        glossary_bracket_issues = self._check_glossary_brackets(source, target, tgt_code, tgt_lang)
+        glossary_bracket_issues = self._check_glossary_brackets(source, target, tgt_code, tgt_lang, row_key=row_key)
         
         # Construct Partial Report Sections
         case_section = "대소문자 하드룰(문장형) 점검:\n" + case_report if case_report else "별도 지적 사항 없음."
@@ -932,7 +937,7 @@ class TranslationChecker:
         else:
             # LLM Calls
             qa_task = self._with_semaphore(
-                self.check_with_llm_qa(source, target, source_lang, tgt_lang, tgt_code)
+                self.check_with_llm_qa(source, target, source_lang, tgt_lang, tgt_code, row_key=row_key)
             )
             
             if self.no_backtranslation:
