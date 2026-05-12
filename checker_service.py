@@ -1224,17 +1224,17 @@ class TranslationChecker:
                 except Exception as e:
                     logs.append(f"[RAG] 검색 오류: {e}")
 
-                translation = await self._run_llm_translation(
-                    source_text, 
-                    target_lang, 
-                    model_name=translation_model,
-                    bx_style_on=bx_style_on,
-                    glossary_context=glossary_dict,
-                    rag_context=rag_context_str,
-                    row_key=item.get('row_key', ''),
-                    source_lang=source_lang,
-                    rag_identity_match=rag_identity_match
-                )
+            translation = await self._run_llm_translation(
+                source_text,
+                target_lang,
+                model_name=translation_model,
+                bx_style_on=bx_style_on,
+                glossary_context=glossary_dict,
+                rag_context=rag_context_str,
+                row_key=item.get("row_key", ""),
+                source_lang=source_lang,
+                rag_identity_match=rag_identity_match,
+            )
             
             # Extract plain glossary targets (removing EXCEPTION strings if any)
             # Use case-insensitive target language code matching
@@ -1277,7 +1277,13 @@ class TranslationChecker:
             target_cell = ws[coord]
             target_cell.value = self._apply_rich_text(translation, original_target_terms, base_font=target_cell.font)
 
-            item_data = {"cell_ref": coord,"sheet_name": ws.title,"source": source_text,"target": translation}
+            item_data = {
+                "cell_ref": coord,
+                "sheet_name": ws.title,
+                "source": source_text,
+                "target": translation,
+                "row_key": item.get("row_key", ""),
+            }
             
             if skip_audit:
                 res = {
@@ -1475,7 +1481,13 @@ class TranslationChecker:
             # If target has text, calculate highlights based on source
             if target_text and target_text.lower() != "x":
                 # 1. Bracket Check
-                bracket_issues = self._check_glossary_brackets(source_text, target_text, target_lang_code, target_lang)
+                bracket_issues = self._check_glossary_brackets(
+                    source_text,
+                    target_text,
+                    target_lang_code,
+                    target_lang,
+                    row_key=item.get("row_key", ""),
+                )
                 if bracket_issues:
                     logs.extend(bracket_issues)
                 

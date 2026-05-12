@@ -286,16 +286,15 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
             LANGUAGE_SPECIFIC_GLOSSARY_RULES
         )
 
-        brackets = ("[", "]")
-        if target_lang == "Japanese":
+        brackets_text = self.get_brackets(target_lang)
+        brackets = (brackets_text[0], brackets_text[1])
+        if brackets_text == "「」":
             ja_rules = LANGUAGE_SPECIFIC_GLOSSARY_RULES.get("Japanese", {})
             formatting_rules.append(f"\n[{ja_rules.get('name', 'Japanese Bracket Style')}]")
             formatting_rules.extend(f"- {r}" for r in ja_rules.get("rules", []))
-            brackets = ("「", "」")
         else:
             formatting_rules.append(f"\n[{DEFAULT_GLOSSARY_BRACKET_RULE['name']}]")
             formatting_rules.extend(f"- {r}" for r in DEFAULT_GLOSSARY_BRACKET_RULE["rules"])
-            brackets = ("[", "]")
 
         # 3. Dynamic context-based rule
         if self.should_skip_brackets(row_key):

@@ -4,6 +4,7 @@ import unittest
 
 from fastapi.testclient import TestClient
 
+from checker_service import TranslationChecker
 from main import app
 from prompt_builder import PromptBuilder
 
@@ -84,6 +85,17 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertIn("brackets: 「」", modules["formatting"]["description"])
         self.assertIn("skip_for_title_button", modules["formatting"]["description"])
 
+    def test_japanese_locale_alias_uses_corner_bracket_rule(self):
+        prompt = self.builder.build_translation_prompt(
+            target_lang="일본",
+            source_lang="Korean",
+            row_key="description_01",
+            glossary_context={"SmartThings": "SmartThings"},
+        )
+
+        self.assertIn("Japanese Bracket Style", prompt)
+        self.assertIn("Wrap glossary terms in '「' and '」'", prompt)
+
     def test_audit_prompt_contract(self):
         prompt = self.builder.build_audit_prompt(
             source_lang="Korean",
@@ -96,6 +108,36 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertIn('"is_excellent"', prompt)
         self.assertIn('"suggested_fix"', prompt)
         self.assertIn("현지화 품질", prompt)
+
+    def test_checker_glossary_brackets_respect_row_key_context(self):
+        checker = TranslationChecker()
+        checker.glossary = {
+            "SmartThings": {
+                "targets": {"일본": "SmartThings"},
+                "rule": "",
+            }
+        }
+        checker._compile_glossary_re()
+
+        self.assertEqual(
+            checker._check_glossary_brackets(
+                "SmartThings를 실행하세요",
+                "SmartThingsを起動",
+                "일본",
+                "Japanese",
+                row_key="hero_title",
+            ),
+            [],
+        )
+        self.assertTrue(
+            checker._check_glossary_brackets(
+                "SmartThings를 실행하세요",
+                "SmartThingsを起動できます",
+                "일본",
+                "Japanese",
+                row_key="description_01",
+            )
+        )
 
 
 class PromptModuleApiTests(unittest.TestCase):
