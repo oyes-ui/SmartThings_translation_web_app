@@ -22,9 +22,10 @@ pinned: false
 - **하이브리드 RAG (Retrieval-Augmented Generation)**: 100% 일치(Identity Match) 및 의미적 유사도 검색을 통한 번역 일관성 확보
 - **다국어 시트 자동 매핑**: 국가 코드(US, KR, DE 등)를 인식하여 시트별 언어 설정 자동화
 - **용어집(Glossary) 검증**: CSV 용어집 기반 정밀 매칭 및 괄호(Bracket) 자동 처리 규칙 적용
-- **Samsung BX Style Transcreation**: 'Confident Explorer' 페르소나 및 브랜드 보이스 가이드라인 반영
-- **모듈형 프롬프트 아키텍처**: 맥락 인식(Context-aware) 및 언어별 특수 규칙이 결합된 고도화된 프롬프트 엔진
-- **실시간 UI 데이터 보드**: 실시간 진행 상황 모니터링 및 HTML 시각화 리포트 제공
+- **V2 Localization Engine**: 브라질/유럽 포르투갈어 및 중국 간체/번체 시장별 완벽 분리 대응
+- **Context-Aware Formatting**: Row Key 기반으로 타이틀/버튼 vs 설명문 맥락을 자동 판정하여 용어집 괄호 처리 최적화
+- **Typography Standards**: 언어별 표준 문장 부호 및 타이포그래피 규칙 자동 적용
+- **Prompt Inspector**: 실시간 프롬프트 조립 상태를 육안으로 확인할 수 있는 전용 디버그 도구 제공
 
 ---
 
@@ -35,8 +36,9 @@ pinned: false
 - **Persona_and_Task**: 기본 번역가 페르소나 설정
 - **Samsung_BX_Guidelines**: 브랜드 가이드라인 동적 주입
 - **Language_Specific_Hints**: 언어별 문법/문화적 뉘앙스 처리
+- **Typography_Rules**: 타겟 언어별 문장 부호 및 타이포그래피 규칙
 - **RAG_Reference**: 유사 사례 참조 (Identity/Semantic)
-- **Bracket_Rule_2**: 맥락(Title/Button vs Description)에 따른 괄호 처리 자동 분기
+- **Context_Routing**: `row_key` 판정을 통한 컨텍스트별 가이드라인 자동 분기
 
 ---
 
@@ -86,7 +88,7 @@ GOOGLE_API_KEY=your_google_api_key_here
 ```bash
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
-브라우저에서 `http://localhost:8000`으로 접속합니다.
+브라우저에서 `http://localhost:8000`으로 접속합니다. (Prompt Inspector: `/demo.html`)
 
 ---
 
@@ -110,14 +112,16 @@ docker run -p 7860:7860 -e GOOGLE_API_KEY="your_key_here" translation-checker
 
 상세한 변경 내역은 [CHANGELOG.md](docs/CHANGELOG.md)에서 확인할 수 있습니다.
 
+### [v1.5.0] - 2026-05-12
+- **Enhanced**: Localization Engine V2 업데이트 (포르투갈어/중국어 시장별 분리)
+- **Added**: Context-Aware Glossary 처리 로직 (Title/Button vs Description)
+- **Added**: Prompt Inspector 디버그 페이지 추가 (`/static/demo.html`)
+- **Added**: 언어별 타이포그래피 및 문장 부호 표준화 규칙 적용
+- **Refactored**: `PromptBuilder` 및 `prompt_modules` 구조적 리팩토링
+
 ### [v1.4.0] - 2026-04-15
 - **Fixed**: `checker_service.py` 구문 오류(SyntaxError) 수정 및 앱 실행 불가 이슈 해결
 - **Added**: 일반 채팅(ChatGPT, Gemini)용 프롬프트 마스터 문서 추가 (`docs/prompts_for_chat.md`)
-- **Docs**: 프롬프트 아키텍처 및 검수 엔진 가이드 최적화
-
-### [v1.3.3] - 2026-04-06
-- **Added**: 한국어 RAG 자동 감지 및 용어집 이중 매칭(EN/KR) 로직 강화
-- **Fixed**: 용어집 CSV 로드 시 빈 헤더 컬럼 인식 오류 수정
 
 ---
 
@@ -131,3 +135,4 @@ docker run -p 7860:7860 -e GOOGLE_API_KEY="your_key_here" translation-checker
     - **RAG DB**: 필요한 경우 RAG DB를 빌드하거나 특정 스토리 데이터를 업데이트합니다.
 3. **Start Inspection**: 설정을 검증([Validate Config])한 후 검수를 시작합니다.
 4. **Live Progress & Download (우측 패널)**: 터미널에서 진행 상황을 확인하고, 완료 시 리포트를 다운로드하거나 HTML 뷰어로 확인합니다.
+5. **Debug**: `http://localhost:8000/demo.html`에서 프롬프트 조립 상태를 실시간 점검할 수 있습니다.

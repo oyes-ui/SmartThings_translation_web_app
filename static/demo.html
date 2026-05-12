@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt Inspector — SmartThings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060913;
+  --s1: #0f172a;
+  --s2: #1e293b;
+  --s3: #273449;
+  --border: rgba(51,65,85,0.6);
+  --text: #f1f5f9;
+  --muted: #64748b;
+  --dim: #334155;
+  --blue: #3b82f6;
+  --blue-dim: rgba(59,130,246,0.12);
+  --blue-border: rgba(59,130,246,0.35);
+  --green: #10b981;
+  --green-dim: rgba(16,185,129,0.1);
+  --green-border: rgba(16,185,129,0.4);
+  --orange: #f59e0b;
+  --orange-dim: rgba(245,158,11,0.1);
+  --orange-border: rgba(245,158,11,0.4);
+  --font: 'Inter', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; overflow: hidden; }
+
+/* ── Topbar ── */
+.topbar {
+  height: 46px; background: var(--s1); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 18px; gap: 10px; flex-shrink: 0;
+}
+.topbar-title { font-size: 13px; font-weight: 600; letter-spacing: -0.2px; }
+.topbar-sub { font-size: 11px; color: var(--muted); }
+.topbar-spacer { flex: 1; }
+.status-pill {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10px; color: var(--muted); font-family: var(--mono);
+}
+#status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); transition: background .3s; }
+#status-dot.ok  { background: var(--green); box-shadow: 0 0 5px var(--green); }
+#status-dot.err { background: #ef4444; }
+#status-dot.busy { background: var(--orange); }
+
+/* ── Layout ── */
+.layout { display: grid; grid-template-columns: 210px 220px 1fr; height: calc(100vh - 46px); overflow: hidden; }
+.col { border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+.col:last-child { border-right: none; }
+.col-head {
+  padding: 10px 14px 9px; font-size: 10px; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.col-body { flex: 1; overflow-y: auto; padding: 14px 12px; }
+.col-body::-webkit-scrollbar { width: 3px; }
+.col-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── Controls ── */
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.field select, .field textarea {
+  width: 100%; background: var(--s2); border: 1px solid var(--border); border-radius: 5px;
+  color: var(--text); font-family: var(--font); font-size: 12px; padding: 6px 9px; outline: none;
+  appearance: none; -webkit-appearance: none;
+}
+.field select:focus, .field textarea:focus { border-color: var(--blue); }
+.field textarea { resize: vertical; min-height: 64px; line-height: 1.5; font-family: var(--mono); font-size: 11px; }
+
+.file-btn {
+  width: 100%; padding: 6px 9px; background: var(--s2); border: 1px dashed var(--border);
+  border-radius: 5px; color: var(--muted); font-size: 11px; cursor: pointer;
+  text-align: center; transition: border-color .15s, color .15s;
+}
+.file-btn:hover { border-color: var(--blue); color: var(--text); }
+.file-btn.has-file { border-color: var(--green-border); color: var(--green); border-style: solid; }
+#glossary-input { display: none; }
+
+.toggle-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; user-select: none; }
+.toggle-row input[type="checkbox"] { display: none; }
+.pill { width: 30px; height: 16px; background: var(--s2); border: 1px solid var(--border); border-radius: 8px; position: relative; flex-shrink: 0; transition: background .2s, border-color .2s; }
+.pill::after { content: ''; position: absolute; top: 2px; left: 2px; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); transition: transform .2s, background .2s; }
+.toggle-row input:checked + .pill { background: var(--blue-dim); border-color: var(--blue); }
+.toggle-row input:checked + .pill::after { transform: translateX(14px); background: var(--blue); }
+.toggle-label { font-size: 12px; }
+
+.divider { height: 1px; background: var(--border); margin: 10px 0; }
+.hint { font-size: 10px; color: var(--dim); line-height: 1.5; }
+
+.refresh-btn {
+  width: 100%; padding: 7px; background: var(--blue-dim); border: 1px solid var(--blue-border);
+  border-radius: 5px; color: var(--blue); font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+  letter-spacing: .03em;
+}
+.refresh-btn:hover { background: rgba(59,130,246,.2); }
+
+/* ── Pipeline nodes ── */
+.pipeline { display: flex; flex-direction: column; align-items: center; }
+.node {
+  width: 100%; background: var(--s1); border: 1px solid var(--border);
+  border-radius: 7px; padding: 8px 11px; transition: border-color .2s, background .2s, opacity .2s;
+}
+.node.always  { border-color: var(--blue-border);  background: var(--blue-dim); }
+.node.active  { border-color: var(--green-border); background: var(--green-dim); }
+.node.inactive { opacity: .38; }
+.node-head { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.node-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); flex-shrink: 0; }
+.node.always .node-dot  { background: var(--blue);  box-shadow: 0 0 4px var(--blue); }
+.node.active .node-dot  { background: var(--green); box-shadow: 0 0 4px var(--green); }
+.node-name { font-size: 10px; font-weight: 600; letter-spacing: .03em; }
+.node.inactive .node-name { color: var(--muted); }
+.node-badge {
+  margin-left: auto; font-size: 9px; font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase; padding: 1px 5px; border-radius: 3px;
+}
+.node.always  .node-badge { background: var(--blue-dim);  color: var(--blue); }
+.node.active  .node-badge { background: var(--green-dim); color: var(--green); }
+.node.inactive .node-badge { background: var(--s2); color: var(--dim); }
+.node-desc { font-size: 9px; color: var(--muted); line-height: 1.4; padding-left: 12px; }
+.node.inactive .node-desc { color: var(--dim); }
+.connector { width: 1px; height: 12px; background: var(--border); flex-shrink: 0; }
+.connector.on { background: var(--green-border); }
+
+/* ── Block viewer ── */
+.tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; padding: 0 14px; }
+.tab {
+  font-size: 11px; font-weight: 500; padding: 9px 12px 8px; cursor: pointer;
+  color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px;
+  user-select: none; transition: color .15s, border-color .15s;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+.tab-panel { flex: 1; display: none; overflow-y: auto; padding: 14px 14px 24px; }
+.tab-panel.active { display: block; }
+.tab-panel::-webkit-scrollbar { width: 3px; }
+.tab-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── Prompt blocks ── */
+.block-group-label {
+  font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--dim); margin: 16px 0 8px; padding-left: 2px;
+}
+.block-group-label:first-child { margin-top: 0; }
+
+.block {
+  border-radius: 7px; border: 1px solid var(--border); margin-bottom: 6px;
+  overflow: hidden; transition: border-color .2s, opacity .2s;
+}
+.block.b-always  { border-color: var(--blue-border); }
+.block.b-active  { border-color: var(--green-border); }
+.block.b-inactive { opacity: .45; }
+.block.b-user   { border-color: var(--orange-border); }
+
+.block-head {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 11px; cursor: pointer; user-select: none;
+  background: var(--s1);
+}
+.block.b-always .block-head  { background: var(--blue-dim); }
+.block.b-active .block-head  { background: var(--green-dim); }
+.block.b-user   .block-head  { background: var(--orange-dim); }
+
+.block-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--dim); flex-shrink: 0; }
+.block.b-always .block-dot  { background: var(--blue); }
+.block.b-active .block-dot  { background: var(--green); }
+.block.b-user   .block-dot  { background: var(--orange); }
+
+.block-label { font-size: 10px; font-weight: 600; letter-spacing: .03em; }
+.block.b-inactive .block-label { color: var(--muted); }
+
+.block-badge {
+  margin-left: auto; font-size: 9px; font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase; padding: 1px 5px; border-radius: 3px;
+}
+.block.b-always  .block-badge { background: var(--blue-dim);   color: var(--blue); }
+.block.b-active  .block-badge { background: var(--green-dim);  color: var(--green); }
+.block.b-inactive .block-badge { background: var(--s2); color: var(--dim); }
+.block.b-user    .block-badge { background: var(--orange-dim); color: var(--orange); }
+
+.block-chevron { font-size: 10px; color: var(--muted); margin-left: 4px; transition: transform .15s; }
+.block.collapsed .block-chevron { transform: rotate(-90deg); }
+
+.block-body {
+  padding: 10px 12px; border-top: 1px solid var(--border);
+  font-family: var(--mono); font-size: 10.5px; line-height: 1.7;
+  color: #94a3b8; white-space: pre-wrap; word-break: break-word;
+  background: var(--bg);
+}
+.block.collapsed .block-body { display: none; }
+.block.b-inactive .block-body { color: var(--dim); }
+.block.b-user .block-body { color: #cbd5e1; }
+
+/* section-head highlight within block body */
+.sh { color: var(--blue); font-weight: 500; }
+
+.err-msg { padding: 20px 14px; font-size: 11px; color: #ef4444; font-family: var(--mono); line-height: 1.6; }
+
+/* ── Token counter ── */
+.token-count {
+  margin-left: 6px; font-size: 9px; color: var(--dim);
+  font-family: var(--mono); white-space: nowrap;
+}
+.block.b-always .token-count  { color: rgba(59,130,246,0.5); }
+.block.b-active .token-count  { color: rgba(16,185,129,0.5); }
+.block.b-user   .token-count  { color: rgba(245,158,11,0.5); }
+
+.token-bar {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  padding: 7px 14px 0; font-size: 10px; font-family: var(--mono);
+  color: var(--muted); flex-shrink: 0;
+}
+.token-bar span { color: var(--dim); }
+.token-bar b { color: var(--text); font-weight: 500; }
+
+.src-counter {
+  font-size: 10px; font-family: var(--mono); color: var(--dim);
+  text-align: right; margin-top: 3px;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div id="status-dot"></div>
+  <span class="topbar-title">Prompt Inspector</span>
+  <span class="topbar-sub">SmartThings Localization</span>
+  <div class="topbar-spacer"></div>
+  <div class="status-pill"><span id="status-text">—</span></div>
+</div>
+
+<div class="layout">
+
+  <!-- ── Col 1: Controls ── -->
+  <div class="col">
+    <div class="col-head">설정</div>
+    <div class="col-body">
+
+      <div class="field">
+        <label>Source Language</label>
+        <select id="source-lang">
+          <option value="English" selected>English</option>
+          <option value="Korean">Korean</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Target Language</label>
+        <select id="target-lang">
+          <option value="English">English</option>
+          <option value="German">German</option>
+          <option value="Japanese" selected>Japanese</option>
+          <option value="French">French</option>
+          <option value="Spanish">Spanish</option>
+          <option value="Brazilian Portuguese">Brazilian Portuguese</option>
+          <option value="European Portuguese">European Portuguese</option>
+          <option value="Simplified Chinese">Simplified Chinese</option>
+          <option value="Traditional Chinese">Traditional Chinese</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Row Context</label>
+        <select id="row-key">
+          <option value="description" selected>description</option>
+          <option value="disclaimer">disclaimer</option>
+          <option value="title">title</option>
+          <option value="button">button</option>
+        </select>
+      </div>
+
+      <div class="divider"></div>
+
+      <label class="toggle-row">
+        <input type="checkbox" id="bx-style">
+        <div class="pill"></div>
+        <span class="toggle-label">BX Style</span>
+      </label>
+
+      <div class="divider"></div>
+
+      <div class="field">
+        <label>원문 텍스트</label>
+        <textarea id="source-text" placeholder="번역할 텍스트를 입력하세요&#10;(용어집 매칭 및 RAG 검색에 사용)"></textarea>
+        <div class="src-counter" id="src-counter">0자 / ~0 tok</div>
+      </div>
+
+      <div class="field">
+        <label>용어집 (CSV)</label>
+        <input type="file" id="glossary-input" accept=".csv">
+        <div class="file-btn" id="glossary-btn" onclick="document.getElementById('glossary-input').click()">
+          파일 선택…
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <button class="refresh-btn" id="refresh-btn">갱신</button>
+
+      <div class="divider"></div>
+      <div class="hint">
+        모듈 내용 수정 → 자동 반영<br>
+        모듈 타입 추가 → demo.html 수동 업데이트
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Col 2: Node pipeline ── -->
+  <div class="col">
+    <div class="col-head">모듈 파이프라인</div>
+    <div class="col-body">
+      <div class="pipeline" id="pipeline"></div>
+    </div>
+  </div>
+
+  <!-- ── Col 3: Block viewer ── -->
+  <div class="col">
+    <div class="tabs">
+      <div class="tab active" data-tab="translation">번역 콜</div>
+      <div class="tab" data-tab="audit">검수 콜</div>
+    </div>
+    <div class="token-bar" id="token-bar-translation"></div>
+    <div class="token-bar" id="token-bar-audit" style="display:none"></div>
+    <div class="tab-panel active" id="panel-translation"></div>
+    <div class="tab-panel" id="panel-audit"></div>
+  </div>
+
+</div>
+
+<script>
+// ─── Pipeline node order (matches describe_applied_modules keys) ───────────
+const NODE_ORDER = ['common', 'language', 'bx', 'glossary', 'rag', 'formatting', 'typography'];
+
+// ─── Token estimation (rough: CJK ~1.5 chars/tok, else ~4 chars/tok) ──────
+function estimateTokens(text) {
+  if (!text) return 0;
+  const cjk = (text.match(/[　-鿿豈-﫿가-힯]/g) || []).length;
+  const rest = text.length - cjk;
+  return Math.round(cjk / 1.5 + rest / 4);
+}
+
+// ─── State ────────────────────────────────────────────────────────────────
+let debounceTimer = null;
+let glossaryFile = null;
+
+// ─── DOM ──────────────────────────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const sourceLang  = $('source-lang');
+const targetLang  = $('target-lang');
+const rowKey      = $('row-key');
+const bxStyle     = $('bx-style');
+const sourceText  = $('source-text');
+const glossaryBtn = $('glossary-btn');
+const statusDot   = $('status-dot');
+const statusText  = $('status-text');
+
+// ─── Glossary file ─────────────────────────────────────────────────────────
+$('glossary-input').addEventListener('change', e => {
+  glossaryFile = e.target.files[0] || null;
+  if (glossaryFile) {
+    glossaryBtn.textContent = glossaryFile.name;
+    glossaryBtn.classList.add('has-file');
+  } else {
+    glossaryBtn.textContent = '파일 선택…';
+    glossaryBtn.classList.remove('has-file');
+  }
+  scheduleRefresh();
+});
+
+// ─── Controls ─────────────────────────────────────────────────────────────
+[sourceLang, targetLang, rowKey, bxStyle].forEach(el =>
+  el.addEventListener('change', scheduleRefresh)
+);
+sourceText.addEventListener('input', () => { updateSrcCounter(); scheduleRefresh(); });
+$('refresh-btn').addEventListener('click', fetchAll);
+
+function updateSrcCounter() {
+  const t = sourceText.value;
+  $('src-counter').textContent = `${t.length}자 / ~${estimateTokens(t)} tok`;
+}
+
+function scheduleRefresh() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(fetchAll, 320);
+}
+
+// ─── Tabs ──────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    $('panel-' + tab.dataset.tab).classList.add('active');
+    $('token-bar-translation').style.display = tab.dataset.tab === 'translation' ? 'flex' : 'none';
+    $('token-bar-audit').style.display = tab.dataset.tab === 'audit' ? 'flex' : 'none';
+  });
+});
+
+// ─── Fetch ─────────────────────────────────────────────────────────────────
+async function fetchAll() {
+  setStatus('busy', '로딩 중…');
+
+  const params = new URLSearchParams({
+    source_lang: sourceLang.value,
+    target_lang: targetLang.value,
+    row_key: rowKey.value,
+    bx_style_on: bxStyle.checked,
+    glossary_available: !!glossaryFile,
+  });
+
+  const form = new FormData();
+  form.append('source_text', sourceText.value);
+  form.append('target_lang', targetLang.value);
+  form.append('source_lang', sourceLang.value);
+  form.append('bx_style_on', bxStyle.checked);
+  form.append('row_key', rowKey.value);
+  if (glossaryFile) form.append('glossary_file', glossaryFile);
+
+  try {
+    const [modRes, blockRes] = await Promise.all([
+      fetch('/api/prompt_modules?' + params),
+      fetch('/api/preview_prompt_blocks', { method: 'POST', body: form }),
+    ]);
+    if (!modRes.ok || !blockRes.ok) throw new Error(`서버 오류 ${modRes.status}/${blockRes.status}`);
+    const [modules, blocks] = await Promise.all([modRes.json(), blockRes.json()]);
+
+    setStatus('ok', 'OK');
+    renderPipeline(modules);
+    renderBlocks('translation', blocks.translation);
+    renderBlocks('audit', blocks.audit);
+  } catch (e) {
+    setStatus('err', '연결 실패');
+    renderError(e);
+  }
+}
+
+function setStatus(state, text) {
+  statusDot.className = state;
+  statusText.textContent = text;
+}
+
+// ─── Pipeline renderer ─────────────────────────────────────────────────────
+function renderPipeline(modules) {
+  const el = $('pipeline');
+  el.innerHTML = '';
+
+  // prepend static PERSONA node
+  const allNodes = [
+    { key: '_persona', name: 'PERSONA', active: true, always: true, description: 'Role assignment — BX Writer or professional localizer.' },
+    ...NODE_ORDER.map(k => ({ key: k, ...modules[k] })),
+    { key: '_output', name: 'OUTPUT FORMAT', active: true, always: true, description: 'Return ONLY a JSON object.' },
+  ];
+
+  allNodes.forEach((n, i) => {
+    const cls = n.always ? 'always' : (n.active ? 'active' : 'inactive');
+    const badge = n.always ? 'always' : (n.active ? 'on' : 'off');
+    const node = document.createElement('div');
+    node.className = 'node ' + cls;
+    node.innerHTML = `
+      <div class="node-head">
+        <div class="node-dot"></div>
+        <div class="node-name">${esc((n.name || n.key).toUpperCase())}</div>
+        <div class="node-badge">${badge}</div>
+      </div>
+      <div class="node-desc">${esc(n.description || '')}</div>`;
+    el.appendChild(node);
+
+    if (i < allNodes.length - 1) {
+      const line = document.createElement('div');
+      line.className = 'connector' + (n.active || n.always ? ' on' : '');
+      el.appendChild(line);
+    }
+  });
+}
+
+// ─── Block viewer renderer ─────────────────────────────────────────────────
+function renderBlocks(type, data) {
+  const panel = $('panel-' + type);
+  if (!data || !data.sections) { panel.innerHTML = '<div class="err-msg">데이터 없음</div>'; return; }
+
+  panel.innerHTML = '';
+
+  // System prompt group
+  const sysLabel = document.createElement('div');
+  sysLabel.className = 'block-group-label';
+  sysLabel.textContent = 'SYSTEM PROMPT';
+  panel.appendChild(sysLabel);
+
+  let sysChars = 0, sysTok = 0;
+  data.sections.forEach(sec => {
+    sysChars += (sec.content || '').length;
+    sysTok += estimateTokens(sec.content || '');
+    panel.appendChild(makeBlock(sec));
+  });
+
+  // User message
+  const userContent = JSON.stringify(data.user_message, null, 2);
+  const userChars = userContent.length;
+  const userTok = estimateTokens(userContent);
+
+  const userLabel = document.createElement('div');
+  userLabel.className = 'block-group-label';
+  userLabel.textContent = 'USER MESSAGE';
+  panel.appendChild(userLabel);
+
+  const userBlock = {
+    id: 'user_message',
+    label: 'INPUT DATA (JSON)',
+    active: true,
+    always: false,
+    content: userContent,
+    _user: true,
+  };
+  panel.appendChild(makeBlock(userBlock));
+
+  // Token summary bar
+  const bar = $('token-bar-' + type);
+  const totalChars = sysChars + userChars;
+  const totalTok = sysTok + userTok;
+  bar.innerHTML = `<span>System <b>${sysChars.toLocaleString()}자</b> ~${sysTok.toLocaleString()}tok</span>`
+    + `<span>User <b>${userChars.toLocaleString()}자</b> ~${userTok.toLocaleString()}tok</span>`
+    + `<span style="color:var(--text)">Total <b>${totalChars.toLocaleString()}자</b> ~${totalTok.toLocaleString()}tok</span>`;
+}
+
+function makeBlock(sec) {
+  const isUser     = sec._user;
+  const isAlways   = !isUser && sec.always;
+  const isActive   = !isUser && !sec.always && sec.active;
+  const isInactive = !isUser && !sec.always && !sec.active;
+
+  const cls = isUser ? 'b-user' : isAlways ? 'b-always' : isActive ? 'b-active' : 'b-inactive';
+  const badge = isUser ? 'user' : isAlways ? 'always' : isActive ? 'on' : 'off';
+
+  const div = document.createElement('div');
+  div.className = `block ${cls}`;
+  // inactive blocks start collapsed
+  if (isInactive) div.classList.add('collapsed');
+
+  const content = sec.content || '';
+  const chars = content.length;
+  const tok = estimateTokens(content);
+  const head = document.createElement('div');
+  head.className = 'block-head';
+  head.innerHTML = `
+    <div class="block-dot"></div>
+    <div class="block-label">${esc(sec.label || sec.id)}</div>
+    <div class="block-badge">${badge}</div>
+    <div class="token-count">${chars}자 ~${tok}tok</div>
+    <div class="block-chevron">▾</div>`;
+  head.addEventListener('click', () => div.classList.toggle('collapsed'));
+
+  const body = document.createElement('div');
+  body.className = 'block-body';
+  body.textContent = sec.content || '';
+
+  div.appendChild(head);
+  div.appendChild(body);
+  return div;
+}
+
+// ─── Error state ───────────────────────────────────────────────────────────
+function renderError(e) {
+  $('pipeline').innerHTML = `<div style="color:#ef4444;font-size:10px;font-family:var(--mono);padding:4px 0;line-height:1.6">${esc(String(e))}</div>`;
+  ['translation', 'audit'].forEach(t => {
+    $('panel-' + t).innerHTML = `<div class="err-msg">서버에 연결할 수 없습니다.<br><br><span style="color:var(--muted)">uvicorn main:app --reload</span><br><br>${esc(String(e))}</div>`;
+  });
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Init ──────────────────────────────────────────────────────────────────
+updateSrcCounter();
+fetchAll();
+</script>
+</body>
+</html>

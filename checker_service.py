@@ -400,7 +400,13 @@ class TranslationChecker:
         
         return "\n".join(out) if out else f"용어집에 '{target_lang_code}' 타겟 항목 없음"
 
-    def _get_glossary_context_as_dict(self, target_lang_code: str, source_text: str | None = None, skip_deactivated: bool = False):
+    def _get_glossary_context_as_dict(
+        self,
+        target_lang_code: str,
+        source_text: str | None = None,
+        skip_deactivated: bool = False,
+        row_key: str = "",
+    ):
         """
         용어집 데이터를 JSON/Dict 형태로 반환합니다. (프롬프트 최적화용)
         """
@@ -423,7 +429,7 @@ class TranslationChecker:
                 continue
             
             if tgt:
-                if not self.prompt_builder.should_wrap_glossary("", rule):
+                if not self.prompt_builder.should_wrap_glossary(row_key, rule):
                     context[term] = f"{tgt} (EXCEPTION: Do NOT wrap '{tgt}' in brackets)"
                 else:
                     context[term] = tgt
@@ -670,7 +676,11 @@ class TranslationChecker:
 
     # ----------------- LLM Calls -----------------
     async def check_with_llm_qa(self, source_text, target_text, source_lang, target_lang, target_lang_code, row_key: str = ""):
-        glossary_dict = self._get_glossary_context_as_dict(target_lang_code, source_text=source_text)
+        glossary_dict = self._get_glossary_context_as_dict(
+            target_lang_code,
+            source_text=source_text,
+            row_key=row_key,
+        )
         
         # QA용 구조화된 프롬프트 데이터
         input_data = {
@@ -1195,7 +1205,12 @@ class TranslationChecker:
             
             # Step 1: Translate
             # Translating: filter out terms explicitly deactivated to save tokens and not force LLM behavior
-            glossary_dict = self._get_glossary_context_as_dict(target_lang_code, source_text=source_text, skip_deactivated=True)
+            glossary_dict = self._get_glossary_context_as_dict(
+                target_lang_code,
+                source_text=source_text,
+                skip_deactivated=True,
+                row_key=item.get("row_key", ""),
+            )
             if not glossary_dict:
                 glossary_dict = None
 

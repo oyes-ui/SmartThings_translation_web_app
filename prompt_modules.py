@@ -19,63 +19,88 @@ COMMON_LOCALIZATION_STANDARD = {
 
 LANGUAGE_LOCALIZATION_RULES = {
     "German": {
-        "name": "German Du/Sie Consistency",
+        "name": "German Du-form Consistency",
         "rules": [
-            "Maintain one address form consistently; do not mix Du-form and Sie-form.",
-            "Prefer Du-form for casual consumer-facing SmartThings copy unless project guidance says otherwise.",
-            "Avoid overly formal or technical constructions in short UI copy.",
+            "Use Du-form consistently unless the locale or project explicitly requires Sie-form.",
+            "Avoid overly formal or technical wording in short UI copy.",
         ],
     },
     "Japanese": {
-        "name": "Japanese Politeness and Desu/Masu",
+        "name": "Japanese ます-form Consistency",
         "rules": [
-            "Maintain consistent Desu/Masu tone and avoid abrupt style shifts.",
-            "Use natural Japanese UI phrasing rather than close structural calques from English or Korean.",
-            "Avoid excessive honorifics unless the source context clearly requires them.",
+            "Use consistent ます-form unless project guidance specifies otherwise.",
+            "Use natural Japanese UI phrasing and avoid close structural calques from English or Korean.",
+            "Avoid excessive honorifics unless the context clearly requires them.",
         ],
     },
     "French": {
-        "name": "French Tu/Vous Consistency",
+        "name": "French Tone and Consistency",
         "rules": [
-            "Maintain a consistent Tu/Vous stance throughout the same experience.",
-            "Use idiomatic French phrasing and avoid English-like syntax.",
-            "Keep benefit-led wording natural and not overly promotional.",
+            "Use one address form consistently; do not mix Tu and Vous.",
+            "Use natural French phrasing and avoid English-influenced structure or wording.",
+            "Keep marketing and benefit-led wording natural, clear, and not overly sales-driven.",
         ],
     },
     "Spanish": {
-        "name": "Spanish Tú/Usted Consistency",
+        "name": "Spanish Usted and Regional Consistency",
         "rules": [
-            "Maintain consistent Tú/Usted usage based on the intended audience.",
-            "Use natural Spanish UI wording and avoid English-influenced sentence order.",
-            "Keep regional neutrality unless a market-specific Spanish variant is requested.",
+            "Use Usted consistently unless the locale or project explicitly requires Tú.",
+            "Keep Spanish regionally neutral unless a market-specific variant is explicitly requested.",
         ],
     },
-    "Portuguese": {
-        "name": "Portuguese Regional Fit",
+    "Brazilian Portuguese": {
+        "name": "Brazilian Portuguese Consistency",
         "rules": [
-            "Respect Portugal vs Brazil wording and grammar differences where the sheet or locale indicates them.",
-            "Avoid mixing European Portuguese and Brazilian Portuguese expressions.",
-            "Keep terminology aligned with the glossary even when regional variants differ.",
+            "Use natural Brazilian Portuguese consistently and avoid European Portuguese wording or grammar.",
         ],
     },
-    "Chinese": {
-        "name": "Chinese Script and Market Fit",
+    "European Portuguese": {
+        "name": "European Portuguese Consistency",
         "rules": [
-            "Respect simplified vs traditional Chinese based on the target sheet or locale.",
-            "Avoid mixing mainland China and Taiwan wording conventions.",
-            "Use concise product UI phrasing that sounds natural in the target market.",
+            "Use natural European Portuguese consistently and avoid Brazilian Portuguese wording or grammar.",
+        ],
+    },
+    "Simplified Chinese": {
+        "name": "Simplified Chinese Consistency",
+        "rules": [
+            "Use natural Mainland Chinese wording consistently and avoid Taiwan Chinese expressions.",
+        ],
+    },
+    "Traditional Chinese": {
+        "name": "Traditional Chinese Consistency",
+        "rules": [
+            "Use natural Taiwan Chinese wording consistently and avoid Mainland Chinese expressions.",
         ],
     },
 }
 
-GLOBAL_GLOSSARY_STANDARDS = {
-    "name": "Global Glossary Standards",
+GLOSSARY_TERM_RULES = {
+    "name": "Glossary Term Rules",
     "rules": [
-        "Use the provided glossary exactly, including capitalization, spacing, and market-specific terms.",
-        "Apply glossary rule or remark exceptions before generic formatting rules.",
-        "For Title/Button context, use glossary terms without brackets unless a term-specific rule says otherwise.",
-        "For Description context, wrap glossary terms in the designated brackets unless an exception applies.",
-        "Do not wrap terms used inside navigation paths such as A > B.",
+        "Use provided glossary terms exactly, including capitalization, spacing, market variants, and term-specific exceptions.",
+    ],
+}
+
+GLOSSARY_CONTEXT_RULES = {
+    "title_button": {
+        "name": "Glossary Context Rule: Title/Button",
+        "rules": [
+            "For Title/Button and heading contexts, use glossary terms without brackets unless a term-specific exception says otherwise.",
+        ],
+    },
+    "description_disclaimer": {
+        "name": "Glossary Context Rule: Description/Disclaimer",
+        "rules": [
+            "For Description/Disclaimer context, wrap glossary terms in the designated brackets unless an exception applies; never wrap terms inside navigation paths such as A > B.",
+        ],
+    },
+}
+
+TYPOGRAPHY_AND_PUNCTUATION_RULES = {
+    "name": "Typography and Punctuation Rules",
+    "rules": [
+        "Follow punctuation, spacing, and quotation mark conventions standard for the target language and locale.",
+        "Do not mechanically copy English punctuation, quotation mark placement, spacing, or sentence-ending style into other languages.",
     ],
 }
 

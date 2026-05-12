@@ -24,3 +24,17 @@ uploads/
 # 4. RAG 오프라인 전용 데이터 (보안 — Git/HuggingFace 업로드 금지)
 @translation_data/
 rag_db/
+
+# 5. 개발 및 디버그용 임시 파일
+scratch/
+plans/
+build.log
+build.pid
+test_output.txt
+.vscode/
+.agent/
+
+# 6. 에이전트 지침 문서 (로컬 유지, 업로드 금지)
+AGENTS.md
+CLAUDE.md
+gemini.md

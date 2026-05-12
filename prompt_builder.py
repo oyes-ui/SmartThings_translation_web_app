@@ -11,10 +11,13 @@ import re
 from prompt_modules import (
     BX_STYLE_RULES,
     COMMON_LOCALIZATION_STANDARD,
-    GLOBAL_GLOSSARY_STANDARDS,
-    LANGUAGE_SPECIFIC_GLOSSARY_RULES,
+    DEFAULT_GLOSSARY_BRACKET_RULE,
+    GLOSSARY_CONTEXT_RULES,
     GLOSSARY_EXEMPT_MARKERS,
+    GLOSSARY_TERM_RULES,
     LANGUAGE_LOCALIZATION_RULES,
+    LANGUAGE_SPECIFIC_GLOSSARY_RULES,
+    TYPOGRAPHY_AND_PUNCTUATION_RULES,
 )
 
 
@@ -36,11 +39,16 @@ class PromptBuilder:
     def get_exempt_markers(self) -> list[str]:
         return GLOSSARY_EXEMPT_MARKERS
 
-    def should_skip_brackets(self, row_key: str) -> bool:
+    def get_glossary_context_mode(self, row_key: str) -> str:
         key = (row_key or "").strip().lower()
         if "description" in key or "disclaimer" in key:
-            return False
-        return "title" in key or "button" in key or bool(re.search(r"\d+$", key))
+            return "description_disclaimer"
+        if "title" in key or "button" in key or bool(re.search(r"\d+$", key)):
+            return "title_button"
+        return "description_disclaimer"
+
+    def should_skip_brackets(self, row_key: str) -> bool:
+        return self.get_glossary_context_mode(row_key) == "title_button"
 
     def should_wrap_glossary(self, row_key: str, rule_text: str = "") -> bool:
         """Single source of truth for whether a term should be wrapped in brackets."""
@@ -82,9 +90,9 @@ class PromptBuilder:
             sections.append(self._build_bx_section(target_lang))
 
         if rag_context:
+            rag_section = self._normalize_rag_section(rag_context)
             sections.append(
-                "[Translation Memory Examples]\n"
-                f"{rag_context}\n"
+                f"{rag_section}\n"
                 "Use these examples as style and terminology reference to maintain consistency."
             )
 
@@ -173,7 +181,8 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
     ) -> dict:
         language_match = self.get_language_rule(target_lang)
         language_rule = language_match[1] if language_match else None
-        bracket_mode = "skip_for_title_button" if self.should_skip_brackets(row_key) else "wrap_for_description"
+        glossary_context_mode = self.get_glossary_context_mode(row_key)
+        bracket_mode = "skip_for_title_button" if glossary_context_mode == "title_button" else "wrap_for_description"
         brackets = self.get_brackets(target_lang)
 
         return {
@@ -194,8 +203,13 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
             },
             "formatting": {
                 "active": True,
-                "name": GLOBAL_GLOSSARY_STANDARDS["name"],
-                "description": f"Bracket mode: {bracket_mode}; brackets: {brackets}.",
+                "name": "Format and Glossary Rules",
+                "description": f"Context mode: {glossary_context_mode}; bracket mode: {bracket_mode}; brackets: {brackets}.",
+            },
+            "typography": {
+                "active": True,
+                "name": TYPOGRAPHY_AND_PUNCTUATION_RULES["name"],
+                "description": "Target-locale punctuation, spacing, quotation marks, and sentence-ending style are enforced.",
             },
             "glossary": {
                 "active": bool(glossary_available),
@@ -273,19 +287,116 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
             )
         return "[GLOSSARY RULE]\nNo glossary terms are provided for this source text."
 
+    def build_translation_prompt_sections(
+        self,
+        target_lang: str,
+        source_lang: str = "English",
+        bx_style_on: bool = False,
+        rag_context: str | None = None,
+        row_key: str = "",
+        glossary_context=None,
+    ) -> list[dict]:
+        lang_content = self._build_language_section(target_lang)
+        bx_content = self._build_bx_section(target_lang) if bx_style_on else ""
+        rag_content = (
+            f"{self._normalize_rag_section(rag_context)}\n"
+            "Use these examples as style and terminology reference to maintain consistency."
+        ) if rag_context else ""
+
+        return [
+            {"id": "persona", "label": "PERSONA", "module_key": None, "active": True, "always": True,
+             "content": self._build_persona_section(target_lang, source_lang, bx_style_on)},
+            {"id": "common", "label": "COMMON LOCALIZATION STANDARD", "module_key": "common", "active": True, "always": True,
+             "content": self._build_common_section()},
+            {"id": "language", "label": "LANGUAGE SPECIFIC RULE", "module_key": "language",
+             "active": bool(lang_content), "always": False,
+             "content": lang_content or "(이 타겟 언어에 적용되는 언어별 규칙 없음)"},
+            {"id": "bx", "label": "SAMSUNG BX STYLE", "module_key": "bx",
+             "active": bool(bx_style_on), "always": False,
+             "content": bx_content or "(BX 스타일 비활성화)"},
+            {"id": "rag", "label": "RAG TRANSLATION MEMORY", "module_key": "rag",
+             "active": bool(rag_content), "always": False,
+             "content": rag_content or "(유사 번역 예시 없음 — RAG DB 미연결 또는 유사 항목 없음)"},
+            {"id": "glossary_rule", "label": "GLOSSARY RULE", "module_key": "glossary",
+             "active": True, "always": True,
+             "content": self._build_glossary_section(bool(glossary_context))},
+            {"id": "formatting", "label": "FORMAT & TYPOGRAPHY RULES", "module_key": "formatting",
+             "active": True, "always": True,
+             "content": self._build_formatting_section(target_lang, row_key)},
+            {"id": "output", "label": "OUTPUT FORMAT", "module_key": None, "active": True, "always": True,
+             "content": 'OUTPUT: Return ONLY a JSON object with a "translation" key.'},
+        ]
+
+    def build_audit_prompt_sections(
+        self,
+        target_lang: str,
+        target_lang_code: str | None = None,
+        row_key: str = "",
+        glossary_context=None,
+    ) -> list[dict]:
+        lang_content = self._build_language_section(target_lang, korean_heading=True)
+        checklist = (
+            "[검수 가이드라인]\n"
+            "1. 문법/유창성: 오타, 문법 오류, 성수 일치, 관용구 사용 등 정밀 점검.\n"
+            "2. 정확성: 원문의 뉘앙스와 정보가 정확히 전달되었는지 확인.\n"
+            "3. 용어집 준수: 제공된 glossary 데이터와 100% 일치하는지 확인 (대소문자, 띄어쓰기 포함).\n"
+            "4. 대소문자(Casing): 해당 언어의 문장형 또는 타이틀형 등 일반 규칙 준수 여부.\n"
+            "5. 현지화 품질: 문화, 어투, 문체, 지역 표현이 대상 시장에 자연스러운지 확인.\n"
+            "6. 품질 등급 평가: 번역의 품질을 다각도로 분석하여 기술하세요."
+        )
+        output_fmt = (
+            "[출력 형식]\nJSON 형식으로 반환하세요:\n"
+            "{\n"
+            '  "evaluation": [\n'
+            '    {"category": "문법/유창성", "comment": "상세한 분석 결과"},\n'
+            '    {"category": "정확성", "comment": "상세한 분석 결과"},\n'
+            '    {"category": "용어집 준수", "comment": "상세한 분석 결과"},\n'
+            '    {"category": "대소문자 표기", "comment": "상세한 분석 결과"},\n'
+            '    {"category": "현지화 품질", "comment": "상세한 분석 결과"},\n'
+            '    {"category": "기타 특이사항", "comment": "상세한 분석 결과"}\n'
+            "  ],\n"
+            '  "is_excellent": true/false,\n'
+            '  "suggested_fix": "가장 자연스럽고 정확한 전체 문장 수정안 (수정 불필요 시 빈 문자열)"\n'
+            "}"
+        )
+        return [
+            {"id": "intro", "label": "검수자 역할 정의", "module_key": None, "active": True, "always": True,
+             "content": "당신은 언어별 문법과 문맥을 정밀하게 분석하는 전문 번역 검수자입니다. 반드시 JSON 형식으로만 응답합니다."},
+            {"id": "common", "label": "공통 현지화 품질 기준", "module_key": "common", "active": True, "always": True,
+             "content": self._build_common_section(korean_heading=True)},
+            {"id": "language", "label": "언어별 현지화 기준", "module_key": "language",
+             "active": bool(lang_content), "always": False,
+             "content": lang_content or "(이 타겟 언어에 적용되는 언어별 규칙 없음)"},
+            {"id": "formatting", "label": "FORMAT & TYPOGRAPHY RULES", "module_key": "formatting",
+             "active": True, "always": True,
+             "content": self._build_formatting_section(target_lang, row_key)},
+            {"id": "checklist", "label": "검수 가이드라인", "module_key": None, "active": True, "always": True,
+             "content": checklist},
+            {"id": "glossary_target", "label": "Glossary Target", "module_key": "glossary",
+             "active": bool(glossary_context), "always": False,
+             "content": f"[Glossary Target]\nTarget code: {target_lang_code or target_lang}" if glossary_context else "(용어집 없음)"},
+            {"id": "output_format", "label": "출력 형식", "module_key": None, "active": True, "always": True,
+             "content": output_fmt},
+        ]
+
     def _build_formatting_section(self, target_lang: str, row_key: str) -> str:
         formatting_rules = []
 
-        # 1. Global standards
-        formatting_rules.append(f"[{GLOBAL_GLOSSARY_STANDARDS['name']}]")
-        formatting_rules.extend(f"- {r}" for r in GLOBAL_GLOSSARY_STANDARDS["rules"])
+        # 1. Always-on glossary term rules
+        formatting_rules.append(f"[{GLOSSARY_TERM_RULES['name']}]")
+        formatting_rules.extend(f"- {r}" for r in GLOSSARY_TERM_RULES["rules"])
 
-        # 2. Bracket style (Default vs Japanese)
-        from prompt_modules import (
-            DEFAULT_GLOSSARY_BRACKET_RULE,
-            LANGUAGE_SPECIFIC_GLOSSARY_RULES
-        )
+        # 2. Row context-specific glossary formatting rules
+        context_mode = self.get_glossary_context_mode(row_key)
+        context_rules = GLOSSARY_CONTEXT_RULES[context_mode]
+        formatting_rules.append(f"\n[{context_rules['name']}]")
+        formatting_rules.extend(f"- {r}" for r in context_rules["rules"])
 
+        # 3. Target-locale typography and punctuation
+        formatting_rules.append(f"\n[{TYPOGRAPHY_AND_PUNCTUATION_RULES['name']}]")
+        formatting_rules.extend(f"- {r}" for r in TYPOGRAPHY_AND_PUNCTUATION_RULES["rules"])
+
+        # 4. Bracket style (Default vs Japanese)
         brackets_text = self.get_brackets(target_lang)
         brackets = (brackets_text[0], brackets_text[1])
         if brackets_text == "「」":
@@ -296,8 +407,8 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
             formatting_rules.append(f"\n[{DEFAULT_GLOSSARY_BRACKET_RULE['name']}]")
             formatting_rules.extend(f"- {r}" for r in DEFAULT_GLOSSARY_BRACKET_RULE["rules"])
 
-        # 3. Dynamic context-based rule
-        if self.should_skip_brackets(row_key):
+        # 5. Dynamic context-based rule
+        if context_mode == "title_button":
             context_rule = f"Use glossary terms WITHOUT brackets for this {row_key} context."
         else:
             context_rule = (
@@ -310,3 +421,9 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
             "[FORMAT AND GLOSSARY RULES]\n"
             + "\n".join(formatting_rules)
         )
+
+    def _normalize_rag_section(self, rag_context: str) -> str:
+        rag_section = rag_context.strip()
+        if not rag_section.startswith("[Translation Memory Examples]"):
+            rag_section = "[Translation Memory Examples]\n" + rag_section
+        return rag_section

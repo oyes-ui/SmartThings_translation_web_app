@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 # Load environment variables FIRST before other imports
 load_dotenv()
 
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException, Query
+from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -380,6 +380,123 @@ async def prompt_modules(
         glossary_available=glossary_available,
         row_key=row_key
     )
+
+
+@app.get("/api/preview_prompt")
+async def preview_prompt(
+    target_lang: str = "English",
+    source_lang: str = "English",
+    bx_style_on: bool = False,
+    glossary_available: bool = False,
+    row_key: str = "",
+):
+    """데모/디버깅용: 현재 설정으로 생성되는 실제 프롬프트 텍스트 반환"""
+    glossary_context = {"demo": True} if glossary_available else None
+    translation_prompt = PROMPT_BUILDER.build_translation_prompt(
+        target_lang=target_lang,
+        source_lang=source_lang,
+        bx_style_on=bx_style_on,
+        rag_context=None,
+        row_key=row_key,
+        glossary_context=glossary_context,
+    )
+    audit_prompt = PROMPT_BUILDER.build_audit_prompt(
+        source_lang=source_lang,
+        target_lang=target_lang,
+        row_key=row_key,
+        glossary_context=glossary_context,
+    )
+    return {"translation_prompt": translation_prompt, "audit_prompt": audit_prompt}
+
+
+_DEMO_LANG_CODE = {
+    "English": "en_US", "German": "de_DE", "Japanese": "ja_JP",
+    "French": "fr_FR", "Spanish": "es_ES",
+    "Brazilian Portuguese": "pt_BR", "European Portuguese": "pt_PT",
+    "Simplified Chinese": "zh_CN", "Traditional Chinese": "zh_TW",
+}
+# RAG DB stores target_lang in sheet-code format (e.g. "JA(일본)")
+_DEMO_RAG_LANG = {
+    "English": "US(미국)", "German": "DE(독일)", "Japanese": "JA(일본)",
+    "French": "FR(프랑스)", "Spanish": "ES(스페인)",
+    "Brazilian Portuguese": "BR(브라질)", "European Portuguese": "PT(포르투갈)",
+    "Simplified Chinese": "CN(중국)", "Traditional Chinese": "TW(대만)",
+}
+
+
+@app.post("/api/preview_prompt_blocks")
+async def preview_prompt_blocks(
+    source_text: str = Form(""),
+    target_lang: str = Form("English"),
+    source_lang: str = Form("English"),
+    bx_style_on: bool = Form(False),
+    row_key: str = Form("description"),
+    glossary_file: UploadFile = File(None),
+):
+    """데모/디버깅용: 섹션별로 분리된 프롬프트 블록과 user message 반환"""
+    glossary_dict = {}
+    target_lang_code = _DEMO_LANG_CODE.get(target_lang, target_lang)
+
+    if glossary_file and glossary_file.filename:
+        temp_path = os.path.join(UPLOAD_DIR, f"demo_gloss_{uuid.uuid4().hex}.csv")
+        try:
+            with open(temp_path, "wb") as f:
+                f.write(await glossary_file.read())
+            tc = TranslationChecker()
+            await tc.load_glossary_from_file(temp_path, source_lang)
+            glossary_dict = tc._get_glossary_context_as_dict(
+                target_lang_code,
+                source_text=source_text or None,
+                row_key=row_key,
+            )
+        except Exception as e:
+            print(f"[demo glossary] 오류: {e}")
+            glossary_dict = {}
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+    rag_context = None
+    if _rag_builder_available and source_text:
+        try:
+            import re as _re
+            from rag_retriever import get_retriever
+            retriever = get_retriever()
+            if retriever.is_available():
+                rag_lang = _DEMO_RAG_LANG.get(target_lang, target_lang)
+                rag_src = "Korean" if _re.search(r'[가-힣]', source_text) else "English"
+                rag_context = retriever.format_for_prompt(source_text, rag_lang, source_lang=rag_src, n_results=2)
+        except Exception:
+            rag_context = None
+
+    translation_sections = PROMPT_BUILDER.build_translation_prompt_sections(
+        target_lang=target_lang, source_lang=source_lang, bx_style_on=bx_style_on,
+        rag_context=rag_context, row_key=row_key, glossary_context=glossary_dict or None,
+    )
+    audit_sections = PROMPT_BUILDER.build_audit_prompt_sections(
+        target_lang=target_lang, target_lang_code=target_lang_code,
+        row_key=row_key, glossary_context=glossary_dict or None,
+    )
+
+    translation_user_msg = {
+        "context_key": row_key,
+        "source_text": source_text or "(원문 텍스트를 입력하세요)",
+        "target_language": target_lang,
+        "glossary": glossary_dict,
+        "formatting": PROMPT_BUILDER.build_input_formatting(target_lang),
+    }
+    audit_user_msg = {
+        "source": {"lang": source_lang, "text": source_text or "(원문 텍스트를 입력하세요)"},
+        "translation": {"lang": f"{target_lang}/{target_lang_code}", "text": "(번역 결과가 여기에 들어갑니다)"},
+        "glossary": glossary_dict,
+        "context_key": row_key,
+    }
+
+    return {
+        "translation": {"sections": translation_sections, "user_message": translation_user_msg},
+        "audit": {"sections": audit_sections, "user_message": audit_user_msg},
+    }
+
 
 # ─── RAG 엔드포인트 ──────────────────────────────────────────────────────────
 

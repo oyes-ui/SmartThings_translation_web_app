@@ -453,7 +453,7 @@ async function updatePromptModules() {
         const res = await fetch(`${API_BASE}/prompt_modules?${params}`);
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        const modules = ['common', 'language', 'bx', 'formatting', 'glossary', 'rag'];
+        const modules = ['common', 'language', 'bx', 'formatting', 'typography', 'glossary', 'rag'];
 
         container.innerHTML = modules.map(key => {
             const item = data[key] || {};
