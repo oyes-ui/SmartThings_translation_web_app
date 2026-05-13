@@ -100,6 +100,17 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 }
 .refresh-btn:hover { background: rgba(59,130,246,.2); }
 
+.btn-universe {
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 10px; padding: 7px;
+  background: var(--panel); border: 1px solid var(--border);
+  color: var(--dim); font-size: 11px; text-decoration: none;
+  border-radius: 5px; transition: all .2s; font-weight: 500;
+}
+.btn-universe:hover {
+  border-color: var(--blue); color: var(--blue); background: var(--blue-dim);
+}
+
 /* ── Pipeline nodes ── */
 .pipeline { display: flex; flex-direction: column; align-items: center; }
 .node {
@@ -327,6 +338,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <div class="divider"></div>
 
       <button class="refresh-btn" id="refresh-btn">갱신</button>
+      <a href="universe.html" class="btn-universe">모듈 유니버스 (Universe View)</a>
 
       <div class="divider"></div>
       <div class="hint">

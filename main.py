@@ -381,6 +381,53 @@ async def prompt_modules(
         row_key=row_key
     )
 
+@app.get("/api/prompt_universe")
+async def prompt_universe():
+    """Builds a Cytoscape-compatible graph of all prompt modules."""
+    from prompt_modules import (
+        COMMON_LOCALIZATION_STANDARD as CLS,
+        LANGUAGE_LOCALIZATION_RULES as LLR,
+        BX_STYLE_RULES as BX,
+        TYPOGRAPHY_AND_PUNCTUATION_RULES as TPR,
+        GLOSSARY_BRACKET_WRAP_RULE as GBR,
+        GLOSSARY_DISCLAIMER_NAV_EXCEPTION as GDNE,
+        GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE as GDNQ
+    )
+    from prompt_builder import _LANGUAGE_RULE_LABELS as LRL
+    
+    nodes, edges = [], []
+    def n(i, l, t, c): nodes.append({"data": {"id": i, "label": l, "type": t, "content": c}})
+    def e(s, t): edges.append({"data": {"source": s, "target": t}})
+
+    # Core
+    n("c_p", "Persona & Goal", "core", "Base persona for translation and audit.")
+    n("c_c", CLS["name"], "core", "\n".join(CLS["rules"]))
+    n("c_t", TPR["name"], "core", "\n".join(TPR["rules"]))
+    e("c_p", "c_c"); e("c_c", "c_t")
+
+    # Language Branch
+    n("b_l", "Language Specific", "branch", "Conditional rules by locale.")
+    e("c_t", "b_l")
+    for k, r in LLR.items():
+        nid = f"l_{k.lower().replace(' ', '_')}"
+        n(nid, LRL.get(k, k), "language", "\n".join(r))
+        e("b_l", nid); e(nid, "b_ctx")
+
+    # Context Branch
+    n("b_ctx", "Context Rules", "branch", "UI context-based rules.")
+    n("x_t", "Title / Button", "context", "No brackets.")
+    n("x_d", "Description", "context", GBR)
+    n("x_s", "Disclaimer", "context", f"{GBR}\n{GDNE}\n{GDNQ}")
+    e("b_ctx", "x_t"); e("b_ctx", "x_d"); e("b_ctx", "x_s")
+
+    # BX Branch
+    n("b_bx", "Samsung BX Style", "branch", "Voice attributes.")
+    e("x_t", "b_bx"); e("x_d", "b_bx"); e("x_s", "b_bx")
+    for k, d in BX["voice_attributes"].items():
+        n(f"bx_{k.lower()}", f"Voice: {k}", "style", f"{d['definition']}\n\n" + "\n".join(d['actionable_rules']))
+        e("b_bx", f"bx_{k.lower()}")
+
+    return {"elements": {"nodes": nodes, "edges": edges}}
 
 @app.get("/api/preview_prompt")
 async def preview_prompt(
