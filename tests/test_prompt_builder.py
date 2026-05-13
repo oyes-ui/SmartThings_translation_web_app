@@ -40,7 +40,8 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertIn("quotation mark conventions", prompt)
         self.assertIn("SAMSUNG BX STYLE", prompt)
         self.assertIn("Example 1", prompt)
-        self.assertIn("without brackets", prompt)
+        self.assertIn("GLOSSARY RULES", prompt)
+        self.assertNotIn("Wrap glossary terms", prompt)
         self.assertIn('"translation"', prompt)
 
     def test_rag_context_header_is_not_duplicated(self):
@@ -79,14 +80,12 @@ class PromptBuilderTests(unittest.TestCase):
             glossary_available=True,
         )
 
-        self.assertIn("Japanese Bracket Style", prompt)
-        self.assertIn("Use Japanese corner brackets 「」 instead of square brackets []", prompt)
-        self.assertIn("Glossary Context Rule: Description/Disclaimer", prompt)
-        self.assertNotIn("Glossary Context Rule: Title/Button", prompt)
+        self.assertIn("Wrap glossary terms in '「' and '」'", prompt)
+        self.assertNotIn("Wrap glossary terms in '[' and ']'", prompt)
         self.assertIn("Do not mechanically copy English punctuation", prompt)
         self.assertIn("brackets: 「」", modules["formatting"]["description"])
-        self.assertIn("wrap_for_description", modules["formatting"]["description"])
-        self.assertIn("description_disclaimer", modules["formatting"]["description"])
+        self.assertIn("wrap (description)", modules["formatting"]["description"])
+        self.assertIn("description", modules["formatting"]["description"])
         self.assertTrue(modules["typography"]["active"])
         self.assertIn("Typography and Punctuation Rules", modules["typography"]["name"])
 
@@ -106,11 +105,9 @@ class PromptBuilderTests(unittest.TestCase):
             glossary_available=True,
         )
 
-        self.assertIn("without brackets", prompt)
-        self.assertIn("Glossary Context Rule: Title/Button", prompt)
-        self.assertNotIn("Glossary Context Rule: Description/Disclaimer", prompt)
+        self.assertNotIn("Wrap glossary terms", prompt)
         self.assertIn("brackets: 「」", modules["formatting"]["description"])
-        self.assertIn("skip_for_title_button", modules["formatting"]["description"])
+        self.assertIn("no_brackets", modules["formatting"]["description"])
         self.assertIn("title_button", modules["formatting"]["description"])
 
     def test_japanese_locale_alias_uses_corner_bracket_rule(self):
@@ -121,7 +118,6 @@ class PromptBuilderTests(unittest.TestCase):
             glossary_context={"SmartThings": "SmartThings"},
         )
 
-        self.assertIn("Japanese Bracket Style", prompt)
         self.assertIn("Wrap glossary terms in '「' and '」'", prompt)
 
     def test_audit_prompt_contract(self):

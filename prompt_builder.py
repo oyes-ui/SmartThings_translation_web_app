@@ -11,12 +11,9 @@ import re
 from prompt_modules import (
     BX_STYLE_RULES,
     COMMON_LOCALIZATION_STANDARD,
-    DEFAULT_GLOSSARY_BRACKET_RULE,
-    GLOSSARY_CONTEXT_RULES,
     GLOSSARY_EXEMPT_MARKERS,
     GLOSSARY_TERM_RULES,
     LANGUAGE_LOCALIZATION_RULES,
-    LANGUAGE_SPECIFIC_GLOSSARY_RULES,
     TYPOGRAPHY_AND_PUNCTUATION_RULES,
 )
 
@@ -30,11 +27,6 @@ _LANGUAGE_RULE_LABELS = {
     "European Portuguese": "European Portuguese Consistency",
     "Simplified Chinese": "Simplified Chinese Consistency",
     "Traditional Chinese": "Traditional Chinese Consistency",
-}
-
-_GLOSSARY_CONTEXT_LABELS = {
-    "title_button": "Glossary Context Rule: Title/Button",
-    "description_disclaimer": "Glossary Context Rule: Description/Disclaimer",
 }
 
 
@@ -58,11 +50,13 @@ class PromptBuilder:
 
     def get_glossary_context_mode(self, row_key: str) -> str:
         key = (row_key or "").strip().lower()
-        if "description" in key or "disclaimer" in key:
-            return "description_disclaimer"
+        if "disclaimer" in key:
+            return "disclaimer"
+        if "description" in key:
+            return "description"
         if "title" in key or "button" in key or bool(re.search(r"\d+$", key)):
             return "title_button"
-        return "description_disclaimer"
+        return "description"
 
     def should_skip_brackets(self, row_key: str) -> bool:
         return self.get_glossary_context_mode(row_key) == "title_button"
@@ -200,7 +194,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         lang_key = language_match[0] if language_match else None
         language_rules = language_match[1] if language_match else None
         glossary_context_mode = self.get_glossary_context_mode(row_key)
-        bracket_mode = "skip_for_title_button" if glossary_context_mode == "title_button" else "wrap_for_description"
+        bracket_mode = "no_brackets" if glossary_context_mode == "title_button" else f"wrap ({glossary_context_mode})"
         brackets = self.get_brackets(target_lang)
 
         return {
@@ -399,47 +393,24 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         ]
 
     def _build_formatting_section(self, target_lang: str, row_key: str) -> str:
-        formatting_rules = []
+        lines = [
+            "[GLOSSARY RULES]",
+            f"- {GLOSSARY_TERM_RULES['rules'][0]}",
+        ]
 
-        # 1. Always-on glossary term rules
-        formatting_rules.append(f"[{GLOSSARY_TERM_RULES['name']}]")
-        formatting_rules.extend(f"- {r}" for r in GLOSSARY_TERM_RULES["rules"])
-
-        # 2. Row context-specific glossary formatting rules
         context_mode = self.get_glossary_context_mode(row_key)
-        context_rules = GLOSSARY_CONTEXT_RULES[context_mode]
-        formatting_rules.append(f"\n[{_GLOSSARY_CONTEXT_LABELS[context_mode]}]")
-        formatting_rules.extend(f"- {r}" for r in context_rules)
+        if context_mode != "title_button":
+            brackets = self.get_brackets(target_lang)
+            wrap_rule = f"Wrap glossary terms in '{brackets[0]}' and '{brackets[1]}'."
+            if context_mode == "disclaimer":
+                wrap_rule += " Exception: do not wrap terms inside navigation paths (e.g., Settings > Device)."
+            lines.append(f"- {wrap_rule}")
 
-        # 3. Target-locale typography and punctuation
-        formatting_rules.append(f"\n[{TYPOGRAPHY_AND_PUNCTUATION_RULES['name']}]")
-        formatting_rules.extend(f"- {r}" for r in TYPOGRAPHY_AND_PUNCTUATION_RULES["rules"])
-
-        # 4. Bracket style (Default vs Japanese)
-        brackets_text = self.get_brackets(target_lang)
-        brackets = (brackets_text[0], brackets_text[1])
-        if brackets_text == "「」":
-            ja_rules = LANGUAGE_SPECIFIC_GLOSSARY_RULES.get("Japanese", [])
-            formatting_rules.append("\n[Japanese Bracket Style]")
-            formatting_rules.extend(f"- {r}" for r in ja_rules)
-        else:
-            formatting_rules.append(f"\n[{DEFAULT_GLOSSARY_BRACKET_RULE['name']}]")
-            formatting_rules.extend(f"- {r}" for r in DEFAULT_GLOSSARY_BRACKET_RULE["rules"])
-
-        # 5. Dynamic context-based rule
-        if context_mode == "title_button":
-            context_rule = f"Use glossary terms WITHOUT brackets for this {row_key} context."
-        else:
-            context_rule = (
-                f"Wrap glossary terms in '{brackets[0]}' and '{brackets[1]}' for Description context unless an exception applies."
-            )
-        
-        formatting_rules.append(f"- {context_rule}")
-
-        return (
-            "[FORMAT AND GLOSSARY RULES]\n"
-            + "\n".join(formatting_rules)
-        )
+        lines += [
+            f"\n[{TYPOGRAPHY_AND_PUNCTUATION_RULES['name']}]",
+            *[f"- {r}" for r in TYPOGRAPHY_AND_PUNCTUATION_RULES["rules"]],
+        ]
+        return "\n".join(lines)
 
     def _normalize_rag_section(self, rag_context: str) -> str:
         rag_section = rag_context.strip()

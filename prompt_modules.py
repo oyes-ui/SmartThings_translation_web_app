@@ -57,33 +57,11 @@ GLOSSARY_TERM_RULES = {
     ],
 }
 
-GLOSSARY_CONTEXT_RULES = {
-    "title_button": [
-        "For Title/Button and heading contexts, use glossary terms without brackets unless a term-specific exception says otherwise.",
-    ],
-    "description_disclaimer": [
-        "For Description/Disclaimer context, wrap glossary terms in the designated brackets unless an exception applies; never wrap terms inside navigation paths such as A > B.",
-    ],
-}
-
 TYPOGRAPHY_AND_PUNCTUATION_RULES = {
     "name": "Typography and Punctuation Rules",
     "rules": [
         "Follow punctuation, spacing, and quotation mark conventions standard for the target language and locale.",
         "Do not mechanically copy English punctuation, quotation mark placement, spacing, or sentence-ending style into other languages.",
-    ],
-}
-
-DEFAULT_GLOSSARY_BRACKET_RULE = {
-    "name": "Default Bracket Style",
-    "rules": [
-        "Use square brackets [] for glossary term wrapping in most languages.",
-    ],
-}
-
-LANGUAGE_SPECIFIC_GLOSSARY_RULES = {
-    "Japanese": [
-        "Use Japanese corner brackets 「」 instead of square brackets [] for glossary wrapping.",
     ],
 }
 
