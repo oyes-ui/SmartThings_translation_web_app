@@ -14,6 +14,8 @@ from prompt_modules import (
     GLOSSARY_BRACKET_WRAP_RULE,
     GLOSSARY_DISCLAIMER_NAV_EXCEPTION,
     GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE,
+    GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_INTL,
+    GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_US,
     GLOSSARY_EXEMPT_MARKERS,
     GLOSSARY_TERM_RULES,
     LANGUAGE_LOCALIZATION_RULES,
@@ -61,6 +63,12 @@ class PromptBuilder:
             return "title_button"
         return "description"
 
+    def _is_us_english(self, target_lang: str, target_lang_code: str = "") -> bool:
+        combined = f"{target_lang} {target_lang_code}".lower().replace("-", "_")
+        is_english = "english" in combined or "영어" in combined or "en_" in combined
+        is_us = "us" in combined or "미국" in combined or "american" in combined
+        return is_english and is_us
+
     def should_skip_brackets(self, row_key: str) -> bool:
         return self.get_glossary_context_mode(row_key) == "title_button"
 
@@ -91,6 +99,7 @@ class PromptBuilder:
         rag_context: str | None = None,
         row_key: str = "",
         glossary_context=None,
+        target_lang_code: str = "",
     ) -> str:
         sections = []
         sections.append(self._build_persona_section(target_lang, source_lang, bx_style_on))
@@ -111,7 +120,7 @@ class PromptBuilder:
             )
 
         sections.append(self._build_glossary_section(bool(glossary_context)))
-        sections.append(self._build_formatting_section(target_lang, row_key))
+        sections.append(self._build_formatting_section(target_lang, row_key, target_lang_code))
         sections.append('OUTPUT: Return ONLY a JSON object with a "translation" key.')
 
         return "\n\n".join(section for section in sections if section).strip()
@@ -133,7 +142,7 @@ class PromptBuilder:
         if language_section:
             sections.append(language_section)
 
-        sections.append(self._build_formatting_section(target_lang, row_key))
+        sections.append(self._build_formatting_section(target_lang, row_key, target_lang_code or ""))
 
         sections.append(
             "[검수 가이드라인]\n"
@@ -311,6 +320,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         rag_context: str | None = None,
         row_key: str = "",
         glossary_context=None,
+        target_lang_code: str = "",
     ) -> list[dict]:
         lang_content = self._build_language_section(target_lang)
         bx_content = self._build_bx_section(target_lang) if bx_style_on else ""
@@ -338,7 +348,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
              "content": self._build_glossary_section(bool(glossary_context))},
             {"id": "formatting", "label": "FORMAT & TYPOGRAPHY RULES", "module_key": "formatting",
              "active": True, "always": True,
-             "content": self._build_formatting_section(target_lang, row_key)},
+             "content": self._build_formatting_section(target_lang, row_key, target_lang_code)},
             {"id": "output", "label": "OUTPUT FORMAT", "module_key": None, "active": True, "always": True,
              "content": 'OUTPUT: Return ONLY a JSON object with a "translation" key.'},
         ]
@@ -385,7 +395,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
              "content": lang_content or "(이 타겟 언어에 적용되는 언어별 규칙 없음)"},
             {"id": "formatting", "label": "FORMAT & TYPOGRAPHY RULES", "module_key": "formatting",
              "active": True, "always": True,
-             "content": self._build_formatting_section(target_lang, row_key)},
+             "content": self._build_formatting_section(target_lang, row_key, target_lang_code or "")},
             {"id": "checklist", "label": "검수 가이드라인", "module_key": None, "active": True, "always": True,
              "content": checklist},
             {"id": "glossary_target", "label": "Glossary Target", "module_key": "glossary",
@@ -395,7 +405,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
              "content": output_fmt},
         ]
 
-    def _build_formatting_section(self, target_lang: str, row_key: str) -> str:
+    def _build_formatting_section(self, target_lang: str, row_key: str, target_lang_code: str = "") -> str:
         lines = [
             "[GLOSSARY RULES]",
             f"- {GLOSSARY_TERM_RULES['rules'][0]}",
@@ -409,7 +419,13 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
                 wrap_rule += f" {GLOSSARY_DISCLAIMER_NAV_EXCEPTION}"
             lines.append(f"- {wrap_rule}")
             if context_mode == "disclaimer":
-                lines.append(f"- {GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE}")
+                if self._is_us_english(target_lang, target_lang_code):
+                    quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_US
+                elif target_lang_code:
+                    quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_INTL
+                else:
+                    quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE
+                lines.append(f"- {quote_rule}")
 
         lines += [
             f"\n[{TYPOGRAPHY_AND_PUNCTUATION_RULES['name']}]",
