@@ -21,6 +21,23 @@ from prompt_modules import (
 )
 
 
+_LANGUAGE_RULE_LABELS = {
+    "German": "German Du-form Consistency",
+    "Japanese": "Japanese ます-form Consistency",
+    "French": "French Tone and Consistency",
+    "Spanish": "Spanish Usted and Regional Consistency",
+    "Brazilian Portuguese": "Brazilian Portuguese Consistency",
+    "European Portuguese": "European Portuguese Consistency",
+    "Simplified Chinese": "Simplified Chinese Consistency",
+    "Traditional Chinese": "Traditional Chinese Consistency",
+}
+
+_GLOSSARY_CONTEXT_LABELS = {
+    "title_button": "Glossary Context Rule: Title/Button",
+    "description_disclaimer": "Glossary Context Rule: Description/Disclaimer",
+}
+
+
 class PromptBuilder:
     def get_language_rule(self, target_lang: str):
         if not target_lang:
@@ -180,7 +197,8 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         row_key: str = "",
     ) -> dict:
         language_match = self.get_language_rule(target_lang)
-        language_rule = language_match[1] if language_match else None
+        lang_key = language_match[0] if language_match else None
+        language_rules = language_match[1] if language_match else None
         glossary_context_mode = self.get_glossary_context_mode(row_key)
         bracket_mode = "skip_for_title_button" if glossary_context_mode == "title_button" else "wrap_for_description"
         brackets = self.get_brackets(target_lang)
@@ -192,9 +210,9 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
                 "description": "Meaning preservation, natural local expression, cultural fit, tone, and risky wording controls.",
             },
             "language": {
-                "active": bool(language_rule),
-                "name": language_rule["name"] if language_rule else "No language-specific module",
-                "description": "; ".join(language_rule["rules"]) if language_rule else "Only the common localization standard is applied.",
+                "active": bool(language_rules),
+                "name": _LANGUAGE_RULE_LABELS.get(lang_key, lang_key) if lang_key else "No language-specific module",
+                "description": "; ".join(language_rules) if language_rules else "Only the common localization standard is applied.",
             },
             "bx": {
                 "active": bool(bx_style_on),
@@ -249,9 +267,10 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         match = self.get_language_rule(target_lang)
         if not match:
             return ""
-        _, rule = match
+        lang_key, rules = match
         heading = "[언어별 현지화 기준]" if korean_heading else "[LANGUAGE SPECIFIC RULE]"
-        return f"{heading}\n{rule['name']}\n" + "\n".join(f"- {item}" for item in rule["rules"])
+        label = _LANGUAGE_RULE_LABELS.get(lang_key, lang_key)
+        return f"{heading}\n{label}\n" + "\n".join(f"- {item}" for item in rules)
 
     def _build_bx_section(self, target_lang: str) -> str:
         identity = BX_STYLE_RULES["system_identity"]
@@ -389,8 +408,8 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         # 2. Row context-specific glossary formatting rules
         context_mode = self.get_glossary_context_mode(row_key)
         context_rules = GLOSSARY_CONTEXT_RULES[context_mode]
-        formatting_rules.append(f"\n[{context_rules['name']}]")
-        formatting_rules.extend(f"- {r}" for r in context_rules["rules"])
+        formatting_rules.append(f"\n[{_GLOSSARY_CONTEXT_LABELS[context_mode]}]")
+        formatting_rules.extend(f"- {r}" for r in context_rules)
 
         # 3. Target-locale typography and punctuation
         formatting_rules.append(f"\n[{TYPOGRAPHY_AND_PUNCTUATION_RULES['name']}]")
@@ -400,9 +419,9 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         brackets_text = self.get_brackets(target_lang)
         brackets = (brackets_text[0], brackets_text[1])
         if brackets_text == "「」":
-            ja_rules = LANGUAGE_SPECIFIC_GLOSSARY_RULES.get("Japanese", {})
-            formatting_rules.append(f"\n[{ja_rules.get('name', 'Japanese Bracket Style')}]")
-            formatting_rules.extend(f"- {r}" for r in ja_rules.get("rules", []))
+            ja_rules = LANGUAGE_SPECIFIC_GLOSSARY_RULES.get("Japanese", [])
+            formatting_rules.append("\n[Japanese Bracket Style]")
+            formatting_rules.extend(f"- {r}" for r in ja_rules)
         else:
             formatting_rules.append(f"\n[{DEFAULT_GLOSSARY_BRACKET_RULE['name']}]")
             formatting_rules.extend(f"- {r}" for r in DEFAULT_GLOSSARY_BRACKET_RULE["rules"])

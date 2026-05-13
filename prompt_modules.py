@@ -18,60 +18,36 @@ COMMON_LOCALIZATION_STANDARD = {
 }
 
 LANGUAGE_LOCALIZATION_RULES = {
-    "German": {
-        "name": "German Du-form Consistency",
-        "rules": [
-            "Use Du-form consistently unless the locale or project explicitly requires Sie-form.",
-            "Avoid overly formal or technical wording in short UI copy.",
-        ],
-    },
-    "Japanese": {
-        "name": "Japanese ます-form Consistency",
-        "rules": [
-            "Use consistent ます-form unless project guidance specifies otherwise.",
-            "Use natural Japanese UI phrasing and avoid close structural calques from English or Korean.",
-            "Avoid excessive honorifics unless the context clearly requires them.",
-        ],
-    },
-    "French": {
-        "name": "French Tone and Consistency",
-        "rules": [
-            "Use one address form consistently; do not mix Tu and Vous.",
-            "Use natural French phrasing and avoid English-influenced structure or wording.",
-            "Keep marketing and benefit-led wording natural, clear, and not overly sales-driven.",
-        ],
-    },
-    "Spanish": {
-        "name": "Spanish Usted and Regional Consistency",
-        "rules": [
-            "Use Usted consistently unless the locale or project explicitly requires Tú.",
-            "Keep Spanish regionally neutral unless a market-specific variant is explicitly requested.",
-        ],
-    },
-    "Brazilian Portuguese": {
-        "name": "Brazilian Portuguese Consistency",
-        "rules": [
-            "Use natural Brazilian Portuguese consistently and avoid European Portuguese wording or grammar.",
-        ],
-    },
-    "European Portuguese": {
-        "name": "European Portuguese Consistency",
-        "rules": [
-            "Use natural European Portuguese consistently and avoid Brazilian Portuguese wording or grammar.",
-        ],
-    },
-    "Simplified Chinese": {
-        "name": "Simplified Chinese Consistency",
-        "rules": [
-            "Use natural Mainland Chinese wording consistently and avoid Taiwan Chinese expressions.",
-        ],
-    },
-    "Traditional Chinese": {
-        "name": "Traditional Chinese Consistency",
-        "rules": [
-            "Use natural Taiwan Chinese wording consistently and avoid Mainland Chinese expressions.",
-        ],
-    },
+    "German": [
+        "Use Du-form consistently unless the locale or project explicitly requires Sie-form.",
+        "Avoid overly formal or technical wording in short UI copy.",
+    ],
+    "Japanese": [
+        "Use consistent ます-form unless project guidance specifies otherwise.",
+        "Use natural Japanese UI phrasing and avoid close structural calques from English or Korean.",
+        "Avoid excessive honorifics unless the context clearly requires them.",
+    ],
+    "French": [
+        "Use one address form consistently; do not mix Tu and Vous.",
+        "Use natural French phrasing and avoid English-influenced structure or wording.",
+        "Keep marketing and benefit-led wording natural, clear, and not overly sales-driven.",
+    ],
+    "Spanish": [
+        "Use Usted consistently unless the locale or project explicitly requires Tú.",
+        "Keep Spanish regionally neutral unless a market-specific variant is explicitly requested.",
+    ],
+    "Brazilian Portuguese": [
+        "Use natural Brazilian Portuguese consistently and avoid European Portuguese wording or grammar.",
+    ],
+    "European Portuguese": [
+        "Use natural European Portuguese consistently and avoid Brazilian Portuguese wording or grammar.",
+    ],
+    "Simplified Chinese": [
+        "Use natural Mainland Chinese wording consistently and avoid Taiwan Chinese expressions.",
+    ],
+    "Traditional Chinese": [
+        "Use natural Taiwan Chinese wording consistently and avoid Mainland Chinese expressions.",
+    ],
 }
 
 GLOSSARY_TERM_RULES = {
@@ -82,18 +58,12 @@ GLOSSARY_TERM_RULES = {
 }
 
 GLOSSARY_CONTEXT_RULES = {
-    "title_button": {
-        "name": "Glossary Context Rule: Title/Button",
-        "rules": [
-            "For Title/Button and heading contexts, use glossary terms without brackets unless a term-specific exception says otherwise.",
-        ],
-    },
-    "description_disclaimer": {
-        "name": "Glossary Context Rule: Description/Disclaimer",
-        "rules": [
-            "For Description/Disclaimer context, wrap glossary terms in the designated brackets unless an exception applies; never wrap terms inside navigation paths such as A > B.",
-        ],
-    },
+    "title_button": [
+        "For Title/Button and heading contexts, use glossary terms without brackets unless a term-specific exception says otherwise.",
+    ],
+    "description_disclaimer": [
+        "For Description/Disclaimer context, wrap glossary terms in the designated brackets unless an exception applies; never wrap terms inside navigation paths such as A > B.",
+    ],
 }
 
 TYPOGRAPHY_AND_PUNCTUATION_RULES = {
@@ -112,12 +82,9 @@ DEFAULT_GLOSSARY_BRACKET_RULE = {
 }
 
 LANGUAGE_SPECIFIC_GLOSSARY_RULES = {
-    "Japanese": {
-        "name": "Japanese Bracket Style",
-        "rules": [
-            "Use Japanese corner brackets 「」 instead of square brackets [] for glossary wrapping.",
-        ],
-    },
+    "Japanese": [
+        "Use Japanese corner brackets 「」 instead of square brackets [] for glossary wrapping.",
+    ],
 }
 
 GLOSSARY_EXEMPT_MARKERS = ["no bracket", "대괄호 제외", "괄호 제외"]
