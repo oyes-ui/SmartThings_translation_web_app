@@ -11,6 +11,9 @@ import re
 from prompt_modules import (
     BX_STYLE_RULES,
     COMMON_LOCALIZATION_STANDARD,
+    GLOSSARY_BRACKET_WRAP_RULE,
+    GLOSSARY_DISCLAIMER_NAV_EXCEPTION,
+    GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE,
     GLOSSARY_EXEMPT_MARKERS,
     GLOSSARY_TERM_RULES,
     LANGUAGE_LOCALIZATION_RULES,
@@ -401,10 +404,12 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         context_mode = self.get_glossary_context_mode(row_key)
         if context_mode != "title_button":
             brackets = self.get_brackets(target_lang)
-            wrap_rule = f"Wrap glossary terms in '{brackets[0]}' and '{brackets[1]}'."
+            wrap_rule = GLOSSARY_BRACKET_WRAP_RULE.format(open=brackets[0], close=brackets[1])
             if context_mode == "disclaimer":
-                wrap_rule += " Exception: do not wrap terms inside navigation paths (e.g., Settings > Device)."
+                wrap_rule += f" {GLOSSARY_DISCLAIMER_NAV_EXCEPTION}"
             lines.append(f"- {wrap_rule}")
+            if context_mode == "disclaimer":
+                lines.append(f"- {GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE}")
 
         lines += [
             f"\n[{TYPOGRAPHY_AND_PUNCTUATION_RULES['name']}]",

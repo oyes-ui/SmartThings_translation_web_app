@@ -65,6 +65,14 @@ TYPOGRAPHY_AND_PUNCTUATION_RULES = {
     ],
 }
 
+GLOSSARY_BRACKET_WRAP_RULE = "Wrap glossary terms in '{open}' and '{close}'."
+GLOSSARY_DISCLAIMER_NAV_EXCEPTION = "Exception: do not wrap terms inside navigation paths (e.g., Settings > Device)."
+GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE = (
+    "Enclose navigation paths in double quotation marks. "
+    "For US English, place the sentence-ending period outside the closing quote; "
+    "for all other target languages, place it inside the closing quote."
+)
+
 GLOSSARY_EXEMPT_MARKERS = ["no bracket", "대괄호 제외", "괄호 제외"]
 
 BX_STYLE_RULES = {
