@@ -9,6 +9,9 @@ prompt modules visible and reusable.
 import re
 
 from prompt_modules import (
+    AUDIT_CHECKLIST_RULES,
+    AUDIT_GRADE_CRITERIA,
+    AUDIT_INTRO,
     BX_STYLE_RULES,
     COMMON_LOCALIZATION_STANDARD,
     GLOSSARY_BRACKET_WRAP_RULE,
@@ -24,6 +27,10 @@ from prompt_modules import (
 
 
 _LANGUAGE_RULE_LABELS = {
+    "English": "US English Consistency",
+    "English_UK": "British English Consistency",
+    "English_AU": "Australian English Consistency",
+    "English_SG": "Singapore English Consistency",
     "German": "German Du-form Consistency",
     "Japanese": "Japanese ます-form Consistency",
     "French": "French Tone and Consistency",
@@ -119,8 +126,7 @@ class PromptBuilder:
                 "Use these examples as style and terminology reference to maintain consistency."
             )
 
-        sections.append(self._build_glossary_section(bool(glossary_context)))
-        sections.append(self._build_formatting_section(target_lang, row_key, target_lang_code))
+        sections.append(self._build_formatting_section(target_lang, row_key, target_lang_code, bool(glossary_context)))
         sections.append('OUTPUT: Return ONLY a JSON object with a "translation" key.')
 
         return "\n\n".join(section for section in sections if section).strip()
@@ -133,45 +139,19 @@ class PromptBuilder:
         row_key: str = "",
         glossary_context=None,
     ) -> str:
-        sections = [
-            "당신은 언어별 문법과 문맥을 정밀하게 분석하는 전문 번역 검수자입니다. 반드시 JSON 형식으로만 응답합니다.",
-            self._build_common_section(korean_heading=True),
-        ]
+        sections = [AUDIT_INTRO]
 
         language_section = self._build_language_section(target_lang, korean_heading=True)
         if language_section:
             sections.append(language_section)
 
-        sections.append(self._build_formatting_section(target_lang, row_key, target_lang_code or ""))
+        sections.append(self._build_formatting_section(target_lang, row_key, target_lang_code or "", bool(glossary_context)))
+        sections.append(self._build_audit_checklist())
 
-        sections.append(
-            "[검수 가이드라인]\n"
-            "1. 문법/유창성: 오타, 문법 오류, 성수 일치, 관용구 사용 등 정밀 점검.\n"
-            "2. 정확성: 원문의 뉘앙스와 정보가 정확히 전달되었는지 확인.\n"
-            "3. 용어집 준수: 제공된 glossary 데이터와 100% 일치하는지 확인 (대소문자, 띄어쓰기 포함).\n"
-            "4. 대소문자(Casing): 해당 언어의 문장형 또는 타이틀형 등 일반 규칙 준수 여부.\n"
-            "5. 현지화 품질: 문화, 어투, 문체, 지역 표현이 대상 시장에 자연스러운지 확인.\n"
-            "6. 품질 등급 평가: 번역의 품질을 다각도로 분석하여 기술하세요."
-        )
         if glossary_context:
             sections.append(f"[Glossary Target]\nTarget code: {target_lang_code or target_lang}")
 
-        sections.append(
-            "[출력 형식]\n"
-            "JSON 형식으로 반환하세요:\n"
-            "{\n"
-            '  "evaluation": [\n'
-            '    {"category": "문법/유창성", "comment": "상세한 분석 결과"},\n'
-            '    {"category": "정확성", "comment": "상세한 분석 결과"},\n'
-            '    {"category": "용어집 준수", "comment": "상세한 분석 결과"},\n'
-            '    {"category": "대소문자 표기", "comment": "상세한 분석 결과"},\n'
-            '    {"category": "현지화 품질", "comment": "상세한 분석 결과"},\n'
-            '    {"category": "기타 특이사항", "comment": "상세한 분석 결과"}\n'
-            "  ],\n"
-            '  "is_excellent": true/false,\n'
-            '  "suggested_fix": "가장 자연스럽고 정확한 전체 문장 수정안 (수정 불필요 시 빈 문자열)"\n'
-            "}"
-        )
+        sections.append(self._build_audit_output_format())
         return "\n\n".join(sections).strip()
 
     def build_bx_audit_prompt(self, source_text: str, translated_text: str, target_lang: str) -> str:
@@ -228,7 +208,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
             "formatting": {
                 "active": True,
                 "name": "Format and Glossary Rules",
-                "description": f"Context mode: {glossary_context_mode}; bracket mode: {bracket_mode}; brackets: {brackets}.",
+                "description": f"Context mode: {glossary_context_mode}; bracket mode: {bracket_mode}; brackets: {brackets}; navigation path rules applied.",
             },
             "typography": {
                 "active": True,
@@ -304,14 +284,6 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
             lines.append(f"Output: {example['output']}")
         return "\n".join(lines)
 
-    def _build_glossary_section(self, glossary_available: bool) -> str:
-        if glossary_available:
-            return (
-                "[GLOSSARY RULE]\n"
-                "Use the provided glossary exactly. Apply term-specific rule or remark exceptions before generic formatting rules."
-            )
-        return "[GLOSSARY RULE]\nNo glossary terms are provided for this source text."
-
     def build_translation_prompt_sections(
         self,
         target_lang: str,
@@ -343,12 +315,9 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
             {"id": "rag", "label": "RAG TRANSLATION MEMORY", "module_key": "rag",
              "active": bool(rag_content), "always": False,
              "content": rag_content or "(유사 번역 예시 없음 — RAG DB 미연결 또는 유사 항목 없음)"},
-            {"id": "glossary_rule", "label": "GLOSSARY RULE", "module_key": "glossary",
-             "active": True, "always": True,
-             "content": self._build_glossary_section(bool(glossary_context))},
             {"id": "formatting", "label": "FORMAT & TYPOGRAPHY RULES", "module_key": "formatting",
              "active": True, "always": True,
-             "content": self._build_formatting_section(target_lang, row_key, target_lang_code)},
+             "content": self._build_formatting_section(target_lang, row_key, target_lang_code, bool(glossary_context))},
             {"id": "output", "label": "OUTPUT FORMAT", "module_key": None, "active": True, "always": True,
              "content": 'OUTPUT: Return ONLY a JSON object with a "translation" key.'},
         ]
@@ -361,58 +330,71 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         glossary_context=None,
     ) -> list[dict]:
         lang_content = self._build_language_section(target_lang, korean_heading=True)
-        checklist = (
-            "[검수 가이드라인]\n"
-            "1. 문법/유창성: 오타, 문법 오류, 성수 일치, 관용구 사용 등 정밀 점검.\n"
-            "2. 정확성: 원문의 뉘앙스와 정보가 정확히 전달되었는지 확인.\n"
-            "3. 용어집 준수: 제공된 glossary 데이터와 100% 일치하는지 확인 (대소문자, 띄어쓰기 포함).\n"
-            "4. 대소문자(Casing): 해당 언어의 문장형 또는 타이틀형 등 일반 규칙 준수 여부.\n"
-            "5. 현지화 품질: 문화, 어투, 문체, 지역 표현이 대상 시장에 자연스러운지 확인.\n"
-            "6. 품질 등급 평가: 번역의 품질을 다각도로 분석하여 기술하세요."
-        )
-        output_fmt = (
-            "[출력 형식]\nJSON 형식으로 반환하세요:\n"
-            "{\n"
-            '  "evaluation": [\n'
-            '    {"category": "문법/유창성", "comment": "상세한 분석 결과"},\n'
-            '    {"category": "정확성", "comment": "상세한 분석 결과"},\n'
-            '    {"category": "용어집 준수", "comment": "상세한 분석 결과"},\n'
-            '    {"category": "대소문자 표기", "comment": "상세한 분석 결과"},\n'
-            '    {"category": "현지화 품질", "comment": "상세한 분석 결과"},\n'
-            '    {"category": "기타 특이사항", "comment": "상세한 분석 결과"}\n'
-            "  ],\n"
-            '  "is_excellent": true/false,\n'
-            '  "suggested_fix": "가장 자연스럽고 정확한 전체 문장 수정안 (수정 불필요 시 빈 문자열)"\n'
-            "}"
-        )
         return [
             {"id": "intro", "label": "검수자 역할 정의", "module_key": None, "active": True, "always": True,
-             "content": "당신은 언어별 문법과 문맥을 정밀하게 분석하는 전문 번역 검수자입니다. 반드시 JSON 형식으로만 응답합니다."},
-            {"id": "common", "label": "공통 현지화 품질 기준", "module_key": "common", "active": True, "always": True,
-             "content": self._build_common_section(korean_heading=True)},
+             "content": AUDIT_INTRO},
             {"id": "language", "label": "언어별 현지화 기준", "module_key": "language",
              "active": bool(lang_content), "always": False,
              "content": lang_content or "(이 타겟 언어에 적용되는 언어별 규칙 없음)"},
             {"id": "formatting", "label": "FORMAT & TYPOGRAPHY RULES", "module_key": "formatting",
              "active": True, "always": True,
-             "content": self._build_formatting_section(target_lang, row_key, target_lang_code or "")},
+             "content": self._build_formatting_section(target_lang, row_key, target_lang_code or "", bool(glossary_context))},
             {"id": "checklist", "label": "검수 가이드라인", "module_key": None, "active": True, "always": True,
-             "content": checklist},
+             "content": self._build_audit_checklist()},
             {"id": "glossary_target", "label": "Glossary Target", "module_key": "glossary",
              "active": bool(glossary_context), "always": False,
              "content": f"[Glossary Target]\nTarget code: {target_lang_code or target_lang}" if glossary_context else "(용어집 없음)"},
             {"id": "output_format", "label": "출력 형식", "module_key": None, "active": True, "always": True,
-             "content": output_fmt},
+             "content": self._build_audit_output_format()},
         ]
 
-    def _build_formatting_section(self, target_lang: str, row_key: str, target_lang_code: str = "") -> str:
+    def _build_audit_checklist(self) -> str:
+        lines = ["[검수 가이드라인]"]
+        for i, (cat, desc) in enumerate(AUDIT_CHECKLIST_RULES, 1):
+            lines.append(f"{i}. {cat}: {desc}")
+        return "\n".join(lines)
+
+    def _build_audit_output_format(self) -> str:
+        last = len(AUDIT_CHECKLIST_RULES) - 1
+        cat_lines = [
+            f'    {{"category": "{cat}", "comment": "상세한 분석 결과"}}{"," if i < last else ""}'
+            for i, (cat, _) in enumerate(AUDIT_CHECKLIST_RULES)
+        ]
+        grade_opts = " | ".join(AUDIT_GRADE_CRITERIA)
+        grade_criteria = "\n".join(f'  - "{k}": {v}' for k, v in AUDIT_GRADE_CRITERIA.items())
+        return (
+            "[출력 형식]\nJSON 형식으로 반환하세요:\n"
+            "{\n"
+            '  "evaluation": [\n'
+            + "\n".join(cat_lines)
+            + "\n  ],\n"
+            f'  "grade": "{grade_opts}",\n'
+            '  "suggested_fix": "가장 자연스럽고 정확한 전체 문장 수정안 (수정 불필요 시 빈 문자열)"\n'
+            "}\n"
+            f"grade 기준:\n{grade_criteria}"
+        )
+
+    def _build_formatting_section(
+        self,
+        target_lang: str,
+        row_key: str,
+        target_lang_code: str = "",
+        glossary_available: bool = True,
+    ) -> str:
         lines = [
             "[GLOSSARY RULES]",
-            f"- {GLOSSARY_TERM_RULES['rules'][0]}",
         ]
 
+        if glossary_available:
+            lines.extend([
+                f"- {GLOSSARY_TERM_RULES['rules'][0]}",
+                "- Apply term-specific rule or remark exceptions before generic formatting rules.",
+            ])
+        else:
+            lines.append("No glossary terms are provided for this source text.")
+
         context_mode = self.get_glossary_context_mode(row_key)
-        if context_mode != "title_button":
+        if glossary_available and context_mode != "title_button":
             brackets = self.get_brackets(target_lang)
             wrap_rule = GLOSSARY_BRACKET_WRAP_RULE.format(open=brackets[0], close=brackets[1])
             if context_mode == "disclaimer":

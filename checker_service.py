@@ -491,6 +491,20 @@ class TranslationChecker:
                     issues.append(f"[대소문자] 용어집 '{t_term}'의 표기가 '{actual}'로 사용됨")
         return issues
 
+    def _get_navigation_path_spans(self, target_text: str):
+        """
+        First-pass deterministic disclaimer exception:
+        double-quoted ranges containing '>' are treated as navigation paths.
+        """
+        spans = []
+        for match in re.finditer(r'"[^"]*"', target_text or ""):
+            if ">" in match.group(0):
+                spans.append(match.span())
+        return spans
+
+    def _is_inside_span(self, start: int, end: int, spans: list[tuple[int, int]]) -> bool:
+        return any(span_start <= start and end <= span_end for span_start, span_end in spans)
+
     def _check_glossary_brackets(self, source_text: str, target_text: str, target_lang_code: str, target_lang: str, row_key: str = ""):
         if not self.glossary or not target_lang_code or not source_text or not target_text:
             return []
@@ -502,6 +516,8 @@ class TranslationChecker:
         issues = []
         brackets = self.prompt_builder.get_brackets(target_lang)
         b_left, b_right = brackets[0], brackets[1]
+        context_mode = self.prompt_builder.get_glossary_context_mode(row_key)
+        navigation_path_spans = self._get_navigation_path_spans(target_text) if context_mode == "disclaimer" else []
 
         for s_term in relevant_terms:
             meta = self.glossary[s_term]
@@ -536,8 +552,11 @@ class TranslationChecker:
                 
             for m in matches:
                 idx = m.start()
-                has_left = (idx > 0 and target_text[idx-1] == b_left)
                 idx_end = m.end()
+                if navigation_path_spans and self._is_inside_span(idx, idx_end, navigation_path_spans):
+                    continue
+
+                has_left = (idx > 0 and target_text[idx-1] == b_left)
                 has_right = (idx_end < len(target_text) and target_text[idx_end] == b_right)
                 has_brackets = has_left and has_right
                 
@@ -593,7 +612,7 @@ class TranslationChecker:
         if simple_fixed_text == target_text:
             simple_fixed_text = None
         return report, simple_fixed_text
-    async def _run_llm_translation(self, text, target_lang, model_name="gemini-2.5-flash", bx_style_on=False, glossary_context=None, rag_context=None, row_key="", source_lang="English", rag_identity_match=True):
+    async def _run_llm_translation(self, text, target_lang, model_name="gemini-2.5-flash", bx_style_on=False, glossary_context=None, rag_context=None, row_key="", source_lang="English", rag_identity_match=True, target_lang_code=""):
         """
         내부 전용 번역 메서드: JSON 프롬프트 생성 및 LLM 호출을 담당합니다.
         """
@@ -627,7 +646,8 @@ class TranslationChecker:
             bx_style_on=bx_style_on,
             rag_context=rag_context,
             row_key=row_key,
-            glossary_context=glossary_context
+            glossary_context=glossary_context,
+            target_lang_code=target_lang_code,
         )
 
         try:
@@ -713,12 +733,12 @@ class TranslationChecker:
             
             if isinstance(response, dict) and response.get("error") == "parsing_failed":
                  err_msg = f"[파싱/서버 오류]: Gemini가 유효한 JSON을 반환하지 않았거나 서버가 응답하지 않습니다. (원문: {str(response.get('original_text', ''))[:100]}...)"
-                 eval_json = json.dumps({"evaluation": [{"category": "에러", "comment": err_msg}], "is_excellent": False, "suggested_fix": ""}, ensure_ascii=False)
+                 eval_json = json.dumps({"evaluation": [{"category": "에러", "comment": err_msg}], "grade": "Needs Revision", "suggested_fix": ""}, ensure_ascii=False)
                  return (err_msg, eval_json)
 
             if isinstance(response, str):
                  eval_text = f"[QA 분석 결과]\n{response}"
-                 eval_json = json.dumps({"evaluation": [{"category": "결과", "comment": response}], "is_excellent": False, "suggested_fix": ""}, ensure_ascii=False)
+                 eval_json = json.dumps({"evaluation": [{"category": "결과", "comment": response}], "grade": "Needs Revision", "suggested_fix": ""}, ensure_ascii=False)
                  return (eval_text, eval_json)
             
             # 1. Build beautiful human-readable text
@@ -731,22 +751,27 @@ class TranslationChecker:
                    lines.append(f"- {cat}: {com}")
             
             eval_text = "\n".join(lines) if lines else "검수 결과 없음."
-            if response.get("is_excellent"):
-                eval_text += "\n\n최종 평가: 우수, 주요 문제 없음."
+            grade = response.get("grade", "")
+            if grade == "Excellent":
+                eval_text += "\n\n최종 평가: 우수 — 직역 없이 자연스러운 현지화."
+            elif grade == "Good":
+                eval_text += "\n\n최종 평가: 양호 — 경미한 개선 여지 있으나 출시 가능 수준."
+            elif grade == "Needs Revision":
+                eval_text += "\n\n최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요."
             if response.get("suggested_fix"):
                 eval_text += f"\n\n[수정안 제안]:\n{response['suggested_fix']}"
 
             # 2. Extract JSON payload
             eval_json = json.dumps({
                 "evaluation": eval_list,
-                "is_excellent": response.get("is_excellent", False),
+                "grade": grade or "Needs Revision",
                 "suggested_fix": response.get("suggested_fix", "")
             }, ensure_ascii=False)
             
             return (eval_text, eval_json)
         except Exception as e:
             err_text = f"[QA 오류]: {str(e)}"
-            err_json = json.dumps({"evaluation": [{"category": "에러", "comment": str(e)}], "is_excellent": False, "suggested_fix": ""}, ensure_ascii=False)
+            err_json = json.dumps({"evaluation": [{"category": "에러", "comment": str(e)}], "grade": "Needs Revision", "suggested_fix": ""}, ensure_ascii=False)
             return (err_text, err_json)
 
 
@@ -1249,6 +1274,7 @@ class TranslationChecker:
                 row_key=item.get("row_key", ""),
                 source_lang=source_lang,
                 rag_identity_match=rag_identity_match,
+                target_lang_code=target_lang_code,
             )
             
             # Extract plain glossary targets (removing EXCEPTION strings if any)

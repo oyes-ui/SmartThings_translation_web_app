@@ -223,6 +223,31 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   font-size: 10px; font-family: var(--mono); color: var(--dim);
   text-align: right; margin-top: 3px;
 }
+
+.copy-btn {
+  margin-left: auto;
+  padding: 3px 8px;
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: var(--font);
+  display: flex;
+  align-items: center;
+}
+.copy-btn:hover {
+  background: var(--blue-dim);
+  border-color: var(--blue);
+  color: var(--blue);
+}
+.copy-btn.copied {
+  background: var(--green-dim);
+  border-color: var(--green);
+  color: var(--green);
+}
 </style>
 </head>
 <body>
@@ -349,6 +374,7 @@ function estimateTokens(text) {
 // ─── State ────────────────────────────────────────────────────────────────
 let debounceTimer = null;
 let glossaryFile = null;
+let currentPromptBlocks = null;
 
 // ─── DOM ──────────────────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
@@ -431,6 +457,7 @@ async function fetchAll() {
     if (!modRes.ok || !blockRes.ok) throw new Error(`서버 오류 ${modRes.status}/${blockRes.status}`);
     const [modules, blocks] = await Promise.all([modRes.json(), blockRes.json()]);
 
+    currentPromptBlocks = blocks;
     setStatus('ok', 'OK');
     renderPipeline(modules);
     renderBlocks('translation', blocks.translation);
@@ -526,7 +553,43 @@ function renderBlocks(type, data) {
   const totalTok = sysTok + userTok;
   bar.innerHTML = `<span>System <b>${sysChars.toLocaleString()}자</b> ~${sysTok.toLocaleString()}tok</span>`
     + `<span>User <b>${userChars.toLocaleString()}자</b> ~${userTok.toLocaleString()}tok</span>`
-    + `<span style="color:var(--text)">Total <b>${totalChars.toLocaleString()}자</b> ~${totalTok.toLocaleString()}tok</span>`;
+    + `<span style="color:var(--text)">Total <b>${totalChars.toLocaleString()}자</b> ~${totalTok.toLocaleString()}tok</span>`
+    + `<button class="copy-btn" onclick="copyPromptText('${type}', this)">전체 복사</button>`;
+}
+
+async function copyPromptText(type, btn) {
+  if (!currentPromptBlocks || !currentPromptBlocks[type]) return;
+
+  const data = currentPromptBlocks[type];
+  let fullText = "";
+
+  // 1. Append active system prompt sections
+  if (data.sections) {
+    data.sections.forEach(sec => {
+      if (sec.always || sec.active) {
+        fullText += (sec.content || "") + "\n\n";
+      }
+    });
+  }
+
+  // 2. Append user message
+  if (data.user_message) {
+    fullText += JSON.stringify(data.user_message, null, 2);
+  }
+
+  try {
+    await navigator.clipboard.writeText(fullText.trim());
+    const originalText = btn.textContent;
+    btn.textContent = "복사 완료!";
+    btn.classList.add("copied");
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.classList.remove("copied");
+    }, 2000);
+  } catch (err) {
+    console.error("Failed to copy:", err);
+    alert("클립보드 복사에 실패했습니다.");
+  }
 }
 
 function makeBlock(sec) {

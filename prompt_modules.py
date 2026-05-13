@@ -18,6 +18,18 @@ COMMON_LOCALIZATION_STANDARD = {
 }
 
 LANGUAGE_LOCALIZATION_RULES = {
+    "English_UK": [
+        "Use British English spelling and wording; avoid US-only spelling and phrasing.",
+    ],
+    "English_AU": [
+        "Use Australian English with British-style spelling; avoid US-only wording.",
+    ],
+    "English_SG": [
+        "Use Singapore English with British-style spelling where appropriate; avoid Singlish, local slang, and overly US-specific wording.",
+    ],
+    "English": [
+        "Use US English spelling and wording unless a more specific English market variant is specified.",
+    ],
     "German": [
         "Use Du-form consistently unless the locale or project explicitly requires Sie-form.",
         "Avoid overly formal or technical wording in short UI copy.",
@@ -82,6 +94,50 @@ GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE = (
 )
 
 GLOSSARY_EXEMPT_MARKERS = ["no bracket", "대괄호 제외", "괄호 제외"]
+
+AUDIT_INTRO = (
+    "당신은 Samsung SmartThings UI 현지화 전문 검수자입니다.\n"
+    "핵심 기준: 원문 의미 보존과 '현지인이 실제로 쓸 법한 표현인가'를 중심으로 검수합니다. "
+    "반드시 JSON 형식으로만 응답합니다."
+)
+
+AUDIT_CHECKLIST_RULES = [
+    (
+        "문법/유창성",
+        "오타, 문법 오류, 성수 일치, 관용구 사용 등 정밀 점검.",
+    ),
+    (
+        "정확성 및 현지화 품질",
+        "원문의 의미와 뉘앙스가 충실히 보존되었는지 확인. "
+        "동시에 원문 구조를 그대로 옮긴 직역이 아닌, 현지인이 실제로 쓸 법한 자연스러운 표현으로 옮겨졌는지 평가. "
+        "'의미가 전달됐는가'와 '현지화가 됐는가'를 함께 판단.",
+    ),
+    (
+        "용어집 준수",
+        "제공된 glossary 데이터와 100% 일치하는지 확인 (대소문자, 띄어쓰기 포함). "
+        "항목별 예외 규칙(rule/remark)이 있는 경우 예외가 우선 적용되었는지 확인.",
+    ),
+    (
+        "언어별 규칙 준수",
+        "[언어별 현지화 기준] 섹션에 명시된 규칙 준수 여부 확인 (예: 독일어 Du-form, 일본어 ます형, 프랑스어 Tu/Vous 등). "
+        "해당 언어 규칙이 적용되지 않은 경우 '해당 없음'으로 기재.",
+    ),
+    (
+        "대소문자 표기",
+        "대상 언어의 문장형(sentence case) 또는 타이틀형(title case) 등 일반 대소문자 표기 규칙 준수 여부.",
+    ),
+    (
+        "서식 및 표기",
+        "[서식 규칙] 섹션 기준으로 점검: glossary 용어의 bracket 표기 적용 여부, "
+        "탐색 경로(nav path)의 따옴표 및 마침표 위치, 타이포그래피·구두점·간격 등 대상 언어 표기 규칙 준수 여부.",
+    ),
+]
+
+AUDIT_GRADE_CRITERIA = {
+    "Excellent": "모든 항목 문제 없음, 직역 없이 자연스러운 현지화",
+    "Good": "경미한 개선 여지 있으나 출시 가능 수준",
+    "Needs Revision": "직역, 용어집 불일치, 문법 오류 등 수정 필요",
+}
 
 BX_STYLE_RULES = {
     "system_identity": {

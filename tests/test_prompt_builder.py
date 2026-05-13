@@ -22,7 +22,20 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertIn("Du-form", german["language"]["name"])
         self.assertTrue(japanese["language"]["active"])
         self.assertIn("ます-form", japanese["language"]["name"])
-        self.assertFalse(english["language"]["active"])
+        self.assertTrue(english["language"]["active"])
+        self.assertIn("US English", english["language"]["name"])
+
+    def test_english_market_variant_rules(self):
+        us_prompt = self.builder.build_translation_prompt(target_lang="English", source_lang="Korean")
+        uk_prompt = self.builder.build_translation_prompt(target_lang="English_UK", source_lang="Korean")
+        au_prompt = self.builder.build_translation_prompt(target_lang="English_AU", source_lang="Korean")
+        sg_prompt = self.builder.build_translation_prompt(target_lang="English_SG", source_lang="Korean")
+
+        self.assertIn("Use US English spelling and wording", us_prompt)
+        self.assertIn("Use British English spelling and wording", uk_prompt)
+        self.assertIn("Use Australian English with British-style spelling", au_prompt)
+        self.assertIn("Use Singapore English with British-style spelling where appropriate", sg_prompt)
+        self.assertIn("avoid Singlish", sg_prompt)
 
     def test_translation_prompt_modules(self):
         prompt = self.builder.build_translation_prompt(
@@ -41,6 +54,7 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertIn("SAMSUNG BX STYLE", prompt)
         self.assertIn("Example 1", prompt)
         self.assertIn("GLOSSARY RULES", prompt)
+        self.assertNotIn("[GLOSSARY RULE]\n", prompt)
         self.assertNotIn("Wrap glossary terms", prompt)
         self.assertIn('"translation"', prompt)
 
@@ -120,6 +134,69 @@ class PromptBuilderTests(unittest.TestCase):
 
         self.assertIn("Wrap glossary terms in '「' and '」'", prompt)
 
+    def test_no_glossary_prompt_does_not_include_wrap_rule(self):
+        prompt = self.builder.build_translation_prompt(
+            target_lang="Japanese",
+            source_lang="Korean",
+            row_key="description_01",
+            glossary_context=None,
+        )
+
+        self.assertIn("[GLOSSARY RULES]", prompt)
+        self.assertIn("No glossary terms are provided", prompt)
+        self.assertNotIn("[GLOSSARY RULE]\n", prompt)
+        self.assertNotIn("Wrap glossary terms", prompt)
+
+    def test_disclaimer_context_keeps_navigation_path_exception(self):
+        self.assertEqual(
+            self.builder.get_glossary_context_mode("//test_disclaimer_01"),
+            "disclaimer",
+        )
+
+        chinese_prompt = self.builder.build_translation_prompt(
+            target_lang="Simplified Chinese",
+            source_lang="Korean",
+            row_key="//test_disclaimer_01",
+            glossary_context={"웰컴 에어 케어": "智能净化"},
+            target_lang_code="zh_CN",
+        )
+        japanese_prompt = self.builder.build_translation_prompt(
+            target_lang="Japanese",
+            source_lang="Korean",
+            row_key="//test_disclaimer_01",
+            glossary_context={"웰컴 에어 케어": "Welcome air care"},
+            target_lang_code="ja_JP",
+        )
+
+        self.assertIn("Wrap glossary terms in '[' and ']'", chinese_prompt)
+        self.assertIn("navigation paths", chinese_prompt)
+        self.assertIn("double quotation marks", chinese_prompt)
+        self.assertIn("inside the closing quote", chinese_prompt)
+        self.assertNotIn("US English", chinese_prompt)
+        self.assertIn("Wrap glossary terms in '「' and '」'", japanese_prompt)
+        self.assertIn("navigation paths", japanese_prompt)
+        self.assertIn("double quotation marks", japanese_prompt)
+        self.assertIn("inside the closing quote", japanese_prompt)
+
+    def test_disclaimer_context_uses_us_english_period_rule_when_code_is_us(self):
+        us_prompt = self.builder.build_translation_prompt(
+            target_lang="English",
+            source_lang="Korean",
+            row_key="//test_disclaimer_01",
+            glossary_context={"Welcome air care": "Welcome air care"},
+            target_lang_code="en_US",
+        )
+        fallback_prompt = self.builder.build_translation_prompt(
+            target_lang="English",
+            source_lang="Korean",
+            row_key="//test_disclaimer_01",
+            glossary_context={"Welcome air care": "Welcome air care"},
+        )
+
+        self.assertIn("outside the closing quote", us_prompt)
+        self.assertNotIn("inside the closing quote", us_prompt)
+        self.assertIn("For US English", fallback_prompt)
+
     def test_audit_prompt_contract(self):
         prompt = self.builder.build_audit_prompt(
             source_lang="Korean",
@@ -129,9 +206,9 @@ class PromptBuilderTests(unittest.TestCase):
         )
 
         self.assertIn('"evaluation"', prompt)
-        self.assertIn('"is_excellent"', prompt)
+        self.assertIn('"grade"', prompt)
         self.assertIn('"suggested_fix"', prompt)
-        self.assertIn("현지화 품질", prompt)
+        self.assertIn("정확성 및 현지화 품질", prompt)
 
     def test_checker_glossary_brackets_respect_row_key_context(self):
         checker = TranslationChecker()
@@ -160,6 +237,36 @@ class PromptBuilderTests(unittest.TestCase):
                 "일본",
                 "Japanese",
                 row_key="description_01",
+            )
+        )
+
+    def test_checker_disclaimer_allows_unwrapped_terms_inside_quoted_navigation_paths(self):
+        checker = TranslationChecker()
+        checker.glossary = {
+            "Welcome air care": {
+                "targets": {"zh_CN": "智能净化"},
+                "rule": "",
+            }
+        }
+        checker._compile_glossary_re()
+
+        self.assertEqual(
+            checker._check_glossary_brackets(
+                "Welcome air care can be set in Welcome air care.",
+                '[智能净化]可在"Settings > 设备 > 空调 > 设备控制 > 智能净化"中设置。',
+                "zh_CN",
+                "Simplified Chinese",
+                row_key="//test_disclaimer_01",
+            ),
+            [],
+        )
+        self.assertTrue(
+            checker._check_glossary_brackets(
+                "Welcome air care can be set in Welcome air care.",
+                '智能净化可在"Settings > 设备 > 空调 > 设备控制 > 智能净化"中设置。',
+                "zh_CN",
+                "Simplified Chinese",
+                row_key="//test_disclaimer_01",
             )
         )
 

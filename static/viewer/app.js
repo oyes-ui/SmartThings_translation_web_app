@@ -145,9 +145,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (item.geminiQa && (item.geminiQa.includes('[AI QA 오류]') || item.geminiQa.includes('[Gemini QA 오류]'))) {
                 item.status = 'fail'; item.tags.push('AI 오류'); hasIssue = true;
-            } else if (item.geminiQa && (item.geminiQa.includes('수정 제안') || item.geminiQa.includes('오류'))) {
-                if (item.status !== 'fail') item.status = 'warn';
-                if (!item.tags.includes('AI 제안')) item.tags.push('AI 추천');
+            } else if (item.geminiQa) {
+                try {
+                    const aiData = JSON.parse(item.geminiQa);
+                    const isExcellent = aiData.is_excellent === true || aiData.grade === 'Excellent';
+                    const hasFix = (aiData.suggested_fix && aiData.suggested_fix.trim() !== '') || aiData.grade === 'Needs Revision';
+                    
+                    if (!isExcellent || hasFix) {
+                        if (item.status !== 'fail') item.status = 'warn';
+                        if (!item.tags.includes('AI 제안')) item.tags.push('AI 추천');
+                    }
+                } catch (e) {
+                    // Fallback to string matching for non-JSON or malformed data
+                    if (item.geminiQa.includes('수정 제안') || item.geminiQa.includes('오류') || item.geminiQa.includes('Needs Revision')) {
+                        if (item.status !== 'fail') item.status = 'warn';
+                        if (!item.tags.includes('AI 제안')) item.tags.push('AI 추천');
+                    }
+                }
             }
 
             if (item.status === 'pass') parsedData.stats.pass++;
@@ -393,8 +407,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             `;
                         });
                     }
-                    if (aiData.is_excellent) {
-                        aiContent += `<div style="margin-top: 10px; color: var(--success-color); font-weight: bold;"><i class="ri-check-double-line"></i> 종합 평가 요약: 우수 <span>(문제점 제안 없음)</span></div>`;
+                    if (aiData.grade === "Excellent" || aiData.is_excellent === true) {
+                        aiContent += `<div style="margin-top: 10px; color: var(--success-color); font-weight: bold;"><i class="ri-check-double-line"></i> 종합 평가: 우수 <span>(직역 없이 자연스러운 현지화)</span></div>`;
+                    } else if (aiData.grade === "Good") {
+                        aiContent += `<div style="margin-top: 10px; color: #d97706; font-weight: bold;"><i class="ri-check-line"></i> 종합 평가: 양호 <span>(경미한 개선 여지)</span></div>`;
+                    } else if (aiData.grade === "Needs Revision" || aiData.is_excellent === false) {
+                        aiContent += `<div style="margin-top: 10px; color: #dc2626; font-weight: bold;"><i class="ri-error-warning-line"></i> 종합 평가: 수정 필요</div>`;
                     }
                     if (aiData.suggested_fix && aiData.suggested_fix.trim() !== '') {
                         let suggClass = "warn";

@@ -392,6 +392,7 @@ async def preview_prompt(
 ):
     """데모/디버깅용: 현재 설정으로 생성되는 실제 프롬프트 텍스트 반환"""
     glossary_context = {"demo": True} if glossary_available else None
+    target_lang_code = _DEMO_LANG_CODE.get(target_lang, target_lang)
     translation_prompt = PROMPT_BUILDER.build_translation_prompt(
         target_lang=target_lang,
         source_lang=source_lang,
@@ -399,10 +400,12 @@ async def preview_prompt(
         rag_context=None,
         row_key=row_key,
         glossary_context=glossary_context,
+        target_lang_code=target_lang_code,
     )
     audit_prompt = PROMPT_BUILDER.build_audit_prompt(
         source_lang=source_lang,
         target_lang=target_lang,
+        target_lang_code=target_lang_code,
         row_key=row_key,
         glossary_context=glossary_context,
     )
@@ -472,6 +475,7 @@ async def preview_prompt_blocks(
     translation_sections = PROMPT_BUILDER.build_translation_prompt_sections(
         target_lang=target_lang, source_lang=source_lang, bx_style_on=bx_style_on,
         rag_context=rag_context, row_key=row_key, glossary_context=glossary_dict or None,
+        target_lang_code=target_lang_code,
     )
     audit_sections = PROMPT_BUILDER.build_audit_prompt_sections(
         target_lang=target_lang, target_lang_code=target_lang_code,
