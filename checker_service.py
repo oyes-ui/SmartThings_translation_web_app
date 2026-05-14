@@ -632,22 +632,24 @@ class TranslationChecker:
                 if clean_value:
                     targets.append(clean_value)
 
-        if targets:
-            for term in sorted(set(targets), key=len, reverse=True):
-                for left, right in bracket_pairs:
-                    cleaned = re.sub(
-                        re.escape(left) + r"\s*" + re.escape(term) + r"\s*" + re.escape(right),
-                        term,
-                        cleaned,
-                        flags=re.IGNORECASE,
-                    )
-        else:
+        for term in sorted(set(targets), key=len, reverse=True):
             for left, right in bracket_pairs:
                 cleaned = re.sub(
-                    re.escape(left) + r"\s*([^" + re.escape(left + right) + r"]+?)\s*" + re.escape(right),
-                    r"\1",
+                    re.escape(left) + r"\s*" + re.escape(term) + r"\s*" + re.escape(right),
+                    term,
                     cleaned,
+                    flags=re.IGNORECASE,
                 )
+
+        # In title/button context, glossary brackets are not allowed at all.
+        # This catches model outputs that wrap the whole heading/button rather
+        # than only the glossary term.
+        for left, right in bracket_pairs:
+            cleaned = re.sub(
+                re.escape(left) + r"\s*([^" + re.escape(left + right) + r"]+?)\s*" + re.escape(right),
+                r"\1",
+                cleaned,
+            )
         return cleaned
 
     def _analyze_sentence_case(self, target_text: str, target_lang: str):
@@ -1323,6 +1325,9 @@ class TranslationChecker:
             nonlocal completed_count
             source_text = item['text']
             coord = item['coord']
+            row_key = item.get("row_key", "")
+            context_mode = self.prompt_builder.get_glossary_context_mode(row_key)
+            logs = []
             
             # Step 1: Translate
             # Translating: filter out terms explicitly deactivated to save tokens and not force LLM behavior
@@ -1330,14 +1335,21 @@ class TranslationChecker:
                 target_lang_code,
                 source_text=source_text,
                 skip_deactivated=True,
-                row_key=item.get("row_key", ""),
+                row_key=row_key,
             )
+            relevant_terms_for_debug = self._get_relevant_glossary_terms(source_text)
+            if context_mode == "title_button":
+                logs.append(
+                    f"[Glossary Debug] {ws.title} {coord} key={row_key or '(empty)'} "
+                    f"mode={context_mode} target_code={target_lang_code} "
+                    f"source_terms={relevant_terms_for_debug or []} "
+                    f"prompt_terms={list(glossary_dict.keys()) if glossary_dict else []}"
+                )
             if not glossary_dict:
                 glossary_dict = None
 
             # RAG Injection
             rag_context_str = None
-            logs = []
             if getattr(self, "rag_retriever", None) and self.rag_retriever.is_available():
                 try:
                     results = self.rag_retriever.retrieve(
@@ -1367,7 +1379,7 @@ class TranslationChecker:
                 bx_style_on=bx_style_on,
                 glossary_context=glossary_dict,
                 rag_context=rag_context_str,
-                row_key=item.get("row_key", ""),
+                row_key=row_key,
                 source_lang=source_lang,
                 rag_identity_match=rag_identity_match,
                 target_lang_code=target_lang_code,
@@ -1411,7 +1423,7 @@ class TranslationChecker:
                 "sheet_name": ws.title,
                 "source": source_text,
                 "target": translation,
-                "row_key": item.get("row_key", ""),
+                "row_key": row_key,
             }
             
             if skip_audit:
@@ -1600,6 +1612,8 @@ class TranslationChecker:
             nonlocal completed_count
             source_text = item['text']
             coord = item['coord']
+            row_key = item.get("row_key", "")
+            context_mode = self.prompt_builder.get_glossary_context_mode(row_key)
             
             target_cell = ws[coord]
             target_text = str(target_cell.value).strip() if target_cell.value is not None else ""
@@ -1615,7 +1629,7 @@ class TranslationChecker:
                     target_text,
                     target_lang_code,
                     target_lang,
-                    row_key=item.get("row_key", ""),
+                    row_key=row_key,
                 )
                 if bracket_issues:
                     logs.extend(bracket_issues)
@@ -1632,6 +1646,12 @@ class TranslationChecker:
 
                 original_target_terms = []
                 relevant_terms = self._get_relevant_glossary_terms(source_text)
+                if context_mode == "title_button":
+                    logs.append(
+                        f"[Glossary Debug] {ws.title} {coord} key={row_key or '(empty)'} "
+                        f"mode={context_mode} target_code={target_lang_code} "
+                        f"source_terms={relevant_terms or []}"
+                    )
                 if relevant_terms:
                     for s_term in relevant_terms:
                         meta = self.glossary.get(s_term)

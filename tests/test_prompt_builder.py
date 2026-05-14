@@ -360,6 +360,14 @@ class PromptBuilderTests(unittest.TestCase):
             ),
             "自宅分析 Settings",
         )
+        self.assertEqual(
+            checker._strip_title_button_glossary_brackets(
+                "[Personalized Home insight]",
+                {"Home insight": "Home insight"},
+                row_key="//section_045_1",
+            ),
+            "Personalized Home insight",
+        )
 
 
 class PromptModuleApiTests(unittest.TestCase):
