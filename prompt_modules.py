@@ -132,6 +132,7 @@ GLOSSARY_TERM_RULES = {
     "name": "Glossary Term Rules",
     "rules": [
         "Use provided glossary terms exactly, including capitalization, spacing, market variants, and term-specific exceptions.",
+        "Glossary capitalization is authoritative and overrides title case, sentence case, and heading/button capitalization rules.",
     ],
 }
 
@@ -164,7 +165,7 @@ GLOSSARY_EXEMPT_MARKERS = ["no bracket", "대괄호 제외", "괄호 제외"]
 GLOSSARY_NO_BRACKET_INSTRUCTION = (
     "For title, section heading, and button copy, do not wrap glossary terms in any brackets. "
     "Use the glossary term text exactly as provided, without [], 「」, or any other surrounding bracket marks, "
-    "even if the source text contains brackets."
+    "even if the source text contains brackets. Do not change glossary capitalization to satisfy heading or button case style."
 )
 GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA = (
     "Enclose navigation paths in 「 and 」. "

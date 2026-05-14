@@ -332,6 +332,45 @@ class PromptBuilderTests(unittest.TestCase):
             "「自宅分析」は「Settings > Devices」で設定できます。",
         )
 
+    def test_glossary_casing_restore_overrides_title_case(self):
+        checker = TranslationChecker()
+        glossary_context = {
+            "Home insight": "Home insight",
+            "SmartThings": "SmartThings",
+        }
+
+        self.assertEqual(
+            checker._restore_glossary_target_casing("Home Insight for Smartthings", glossary_context),
+            "Home insight for SmartThings",
+        )
+        self.assertEqual(
+            checker._restore_glossary_target_casing("air quality and ai", {"AI": "AI"}),
+            "air quality and AI",
+        )
+        self.assertEqual(
+            checker._restore_glossary_target_casing(
+                checker._strip_title_button_glossary_brackets(
+                    "[Home Insight] for Smartthings",
+                    glossary_context,
+                    row_key="//section_045_1",
+                ),
+                glossary_context,
+            ),
+            "Home insight for SmartThings",
+        )
+
+    def test_sentence_case_fix_preserves_glossary_casing(self):
+        checker = TranslationChecker()
+
+        report, fix = checker._analyze_sentence_case(
+            "Manage Home Insight With Smartthings.",
+            "English",
+            glossary_terms=["Home insight", "SmartThings"],
+        )
+
+        self.assertIn("문장", report)
+        self.assertEqual(fix, "Manage Home insight with SmartThings.")
+
     def test_row_key_formula_is_resolved_for_title_button_detection(self):
         from openpyxl import Workbook
 

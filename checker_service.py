@@ -256,6 +256,41 @@ class TranslationChecker:
                 return val
         return None
 
+    def _extract_glossary_target_terms(self, glossary_context_or_terms) -> list[str]:
+        if not glossary_context_or_terms:
+            return []
+
+        raw_terms = []
+        if isinstance(glossary_context_or_terms, dict):
+            raw_terms = list(glossary_context_or_terms.values())
+        elif isinstance(glossary_context_or_terms, (list, tuple, set)):
+            raw_terms = list(glossary_context_or_terms)
+        else:
+            raw_terms = [glossary_context_or_terms]
+
+        terms = []
+        for value in raw_terms:
+            if not value:
+                continue
+            clean_value = re.sub(r'\(EXCEPTION:.*?\)', '', str(value)).strip()
+            if clean_value:
+                terms.append(clean_value)
+        return sorted(set(terms), key=len, reverse=True)
+
+    def _restore_glossary_target_casing(self, target_text: str, glossary_context_or_terms) -> str:
+        if not target_text:
+            return target_text
+
+        restored = target_text
+        for term in self._extract_glossary_target_terms(glossary_context_or_terms):
+            pattern = re.escape(term)
+            if term[0].isalnum():
+                pattern = r'(?<![a-zA-Z0-9])' + pattern
+            if term[-1].isalnum():
+                pattern = pattern + r'(?![a-zA-Z0-9])'
+            restored = re.sub(pattern, term, restored, flags=re.IGNORECASE)
+        return restored
+
     def _compile_glossary_re(self):
         """
         용어집의 소스어들을 하나의 정규표현식으로 컴파일하여 검색 성능을 최적화합니다.
@@ -554,7 +589,10 @@ class TranslationChecker:
                 if idx == -1: continue
                 actual = target_text[idx:idx + len(t_term)]
                 if actual.lower() == t_term.lower() and actual != t_term:
-                    issues.append(f"[대소문자] 용어집 '{t_term}'의 표기가 '{actual}'로 사용됨")
+                    issues.append(
+                        f"[대소문자] 용어집 '{t_term}'의 표기가 '{actual}'로 사용됨 "
+                        "(용어집 대소문자는 제목/문장형 대소문자 규칙보다 우선)"
+                    )
         return issues
 
     def _get_navigation_path_spans(self, target_text: str, target_lang: str = "") -> list:
@@ -649,16 +687,9 @@ class TranslationChecker:
 
         cleaned = target_text
         bracket_pairs = [("[", "]"), ("「", "」")]
-        targets = []
-        if isinstance(glossary_context, dict):
-            for value in glossary_context.values():
-                if not value:
-                    continue
-                clean_value = re.sub(r'\(EXCEPTION:.*?\)', '', str(value)).strip()
-                if clean_value:
-                    targets.append(clean_value)
+        targets = self._extract_glossary_target_terms(glossary_context)
 
-        for term in sorted(set(targets), key=len, reverse=True):
+        for term in targets:
             for left, right in bracket_pairs:
                 cleaned = re.sub(
                     re.escape(left) + r"\s*" + re.escape(term) + r"\s*" + re.escape(right),
@@ -669,7 +700,7 @@ class TranslationChecker:
 
         return cleaned
 
-    def _analyze_sentence_case(self, target_text: str, target_lang: str):
+    def _analyze_sentence_case(self, target_text: str, target_lang: str, glossary_terms=None):
         if not target_text or not _is_case_sensitive_language(target_lang):
             return None, None
         
@@ -705,6 +736,7 @@ class TranslationChecker:
             
             fixed_rest = rest.lower()
             fixed_sent = s[:first_alpha_index] + first_char.upper() + fixed_rest
+            fixed_sent = self._restore_glossary_target_casing(fixed_sent, glossary_terms)
             fixed_sentences.append(fixed_sent)
             
         simple_fixed_text = " ".join(fixed_sentences)
@@ -763,7 +795,8 @@ class TranslationChecker:
                 translation = response_data.get("translation", str(response_data))
             else:
                 translation = str(response_data)
-            return self._strip_title_button_glossary_brackets(translation, glossary_context, row_key)
+            translation = self._strip_title_button_glossary_brackets(translation, glossary_context, row_key)
+            return self._restore_glossary_target_casing(translation, glossary_context)
         except Exception as e:
             return f"[번역 오류] {str(e)}"
 
@@ -982,7 +1015,17 @@ class TranslationChecker:
         
         row_key = item.get("row_key", "")
         
-        case_report, simple_case_fix = self._analyze_sentence_case(target, tgt_lang)
+        relevant_terms_for_case = self._get_relevant_glossary_terms(source)
+        glossary_targets_for_case = []
+        for s_term in relevant_terms_for_case:
+            meta = self.glossary.get(s_term)
+            if not meta:
+                continue
+            target_val = self._get_target_val(meta["targets"], tgt_code)
+            if target_val:
+                glossary_targets_for_case.append(target_val)
+
+        case_report, simple_case_fix = self._analyze_sentence_case(target, tgt_lang, glossary_targets_for_case)
         glossary_case_issues = self._check_glossary_casing(source, target, tgt_code)
         glossary_bracket_issues = self._check_glossary_brackets(source, target, tgt_code, tgt_lang, row_key=row_key)
         
