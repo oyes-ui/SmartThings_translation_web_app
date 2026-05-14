@@ -65,6 +65,9 @@ class PromptBuilder:
             return None
         normalized = target_lang.lower()
         for lang_key, rule in LANGUAGE_LOCALIZATION_RULES.items():
+            if lang_key.lower() == normalized:
+                return lang_key, rule
+        for lang_key, rule in sorted(LANGUAGE_LOCALIZATION_RULES.items(), key=lambda item: len(item[0]), reverse=True):
             if lang_key.lower() in normalized:
                 return lang_key, rule
         return None

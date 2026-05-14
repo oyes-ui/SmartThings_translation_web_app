@@ -17,6 +17,9 @@ class PromptBuilderTests(unittest.TestCase):
         german = self.builder.describe_applied_modules(target_lang="German", source_lang="Korean")
         japanese = self.builder.describe_applied_modules(target_lang="Japanese", source_lang="Korean")
         english = self.builder.describe_applied_modules(target_lang="English", source_lang="Korean")
+        french_be = self.builder.describe_applied_modules(target_lang="French_BE", source_lang="Korean")
+        french_ca = self.builder.describe_applied_modules(target_lang="French_CA", source_lang="Korean")
+        spanish_es = self.builder.describe_applied_modules(target_lang="Spanish_ES", source_lang="Korean")
 
         self.assertTrue(german["language"]["active"])
         self.assertIn("Du-form", german["language"]["name"])
@@ -24,6 +27,9 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertIn("ます-form", japanese["language"]["name"])
         self.assertTrue(english["language"]["active"])
         self.assertIn("US English", english["language"]["name"])
+        self.assertIn("Belgian French", french_be["language"]["name"])
+        self.assertIn("Canadian French", french_ca["language"]["name"])
+        self.assertIn("Spain Spanish", spanish_es["language"]["name"])
 
     def test_english_market_variant_rules(self):
         us_prompt = self.builder.build_translation_prompt(target_lang="English", source_lang="Korean")
@@ -293,6 +299,38 @@ class PromptBuilderTests(unittest.TestCase):
 
         self.assertEqual(title_context["Home insight"], "自宅分析")
         self.assertEqual(description_context["Home insight"], "自宅分析")
+
+    def test_title_button_postprocess_removes_glossary_brackets_only_in_title_button_context(self):
+        checker = TranslationChecker()
+        glossary_context = {
+            "Home insight": "自宅分析",
+            "Settings": "Settings",
+        }
+
+        self.assertEqual(
+            checker._strip_title_button_glossary_brackets(
+                "「自宅分析」をSettingsで設定",
+                glossary_context,
+                row_key="//section_045_1_button",
+            ),
+            "自宅分析をSettingsで設定",
+        )
+        self.assertEqual(
+            checker._strip_title_button_glossary_brackets(
+                "[自宅分析] can be set in [Settings]",
+                glossary_context,
+                row_key="//section_045_1",
+            ),
+            "自宅分析 can be set in Settings",
+        )
+        self.assertEqual(
+            checker._strip_title_button_glossary_brackets(
+                "「自宅分析」は「Settings > Devices」で設定できます。",
+                glossary_context,
+                row_key="//section_045_1_description",
+            ),
+            "「自宅分析」は「Settings > Devices」で設定できます。",
+        )
 
 
 class PromptModuleApiTests(unittest.TestCase):

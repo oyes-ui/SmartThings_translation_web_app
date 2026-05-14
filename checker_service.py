@@ -128,13 +128,17 @@ class TranslationChecker:
             source_col_idx = -1
             rule_col_idx = -1
             # 소스 언어 컬럼 찾기 (1~3행 모두 검색)
+            # Korean source: do NOT search for the Korean translation column here.
+            # The key column (col 0) is always the primary identifier regardless of source language.
+            # The Korean translation column is handled separately via kr_col_idx for double-registration.
+            is_korean_source_pre = any(
+                t in source_lang_code.lower() for t in ["korean", "한국어", "ko_kr", "ko-kr"]
+            ) if source_lang_code else False
+
             search_terms = []
-            if source_lang_code:
+            if source_lang_code and not is_korean_source_pre:
                 search_terms.append(source_lang_code.lower())
-                # 한국어/영어 등 주요 언어 매칭 보강
                 lang_alias = {
-                    "korean": ["한국어", "ko_kr", "ko-kr", "kr", "ko"],
-                    "한국어": ["korean", "ko_kr", "ko-kr", "kr", "ko"],
                     "english": ["영어", "en_us", "en-us", "us", "en_gb", "en-gb", "uk", "en"],
                     "영어": ["english", "en_us", "en-us", "us", "en_gb", "en-gb", "uk", "en"]
                 }
@@ -149,11 +153,13 @@ class TranslationChecker:
                             source_col_idx = c
                             break
                     if source_col_idx != -1: break
-            
+
+            # Korean source always falls back to col 0 (the Key/Lng identifier column).
+            # This ensures "SmartThings" etc. in Korean source text can be matched by English key.
             if source_col_idx == -1:
-                # Fallback: 만약 못 찾으면 0번 컬럼(A열)을 원문으로 가정 (대부분의 용어집 구조)
                 source_col_idx = 0
-                print(f"ℹ Glossary: '{source_lang_code}' 컬럼을 찾지 못해 0번 컬럼을 기본값으로 사용합니다.")
+                if not is_korean_source_pre:
+                    print(f"ℹ Glossary: '{source_lang_code}' 컬럼을 찾지 못해 0번 컬럼을 기본값으로 사용합니다.")
 
             # 설명/규칙/비고 컬럼 찾기
             for c in range(num_cols):
@@ -181,7 +187,7 @@ class TranslationChecker:
                 for c in range(num_cols):
                     for r in range(3):
                         val = str(df_headers.iloc[r, c]).strip().lower()
-                        if val in ["한국어", "ko_kr", "ko-kr", "korean"]:
+                        if val and any(t in val or val in t for t in ["한국어", "ko_kr", "ko-kr", "korean"] if t):
                             kr_col_idx = c
                             break
                     if kr_col_idx != -1:
@@ -232,6 +238,23 @@ class TranslationChecker:
 
         except Exception as e:
             return f"Glossary load failed: {str(e)}"
+
+    def _get_target_val(self, targets: dict, lang_code: str) -> str | None:
+        """Flexible lang-code → target value lookup: exact → case-insensitive → substring."""
+        if not lang_code:
+            return None
+        v = targets.get(lang_code)
+        if v:
+            return v
+        lc = lang_code.lower()
+        for k, val in targets.items():
+            if k and k.lower() == lc:
+                return val
+        for k, val in targets.items():
+            kl = k.lower() if k else ""
+            if kl and (lc in kl or kl in lc):
+                return val
+        return None
 
     def _compile_glossary_re(self):
         """
@@ -393,7 +416,7 @@ class TranslationChecker:
         out = []
         for term in relevant_terms:
             meta = self.glossary[term]
-            tgt = meta["targets"].get(target_lang_code)
+            tgt = self._get_target_val(meta["targets"], target_lang_code)
             if not tgt:
                 continue
             rule = meta.get("rule")
@@ -425,7 +448,7 @@ class TranslationChecker:
         context_is_title_button = self.prompt_builder.should_skip_brackets(row_key)
 
         for term in relevant_terms:
-            tgt = self.glossary[term]["targets"].get(target_lang_code)
+            tgt = self._get_target_val(self.glossary[term]["targets"], target_lang_code)
             rule = self.glossary[term].get("rule", "").lower()
             clean_rule = rule.replace(" ", "")
 
@@ -463,9 +486,9 @@ class TranslationChecker:
             if "비활성화" in clean_rule or "deactivate" in clean_rule or "disable" in clean_rule:
                 continue
 
-            t_term = meta["targets"].get(target_lang_code)
+            t_term = self._get_target_val(meta["targets"], target_lang_code)
             if not t_term: continue
-            
+
             if t_term.lower() not in tgt_lower:
                 mismatches.append(f"[미적용] '{s_term}' → '{t_term}' 미적용")
         return mismatches
@@ -489,9 +512,9 @@ class TranslationChecker:
             if "비활성화" in clean_rule or "deactivate" in clean_rule or "disable" in clean_rule:
                 continue
 
-            t_term = meta["targets"].get(target_lang_code)
+            t_term = self._get_target_val(meta["targets"], target_lang_code)
             if not t_term: continue
-            
+
             if t_term.lower() in tgt_lower:
                 idx = tgt_lower.find(t_term.lower())
                 if idx == -1: continue
@@ -542,13 +565,8 @@ class TranslationChecker:
                 continue
                 
             t_meta = meta["targets"]
-            target_val = t_meta.get(target_lang_code)
+            target_val = self._get_target_val(t_meta, target_lang_code)
             if not target_val:
-                for k, v in t_meta.items():
-                    if k.lower() == target_lang_code.lower():
-                        target_val = v
-                        break
-            if not target_val: 
                 continue
                 
             clean_val = re.sub(r'\(.*?\)', '', target_val).strip()
@@ -582,6 +600,40 @@ class TranslationChecker:
                     break # Report once per term per cell
                     
         return issues
+
+    def _strip_title_button_glossary_brackets(self, target_text: str, glossary_context, row_key: str = "") -> str:
+        """
+        Deterministic guardrail after LLM generation.
+
+        Prompt instructions are necessary but not sufficient: short title/button
+        strings are exactly where models tend to copy source-side glossary
+        brackets. For title/button context, remove bracket pairs only when they
+        wrap a glossary target value.
+        """
+        if not target_text or not self.prompt_builder.should_skip_brackets(row_key):
+            return target_text
+        if not isinstance(glossary_context, dict) or not glossary_context:
+            return target_text
+
+        cleaned = target_text
+        bracket_pairs = [("[", "]"), ("「", "」")]
+        targets = []
+        for value in glossary_context.values():
+            if not value:
+                continue
+            clean_value = re.sub(r'\(EXCEPTION:.*?\)', '', str(value)).strip()
+            if clean_value:
+                targets.append(clean_value)
+
+        for term in sorted(set(targets), key=len, reverse=True):
+            for left, right in bracket_pairs:
+                cleaned = re.sub(
+                    re.escape(left) + r"\s*" + re.escape(term) + r"\s*" + re.escape(right),
+                    term,
+                    cleaned,
+                    flags=re.IGNORECASE,
+                )
+        return cleaned
 
     def _analyze_sentence_case(self, target_text: str, target_lang: str):
         if not target_text or not _is_case_sensitive_language(target_lang):
@@ -674,8 +726,10 @@ class TranslationChecker:
             )
 
             if isinstance(response_data, dict):
-                return response_data.get("translation", str(response_data))
-            return str(response_data)
+                translation = response_data.get("translation", str(response_data))
+            else:
+                translation = str(response_data)
+            return self._strip_title_button_glossary_brackets(translation, glossary_context, row_key)
         except Exception as e:
             return f"[번역 오류] {str(e)}"
 
@@ -1320,17 +1374,9 @@ class TranslationChecker:
                             continue
 
                         t_meta = meta["targets"]
-                        # Try exact match, then case-insensitive match
-                        target_val = t_meta.get(target_lang_code)
-                        if not target_val:
-                            # Search by lowercase key
-                            for k, v in t_meta.items():
-                                if k.lower() == target_lang_code.lower():
-                                    target_val = v
-                                    break
-                        
+                        target_val = self._get_target_val(t_meta, target_lang_code)
+
                         if target_val:
-                            # 괄호()가 포함된 경우 제외 조건일 수 있으므로 순수 텍스트만 추출하거나 전체 포함
                             clean_val = re.sub(r'\(.*?\)', '', target_val).strip()
                             
                             # 반점(,)이나 슬래시(/)로 여러 단어가 기재된 경우(예: "단어1, 단어2") 각각 하이라이트 되도록 분리
@@ -1582,13 +1628,8 @@ class TranslationChecker:
                                 continue
 
                             t_meta = meta["targets"]
-                            target_val = t_meta.get(target_lang_code)
-                            if not target_val:
-                                for k, v in t_meta.items():
-                                    if k.lower() == target_lang_code.lower():
-                                        target_val = v
-                                        break
-                            
+                            target_val = self._get_target_val(t_meta, target_lang_code)
+
                             if target_val:
                                 clean_val = re.sub(r'\(.*?\)', '', target_val).strip()
                                 for extract_str in (clean_val, target_val):

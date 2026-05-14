@@ -162,7 +162,9 @@ GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_INTL = (
 GLOSSARY_EXEMPT_MARKERS = ["no bracket", "대괄호 제외", "괄호 제외"]
 
 GLOSSARY_NO_BRACKET_INSTRUCTION = (
-    "Do not wrap glossary terms in any brackets. Use them exactly as provided."
+    "For title, section heading, and button copy, do not wrap glossary terms in any brackets. "
+    "Use the glossary term text exactly as provided, without [], 「」, or any other surrounding bracket marks, "
+    "even if the source text contains brackets."
 )
 GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA = (
     "Enclose navigation paths in 「 and 」. "
