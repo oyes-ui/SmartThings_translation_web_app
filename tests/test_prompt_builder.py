@@ -332,26 +332,6 @@ class PromptBuilderTests(unittest.TestCase):
             "「自宅分析」は「Settings > Devices」で設定できます。",
         )
 
-    def test_title_button_postprocess_removes_generic_brackets_when_glossary_is_empty(self):
-        checker = TranslationChecker()
-
-        self.assertEqual(
-            checker._strip_title_button_glossary_brackets(
-                "「自宅分析」 [Settings]",
-                {},
-                row_key="//section_045_1_button",
-            ),
-            "自宅分析 Settings",
-        )
-        self.assertEqual(
-            checker._strip_title_button_glossary_brackets(
-                "[Personalized Home insight]",
-                {"Home insight": "Home insight"},
-                row_key="//section_045_1",
-            ),
-            "Personalized Home insight",
-        )
-
     def test_row_key_formula_is_resolved_for_title_button_detection(self):
         from openpyxl import Workbook
 

@@ -667,15 +667,6 @@ class TranslationChecker:
                     flags=re.IGNORECASE,
                 )
 
-        # In title/button context, glossary brackets are not allowed at all.
-        # This catches model outputs that wrap the whole heading/button rather
-        # than only the glossary term.
-        for left, right in bracket_pairs:
-            cleaned = re.sub(
-                re.escape(left) + r"\s*([^" + re.escape(left + right) + r"]+?)\s*" + re.escape(right),
-                r"\1",
-                cleaned,
-            )
         return cleaned
 
     def _analyze_sentence_case(self, target_text: str, target_lang: str):
