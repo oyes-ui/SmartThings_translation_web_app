@@ -54,7 +54,9 @@ class TranslationChecker:
         max_concurrency: int = 10,
         short_text_whitelist=None,
         skip_llm_when_glossary_mismatch: bool = False,
-        no_backtranslation: bool = False
+        no_backtranslation: bool = False,
+        gemini_api_key: str = None,
+        openai_api_key: str = None,
     ):
         # API Setup
         self.model_name = model_name
@@ -93,7 +95,7 @@ class TranslationChecker:
         self.source_lang_code = None
 
         # Integrated components
-        self.model_handler = ModelHandler()
+        self.model_handler = ModelHandler(gemini_api_key=gemini_api_key, openai_api_key=openai_api_key)
         self.prompt_builder = PromptBuilder()
 
         # RAG Retriever (오프라인 전용, DB 없으면 None)
@@ -420,19 +422,26 @@ class TranslationChecker:
         relevant_terms = self._get_relevant_glossary_terms(source_text) if source_text else list(self.glossary.keys())
         
         context = {}
+        context_is_title_button = self.prompt_builder.should_skip_brackets(row_key)
+
         for term in relevant_terms:
             tgt = self.glossary[term]["targets"].get(target_lang_code)
             rule = self.glossary[term].get("rule", "").lower()
             clean_rule = rule.replace(" ", "")
-            
+
             if skip_deactivated and ("비활성화" in clean_rule or "deactivate" in clean_rule or "disable" in clean_rule):
                 continue
-            
+
             if tgt:
-                if not self.prompt_builder.should_wrap_glossary(row_key, rule):
-                    context[term] = f"{tgt} (EXCEPTION: Do NOT wrap '{tgt}' in brackets)"
-                else:
+                if context_is_title_button:
+                    # System prompt carries the no-bracket instruction; keep value clean.
                     context[term] = tgt
+                else:
+                    exempt_markers = self.prompt_builder.get_exempt_markers()
+                    if any(marker in rule for marker in exempt_markers):
+                        context[term] = f"{tgt} (EXCEPTION: Do NOT wrap '{tgt}' in brackets)"
+                    else:
+                        context[term] = tgt
         return context
 
     def _precheck_glossary_mismatch(self, source_text: str, target_text: str, target_lang_code: str):
@@ -491,15 +500,20 @@ class TranslationChecker:
                     issues.append(f"[대소문자] 용어집 '{t_term}'의 표기가 '{actual}'로 사용됨")
         return issues
 
-    def _get_navigation_path_spans(self, target_text: str):
+    def _get_navigation_path_spans(self, target_text: str, target_lang: str = "") -> list:
         """
         First-pass deterministic disclaimer exception:
-        double-quoted ranges containing '>' are treated as navigation paths.
+        double-quoted ranges (or Japanese corner-bracket ranges) containing '>'
+        are treated as navigation paths.
         """
         spans = []
         for match in re.finditer(r'"[^"]*"', target_text or ""):
             if ">" in match.group(0):
                 spans.append(match.span())
+        if target_lang and ("Japanese" in target_lang or "일본" in target_lang):
+            for match in re.finditer(r'「[^」]*」', target_text or ""):
+                if ">" in match.group(0):
+                    spans.append(match.span())
         return spans
 
     def _is_inside_span(self, start: int, end: int, spans: list[tuple[int, int]]) -> bool:
@@ -517,7 +531,7 @@ class TranslationChecker:
         brackets = self.prompt_builder.get_brackets(target_lang)
         b_left, b_right = brackets[0], brackets[1]
         context_mode = self.prompt_builder.get_glossary_context_mode(row_key)
-        navigation_path_spans = self._get_navigation_path_spans(target_text) if context_mode == "disclaimer" else []
+        navigation_path_spans = self._get_navigation_path_spans(target_text, target_lang) if context_mode == "disclaimer" else []
 
         for s_term in relevant_terms:
             meta = self.glossary[s_term]
@@ -622,7 +636,7 @@ class TranslationChecker:
             "source_text": text,
             "target_language": target_lang,
             "glossary": glossary_context if isinstance(glossary_context, dict) else {},
-            "formatting": self.prompt_builder.build_input_formatting(target_lang)
+            "formatting": self.prompt_builder.build_input_formatting(target_lang, row_key)
         }
 
         # RAG 예시 주입: 유사 번역 사례 최대 2건을 시스템 프롬프트에 첨부
@@ -1022,12 +1036,18 @@ class TranslationChecker:
         
         # Load Glossary
         if glossary_file_path:
-             # Try to get more descriptive source lang for matching
              src_lookup = source_lang
              if source_sheet_name and sheet_lang_map:
                  s_info = sheet_lang_map.get(source_sheet_name)
                  if s_info:
                      src_lookup = s_info.get('code', s_info.get('lang', source_lang))
+                 else:
+                     # Sheet not in map: infer source language from sheet name pattern
+                     sn = source_sheet_name.lower()
+                     if any(x in sn for x in ["kr", "한국", "korean"]):
+                         src_lookup = "Korean"
+                     elif any(x in sn for x in ["us", "en_us", "미국"]):
+                         src_lookup = "English"
 
              yield {"type": "log", "message": f"용어집 파일 로드 중: {os.path.basename(glossary_file_path)} (기준: {src_lookup})"}
              msg = await self.load_glossary_from_file(glossary_file_path, src_lookup)
@@ -1172,6 +1192,13 @@ class TranslationChecker:
             if source_sheet_name in sheet_lang_map:
                 s_info = sheet_lang_map[source_sheet_name]
                 src_lookup = s_info.get('code', s_info.get('lang', source_lang))
+            else:
+                # Sheet not in map: infer source language from sheet name pattern
+                sn = (source_sheet_name or "").lower()
+                if any(x in sn for x in ["kr", "한국", "korean"]):
+                    src_lookup = "Korean"
+                elif any(x in sn for x in ["us", "en_us", "미국"]):
+                    src_lookup = "English"
 
             yield {"type": "log", "message": f"Loading glossary (Match Base: {src_lookup})..."}
             msg = await self.load_glossary_from_file(glossary_file_path, src_lookup)

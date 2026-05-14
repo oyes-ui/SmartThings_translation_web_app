@@ -292,6 +292,9 @@ startBtn.addEventListener('click', async () => {
     log("Starting inspection task...", "system");
 
     try {
+        const geminiKey = sessionStorage.getItem('gemini_api_key') || undefined;
+        const openaiKey = sessionStorage.getItem('openai_api_key') || undefined;
+
         const payload = {
             source_file_id: uploadedFileIds.source,
             source_file_name: uploadedFileIds.source_name,
@@ -307,7 +310,9 @@ startBtn.addEventListener('click', async () => {
             bx_style_enabled: document.getElementById('bxStyleToggle').checked,
             source_lang: document.getElementById('sourceLangSelect').value,
             task_mode: taskMode,
-            rag_identity_match: document.getElementById('identityMatchCheck')?.checked ?? true
+            rag_identity_match: document.getElementById('identityMatchCheck')?.checked ?? true,
+            ...(geminiKey && { gemini_api_key: geminiKey }),
+            ...(openaiKey && { openai_api_key: openaiKey }),
         };
 
         const res = await fetch(`${API_BASE}/start`, {
@@ -570,3 +575,53 @@ document.getElementById('updateRagBtn')?.addEventListener('click', async () => {
 // 페이지 로드 시 RAG 상태 자동 조회
 fetchRagStatus();
 updatePromptModules();
+
+// ─── API Key Panel ────────────────────────────────────────────────────────────
+
+(function initApiKeyPanel() {
+    const toggle = document.getElementById('apiKeyToggle');
+    const fields = document.getElementById('apiKeyFields');
+    const arrow = document.getElementById('apiKeyArrow');
+    const geminiInput = document.getElementById('geminiKeyInput');
+    const openaiInput = document.getElementById('openaiKeyInput');
+    const saveBtn = document.getElementById('saveApiKeysBtn');
+    const clearBtn = document.getElementById('clearApiKeysBtn');
+
+    if (!toggle || !fields) return;
+
+    // Restore from sessionStorage on load
+    const savedGemini = sessionStorage.getItem('gemini_api_key') || '';
+    const savedOpenai = sessionStorage.getItem('openai_api_key') || '';
+    if (geminiInput) geminiInput.value = savedGemini;
+    if (openaiInput) openaiInput.value = savedOpenai;
+
+    // Auto-expand if keys are already saved
+    if (savedGemini || savedOpenai) {
+        fields.style.display = 'flex';
+        arrow.textContent = '▼';
+    }
+
+    toggle.addEventListener('click', () => {
+        const isOpen = fields.style.display !== 'none';
+        fields.style.display = isOpen ? 'none' : 'flex';
+        arrow.textContent = isOpen ? '▶' : '▼';
+    });
+
+    saveBtn.addEventListener('click', () => {
+        const g = geminiInput.value.trim();
+        const o = openaiInput.value.trim();
+        if (g) sessionStorage.setItem('gemini_api_key', g);
+        else sessionStorage.removeItem('gemini_api_key');
+        if (o) sessionStorage.setItem('openai_api_key', o);
+        else sessionStorage.removeItem('openai_api_key');
+        log('API Keys saved for this session.', 'success');
+    });
+
+    clearBtn.addEventListener('click', () => {
+        sessionStorage.removeItem('gemini_api_key');
+        sessionStorage.removeItem('openai_api_key');
+        if (geminiInput) geminiInput.value = '';
+        if (openaiInput) openaiInput.value = '';
+        log('API Keys cleared.', 'info');
+    });
+})();

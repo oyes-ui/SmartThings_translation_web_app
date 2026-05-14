@@ -18,8 +18,10 @@ from prompt_modules import (
     GLOSSARY_DISCLAIMER_NAV_EXCEPTION,
     GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE,
     GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_INTL,
+    GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA,
     GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_US,
     GLOSSARY_EXEMPT_MARKERS,
+    GLOSSARY_NO_BRACKET_INSTRUCTION,
     GLOSSARY_TERM_RULES,
     LANGUAGE_LOCALIZATION_RULES,
     TYPOGRAPHY_AND_PUNCTUATION_RULES,
@@ -27,18 +29,33 @@ from prompt_modules import (
 
 
 _LANGUAGE_RULE_LABELS = {
+    "Korean": "Korean Honorifics & Style Consistency",
     "English": "US English Consistency",
+    "English_US": "US English Consistency",
     "English_UK": "British English Consistency",
     "English_AU": "Australian English Consistency",
     "English_SG": "Singapore English Consistency",
     "German": "German Du-form Consistency",
     "Japanese": "Japanese ます-form Consistency",
     "French": "French Tone and Consistency",
+    "French_BE": "Belgian French Consistency",
+    "French_CA": "Canadian French Consistency",
+    "Italian": "Italian UI Phrasing Consistency",
     "Spanish": "Spanish Usted and Regional Consistency",
+    "Spanish_ES": "Spain Spanish Consistency",
+    "Dutch": "Dutch Directness & Phrasing",
+    "Swedish": "Swedish UI Phrasing & Case Consistency",
+    "Arabic": "MSA & Arabic UI Conventions",
     "Brazilian Portuguese": "Brazilian Portuguese Consistency",
     "European Portuguese": "European Portuguese Consistency",
+    "Russian": "Russian Word Order & Phrasing",
+    "Turkish": "Turkish UI Phrasing Consistency",
     "Simplified Chinese": "Simplified Chinese Consistency",
     "Traditional Chinese": "Traditional Chinese Consistency",
+    "Polish": "Polish Grammar & Phrasing Consistency",
+    "Vietnamese": "Vietnamese Phrasing & Case Consistency",
+    "Thai": "Thai UI Phrasing & Punctuation",
+    "Indonesian": "Indonesian Phrasing & Style Consistency",
 }
 
 
@@ -91,7 +108,9 @@ class PromptBuilder:
                 
         return True
 
-    def build_input_formatting(self, target_lang: str) -> dict:
+    def build_input_formatting(self, target_lang: str, row_key: str = "") -> dict:
+        if self.get_glossary_context_mode(row_key) == "title_button":
+            return {"glossary_prefix": "", "glossary_suffix": ""}
         brackets = self.get_brackets(target_lang)
         return {
             "glossary_prefix": brackets[0],
@@ -394,20 +413,29 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
             lines.append("No glossary terms are provided for this source text.")
 
         context_mode = self.get_glossary_context_mode(row_key)
-        if glossary_available and context_mode != "title_button":
+
+        # No-bracket rule is a structural rule for title/button — always add it regardless of glossary.
+        if context_mode == "title_button":
+            lines.append(f"- {GLOSSARY_NO_BRACKET_INSTRUCTION}")
+        elif glossary_available:
             brackets = self.get_brackets(target_lang)
             wrap_rule = GLOSSARY_BRACKET_WRAP_RULE.format(open=brackets[0], close=brackets[1])
             if context_mode == "disclaimer":
                 wrap_rule += f" {GLOSSARY_DISCLAIMER_NAV_EXCEPTION}"
             lines.append(f"- {wrap_rule}")
-            if context_mode == "disclaimer":
-                if self._is_us_english(target_lang, target_lang_code):
-                    quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_US
-                elif target_lang_code:
-                    quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_INTL
-                else:
-                    quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE
-                lines.append(f"- {quote_rule}")
+
+        # Nav path quote rule is typography, not glossary — always applies for disclaimer rows.
+        if context_mode == "disclaimer":
+            is_ja = target_lang and ("Japanese" in target_lang or "일본" in target_lang)
+            if self._is_us_english(target_lang, target_lang_code):
+                quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_US
+            elif is_ja:
+                quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA
+            elif target_lang_code:
+                quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_INTL
+            else:
+                quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE
+            lines.append(f"- {quote_rule}")
 
         lines += [
             f"\n[{TYPOGRAPHY_AND_PUNCTUATION_RULES['name']}]",

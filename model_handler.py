@@ -9,15 +9,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class ModelHandler:
-    def __init__(self):
-        # Gemini config (New SDK)
-        self.gemini_api_key = os.getenv("GEMINI_API_KEY")
+    def __init__(self, gemini_api_key: str = None, openai_api_key: str = None):
+        # Gemini config (New SDK) — runtime key takes priority over .env
+        self.gemini_api_key = gemini_api_key or os.getenv("GEMINI_API_KEY")
         self.gemini_client = None
         if self.gemini_api_key:
             self.gemini_client = genai.Client(api_key=self.gemini_api_key)
-        
-        # OpenAI config
-        self.openai_api_key = os.getenv("OPENAI_API_KEY")
+
+        # OpenAI config — runtime key takes priority over .env
+        self.openai_api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
         self.openai_client = None
         if self.openai_api_key:
             self.openai_client = AsyncOpenAI(api_key=self.openai_api_key)

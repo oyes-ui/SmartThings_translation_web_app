@@ -29,6 +29,15 @@ pinned: false
 
 ---
 
+## 📚 튜토리얼 및 규칙 가이드 (Guides & Rules)
+
+시스템 사용법부터 내부 번역 규칙까지 단계별로 안내합니다.
+
+1.  **[가이드 01] 통합 사용 가이드**: [user_guide.md](docs/user_guide.md) - 설치, 실행, 워크플로우 및 용어집 활용 (A to Z)
+2.  **[가이드 02] 종합 규칙 모음**: [comprehensive_rules.md](docs/comprehensive_rules.md) - 프롬프트 로직, 국가별 규칙, BX 스타일 등 모든 내부 엔진 규칙 참조
+
+---
+
 ## 🏗️ 프롬프트 아키텍처 (Prompt Architecture)
 
 이 프로젝트는 고도로 모듈화된 프롬프트 시스템을 사용합니다. 상세 구조는 [Prompt Architecture Document](docs/prompt_architecture.html)에서 확인할 수 있습니다.

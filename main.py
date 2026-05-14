@@ -70,6 +70,8 @@ class StartRequest(BaseModel):
     bx_style_enabled: bool = False
     task_mode: str = "integrated"
     rag_identity_match: bool = True
+    gemini_api_key: str = None
+    openai_api_key: str = None
 
 async def background_inspection_task(task_id, params):
     queue = TASK_STORE[task_id]["queue"]
@@ -78,7 +80,9 @@ async def background_inspection_task(task_id, params):
             model_name=params.model_name,
             max_concurrency=params.max_concurrency,
             skip_llm_when_glossary_mismatch=False,
-            no_backtranslation=True # Disabled as per user request
+            no_backtranslation=True,
+            gemini_api_key=params.gemini_api_key,
+            openai_api_key=params.openai_api_key,
         )
         
         source_path = os.path.join(UPLOAD_DIR, params.source_file_id)
@@ -138,7 +142,9 @@ async def integrated_translation_task(task_id, params):
         checker = TranslationChecker(
             model_name=params.audit_model,
             max_concurrency=params.max_concurrency,
-            no_backtranslation=True # Disabled as per user request
+            no_backtranslation=True,
+            gemini_api_key=params.gemini_api_key,
+            openai_api_key=params.openai_api_key,
         )
         
         source_path = os.path.join(UPLOAD_DIR, params.source_file_id)
@@ -460,17 +466,29 @@ async def preview_prompt(
 
 
 _DEMO_LANG_CODE = {
-    "English": "en_US", "German": "de_DE", "Japanese": "ja_JP",
-    "French": "fr_FR", "Spanish": "es_ES",
+    "English": "en_US", "English_US": "en_US", "English_UK": "en_GB", 
+    "English_AU": "en_AU", "English_SG": "en_SG",
+    "Korean": "ko_KR", "German": "de_DE", "Japanese": "ja_JP",
+    "French": "fr_FR", "French_BE": "fr_BE", "French_CA": "fr_CA",
+    "Italian": "it_IT", "Spanish": "es_ES", "Spanish_ES": "es_ES",
+    "Dutch": "nl_NL", "Swedish": "sv_SE", "Arabic": "ar_SA",
     "Brazilian Portuguese": "pt_BR", "European Portuguese": "pt_PT",
+    "Russian": "ru_RU", "Turkish": "tr_TR",
     "Simplified Chinese": "zh_CN", "Traditional Chinese": "zh_TW",
+    "Polish": "pl_PL", "Vietnamese": "vi_VN", "Thai": "th_TH", "Indonesian": "id_ID"
 }
 # RAG DB stores target_lang in sheet-code format (e.g. "JA(일본)")
 _DEMO_RAG_LANG = {
-    "English": "US(미국)", "German": "DE(독일)", "Japanese": "JA(일본)",
-    "French": "FR(프랑스)", "Spanish": "ES(스페인)",
+    "English": "US(미국)", "English_US": "US(미국)", "English_UK": "UK(영국)",
+    "English_AU": "AU(호주)", "English_SG": "SG(싱가포르)",
+    "Korean": "KR(한국)", "German": "DE(독일)", "Japanese": "JA(일본)",
+    "French": "FR(프랑스)", "French_BE": "BE(벨기에)", "French_CA": "CA(캐나다)",
+    "Italian": "IT(이탈리아)", "Spanish": "ES(스페인)", "Spanish_ES": "ES(스페인)",
+    "Dutch": "NL(네덜란드)", "Swedish": "SE(스웨덴)", "Arabic": "AE(아랍에메리트)",
     "Brazilian Portuguese": "BR(브라질)", "European Portuguese": "PT(포르투갈)",
+    "Russian": "RU(러시아)", "Turkish": "TR(터키)",
     "Simplified Chinese": "CN(중국)", "Traditional Chinese": "TW(대만)",
+    "Polish": "PL(폴란드)", "Vietnamese": "VN(베트남)", "Thai": "TH(태국)", "Indonesian": "ID(인도네시아)"
 }
 
 
@@ -534,7 +552,7 @@ async def preview_prompt_blocks(
         "source_text": source_text or "(원문 텍스트를 입력하세요)",
         "target_language": target_lang,
         "glossary": glossary_dict,
-        "formatting": PROMPT_BUILDER.build_input_formatting(target_lang),
+        "formatting": PROMPT_BUILDER.build_input_formatting(target_lang, row_key=row_key),
     }
     audit_user_msg = {
         "source": {"lang": source_lang, "text": source_text or "(원문 텍스트를 입력하세요)"},

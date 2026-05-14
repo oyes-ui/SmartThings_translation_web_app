@@ -1,175 +1,264 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html class="dark" lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prompt Universe — SmartThings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
-<style>
-  :root {
-    --bg: #0f172a; --panel: #1e293b; --text: #f1f5f9; --dim: #94a3b8;
-    --border: #334155; --blue: #3b82f6; --green: #10b981; --purple: #8b5cf6;
-    --orange: #f59e0b; --red: #ef4444; --font: 'Inter', system-ui, sans-serif;
-  }
-  body, html {
-    margin: 0; padding: 0; width: 100%; height: 100%;
-    background: var(--bg); color: var(--text); font-family: var(--font);
-    overflow: hidden; display: flex;
-  }
-  #cy { flex: 1; height: 100%; background: var(--bg); }
-  
-  /* Sidebar */
-  #sidebar {
-    width: 350px; background: var(--panel); border-left: 1px solid var(--border);
-    display: flex; flex-direction: column; box-shadow: -4px 0 15px rgba(0,0,0,0.3);
-    z-index: 10;
-  }
-  .sidebar-head {
-    padding: 20px; border-bottom: 1px solid var(--border);
-  }
-  .sidebar-head h2 { margin: 0; font-size: 18px; color: var(--blue); }
-  .sidebar-head p { margin: 5px 0 0 0; font-size: 12px; color: var(--dim); }
-  
-  .sidebar-body { padding: 20px; flex: 1; overflow-y: auto; line-height: 1.6; }
-  .node-title { font-weight: 600; font-size: 16px; margin-bottom: 10px; display: block; }
-  .node-type {
-    display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px;
-    text-transform: uppercase; font-weight: bold; margin-bottom: 15px;
-  }
-  .type-core { background: var(--blue); color: #fff; }
-  .type-language { background: var(--green); color: #fff; }
-  .type-context { background: var(--orange); color: #fff; }
-  .type-style { background: var(--purple); color: #fff; }
-  .type-branch { background: var(--dim); color: #fff; }
-  
-  .content-box {
-    background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;
-    font-family: 'JetBrains Mono', monospace; font-size: 13px; white-space: pre-wrap;
-    border: 1px solid var(--border); color: #cbd5e1;
-  }
-  
-  .back-link {
-    display: inline-flex; align-items: center; text-decoration: none;
-    color: var(--dim); font-size: 12px; margin-bottom: 15px; transition: color 0.2s;
-  }
-  .back-link:hover { color: var(--text); }
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
 
-  /* Controls */
-  .controls {
-    position: absolute; bottom: 20px; left: 20px; display: flex; gap: 10px; z-index: 5;
-  }
-  .btn {
-    background: var(--panel); border: 1px solid var(--border); color: var(--text);
-    padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;
-  }
-  .btn:hover { background: var(--border); }
+<style>
+    :root {
+        --primary: #c0c1ff;
+        --secondary: #4edea3;
+        --tertiary: #ffb783;
+        --purple: #8b5cf6;
+        --surface: #0d0d15;
+        --outline: #292932;
+    }
+
+    body {
+        background-color: #050508;
+        background-image: 
+            radial-gradient(circle at 50% 50%, rgba(73, 75, 214, 0.05) 0%, transparent 50%),
+            radial-gradient(circle at 20% 80%, rgba(0, 165, 114, 0.05) 0%, transparent 40%);
+        font-family: 'Inter', sans-serif;
+    }
+
+    .canvas-grid {
+        background-image: 
+            linear-gradient(rgba(144, 143, 160, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(144, 143, 160, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+    }
+
+    .glass-panel {
+        background: rgba(19, 19, 27, 0.65);
+        backdrop-filter: blur(24px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+    }
+
+    .grain {
+        position: absolute; inset: 0; pointer-events: none; opacity: 0.03; mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    #cy { width: 100%; height: 100%; z-index: 1; }
+
+    .node-type-tag {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 4px 10px; border-radius: 99px; font-size: 10px; font-weight: 800;
+        text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .tag-core { background: rgba(192, 193, 255, 0.15); color: var(--primary); border: 1px solid rgba(192, 193, 255, 0.3); }
+    .tag-language { background: rgba(78, 222, 163, 0.15); color: var(--secondary); border: 1px solid rgba(78, 222, 163, 0.3); }
+    .tag-context { background: rgba(255, 183, 131, 0.15); color: var(--tertiary); border: 1px solid rgba(255, 183, 131, 0.3); }
+    .tag-style { background: rgba(139, 92, 246, 0.15); color: var(--purple); border: 1px solid rgba(139, 92, 246, 0.3); }
+
+    .shimmer-border {
+        position: relative; overflow: hidden;
+    }
+    .shimmer-border::after {
+        content: ""; position: absolute; top: -150%; left: -150%; width: 400%; height: 400%;
+        background: conic-gradient(from 0deg, transparent, rgba(192, 193, 255, 0.05), transparent 25%, transparent);
+        animation: rotate 10s linear infinite; pointer-events: none;
+    }
+    @keyframes rotate { 100% { transform: rotate(360deg); } }
 </style>
 </head>
-<body>
+<body class="overflow-hidden text-slate-200">
 
-<div id="cy"></div>
+<div class="grain"></div>
 
-<div class="controls">
-  <button class="btn" onclick="cy.fit()">전체 맞춤</button>
-  <button class="btn" onclick="location.reload()">새로고침</button>
+<!-- Navigation -->
+<nav class="flex justify-between items-center w-[calc(100%-48px)] mx-6 mt-4 h-14 fixed top-0 z-50 glass-panel rounded-full px-6">
+    <div class="flex items-center gap-6">
+        <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-[#c0c1ff] shadow-[0_0_10px_rgba(192,193,255,0.8)]"></div>
+            <span class="text-lg font-bold tracking-tight">Prompt Universe</span>
+        </div>
+        <div class="h-4 w-px bg-white/10 hidden md:block"></div>
+        <div class="hidden md:flex gap-6 items-center">
+            <span class="text-[11px] font-bold uppercase tracking-widest text-white/40">Architecture Visualizer</span>
+        </div>
+    </div>
+    <div class="flex items-center gap-4">
+        <a href="demo.html" class="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-[#c0c1ff] transition-colors">
+            <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+            Back to Inspector
+        </a>
+    </div>
+</nav>
+
+<!-- Main Canvas -->
+<main class="w-screen h-screen canvas-grid relative overflow-hidden">
+    <div id="cy"></div>
+</main>
+
+<!-- Canvas Controls -->
+<div class="fixed bottom-6 left-6 flex gap-3 z-40">
+    <button onclick="cy.fit()" class="flex items-center gap-2 glass-panel px-5 py-3 rounded-2xl text-slate-400 hover:text-white transition-all group hover:bg-white/5 border-white/5">
+        <span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">fit_screen</span>
+        <span class="text-[10px] font-bold uppercase tracking-widest">전체 맞춤</span>
+    </button>
+    <button onclick="location.reload()" class="flex items-center gap-2 glass-panel px-5 py-3 rounded-2xl text-slate-400 hover:text-white transition-all group hover:bg-white/5 border-white/5">
+        <span class="material-symbols-outlined text-[20px] group-hover:rotate-180 transition-transform duration-500">refresh</span>
+        <span class="text-[10px] font-bold uppercase tracking-widest">새로고침</span>
+    </button>
 </div>
 
-<aside id="sidebar">
-  <div class="sidebar-head">
-    <a href="demo.html" class="back-link">← Inspector로 돌아가기</a>
-    <h2>Module Details</h2>
-    <p>노드를 클릭하여 세부 규칙을 확인하세요.</p>
-  </div>
-  <div class="sidebar-body" id="details">
-    <div style="text-align:center; padding-top: 50px; color: var(--dim);">
-      시각화된 노드를 선택해 주세요.
+<!-- Floating Inspector Box -->
+<div id="inspector" class="fixed top-24 right-6 w-[360px] glass-panel rounded-[32px] p-[1px] shadow-[0_40px_80px_rgba(0,0,0,0.7)] z-50 shimmer-border hidden">
+    <div class="bg-[#1b1b23]/90 backdrop-blur-3xl rounded-[31px] p-7 relative z-10 overflow-hidden">
+        <div class="grain"></div>
+        
+        <div class="flex items-center justify-between mb-6">
+            <div id="node-tag" class="node-type-tag">Core</div>
+            <button onclick="document.getElementById('inspector').classList.add('hidden')" class="material-symbols-outlined text-slate-500 hover:text-red-400 transition-colors">close</button>
+        </div>
+
+        <div class="mb-6">
+            <h1 id="node-label" class="text-xl font-bold text-white mb-1">Module Details</h1>
+            <p class="text-xs text-slate-400">Selected node configuration and rules</p>
+        </div>
+
+        <div class="space-y-6">
+            <section>
+                <div class="rounded-2xl p-4 font-mono text-[12px] bg-black/40 border border-white/5 leading-relaxed text-slate-300 overflow-y-auto max-h-[350px]">
+                    <code id="node-content" class="block whitespace-pre-wrap">Select a node to see its prompt content.</code>
+                </div>
+            </section>
+
+            <section class="space-y-3">
+                <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] px-1">Metadata</h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center bg-white/5 px-4 py-3 rounded-xl border border-white/5">
+                        <span class="text-[11px] text-slate-500">Category</span>
+                        <span id="meta-type" class="text-[11px] text-white font-semibold">Architecture</span>
+                    </div>
+                </div>
+            </section>
+        </div>
     </div>
-  </div>
-</aside>
+</div>
 
 <script>
 let cy;
 
 async function init() {
-  try {
-    const res = await fetch('/api/prompt_universe');
-    const data = await res.json();
-    
-    cy = cytoscape({
-      container: document.getElementById('cy'),
-      elements: data.elements,
-      style: [
-        {
-          selector: 'node',
-          style: {
-            'label': 'data(label)',
-            'color': '#f1f5f9',
-            'font-family': 'Inter',
-            'font-size': '10px',
-            'text-valign': 'center',
-            'text-halign': 'center',
-            'background-color': '#334155',
-            'width': '120px', 'height': '40px',
-            'shape': 'round-rectangle',
-            'border-width': 1, 'border-color': '#475569'
-          }
-        },
-        {
-          selector: 'node[type="core"]',
-          style: { 'background-color': '#1d4ed8', 'width': '140px', 'height': '50px', 'font-weight': 'bold' }
-        },
-        {
-          selector: 'node[type="branch"]',
-          style: { 'background-color': '#475569', 'shape': 'ellipse', 'width': '80px', 'height': '80px' }
-        },
-        {
-          selector: 'node[type="language"]',
-          style: { 'background-color': '#065f46' }
-        },
-        {
-          selector: 'node[type="context"]',
-          style: { 'background-color': '#92400e' }
-        },
-        {
-          selector: 'node[type="style"]',
-          style: { 'background-color': '#6b21a8' }
-        },
-        {
-          selector: 'edge',
-          style: {
-            'width': 2,
-            'line-color': '#334155',
-            'target-arrow-color': '#334155',
-            'target-arrow-shape': 'triangle',
-            'curve-style': 'bezier'
-          }
-        }
-      ],
-      layout: {
-        name: 'breadthfirst',
-        directed: true,
-        padding: 50,
-        spacingFactor: 1.5
-      }
-    });
+    try {
+        const res = await fetch('/api/prompt_universe');
+        const data = await res.json();
+        
+        cy = cytoscape({
+            container: document.getElementById('cy'),
+            elements: data.elements,
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'label': 'data(label)',
+                        'color': '#94a3b8',
+                        'font-family': 'Inter',
+                        'font-size': '11px',
+                        'font-weight': '600',
+                        'text-valign': 'center',
+                        'text-halign': 'center',
+                        'background-color': '#1e293b',
+                        'width': '130px', 'height': '45px',
+                        'shape': 'round-rectangle',
+                        'border-width': 1, 'border-color': '#334155',
+                        'transition-property': 'background-color, border-color, color, width, height',
+                        'transition-duration': '0.3s'
+                    }
+                },
+                {
+                    selector: 'node[type="core"]',
+                    style: { 
+                        'background-color': '#1a1a2e', 'border-color': '#494bd6', 'color': '#c0c1ff',
+                        'width': '160px', 'height': '55px', 'border-width': 2
+                    }
+                },
+                {
+                    selector: 'node[type="language"]',
+                    style: { 'border-color': '#00a572', 'background-color': '#06201b', 'color': '#4edea3' }
+                },
+                {
+                    selector: 'node[type="context"]',
+                    style: { 'border-color': '#d97706', 'background-color': '#2a1a05', 'color': '#ffb783' }
+                },
+                {
+                    selector: 'node[type="style"]',
+                    style: { 'border-color': '#7c3aed', 'background-color': '#1e1033', 'color': '#c084fc' }
+                },
+                {
+                    selector: 'node[type="branch"]',
+                    style: { 
+                        'background-color': '#000', 'shape': 'ellipse', 'width': '80px', 'height': '80px',
+                        'border-style': 'dashed', 'border-color': '#464554', 'color': '#908fa0'
+                    }
+                },
+                {
+                    selector: 'node:selected',
+                    style: {
+                        'border-width': 3,
+                        'border-color': '#fff',
+                        'background-color': '#334155'
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 1.5,
+                        'line-color': 'rgba(144, 143, 160, 0.2)',
+                        'target-arrow-color': 'rgba(144, 143, 160, 0.2)',
+                        'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier',
+                        'line-style': 'dashed',
+                        'line-dash-pattern': [6, 3]
+                    }
+                }
+            ],
+            layout: {
+                name: 'breadthfirst',
+                directed: true,
+                padding: 100,
+                spacingFactor: 1.2
+            }
+        });
 
-    cy.on('tap', 'node', function(evt){
-      const node = evt.target;
-      renderDetails(node.data());
-    });
+        cy.on('tap', 'node', function(evt){
+            const node = evt.target;
+            showInspector(node.data());
+        });
 
-  } catch (err) {
-    document.getElementById('details').innerHTML = `<p style="color:var(--red)">데이터 로드 실패: ${err.message}</p>`;
-  }
+        cy.on('mouseover', 'node', function(e){
+            document.body.style.cursor = 'pointer';
+        });
+        cy.on('mouseout', 'node', function(e){
+            document.body.style.cursor = 'default';
+        });
+
+    } catch (err) {
+        console.error(err);
+    }
 }
 
-function renderDetails(data) {
-  const el = document.getElementById('details');
-  el.innerHTML = `
-    <span class="node-type type-${data.type}">${data.type}</span>
-    <span class="node-title">${data.label}</span>
-    <div class="content-box">${data.content}</div>
-  `;
+function showInspector(data) {
+    const inspector = document.getElementById('inspector');
+    const tag = document.getElementById('node-tag');
+    
+    document.getElementById('node-label').textContent = data.label;
+    document.getElementById('node-content').textContent = data.content;
+    document.getElementById('meta-type').textContent = data.type.toUpperCase();
+    
+    tag.className = `node-type-tag tag-${data.type}`;
+    tag.textContent = data.type;
+    
+    inspector.classList.remove('hidden');
 }
 
 init();

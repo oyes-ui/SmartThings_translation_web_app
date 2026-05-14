@@ -228,7 +228,31 @@
                         </select>
                     </div>
 
-                    <div class="version-info" style="margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 10.5px; color: #475569; display: flex; justify-content: space-between;">
+                    <!-- API Keys (optional) -->
+                    <div class="config-item" id="apiKeySection" style="margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05);">
+                        <button type="button" id="apiKeyToggle" style="background:none; border:none; cursor:pointer; color:#64748b; font-size:11px; font-weight:600; padding:0; display:flex; align-items:center; gap:4px; width:100%;">
+                            <span id="apiKeyArrow">▶</span> API Keys <span style="font-weight:400; color:#475569;">(선택)</span>
+                        </button>
+                        <div id="apiKeyFields" style="display:none; margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+                            <div>
+                                <label style="font-size:10px; color:#64748b; margin-bottom:3px; display:block;">Gemini API Key</label>
+                                <input type="password" id="geminiKeyInput" placeholder="AIza..." autocomplete="off"
+                                    style="width:100%; box-sizing:border-box; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:6px 8px; color:#e2e8f0; font-size:11px; font-family:inherit;">
+                            </div>
+                            <div>
+                                <label style="font-size:10px; color:#64748b; margin-bottom:3px; display:block;">OpenAI API Key</label>
+                                <input type="password" id="openaiKeyInput" placeholder="sk-..." autocomplete="off"
+                                    style="width:100%; box-sizing:border-box; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:6px 8px; color:#e2e8f0; font-size:11px; font-family:inherit;">
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <button type="button" id="saveApiKeysBtn" style="flex:1; font-size:11px; padding:5px 10px; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); border-radius:6px; color:#a5b4fc; cursor:pointer;">저장 (세션)</button>
+                                <button type="button" id="clearApiKeysBtn" style="font-size:11px; padding:5px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#64748b; cursor:pointer;">지우기</button>
+                            </div>
+                            <p style="font-size:10px; color:#475569; margin:0;">.env에 키가 설정된 경우 비워두세요. 탭을 닫으면 자동 삭제됩니다.</p>
+                        </div>
+                    </div>
+
+                    <div class="version-info" style="padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 10.5px; color: #475569; display: flex; justify-content: space-between;">
                         <span>v1.4.0</span>
                         <span>2026.04.15</span>
                     </div>

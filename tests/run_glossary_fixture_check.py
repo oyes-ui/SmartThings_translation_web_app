@@ -74,9 +74,9 @@ TARGET_TEXT = {
         "(壁挂式型号)设备 > 空调 > 设备控制 > 运动检测 > 不在家时\"中设置。",
     },
     "JA(일본)": {
-        30: "「Welcome air care」は\"Settings > デバイス > エアコン > デバイス操作 > Welcome air care\"で設定できます。",
-        31: "「外出中に省電力」は\"Settings > (床置きモデル)デバイス > エアコン > デバイス操作 > Motion detection > 外出中に省電力、"
-        "(壁掛けモデル)デバイス > エアコン > デバイス操作 > Motion detection > While away\"で設定できます。",
+        30: "「Welcome air care」は「Settings > デバイス > エアコン > デバイス操作 > Welcome air care」で設定できます。",
+        31: "「外出中に省電力」は「Settings > (床置きモデル)デバイス > エアコン > デバイス操作 > Motion detection > 外出中に省電力、"
+        "(壁掛けモデル)デバイス > エアコン > デバイス操作 > Motion detection > While away」で設定できます。",
     },
     "BR(브라질)": {
         30: "[Cuidado do ar de boas-vindas] pode ser definido em \"Device > Air Conditioner > Contr. do aparelho > "
@@ -112,8 +112,12 @@ def assert_prompt_builder() -> list[str]:
         assert builder.get_glossary_context_mode("//test_disclaimer_01") == "disclaimer"
         assert expected_wrap in prompt, f"{sheet_name}: missing {expected_wrap}"
         assert "navigation paths" in prompt, f"{sheet_name}: missing navigation path exception"
-        assert "double quotation marks" in prompt, f"{sheet_name}: missing path quote rule"
-        assert "inside the closing quote" in prompt, f"{sheet_name}: missing intl period placement rule"
+        if sheet_name == "JA(일본)":
+            assert "Enclose navigation paths in 「 and 」" in prompt, f"{sheet_name}: missing Japanese path quote rule"
+            assert "inside the closing 」" in prompt, f"{sheet_name}: missing Japanese period placement rule"
+        else:
+            assert "double quotation marks" in prompt, f"{sheet_name}: missing path quote rule"
+            assert "inside the closing quotation mark" in prompt, f"{sheet_name}: missing intl period placement rule"
         assert "US English" not in prompt, f"{sheet_name}: should use concrete intl period placement rule"
         results.append(f"PASS prompt: {sheet_name} uses disclaimer wrap, path quote, and period placement rules")
     return results

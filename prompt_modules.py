@@ -18,47 +18,113 @@ COMMON_LOCALIZATION_STANDARD = {
 }
 
 LANGUAGE_LOCALIZATION_RULES = {
+    "Korean": [
+        "Use consistent polite (honorific) or formal literary style as appropriate for the context.",
+        "Ensure terminology consistency throughout the UI.",
+    ],
+    "English_US": [
+        "Use US English spelling and wording (e.g., 'color', 'personalize').",
+        "Follow the project-specific rule for disclaimers: place the sentence-ending period outside the closing quotation mark.",
+    ],
     "English_UK": [
-        "Use British English spelling and wording; avoid US-only spelling and phrasing.",
+        "Use British English spelling (e.g., 'colour', 'personalise', 'optimise').",
+        "Avoid US-specific vocabulary and phrasing.",
     ],
     "English_AU": [
-        "Use Australian English with British-style spelling; avoid US-only wording.",
+        "Use Australian English with British-style spelling.",
+        "Avoid overly aggressive US-style marketing tones; keep it helpful and clear.",
     ],
     "English_SG": [
-        "Use Singapore English with British-style spelling where appropriate; avoid Singlish, local slang, and overly US-specific wording.",
+        "Use concise, international Singapore English with British-style spelling where appropriate.",
+        "Do NOT use Singlish, local slang, or overly US-specific wording.",
     ],
     "English": [
-        "Use US English spelling and wording unless a more specific English market variant is specified.",
+        "Use US English spelling and wording (e.g., 'color', 'personalize') unless a more specific English market variant is specified.",
+        "Follow the project-specific rule for disclaimers: place the sentence-ending period outside the closing quotation mark.",
     ],
     "German": [
         "Use Du-form consistently unless the locale or project explicitly requires Sie-form.",
+        "Ensure natural capitalization of nouns and maintain natural compound word structures.",
         "Avoid overly formal or technical wording in short UI copy.",
     ],
     "Japanese": [
         "Use consistent ます-form unless project guidance specifies otherwise.",
         "Use natural Japanese UI phrasing and avoid close structural calques from English or Korean.",
+        "Prioritize natural '操作/設定' style expressions over mechanical literal translations.",
         "Avoid excessive honorifics unless the context clearly requires them.",
     ],
     "French": [
-        "Use one address form consistently; do not mix Tu and Vous.",
-        "Use natural French phrasing and avoid English-influenced structure or wording.",
-        "Keep marketing and benefit-led wording natural, clear, and not overly sales-driven.",
+        "Use one address form consistently (Tu vs Vous); do not mix them.",
+        "Avoid unnecessary capitalization in UI copy.",
+        "Use natural French phrasing and avoid English-influenced structures.",
+    ],
+    "French_BE": [
+        "Use neutral French and avoid overly idiomatic expressions specific to mainland France.",
+        "Ensure consistent tone for the Belgian market.",
+    ],
+    "French_CA": [
+        "Follow Canadian French standards; prioritize phrasing natural to North American French over mainland France idioms.",
+    ],
+    "Italian": [
+        "Use natural Italian UI sentence structures; avoid English-style noun-chaining.",
     ],
     "Spanish": [
         "Use Usted consistently unless the locale or project explicitly requires Tú.",
-        "Keep Spanish regionally neutral unless a market-specific variant is explicitly requested.",
+        "Keep Spanish regionally neutral unless a market-specific variant is requested.",
     ],
-    "Brazilian Portuguese": [
-        "Use natural Brazilian Portuguese consistently and avoid European Portuguese wording or grammar.",
+    "Spanish_ES": [
+        "Use Spain Spanish (Castilian) and avoid Latin American-specific wording or usage.",
+    ],
+    "Dutch": [
+        "Keep Dutch copy direct and concise.",
+        "Avoid literal translation of English word order or noun-phrase structures.",
+    ],
+    "Swedish": [
+        "Keep Swedish UI copy concise and natural.",
+        "Avoid English-style title case; prioritize sentence case for headings and buttons.",
+    ],
+    "Arabic": [
+        "Use Modern Standard Arabic (MSA).",
+        "Follow Arabic conventions for UI directionality, punctuation, and sentence-ending styles.",
+        "Avoid literal translations that sound unnatural in Arabic.",
     ],
     "European Portuguese": [
-        "Use natural European Portuguese consistently and avoid Brazilian Portuguese wording or grammar.",
+        "Use European Portuguese consistently; avoid Brazilian Portuguese wording, vocabulary, or gerund structures.",
+    ],
+    "Brazilian Portuguese": [
+        "Use Brazilian Portuguese consistently; avoid European Portuguese vocabulary or phrasing.",
+    ],
+    "Russian": [
+        "Use natural Russian word order.",
+        "Avoid English-style noun-phrase literal translations and excessive capitalization.",
+    ],
+    "Turkish": [
+        "Use natural Turkish word order and avoid structural calques from English.",
+        "Maintain concise imperative or descriptive forms suitable for UI copy.",
     ],
     "Simplified Chinese": [
-        "Use natural Mainland Chinese wording consistently and avoid Taiwan Chinese expressions.",
+        "Use natural Mainland Chinese wording and Simplified Chinese characters.",
+        "Avoid Taiwan-specific terminology.",
     ],
     "Traditional Chinese": [
-        "Use natural Taiwan Chinese wording consistently and avoid Mainland Chinese expressions.",
+        "Use natural Taiwan Traditional Chinese wording and characters.",
+        "Avoid Mainland Chinese-specific terminology.",
+    ],
+    "Polish": [
+        "Ensure natural Polish declension and grammatical agreement.",
+        "Avoid English-style noun-chaining; use natural phrasing.",
+    ],
+    "Vietnamese": [
+        "Use natural Vietnamese word order and concise UI phrasing.",
+        "Avoid English-style capitalization patterns.",
+    ],
+    "Thai": [
+        "Use natural Thai UI phrasing.",
+        "Avoid unnecessary spaces and mechanical copying of English punctuation.",
+    ],
+    "Indonesian": [
+        "Keep Indonesian copy concise and natural.",
+        "Avoid overly formal structures or English-style literal phrasing.",
     ],
 }
 
@@ -79,21 +145,29 @@ TYPOGRAPHY_AND_PUNCTUATION_RULES = {
 
 GLOSSARY_BRACKET_WRAP_RULE = "Wrap glossary terms in '{open}' and '{close}'."
 GLOSSARY_DISCLAIMER_NAV_EXCEPTION = "Exception: do not wrap terms inside navigation paths (e.g., Settings > Device)."
-GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_US = (
-    "Enclose navigation paths in double quotation marks. "
-    "Place the sentence-ending period outside the closing quote."
-)
-GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_INTL = (
-    "Enclose navigation paths in double quotation marks. "
-    "Place the sentence-ending period inside the closing quote."
-)
 GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE = (
     "Enclose navigation paths in double quotation marks. "
     "For US English, place the sentence-ending period outside the closing quote; "
     "for all other target languages, place it inside the closing quote."
 )
+GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_US = (
+    "Enclose navigation paths in double quotation marks. "
+    "Place the sentence-ending period outside the closing quotation mark."
+)
+GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_INTL = (
+    "Enclose navigation paths in double quotation marks. "
+    "Place the sentence-ending period inside the closing quotation mark."
+)
 
 GLOSSARY_EXEMPT_MARKERS = ["no bracket", "대괄호 제외", "괄호 제외"]
+
+GLOSSARY_NO_BRACKET_INSTRUCTION = (
+    "Do not wrap glossary terms in any brackets. Use them exactly as provided."
+)
+GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA = (
+    "Enclose navigation paths in 「 and 」. "
+    "Place the sentence-ending period inside the closing 」."
+)
 
 AUDIT_INTRO = (
     "당신은 Samsung SmartThings UI 현지화 전문 검수자입니다.\n"

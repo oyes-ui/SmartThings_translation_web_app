@@ -289,15 +289,40 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <div class="field">
         <label>Target Language</label>
         <select id="target-lang">
-          <option value="English">English</option>
-          <option value="German">German</option>
-          <option value="Japanese" selected>Japanese</option>
-          <option value="French">French</option>
-          <option value="Spanish">Spanish</option>
-          <option value="Brazilian Portuguese">Brazilian Portuguese</option>
-          <option value="European Portuguese">European Portuguese</option>
-          <option value="Simplified Chinese">Simplified Chinese</option>
-          <option value="Traditional Chinese">Traditional Chinese</option>
+          <optgroup label="English Variants">
+            <option value="English_US">English (US)</option>
+            <option value="English_UK">English (UK)</option>
+            <option value="English_AU">English (Australia)</option>
+            <option value="English_SG">English (Singapore)</option>
+          </optgroup>
+          <optgroup label="European">
+            <option value="German">German</option>
+            <option value="French">French (France)</option>
+            <option value="French_BE">French (Belgium)</option>
+            <option value="French_CA">French (Canada)</option>
+            <option value="Italian">Italian</option>
+            <option value="Spanish_ES">Spanish (Spain)</option>
+            <option value="Spanish">Spanish (Latin Am.)</option>
+            <option value="Dutch">Dutch</option>
+            <option value="Swedish">Swedish</option>
+            <option value="Polish">Polish</option>
+            <option value="Russian">Russian</option>
+            <option value="Turkish">Turkish</option>
+            <option value="European Portuguese">Portuguese (EU)</option>
+          </optgroup>
+          <optgroup label="Asian & Others">
+            <option value="Korean">Korean</option>
+            <option value="Japanese" selected>Japanese</option>
+            <option value="Simplified Chinese">Chinese (Simplified)</option>
+            <option value="Traditional Chinese">Chinese (Traditional)</option>
+            <option value="Vietnamese">Vietnamese</option>
+            <option value="Thai">Thai</option>
+            <option value="Indonesian">Indonesian</option>
+            <option value="Arabic">Arabic (MSA)</option>
+          </optgroup>
+          <optgroup label="Americas">
+            <option value="Brazilian Portuguese">Portuguese (Brazil)</option>
+          </optgroup>
         </select>
       </div>
 
