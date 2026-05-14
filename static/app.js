@@ -444,36 +444,99 @@ function getPromptModuleTargetLang() {
 
 async function updatePromptModules() {
     const container = document.getElementById('promptModules');
+    const langTag = document.getElementById('promptModuleLangTag');
     if (!container) return;
 
-    const params = new URLSearchParams({
-        target_lang: getPromptModuleTargetLang(),
-        source_lang: document.getElementById('sourceLangSelect')?.value || 'English',
-        bx_style_on: document.getElementById('bxStyleToggle')?.checked ? 'true' : 'false',
-        glossary_available: uploadedGlossaryId ? 'true' : 'false',
-        row_key: document.getElementById('cellRange')?.value || ''
-    });
+    let sheetConfig = {};
+    try { sheetConfig = JSON.parse(document.getElementById('sheetConfig').value); } catch(e) {}
+
+    const selectedSheets = Array.from(sheetList.querySelectorAll('.target-check:checked')).map(cb => cb.value);
+    const sourceLang = document.getElementById('sourceLangSelect')?.value || 'English';
+    const bxStyleOn = document.getElementById('bxStyleToggle')?.checked ? 'true' : 'false';
+    const glossaryAvailable = uploadedGlossaryId ? 'true' : 'false';
+    const rowKey = '';
+
+    if (selectedSheets.length === 0) {
+        if (langTag) langTag.textContent = '';
+        container.innerHTML = '<div class="prompt-module-empty">선택된 대상 시트가 없습니다.</div>';
+        return;
+    }
+
+    if (langTag) langTag.textContent = `— ${selectedSheets.length}개 언어`;
+
+    const fetchForLang = async (lang) => {
+        const p = new URLSearchParams({ target_lang: lang, source_lang: sourceLang,
+            bx_style_on: bxStyleOn, glossary_available: glossaryAvailable, row_key: rowKey });
+        const res = await fetch(`${API_BASE}/prompt_modules?${p}`);
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    };
+
+    const parseBrackets = (desc) => {
+        if (!desc) return '';
+        if (desc.includes('no_brackets')) return '';
+        const m = desc.match(/brackets:\s*([^\s;,]+)/);
+        return m ? m[1] : '';
+    };
 
     try {
-        const res = await fetch(`${API_BASE}/prompt_modules?${params}`);
-        if (!res.ok) throw new Error(await res.text());
-        const data = await res.json();
-        const modules = ['common', 'language', 'bx', 'formatting', 'typography', 'glossary', 'rag'];
+        // Fetch unique languages in parallel
+        const uniqueLangs = [...new Set(selectedSheets.map(s => sheetConfig[s]?.lang).filter(Boolean))];
+        if (!uniqueLangs.length) uniqueLangs.push(sourceLang);
 
-        container.innerHTML = modules.map(key => {
-            const item = data[key] || {};
-            const active = item.active ? 'active' : 'inactive';
-            const status = item.active ? 'ON' : 'OFF';
+        const results = await Promise.all(uniqueLangs.map(lang => fetchForLang(lang)));
+        const dataByLang = Object.fromEntries(uniqueLangs.map((lang, i) => [lang, results[i]]));
+
+        const firstLang = sheetConfig[selectedSheets[0]]?.lang || sourceLang;
+        const baseData = dataByLang[firstLang] || results[0];
+
+        // Build language card content — list per sheet when multiple
+        let langCardDesc, langCardActive;
+        if (selectedSheets.length === 1) {
+            const d = baseData.language || {};
+            langCardActive = d.active;
+            langCardDesc = `<span class="pm-card-text">${escapeHTML(d.description || '')}</span>`;
+        } else {
+            langCardActive = true;
+            const items = selectedSheets.map(sheet => {
+                const lang = sheetConfig[sheet]?.lang || '';
+                const d = dataByLang[lang];
+                const ruleName = d?.language?.active ? d.language.name : '공통 기준만 적용';
+                const brackets = parseBrackets(d?.formatting?.description);
+                const bracketTag = brackets ? `<span class="pm-bracket-tag">${escapeHTML(brackets)}</span>` : '';
+                return `<div class="pm-card-lang-row"><span class="pm-card-sheet">${escapeHTML(sheet)}</span><span class="pm-card-rule">${escapeHTML(ruleName)}${bracketTag}</span></div>`;
+            }).join('');
+            langCardDesc = `<div class="pm-card-lang-list">${items}</div>`;
+        }
+
+        // Build standard cards
+        const makeCard = (key, overrideName, overrideActive, overrideDescHtml) => {
+            const item = baseData[key] || {};
+            const active = (overrideActive !== undefined ? overrideActive : item.active) ? 'active' : 'inactive';
+            const status = active === 'active' ? 'ON' : 'OFF';
+            const name = overrideName || item.name || key;
+            const descHtml = overrideDescHtml !== undefined
+                ? overrideDescHtml
+                : `<span class="pm-card-text">${escapeHTML(item.description || '')}</span>`;
             return `
                 <div class="prompt-module ${active}">
                     <div class="prompt-module-head">
-                        <span class="prompt-module-name">${escapeHTML(item.name || key)}</span>
+                        <span class="prompt-module-name">${escapeHTML(name)}</span>
                         <span class="prompt-module-status ${active}">${status}</span>
                     </div>
-                    <div class="prompt-module-desc">${escapeHTML(item.description || '')}</div>
-                </div>
-            `;
-        }).join('');
+                    <div class="prompt-module-desc">${descHtml}</div>
+                </div>`;
+        };
+
+        container.innerHTML = [
+            makeCard('common'),
+            makeCard('language', null, langCardActive, langCardDesc),
+            makeCard('bx'),
+            makeCard('formatting'),
+            makeCard('typography'),
+            makeCard('glossary'),
+            makeCard('rag'),
+        ].join('');
     } catch (e) {
         container.innerHTML = `<div class="prompt-module-empty">프롬프트 모듈 조회 실패: ${escapeHTML(e.message)}</div>`;
     }

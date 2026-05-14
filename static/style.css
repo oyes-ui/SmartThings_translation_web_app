@@ -744,7 +744,6 @@ body {
     background: rgba(0, 0, 0, 0.16);
     border-radius: 6px;
     padding: 8px 10px;
-    min-height: 72px;
 }
 
 .prompt-module.active {
@@ -799,6 +798,64 @@ body {
     padding: 10px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
+}
+
+/* ─── Prompt Modules: multi-language card content ────────────────────── */
+.pm-card-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.pm-card-lang-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    max-height: 140px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148,163,184,0.2) transparent;
+}
+
+.pm-card-lang-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+}
+
+.pm-card-sheet {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: rgba(148, 163, 184, 0.1);
+    border-radius: 3px;
+    padding: 1px 5px;
+    white-space: nowrap;
+}
+
+.pm-card-rule {
+    font-size: 10.5px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pm-bracket-tag {
+    flex-shrink: 0;
+    font-family: monospace;
+    font-size: 10px;
+    color: var(--text-secondary);
+    background: rgba(0,0,0,0.2);
+    border-radius: 3px;
+    padding: 0 4px;
 }
 
 /* ─── Print / PDF Export Page Break Prevention ──────────────────────── */
