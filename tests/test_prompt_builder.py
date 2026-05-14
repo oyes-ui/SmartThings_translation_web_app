@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -330,6 +331,34 @@ class PromptBuilderTests(unittest.TestCase):
                 row_key="//section_045_1_description",
             ),
             "「自宅分析」は「Settings > Devices」で設定できます。",
+        )
+
+    def test_glossary_loader_registers_korean_terms_even_if_source_language_is_misconfigured(self):
+        checker = TranslationChecker()
+        glossary_path = Path(__file__).resolve().parent / "glossary_TEST_ver2.csv"
+
+        import asyncio
+        asyncio.run(checker.load_glossary_from_file(str(glossary_path), "English"))
+
+        context = checker._get_glossary_context_as_dict(
+            "일본",
+            source_text="홈 인사이트 설정하기",
+            row_key="//section_045_1_button",
+        )
+
+        self.assertEqual(context["홈 인사이트"], "自宅分析")
+        self.assertEqual(context["설정"], "Settings")
+
+    def test_title_button_postprocess_removes_generic_brackets_when_glossary_is_empty(self):
+        checker = TranslationChecker()
+
+        self.assertEqual(
+            checker._strip_title_button_glossary_brackets(
+                "「自宅分析」 [Settings]",
+                {},
+                row_key="//section_045_1_button",
+            ),
+            "自宅分析 Settings",
         )
 
 

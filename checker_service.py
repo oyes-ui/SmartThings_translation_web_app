@@ -178,20 +178,20 @@ class TranslationChecker:
             
             self.source_lang_code = source_lang_code
 
-            # 소스 언어가 한국어인 경우 한국어 컬럼도 찾아서 이중 키 등록에 사용
+            # 한국어 컬럼도 찾아서 보조 source key 등록에 사용합니다.
+            # UI source language가 잘못 선택되어도 한국어 원문 매칭이 죽지 않도록 항상 찾습니다.
             is_korean_source = any(
                 t in source_lang_code.lower() for t in ["korean", "한국어", "ko_kr", "ko-kr"]
             )
             kr_col_idx = -1
-            if is_korean_source:
-                for c in range(num_cols):
-                    for r in range(3):
-                        val = str(df_headers.iloc[r, c]).strip().lower()
-                        if val and any(t in val or val in t for t in ["한국어", "ko_kr", "ko-kr", "korean"] if t):
-                            kr_col_idx = c
-                            break
-                    if kr_col_idx != -1:
+            for c in range(num_cols):
+                for r in range(3):
+                    val = str(df_headers.iloc[r, c]).strip().lower()
+                    if val and any(t in val or val in t for t in ["한국어", "ko_kr", "ko-kr", "korean"] if t):
+                        kr_col_idx = c
                         break
+                if kr_col_idx != -1:
+                    break
 
             count = 0
             for _, row in df_data.iterrows():
@@ -220,20 +220,28 @@ class TranslationChecker:
                             targets[code_key] = val
                 
                 if targets:
-                    # 영문 key 컬럼 값으로 등록 (항상)
-                    self.glossary[source_term] = {"targets": targets, "rule": rule}
-                    count += 1
+                    before_count = len(self.glossary)
+                    candidate_source_terms = [source_term]
 
-                    # 🔑 소스 언어가 한국어면 한국어 컬럼 값도 소스 키로 이중 등록
-                    # 예) 'SmartThings' 키와 함께 '스마트싱스'도 키로 등록 → 한국어 원문 검수 시 매칭 가능
-                    if is_korean_source and kr_col_idx != -1:
+                    # Key/Lng identifier column is the stable project glossary key.
+                    primary_key = str(row[0]).strip() if num_cols > 0 else ""
+                    if primary_key and primary_key.lower() not in ("lng", ""):
+                        candidate_source_terms.append(primary_key)
+
+                    # Korean source rows should match even when UI source language was mis-selected.
+                    if kr_col_idx != -1:
                         kr_term = str(row[kr_col_idx]).strip()
-                        if kr_term and kr_term.lower() not in ("lng", "") and kr_term != source_term:
-                            if kr_term not in self.glossary:
-                                self.glossary[kr_term] = {"targets": targets, "rule": rule}
+                        if kr_term and kr_term.lower() not in ("lng", ""):
+                            candidate_source_terms.append(kr_term)
+
+                    for candidate in candidate_source_terms:
+                        if candidate and candidate not in self.glossary:
+                            self.glossary[candidate] = {"targets": targets, "rule": rule}
+
+                    count += len(self.glossary) - before_count
 
             self._compile_glossary_re()
-            kr_note = " (한국어 원문 키 이중 등록 적용)" if is_korean_source and kr_col_idx != -1 else ""
+            kr_note = " (한국어 원문 키 보조 등록 적용)" if kr_col_idx != -1 else ""
             return f"✓ 용어집 로드 성공: {len(self.glossary)}개 항목 (매칭 기준: {source_lang_code}){kr_note}"
 
         except Exception as e:
@@ -612,26 +620,33 @@ class TranslationChecker:
         """
         if not target_text or not self.prompt_builder.should_skip_brackets(row_key):
             return target_text
-        if not isinstance(glossary_context, dict) or not glossary_context:
-            return target_text
 
         cleaned = target_text
         bracket_pairs = [("[", "]"), ("「", "」")]
         targets = []
-        for value in glossary_context.values():
-            if not value:
-                continue
-            clean_value = re.sub(r'\(EXCEPTION:.*?\)', '', str(value)).strip()
-            if clean_value:
-                targets.append(clean_value)
+        if isinstance(glossary_context, dict):
+            for value in glossary_context.values():
+                if not value:
+                    continue
+                clean_value = re.sub(r'\(EXCEPTION:.*?\)', '', str(value)).strip()
+                if clean_value:
+                    targets.append(clean_value)
 
-        for term in sorted(set(targets), key=len, reverse=True):
+        if targets:
+            for term in sorted(set(targets), key=len, reverse=True):
+                for left, right in bracket_pairs:
+                    cleaned = re.sub(
+                        re.escape(left) + r"\s*" + re.escape(term) + r"\s*" + re.escape(right),
+                        term,
+                        cleaned,
+                        flags=re.IGNORECASE,
+                    )
+        else:
             for left, right in bracket_pairs:
                 cleaned = re.sub(
-                    re.escape(left) + r"\s*" + re.escape(term) + r"\s*" + re.escape(right),
-                    term,
+                    re.escape(left) + r"\s*([^" + re.escape(left + right) + r"]+?)\s*" + re.escape(right),
+                    r"\1",
                     cleaned,
-                    flags=re.IGNORECASE,
                 )
         return cleaned
 
