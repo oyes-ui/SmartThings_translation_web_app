@@ -178,20 +178,20 @@ class TranslationChecker:
             
             self.source_lang_code = source_lang_code
 
-            # 한국어 컬럼도 찾아서 보조 source key 등록에 사용합니다.
-            # UI source language가 잘못 선택되어도 한국어 원문 매칭이 죽지 않도록 항상 찾습니다.
+            # 소스 언어가 한국어인 경우 한국어 컬럼도 찾아서 이중 키 등록에 사용
             is_korean_source = any(
                 t in source_lang_code.lower() for t in ["korean", "한국어", "ko_kr", "ko-kr"]
             )
             kr_col_idx = -1
-            for c in range(num_cols):
-                for r in range(3):
-                    val = str(df_headers.iloc[r, c]).strip().lower()
-                    if val and any(t in val or val in t for t in ["한국어", "ko_kr", "ko-kr", "korean"] if t):
-                        kr_col_idx = c
+            if is_korean_source:
+                for c in range(num_cols):
+                    for r in range(3):
+                        val = str(df_headers.iloc[r, c]).strip().lower()
+                        if val and any(t in val or val in t for t in ["한국어", "ko_kr", "ko-kr", "korean"] if t):
+                            kr_col_idx = c
+                            break
+                    if kr_col_idx != -1:
                         break
-                if kr_col_idx != -1:
-                    break
 
             count = 0
             for _, row in df_data.iterrows():
@@ -220,28 +220,20 @@ class TranslationChecker:
                             targets[code_key] = val
                 
                 if targets:
-                    before_count = len(self.glossary)
-                    candidate_source_terms = [source_term]
+                    # 영문 key 컬럼 값으로 등록 (항상)
+                    self.glossary[source_term] = {"targets": targets, "rule": rule}
+                    count += 1
 
-                    # Key/Lng identifier column is the stable project glossary key.
-                    primary_key = str(row[0]).strip() if num_cols > 0 else ""
-                    if primary_key and primary_key.lower() not in ("lng", ""):
-                        candidate_source_terms.append(primary_key)
-
-                    # Korean source rows should match even when UI source language was mis-selected.
-                    if kr_col_idx != -1:
+                    # 🔑 소스 언어가 한국어면 한국어 컬럼 값도 소스 키로 이중 등록
+                    # 예) 'SmartThings' 키와 함께 '스마트싱스'도 키로 등록 → 한국어 원문 검수 시 매칭 가능
+                    if is_korean_source and kr_col_idx != -1:
                         kr_term = str(row[kr_col_idx]).strip()
-                        if kr_term and kr_term.lower() not in ("lng", ""):
-                            candidate_source_terms.append(kr_term)
-
-                    for candidate in candidate_source_terms:
-                        if candidate and candidate not in self.glossary:
-                            self.glossary[candidate] = {"targets": targets, "rule": rule}
-
-                    count += len(self.glossary) - before_count
+                        if kr_term and kr_term.lower() not in ("lng", "") and kr_term != source_term:
+                            if kr_term not in self.glossary:
+                                self.glossary[kr_term] = {"targets": targets, "rule": rule}
 
             self._compile_glossary_re()
-            kr_note = " (한국어 원문 키 보조 등록 적용)" if kr_col_idx != -1 else ""
+            kr_note = " (한국어 원문 키 이중 등록 적용)" if is_korean_source and kr_col_idx != -1 else ""
             return f"✓ 용어집 로드 성공: {len(self.glossary)}개 항목 (매칭 기준: {source_lang_code}){kr_note}"
 
         except Exception as e:
@@ -312,6 +304,40 @@ class TranslationChecker:
                 found_terms.add(original_term)
         return list(found_terms)
 
+    def _get_row_key(self, worksheet, row_idx: int) -> str:
+        cell = worksheet[f"B{row_idx}"]
+        value = cell.value
+        if value is None:
+            return ""
+        raw = str(value).strip()
+        if not raw:
+            return ""
+        if not raw.startswith("="):
+            return raw
+
+        # Best-effort evaluator for the project row-key formula pattern:
+        # ="//section_"&RIGHT($C$5, 3)&"_1_button"
+        story_id = ""
+        c5 = worksheet["C5"].value
+        if c5 is not None:
+            digits = re.findall(r"\d+", str(c5))
+            if digits:
+                story_id = digits[-1][-3:].zfill(3)
+
+        formula_body = raw[1:]
+        parts = []
+        for token in formula_body.split("&"):
+            token = token.strip()
+            quoted = re.fullmatch(r'"(.*)"', token)
+            if quoted:
+                parts.append(quoted.group(1))
+                continue
+            if "RIGHT" in token.upper() and story_id:
+                parts.append(story_id)
+
+        resolved = "".join(parts).strip()
+        return resolved if resolved.startswith("//") else raw
+
     # ----------------- Excel Loader -----------------
     def load_excel_files(self, source_path, target_path, selected_sheets=None):
         pass
@@ -381,7 +407,7 @@ class TranslationChecker:
                             if s_val and t_val and s_val.lower() != "x" and t_val.lower() != "x":
                                 # Extract row_key from column B of the same row
                                 row_idx = s_cell.row
-                                row_key = str(ws_source[f"B{row_idx}"].value).strip() if ws_source[f"B{row_idx}"].value else ""
+                                row_key = self._get_row_key(ws_source, row_idx)
                                 
                                 all_data.append({
                                     "cell_ref": s_cell.coordinate,
@@ -1297,7 +1323,7 @@ class TranslationChecker:
                         val = str(cell.value).strip() if cell.value is not None else ""
                         if val and val.lower() != "x":
                             row_idx = cell.row
-                            row_key = str(source_ws[f"B{row_idx}"].value).strip() if source_ws[f"B{row_idx}"].value else ""
+                            row_key = self._get_row_key(source_ws, row_idx)
                             source_data.append({'text': str(cell.value).strip(), 'coord': cell.coordinate, 'row_key': row_key})
             except Exception as e:
                 yield {"type": "error", "message": f"Error accessing range {current_range}: {e}"}
@@ -1326,8 +1352,6 @@ class TranslationChecker:
             source_text = item['text']
             coord = item['coord']
             row_key = item.get("row_key", "")
-            context_mode = self.prompt_builder.get_glossary_context_mode(row_key)
-            logs = []
             
             # Step 1: Translate
             # Translating: filter out terms explicitly deactivated to save tokens and not force LLM behavior
@@ -1337,19 +1361,12 @@ class TranslationChecker:
                 skip_deactivated=True,
                 row_key=row_key,
             )
-            relevant_terms_for_debug = self._get_relevant_glossary_terms(source_text)
-            if context_mode == "title_button":
-                logs.append(
-                    f"[Glossary Debug] {ws.title} {coord} key={row_key or '(empty)'} "
-                    f"mode={context_mode} target_code={target_lang_code} "
-                    f"source_terms={relevant_terms_for_debug or []} "
-                    f"prompt_terms={list(glossary_dict.keys()) if glossary_dict else []}"
-                )
             if not glossary_dict:
                 glossary_dict = None
 
             # RAG Injection
             rag_context_str = None
+            logs = []
             if getattr(self, "rag_retriever", None) and self.rag_retriever.is_available():
                 try:
                     results = self.rag_retriever.retrieve(
@@ -1583,7 +1600,7 @@ class TranslationChecker:
                         val = str(cell.value).strip() if cell.value is not None else ""
                         if val and val.lower() != "x":
                             row_idx = cell.row
-                            row_key = str(source_ws[f"B{row_idx}"].value).strip() if source_ws[f"B{row_idx}"].value else ""
+                            row_key = self._get_row_key(source_ws, row_idx)
                             source_data.append({'text': val, 'coord': cell.coordinate, 'row_key': row_key})
             except Exception as e:
                 yield {"type": "error", "message": f"Error accessing range {current_range}: {e}"}
@@ -1613,7 +1630,6 @@ class TranslationChecker:
             source_text = item['text']
             coord = item['coord']
             row_key = item.get("row_key", "")
-            context_mode = self.prompt_builder.get_glossary_context_mode(row_key)
             
             target_cell = ws[coord]
             target_text = str(target_cell.value).strip() if target_cell.value is not None else ""
@@ -1646,12 +1662,6 @@ class TranslationChecker:
 
                 original_target_terms = []
                 relevant_terms = self._get_relevant_glossary_terms(source_text)
-                if context_mode == "title_button":
-                    logs.append(
-                        f"[Glossary Debug] {ws.title} {coord} key={row_key or '(empty)'} "
-                        f"mode={context_mode} target_code={target_lang_code} "
-                        f"source_terms={relevant_terms or []}"
-                    )
                 if relevant_terms:
                     for s_term in relevant_terms:
                         meta = self.glossary.get(s_term)
