@@ -136,29 +136,37 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             // Analyze Status and Tags
-            let hasIssue = false;
             if (item.casingCheck && !item.casingCheck.includes('추가 대문자 수: 0개') && item.casingCheck.includes('문장형 아님')) {
-                item.status = 'warn'; item.tags.push('대소문자'); parsedData.stats.casingIssues++; hasIssue = true;
+                item.tags.push('대소문자'); 
+                parsedData.stats.casingIssues++;
             }
             if (item.glossaryCheck && !item.glossaryCheck.includes('별도 지적 사항 없음')) {
-                item.status = 'fail'; item.tags.push('용어집'); parsedData.stats.glossaryIssues++; hasIssue = true;
+                item.tags.push('용어집'); 
+                parsedData.stats.glossaryIssues++;
             }
+
             if (item.geminiQa && (item.geminiQa.includes('[AI QA 오류]') || item.geminiQa.includes('[Gemini QA 오류]'))) {
-                item.status = 'fail'; item.tags.push('AI 오류'); hasIssue = true;
+                item.status = 'fail'; 
+                item.tags.push('AI 오류');
             } else if (item.geminiQa) {
                 try {
                     const aiData = JSON.parse(item.geminiQa);
                     const isExcellent = aiData.is_excellent === true || aiData.grade === 'Excellent';
-                    const hasFix = (aiData.suggested_fix && aiData.suggested_fix.trim() !== '') || aiData.grade === 'Needs Revision';
+                    const needsRevision = aiData.grade === 'Needs Revision' || aiData.is_excellent === false;
+                    const hasFix = (aiData.suggested_fix && aiData.suggested_fix.trim() !== '') || aiData.grade === 'Good';
                     
-                    if (!isExcellent || hasFix) {
-                        if (item.status !== 'fail') item.status = 'warn';
+                    if (needsRevision) {
+                        item.status = 'fail';
+                    } else if (hasFix || !isExcellent) {
+                        item.status = 'warn';
                         if (!item.tags.includes('AI 제안')) item.tags.push('AI 추천');
                     }
                 } catch (e) {
                     // Fallback to string matching for non-JSON or malformed data
-                    if (item.geminiQa.includes('수정 제안') || item.geminiQa.includes('오류') || item.geminiQa.includes('Needs Revision')) {
-                        if (item.status !== 'fail') item.status = 'warn';
+                    if (item.geminiQa.includes('Needs Revision') || item.geminiQa.includes('수정 필요') || item.geminiQa.includes('오류')) {
+                        item.status = 'fail';
+                    } else if (item.geminiQa.includes('수정 제안') || item.geminiQa.includes('Good') || item.geminiQa.includes('양호')) {
+                        item.status = 'warn';
                         if (!item.tags.includes('AI 제안')) item.tags.push('AI 추천');
                     }
                 }
@@ -202,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="stat-info">
                     <div class="stat-label">수정 권장 (Warning)</div>
                     <div class="stat-value">${parsedData.stats.warn}건</div>
-                    <div class="stat-subtext">대소문자 위반 ${parsedData.stats.casingIssues}건 포함</div>
+                    <div class="stat-subtext">AI가 개선을 제안한 항목</div>
                 </div>
             </div>
             <div class="stat-card stat-danger">
@@ -210,7 +218,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="stat-info">
                     <div class="stat-label">수정 필수 (Fail)</div>
                     <div class="stat-value">${parsedData.stats.fail}건</div>
-                    <div class="stat-subtext">용어집 위반 ${parsedData.stats.glossaryIssues}건 포함</div>
+                    <div class="stat-subtext">AI가 수정을 필수로 판정한 항목</div>
+                </div>
+            </div>
+            <div class="stat-card stat-info" style="background: var(--bg-secondary); border: 1px solid var(--border-color);">
+                <div class="stat-icon" style="color: var(--text-secondary);"><i class="ri-microscope-line"></i></div>
+                <div class="stat-info">
+                    <div class="stat-label" style="color: var(--text-secondary);">참고: 기계검수 (Heuristic)</div>
+                    <div class="stat-value" style="color: var(--text-primary); font-size: 1.4rem;">${parsedData.stats.casingIssues + parsedData.stats.glossaryIssues}건</div>
+                    <div class="stat-subtext">용어집 ${parsedData.stats.glossaryIssues}건, 대소문자 ${parsedData.stats.casingIssues}건</div>
                 </div>
             </div>
         `;
