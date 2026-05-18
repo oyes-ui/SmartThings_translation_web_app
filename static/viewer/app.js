@@ -298,25 +298,35 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="card-title-group">
                             <span class="card-badge"><i class="ri-map-pin-line"></i> ${escapeHTML(item.header || `항목 ${index + 1}`)}</span>
                             ${statusTagHtml}
+                            <button class="copy-icon-btn copy-full-btn" onclick="window.copyViewerText(this)" title="이 셀의 전체 검수 결과 복사하기" style="margin-left: 8px;"><i class="ri-clipboard-line"></i></button>
                         </div>
                         <div class="category-tags">${tagsHtml}</div>
                     </div>
                     <div class="card-body">
                         <div class="diff-viewer">
                             <div class="diff-panel">
-                                <span class="diff-header"><i class="ri-text"></i> 원문 (Source)</span>
-                                <div class="diff-content">${escapeHTML(item.sourceText)}</div>
+                                <span class="diff-header">
+                                    <span class="diff-header-title"><i class="ri-text"></i> 원문 (Source)</span>
+                                    <button class="copy-icon-btn" onclick="window.copyViewerText(this)" title="복사하기"><i class="ri-clipboard-line"></i></button>
+                                </span>
+                                <div class="diff-content" data-raw-text="${escapeHTML(item.sourceText)}">${escapeHTML(item.sourceText)}</div>
                             </div>
                             <div class="diff-panel">
-                                <span class="diff-header"><i class="ri-translate"></i> 번역문 (Target)</span>
-                                <div class="diff-content">${escapeHTML(item.targetText)}</div>
+                                <span class="diff-header">
+                                    <span class="diff-header-title"><i class="ri-translate"></i> 번역문 (Target)</span>
+                                    <button class="copy-icon-btn" onclick="window.copyViewerText(this)" title="복사하기"><i class="ri-clipboard-line"></i></button>
+                                </span>
+                                <div class="diff-content" data-raw-text="${escapeHTML(item.targetText)}">${escapeHTML(item.targetText)}</div>
                             </div>
                         </div>
                         ${(item.casingSuggestion && item.status !== 'pass' && item.casingSuggestion.trim() !== '') ? `
                         <div class="diff-viewer diff-suggestion" style="margin-top: 10px; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 10px;">
                             <div class="diff-panel" style="width: 100%;">
-                                <span class="diff-header" style="color:var(--warning-color);"><i class="ri-edit-line"></i> 교정 제안 (Diff Viewer)</span>
-                                <div class="diff-content">${generateDiffHtml(item.targetText, item.casingSuggestion)}</div>
+                                <span class="diff-header" style="color:var(--warning-color);">
+                                    <span class="diff-header-title"><i class="ri-edit-line"></i> 교정 제안 (Diff Viewer)</span>
+                                    <button class="copy-icon-btn" onclick="window.copyViewerText(this)" title="복사하기"><i class="ri-clipboard-line"></i></button>
+                                </span>
+                                <div class="diff-content" data-raw-text="${escapeHTML(item.casingSuggestion)}">${generateDiffHtml(item.targetText, item.casingSuggestion)}</div>
                             </div>
                         </div>` : ''}
                         
@@ -329,8 +339,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 : '<span style="color:#94a3b8;">생략됨 (지원하지 않거나 수행되지 않음)</span>';
             htmlString += `
                 <div class="action-card info">
-                    <span class="action-title"><i class="ri-arrow-left-right-line"></i> 역번역 결과 (Back Translation)</span>
-                    <div class="action-content" style="color: ${backTransText.includes('생략됨') ? '#94a3b8' : '#2b6cb0'};">${backTransText}</div>
+                    <span class="action-title">
+                        <span class="action-title-text"><i class="ri-arrow-left-right-line"></i> 역번역 결과 (Back Translation)</span>
+                        <button class="copy-icon-btn" onclick="window.copyViewerText(this)" title="복사하기"><i class="ri-clipboard-line"></i></button>
+                    </span>
+                    <div class="action-content" data-raw-text="${escapeHTML(item.backTranslation || '')}" style="color: ${backTransText.includes('생략됨') ? '#94a3b8' : '#2b6cb0'};">${backTransText}</div>
                 </div>
             `;
 
@@ -374,7 +387,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             htmlString += `
                 <div class="action-card info">
-                    <span class="action-title"><i class="ri-database-2-line"></i> RAG 일관성 참고 내역</span>
+                    <span class="action-title">
+                        <span class="action-title-text"><i class="ri-database-2-line"></i> RAG 일관성 참고 내역</span>
+                        <button class="copy-icon-btn" onclick="window.copyViewerText(this)" title="복사하기"><i class="ri-clipboard-line"></i></button>
+                    </span>
                     <div class="action-content">${ragText}</div>
                 </div>
             `;
@@ -386,9 +402,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const casingContent = (item.casingCheck && item.casingCheck.trim() !== '') ? escapeHTML(item.casingCheck) : '특이사항 없음';
             htmlString += `
                 <div class="action-card ${casingClass}">
-                    <span class="action-title">${casingTitle}</span>
-                    <div class="action-content">${casingContent}</div>
-                    ${(hasCasingIssue && item.casingSuggestion) ? `<div class="suggestion-box"><strong>제안:</strong> ${escapeHTML(item.casingSuggestion)}</div>` : ''}
+                    <span class="action-title">
+                        <span class="action-title-text">${casingTitle}</span>
+                        <button class="copy-icon-btn" onclick="window.copyViewerText(this)" title="복사하기"><i class="ri-clipboard-line"></i></button>
+                    </span>
+                    <div class="action-content" data-raw-text="${escapeHTML(item.casingCheck || '')}">${casingContent}</div>
+                    ${(hasCasingIssue && item.casingSuggestion) ? `<div class="suggestion-box" data-raw-text="${escapeHTML(item.casingSuggestion)}"><strong>제안:</strong> ${escapeHTML(item.casingSuggestion)}</div>` : ''}
                 </div>
             `;
 
@@ -399,8 +418,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const glossaryContent = (item.glossaryCheck && item.glossaryCheck.trim() !== '') ? escapeHTML(item.glossaryCheck) : '특이사항 없음';
             htmlString += `
                 <div class="action-card ${glossaryClass}">
-                    <span class="action-title">${glossaryTitle}</span>
-                    <div class="action-content">${glossaryContent}</div>
+                    <span class="action-title">
+                        <span class="action-title-text">${glossaryTitle}</span>
+                        <button class="copy-icon-btn" onclick="window.copyViewerText(this)" title="복사하기"><i class="ri-clipboard-line"></i></button>
+                    </span>
+                    <div class="action-content" data-raw-text="${escapeHTML(item.glossaryCheck || '')}">${glossaryContent}</div>
                 </div>
             `;
 
@@ -461,7 +483,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             htmlString += `
                 <div class="action-card ${geminiClass}" style="background: linear-gradient(to right, rgba(139, 92, 246, 0.05), rgba(139, 92, 246, 0.01));">
-                    <span class="action-title" style="color: #6d28d9;"><i class="ri-robot-2-line"></i> AI 상세 검수 코멘트</span>
+                    <span class="action-title" style="color: #6d28d9;">
+                        <span class="action-title-text"><i class="ri-robot-2-line"></i> AI 상세 검수 코멘트</span>
+                        <button class="copy-icon-btn" onclick="window.copyViewerText(this)" title="복사하기"><i class="ri-clipboard-line"></i></button>
+                    </span>
                     <div class="action-content" style="padding-top: 10px;">${aiContent}</div>
                 </div>
             `;
@@ -587,4 +612,52 @@ document.addEventListener('DOMContentLoaded', () => {
             contentArea.style.margin = origMargin;
         });
     });
+
+    // --- Copy to Clipboard ---
+    window.copyViewerText = function(btn) {
+        let textToCopy = '';
+        
+        // 1. Check if it's a full card copy
+        if (btn.classList.contains('copy-full-btn')) {
+            const cardBody = btn.closest('.review-card').querySelector('.card-body');
+            if (!cardBody) return;
+            // Get text, prepend the header for context
+            const headerText = btn.closest('.card-header').querySelector('.card-badge').innerText;
+            textToCopy = headerText + '\n\n' + cardBody.innerText;
+        } else {
+            // 2. Individual section copy
+            const container = btn.closest('.diff-panel') || btn.closest('.action-card');
+            if (!container) return;
+            
+            const contentEl = container.querySelector('.diff-content') || container.querySelector('.action-content');
+            if (!contentEl) return;
+            
+            textToCopy = contentEl.getAttribute('data-raw-text');
+            
+            if (!textToCopy || textToCopy.trim() === '') {
+                textToCopy = contentEl.innerText;
+            } else {
+                // Unescape manually if data-raw-text is used since we passed escaped string
+                const unescapeHTML = (str) => {
+                    const txt = document.createElement('textarea');
+                    txt.innerHTML = str;
+                    return txt.value;
+                };
+                textToCopy = unescapeHTML(textToCopy);
+            }
+        }
+
+        navigator.clipboard.writeText(textToCopy.trim()).then(() => {
+            const icon = btn.querySelector('i');
+            icon.className = 'ri-check-line';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                icon.className = 'ri-clipboard-line';
+                btn.classList.remove('copied');
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            alert('복사에 실패했습니다.');
+        });
+    };
 });

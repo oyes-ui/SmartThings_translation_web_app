@@ -115,3 +115,45 @@ class ModelHandler:
             return await self.call_gpt(prompt, model_name=model_name, system_instruction=system_instruction, response_json=response_json)
         else:
             return await self.call_gemini(prompt, model_name=model_name, system_instruction=system_instruction, response_json=response_json)
+
+    async def count_tokens(self, text: str, model_name: str = "gemini-2.5-flash") -> tuple[int, str]:
+        """
+        Returns (token_count, method).
+        method: 'gemini_api' | 'tiktoken' | 'estimated'
+        GPT/o-series  → tiktoken (local, free).
+        Gemini        → client.models.count_tokens (lightweight, ~free).
+        Fallback      → CJK/1.5 + rest/4 estimation.
+        """
+        import asyncio as _asyncio
+
+        is_gpt = any(k in model_name.lower() for k in ("gpt", "o1", "o3", "o4"))
+
+        if is_gpt:
+            try:
+                import tiktoken
+                enc = tiktoken.get_encoding("o200k_base")
+                return len(enc.encode(text)), "tiktoken"
+            except Exception:
+                pass
+        else:
+            if self.gemini_client:
+                try:
+                    actual = model_name if model_name.startswith("models/") else f"models/{model_name}"
+                    result = await _asyncio.to_thread(
+                        self.gemini_client.models.count_tokens,
+                        model=actual,
+                        contents=text,
+                    )
+                    return result.total_tokens, "gemini_api"
+                except Exception:
+                    pass
+            try:
+                import tiktoken
+                enc = tiktoken.get_encoding("o200k_base")
+                return len(enc.encode(text)), "tiktoken"
+            except Exception:
+                pass
+
+        cjk = len(re.findall(r'[　-鿿豈-﫿가-힯]', text))
+        rest = len(text) - cjk
+        return round(cjk / 1.5 + rest / 4), "estimated"

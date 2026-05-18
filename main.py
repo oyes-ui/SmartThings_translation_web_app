@@ -17,6 +17,7 @@ from datetime import datetime
 from contextlib import asynccontextmanager
 from checker_service import TranslationChecker
 from prompt_builder import PromptBuilder
+from model_handler import ModelHandler
 import zipfile
 
 # RAG 모듈 임포트 (DB 없으면 graceful fallback)
@@ -50,6 +51,7 @@ app.add_middleware(
 # Store for active tasks: { task_id: { "queue": asyncio.Queue, "result_path": str, "status": ... } }
 TASK_STORE = {}
 PROMPT_BUILDER = PromptBuilder()
+_TOKEN_COUNTER = ModelHandler()  # env-key only; used for token counting in demo
 
 class StartRequest(BaseModel):
     source_file_id: str
@@ -500,6 +502,7 @@ async def preview_prompt_blocks(
     bx_style_on: bool = Form(False),
     row_key: str = Form("description"),
     glossary_file: UploadFile = File(None),
+    model_name: str = Form("gemini-2.5-flash"),
 ):
     """데모/디버깅용: 섹션별로 분리된 프롬프트 블록과 user message 반환"""
     glossary_dict = {}
@@ -561,9 +564,30 @@ async def preview_prompt_blocks(
         "context_key": row_key,
     }
 
+    tr_sys_text  = "\n".join(s["content"] for s in translation_sections if s.get("content"))
+    au_sys_text  = "\n".join(s["content"] for s in audit_sections if s.get("content"))
+    tr_user_text = json.dumps(translation_user_msg, ensure_ascii=False)
+    au_user_text = json.dumps(audit_user_msg, ensure_ascii=False)
+
+    (tr_sys_tok, tr_method), (tr_user_tok, _), (au_sys_tok, au_method), (au_user_tok, _) = \
+        await asyncio.gather(
+            _TOKEN_COUNTER.count_tokens(tr_sys_text, model_name),
+            _TOKEN_COUNTER.count_tokens(tr_user_text, model_name),
+            _TOKEN_COUNTER.count_tokens(au_sys_text, model_name),
+            _TOKEN_COUNTER.count_tokens(au_user_text, model_name),
+        )
+
     return {
-        "translation": {"sections": translation_sections, "user_message": translation_user_msg},
-        "audit": {"sections": audit_sections, "user_message": audit_user_msg},
+        "translation": {
+            "sections": translation_sections,
+            "user_message": translation_user_msg,
+            "token_counts": {"system": tr_sys_tok, "user": tr_user_tok, "total": tr_sys_tok + tr_user_tok, "method": tr_method},
+        },
+        "audit": {
+            "sections": audit_sections,
+            "user_message": audit_user_msg,
+            "token_counts": {"system": au_sys_tok, "user": au_user_tok, "total": au_sys_tok + au_user_tok, "method": au_method},
+        },
     }
 
 

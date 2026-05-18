@@ -485,6 +485,7 @@ async function fetchAll() {
   form.append('bx_style_on', bxStyle.checked);
   form.append('row_key', rowKey.value);
   if (glossaryFile) form.append('glossary_file', glossaryFile);
+  form.append('model_name', 'gemini-2.5-flash');
 
   try {
     const [modRes, blockRes] = await Promise.all([
@@ -587,11 +588,22 @@ function renderBlocks(type, data) {
   // Token summary bar
   const bar = $('token-bar-' + type);
   const totalChars = sysChars + userChars;
-  const totalTok = sysTok + userTok;
-  bar.innerHTML = `<span>System <b>${sysChars.toLocaleString()}자</b> ~${sysTok.toLocaleString()}tok</span>`
-    + `<span>User <b>${userChars.toLocaleString()}자</b> ~${userTok.toLocaleString()}tok</span>`
-    + `<span style="color:var(--text)">Total <b>${totalChars.toLocaleString()}자</b> ~${totalTok.toLocaleString()}tok</span>`
-    + `<button class="copy-btn" onclick="copyPromptText('${type}', this)">전체 복사</button>`;
+  if (data.token_counts) {
+    const tc = data.token_counts;
+    const exact = tc.method !== 'estimated';
+    const p = exact ? '' : '~';
+    const methodLabel = `<small style="opacity:.45;font-size:9px">${tc.method}</small>`;
+    bar.innerHTML = `<span>System <b>${sysChars.toLocaleString()}자</b> ${p}${tc.system.toLocaleString()}tok</span>`
+      + `<span>User <b>${userChars.toLocaleString()}자</b> ${p}${tc.user.toLocaleString()}tok</span>`
+      + `<span style="color:var(--text)">Total <b>${totalChars.toLocaleString()}자</b> ${p}${tc.total.toLocaleString()}tok ${methodLabel}</span>`
+      + `<button class="copy-btn" onclick="copyPromptText('${type}', this)">전체 복사</button>`;
+  } else {
+    const totalTok = sysTok + userTok;
+    bar.innerHTML = `<span>System <b>${sysChars.toLocaleString()}자</b> ~${sysTok.toLocaleString()}tok</span>`
+      + `<span>User <b>${userChars.toLocaleString()}자</b> ~${userTok.toLocaleString()}tok</span>`
+      + `<span style="color:var(--text)">Total <b>${totalChars.toLocaleString()}자</b> ~${totalTok.toLocaleString()}tok</span>`
+      + `<button class="copy-btn" onclick="copyPromptText('${type}', this)">전체 복사</button>`;
+  }
 }
 
 async function copyPromptText(type, btn) {

@@ -21,33 +21,255 @@
 시스템은 아래와 같이 각 언어 및 시장별로 세분화된 규칙을 적용합니다.
 > **📌 매핑 변수**: `LANGUAGE_LOCALIZATION_RULES` (`prompt_modules.py`)
 
-| 언어/지역 (Locale) | 내부 키 (Dict Key) | 상세 규칙 및 가이드라인 |
-| :--- | :--- | :--- |
-| **Korean** | `Korean` | 존댓말(honorific) 또는 문어체 스타일 일관성 유지. UI 전체 용어 일관성 확보. |
-| **English (US)** | `English_US` / `English` | US 철자 사용 (color, personalize). 디스클레이머 마침표는 따옴표 밖(`".`)에 위치. |
-| **English (UK)** | `English_UK` | British 철자 사용 (colour, personalise, optimise). US 전용 어휘 지양. |
-| **English (AU)** | `English_AU` | British 철자 기반. 지나친 마케팅 톤을 지양하고 명확하고 유익한 톤 유지. |
-| **English (SG)** | `English_SG` | 국제 싱가포르 영어(British 철자) 사용. 현지 속어(Singlish) 사용 금지. |
-| **German** | `German` | `Du-form` 기본 사용. 명사 대문자 표기 및 복합어 구조 준수. 기술적 어투 지양. |
-| **Japanese** | `Japanese` | `ます-form` 기본 사용. 자연스러운 UI 표현(操作/設定 등) 우선. 직역형 구조 지양. 내비게이션 경로는 `「 」` 사용 및 마침표를 안쪽에 배치. |
-| **French** | `French` | `Tu/Vous` 중 하나를 일관되게 사용. 불필요한 대문자 사용 지양. |
-| **French (BE/CA)** | `French_BE` / `French_CA` | **BE**: 벨기에 시장 톤 유지. **CA**: 북미 프랑스어 표준 및 자연스러운 어구 우선. |
-| **Italian** | `Italian` | 자연스러운 이탈리아어 문장 구조 사용. 영어식 명사 나열 지양. |
-| **Spanish** | `Spanish` | `Usted` 기본 사용. 특정 요청이 없는 한 지역 중립적 스페인어 지향. |
-| **Spanish (ES)** | `Spanish_ES` | 카스티야(Spain) 스페인어 사용. 라틴 아메리카 전용 어휘 지양. |
-| **Dutch** | `Dutch` | 직접적이고 간결한 문체. 영어식 어순이나 명사구 구조 지양. |
-| **Swedish** | `Swedish` | 간결한 UI copy. 영어식 Title Case 대신 Sentence Case(첫 글자만 대문자) 우선. |
-| **Arabic** | `Arabic` | 현대 표준 아랍어(MSA) 사용. UI 방향성(RTL), 구두점, 문장 끝맺음 규칙 준수. |
-| **Portuguese (BR)** | `Brazilian Portuguese` | 브라질 포르투갈어 전용 어휘 및 문구 사용. 유럽식 어휘/구조 지양. |
-| **Portuguese (PT)** | `European Portuguese` | 유럽 포르투갈어 전용 어휘 사용. 브라질식 어휘나 진행형(gerund) 구조 지양. |
-| **Russian** | `Russian` | 러시아어 어순 준수. 영어식 명사구 직역 및 과도한 대문자 지양. |
-| **Turkish** | `Turkish` | 터키어 어순 준수. UI에 적합한 간결한 명령형 또는 묘사형 사용. |
-| **Chinese (Simplified)** | `Simplified Chinese` | 중국 본토 표준 용어 및 간체자 사용. 대만식 용어 지양. |
-| **Chinese (Traditional)** | `Traditional Chinese` | 대만 표준 용어 및 번체자 사용. 중국 본토식 용어 지양. |
-| **Polish** | `Polish` | 격 변화(declension) 및 문법적 일치 준수. 영어식 명사 나열 지양. |
-| **Vietnamese** | `Vietnamese` | 자연스러운 어순 및 간결한 UI 표현. 영어식 대문자 패턴 지양. |
-| **Thai** | `Thai` | 자연스러운 태국어 UI 표현. 불필요한 공백 및 구두점 복사 금지. |
-| **Indonesian** | `Indonesian` | 간결하고 자연스러운 문체. 과하게 격식적인 구조나 영어식 직역 지양. |
+### 🇰🇷 KR (한국) - Korean (`Korean`)
+> **💡 정책 요약**: 존댓말(honorific) 또는 문어체 스타일 일관성 유지. UI 전체 용어 일관성 확보.
+
+```text
+- Use consistent polite (honorific) or formal literary style as appropriate for the context.
+- Ensure terminology consistency throughout the UI.
+```
+
+---
+
+### 🇺🇸 US (미국) - English (`English` / `English_US`)
+> **💡 정책 요약**: US 철자 사용 (color, personalize). 특정 시장 변형이 지정되지 않은 경우 기본 영어로 작동하며, 디스클레이머 마침표는 따옴표 밖(`".`)에 위치.
+
+```text
+- Use US English spelling and wording (e.g., 'color', 'personalize') unless a more specific English market variant is specified.
+- Follow the project-specific rule for disclaimers: place the sentence-ending period outside the closing quotation mark.
+```
+
+---
+
+### 🇬🇧 UK (영국) - English (`English_UK`)
+> **💡 정책 요약**: British 철자 사용 (colour, personalise, optimise). US 전용 어휘 지양.
+
+```text
+- Use British English spelling (e.g., 'colour', 'personalise', 'optimise').
+- Avoid US-specific vocabulary and phrasing.
+```
+
+---
+
+### 🇦🇺 AU (호주) - English (`English_AU`)
+> **💡 정책 요약**: British 철자 기반. 지나친 마케팅 톤을 지양하고 명확하고 유익한 톤 유지.
+
+```text
+- Use Australian English with British-style spelling.
+- Avoid overly aggressive US-style marketing tones; keep it helpful and clear.
+```
+
+---
+
+### 🇸🇬 SG (싱가포르) - English (`English_SG`)
+> **💡 정책 요약**: 국제 싱가포르 영어(British 철자) 사용. 현지 속어(Singlish) 사용 금지.
+
+```text
+- Use concise, international Singapore English with British-style spelling where appropriate.
+- Do NOT use Singlish, local slang, or overly US-specific wording.
+```
+
+---
+
+### 🇫🇷 FR (프랑스) - French (`French`)
+> **💡 정책 요약**: `Tu/Vous` 중 하나를 일관되게 사용. 불필요한 대문자 사용 지양.
+
+```text
+- Use one address form consistently (Tu vs Vous); do not mix them.
+- Avoid unnecessary capitalization in UI copy.
+- Use natural French phrasing and avoid English-influenced structures.
+```
+
+---
+
+### 🇧🇪 BE (벨기에) - French (`French_BE` / `French_Belgium`)
+> **💡 정책 요약**: 벨기에 시장에 적합한 중립적 톤 유지. 프랑스 본토 전용 관용구 지양.
+
+```text
+- Use neutral French and avoid overly idiomatic expressions specific to mainland France.
+- Ensure consistent tone for the Belgian market.
+```
+
+---
+
+### 🇨🇦 CA (캐나다) - French (`French_CA` / `French_Canada`)
+> **💡 정책 요약**: 북미 프랑스어 표준 및 자연스러운 어구 우선.
+
+```text
+- Follow Canadian French standards; prioritize phrasing natural to North American French over mainland France idioms.
+```
+
+---
+
+### 🇩🇪 DE (독일) - German (`German`)
+> **💡 정책 요약**: `Du-form` 기본 사용. 명사 대문자 표기 및 복합어 구조 준수. 기술적 어투 지양.
+
+```text
+- Use Du-form consistently unless the locale or project explicitly requires Sie-form.
+- Ensure natural capitalization of nouns and maintain natural compound word structures.
+- Avoid overly formal or technical wording in short UI copy.
+```
+
+---
+
+### 🇮🇹 IT (이탈리아) - Italian (`Italian`)
+> **💡 정책 요약**: 자연스러운 이탈리아어 문장 구조 사용. 영어식 명사 나열 지양.
+
+```text
+- Use natural Italian UI sentence structures; avoid English-style noun-chaining.
+```
+
+---
+
+### 🇪🇸 ES (스페인) - Spanish (`Spanish` / `Spanish_ES`)
+> **💡 정책 요약**: 카스티야(Spain) 스페인어 및 `Usted` 기본 사용. 라틴 아메리카 전용 어휘 지양.
+
+```text
+- Use Usted consistently unless the locale or project explicitly requires Tú.
+- Use Spain Spanish (Castilian) and avoid Latin American-specific wording or usage.
+- Keep Spanish regionally neutral unless a market-specific variant is requested.
+```
+
+---
+
+### 🇳🇱 NL (네덜란드) - Dutch (`Dutch`)
+> **💡 정책 요약**: 직접적이고 간결한 문체. 영어식 어순이나 명사구 구조 지양.
+
+```text
+- Keep Dutch copy direct and concise.
+- Avoid literal translation of English word order or noun-phrase structures.
+```
+
+---
+
+### 🇸🇪 SE (스웨덴) - Swedish (`Swedish`)
+> **💡 정책 요약**: 간결한 UI copy. 영어식 Title Case 대신 Sentence Case(첫 글자만 대문자) 우선.
+
+```text
+- Keep Swedish UI copy concise and natural.
+- Avoid English-style title case; prioritize sentence case for headings and buttons.
+```
+
+---
+
+### 🇦🇪 AE (아랍에미리트) - Arabic (`Arabic`)
+> **💡 정책 요약**: 현대 표준 아랍어(MSA) 사용. UI 방향성(RTL), 구두점, 문장 끝맺음 규칙 준수.
+
+```text
+- Use Modern Standard Arabic (MSA).
+- Follow Arabic conventions for UI directionality, punctuation, and sentence-ending styles.
+- Avoid literal translations that sound unnatural in Arabic.
+```
+
+---
+
+### 🇵🇹 PT (포르투갈) - European Portuguese (`European Portuguese`)
+> **💡 정책 요약**: 유럽 포르투갈어 전용 어휘 사용. 브라질식 어휘나 진행형(gerund) 구조 지양.
+
+```text
+- Use European Portuguese consistently; avoid Brazilian Portuguese wording, vocabulary, or gerund structures.
+```
+
+---
+
+### 🇧🇷 BR (브라질) - Brazilian Portuguese (`Brazilian Portuguese`)
+> **💡 정책 요약**: 브라질 포르투갈어 전용 어휘 및 문구 사용. 유럽식 어휘/구조 지양.
+
+```text
+- Use Brazilian Portuguese consistently; avoid European Portuguese vocabulary or phrasing.
+```
+
+---
+
+### 🇷🇺 RU (러시아) - Russian (`Russian`)
+> **💡 정책 요약**: 러시아어 어순 준수. 영어식 명사구 직역 및 과도한 대문자 지양.
+
+```text
+- Use natural Russian word order.
+- Avoid English-style noun-phrase literal translations and excessive capitalization.
+```
+
+---
+
+### 🇹🇷 TR (터키) - Turkish (`Turkish`)
+> **💡 정책 요약**: 터키어 어순 준수. UI에 적합한 간결한 명령형 또는 묘사형 사용.
+
+```text
+- Use natural Turkish word order and avoid structural calques from English.
+- Maintain concise imperative or descriptive forms suitable for UI copy.
+```
+
+---
+
+### 🇨🇳 CN (중국) - Simplified Chinese (`Simplified Chinese`)
+> **💡 정책 요약**: 중국 본토 표준 용어 및 간체자 사용. 대만식 용어 지양.
+
+```text
+- Use natural Mainland Chinese wording and Simplified Chinese characters.
+- Avoid Taiwan-specific terminology.
+```
+
+---
+
+### 🇹🇼 TW (대만) - Traditional Chinese (`Traditional Chinese`)
+> **💡 정책 요약**: 대만 표준 용어 및 번체자 사용. 중국 본토식 용어 지양.
+
+```text
+- Use natural Taiwan Traditional Chinese wording and characters.
+- Avoid Mainland Chinese-specific terminology.
+```
+
+---
+
+### 🇯🇵 JA (일본) - Japanese (`Japanese`)
+> **💡 정책 요약**: `ます-form` 기본 사용. 자연스러운 UI 표현(操作/設定 등) 우선. 직역형 구조 지양. 내비게이션 경로는 `「 」` 사용 및 마침표를 안쪽에 배치.
+
+```text
+- Use consistent ます-form unless project guidance specifies otherwise.
+- Use natural Japanese UI phrasing and avoid close structural calques from English or Korean.
+- Prioritize natural '操作/設定' style expressions over mechanical literal translations.
+- Avoid excessive honorifics unless the context clearly requires them.
+```
+
+---
+
+### 🇵🇱 PL (폴란드) - Polish (`Polish`)
+> **💡 정책 요약**: 격 변화(declension) 및 문법적 일치 준수. 영어식 명사 나열 지양.
+
+```text
+- Ensure natural Polish declension and grammatical agreement.
+- Avoid English-style noun-chaining; use natural phrasing.
+```
+
+---
+
+### 🇻🇳 VN (베트남) - Vietnamese (`Vietnamese`)
+> **💡 정책 요약**: 자연스러운 어순 및 간결한 UI 표현. 영어식 대문자 패턴 지양.
+
+```text
+- Use natural Vietnamese word order and concise UI phrasing.
+- Avoid English-style capitalization patterns.
+```
+
+---
+
+### 🇹🇭 TH (태국) - Thai (`Thai`)
+> **💡 정책 요약**: 자연스러운 태국어 UI 표현. 불필요한 공백 및 구두점 복사 금지.
+
+```text
+- Use natural Thai UI phrasing.
+- Avoid unnecessary spaces and mechanical copying of English punctuation.
+```
+
+---
+
+### 🇮🇩 ID (인도네시아) - Indonesian (`Indonesian`)
+> **💡 정책 요약**: 간결하고 자연스러운 문체. 과하게 격식적인 구조나 영어식 직역 지양.
+
+```text
+- Keep Indonesian copy concise and natural.
+- Avoid overly formal structures or English-style literal phrasing.
+```
 
 ---
 
@@ -214,22 +436,63 @@ Use these examples as style and terminology reference to maintain consistency.
 ```
 
 #### [6] Formatting & Glossary Section (용어집 및 표기 규칙 제어)
-> **💡 역할 해설**: 번역 문맥(`row_key`)을 분석하여 용어집(Glossary) 단어의 대괄호 래핑 규칙(`[]`, `「」`)을 동적으로 결정합니다. 버튼이나 타이틀 문맥에서는 괄호를 제거하고, 일반 설명문에서는 괄호를 유지하며, 법적 고지(Disclaimer) 문맥에서는 탐색 경로 따옴표 및 마침표 위치 등 국가별 특수 구두점 규칙을 정확히 따르도록 지시합니다.
+> **💡 역할 해설**: 번역 문맥(`row_key`)과 국가별 타이포그래피 표준을 결합하여 용어집(Glossary) 단어의 대괄호 래핑 규칙(`[]`, `「」`)과 내비게이션 경로 표기법을 동적으로 결정합니다.
 
 ```python
-# [6] Formatting & Glossary Section (용어집 및 서식 제어)
+# [6] Formatting & Glossary Section (용어집 및 서식 제어 기본 구조)
 [GLOSSARY RULES]
 - Use provided glossary terms exactly, including capitalization, spacing, market variants, and term-specific exceptions.
 - Apply term-specific rule or remark exceptions before generic formatting rules.
-# 문맥(row_key)에 따라 동적 래핑 규칙 삽입:
-# (Description/Body 문맥 시): Wrap glossary terms in '[/「' and ']/」'.
-# (Title/Button 문맥 시): For title, section heading, and button copy, do not wrap glossary terms in any brackets...
-# (Disclaimer 문맥 시): Enclose navigation paths in double quotation marks. Place the sentence-ending period...
+```
 
+##### 🔹 문맥(`row_key`) 및 타겟 언어에 따른 동적 서식 분기 프롬프트
+
+**1) Title & Button 문맥** (`title`, `button` 등 포함 시)
+> UI 요소의 깔끔한 렌더링을 위해 괄호 마커를 일절 제외하고 원문 단어 그대로 출력하도록 강제합니다.
+```text
+- For title, section heading, and button copy, do not wrap glossary terms in any brackets. Use the glossary term text exactly as provided, without [], 「」, or any other surrounding bracket marks, even if the source text contains brackets. Do not change glossary capitalization to satisfy heading or button case style.
+```
+
+**2) Description / Body 문맥** (일반 설명문)
+> 타겟 언어권의 관행에 맞는 기호로 용어집 단어를 강조(Wrapping)합니다.
+```text
+# 한국어, 영어, 서양권 언어 등:
+- Wrap glossary terms in '[' and ']'.
+
+# 일본어 (JA):
+- Wrap glossary terms in '「' and '」'.
+```
+
+**3) Disclaimer 문맥** (`disclaimer` 포함 시)
+> 법적 고지 문구 및 메뉴 탐색 경로(`Settings > General`) 안내 시, 괄호 래핑을 면제하고 국가별 표준 따옴표 및 문장 종결 마침표 위치를 제어합니다.
+```text
+# 공통 예외 규칙 삽입:
+- Exception: do not wrap terms inside navigation paths (e.g., Settings > Device).
+
+# US (미국 - English_US) 전용 규칙:
+- Enclose navigation paths in double quotation marks. Place the sentence-ending period outside the closing quotation mark.
+  (출력 예시: "Settings > General".)
+
+# 글로벌 국제 공통 규칙 (US 제외 타 국가):
+- Enclose navigation paths in double quotation marks. Place the sentence-ending period inside the closing quotation mark.
+  (출력 예시: "Settings > General.")
+
+# JA (일본) 전용 규칙:
+- Enclose navigation paths in 「 and 」. Place the sentence-ending period inside the closing 」.
+  (출력 예시: 「設定 > 一般。」)
+```
+
+##### 🔹 타이포그래피 및 구두점 규칙 (Typography and Punctuation Rules)
+> 영어 원문(Source)의 구두점이나 띄어쓰기 관행을 기계적으로 복사하지 않고, 타겟 언어의 표준 맞춤법과 로케일(Locale) 관행을 준수하도록 지시합니다.
+```text
 [Typography and Punctuation Rules]
 - Follow punctuation, spacing, and quotation mark conventions standard for the target language and locale.
 - Do not mechanically copy English punctuation, quotation mark placement, spacing, or sentence-ending style into other languages.
 ```
+> **📌 주요 언어별 동작 효과**:
+> - **프랑스어 (`FR`)**: 콜론(`:`), 세미콜론(`;`), 물음표(`?`), 느낌표(`!`) 앞에 공백(Non-breaking space) 삽입 표준 준수.
+> - **아랍어 (`AE`)**: 오른쪽에서 왼쪽(RTL) 방향성에 맞춰 아랍어 전용 쉼표(`،`) 및 물음표(`؟`) 사용.
+> - **중국어/일본어 (`CN`, `TW`, `JA`)**: 서양식 반각 기호와 띄어쓰기 대신 전각 기호(`，`, `。`, `、`) 사용.
 
 #### [7] Output Section (JSON 출력 규격 강제)
 > **💡 역할 해설**: 시스템이 파이썬 코드에서 번역 결과를 안정적으로 파싱할 수 있도록, 불필요한 설명(사족)을 제외하고 오직 `{"translation": "..."}` 형태의 JSON 객체로만 응답하도록 강력하게 제한합니다.

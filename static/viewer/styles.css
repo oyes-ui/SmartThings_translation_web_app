@@ -557,7 +557,38 @@ body {
     font-weight: 600;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 6px;
+}
+
+.diff-header-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.copy-icon-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.copy-icon-btn:hover {
+    color: var(--accent-color);
+    background: var(--info-bg);
+}
+
+.copy-icon-btn.copied {
+    color: var(--success);
+    background: var(--success-bg);
 }
 
 .diff-content {
@@ -637,6 +668,13 @@ body {
 .action-title {
     font-size: 0.85rem;
     font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.action-title-text {
     display: flex;
     align-items: center;
     gap: 6px;
