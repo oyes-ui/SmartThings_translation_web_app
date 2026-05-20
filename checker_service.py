@@ -50,7 +50,7 @@ class TranslationChecker:
 
     def __init__(
         self,
-        model_name: str = "gpt-5-mini",
+        model_name: str = "gpt-5.4-mini",
         max_concurrency: int = 10,
         short_text_whitelist=None,
         skip_llm_when_glossary_mismatch: bool = False,
@@ -801,7 +801,7 @@ class TranslationChecker:
             return f"[번역 오류] {str(e)}"
 
 
-    async def _run_llm_audit(self, source_text, translated_text, target_lang, model_name="gpt-5-mini"):
+    async def _run_llm_audit(self, source_text, translated_text, target_lang, model_name="gpt-5.4-mini"):
         """
         내부 전용 감사 메서드: JSON 구조화된 프롬프트를 사용하여 품질 검수합니다.
         """
@@ -834,6 +834,7 @@ class TranslationChecker:
         glossary_dict = self._get_glossary_context_as_dict(
             target_lang_code,
             source_text=source_text,
+            skip_deactivated=True,
             row_key=row_key,
         )
         

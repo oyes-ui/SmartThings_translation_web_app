@@ -68,7 +68,7 @@ class StartRequest(BaseModel):
     cell_range: str = "C7:C28" # Default range
     model_name: str
     translation_model: str = "gemini-2.5-flash"
-    audit_model: str = "gpt-5-mini"
+    audit_model: str = "gpt-5.4-mini"
     bx_style_enabled: bool = False
     task_mode: str = "integrated"
     rag_identity_match: bool = True

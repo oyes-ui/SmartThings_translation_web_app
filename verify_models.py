@@ -20,7 +20,7 @@ async def test_routing():
     # Test cases: (model_name, expected_provider_part_of_log_or_error)
     test_models = [
         "gemini-2.5-flash",
-        "gpt-5-mini",
+        "gpt-5.4-mini",
         "gemini-2.0-flash",
         "gpt-4o"
     ]
@@ -43,7 +43,7 @@ async def test_routing():
         print(f"Gemini Call Failed (Expected if API issues): {e}")
 
     try:
-        res = await handler.generate_content("Hi", model_name="gpt-5-mini")
+        res = await handler.generate_content("Hi", model_name="gpt-5.4-mini")
         print(f"GPT Call Result: {res[:50]}...")
     except Exception as e:
         print(f"GPT Call Failed (Expected if API issues/unauthorized): {e}")

@@ -258,13 +258,13 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
                 f"You are the {role}.\n"
                 f"Source Language: {source_lang}\n"
                 f"Target Language: {target_lang}\n"
-                "TASK: Translate and polish the source text naturally for a native speaker while preserving 100% of the original meaning."
+                "TASK: Translate and polish the source text naturally for a native speaker while faithfully conveying the full intent and nuance of the original."
             )
         return (
             f"You are a professional {target_lang} localizer.\n"
             f"Source Language: {source_lang}\n"
             f"Target Language: {target_lang}\n"
-            "TASK: Translate the source text naturally for a native speaker while preserving 100% of the original meaning."
+            "TASK: Translate the source text naturally for a native speaker while faithfully conveying the full intent and nuance of the original."
         )
 
     def _build_common_section(self, korean_heading: bool = False) -> str:

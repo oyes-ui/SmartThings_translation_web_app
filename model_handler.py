@@ -77,7 +77,7 @@ class ModelHandler:
         except Exception as e:
             return f"Gemini Error: {str(e)}"
 
-    async def call_gpt(self, prompt, model_name="gpt-5-mini", system_instruction=None, response_json=False):
+    async def call_gpt(self, prompt, model_name="gpt-5.4-mini", system_instruction=None, response_json=False):
         if not self.openai_client:
             return "OpenAI API Key not configured."
         

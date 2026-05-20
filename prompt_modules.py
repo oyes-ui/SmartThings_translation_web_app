@@ -11,8 +11,8 @@ COMMON_LOCALIZATION_STANDARD = {
     "rules": [
         "Preserve the original intent, nuance, and user benefit of the source.",
         "Avoid overly literal translation when more natural, market-appropriate wording communicates the same intent better.",
-        "Keep Samsung SmartThings brand tone clear, confident, and helpful.",
-        "Avoid culturally awkward idioms, metaphors, or risky wording (e.g., fear-based claims, hedging).",
+        "Where appropriate, use creative expression — refined wit, metaphor, or personification — to make technology feel approachable rather than technical.",
+        "Avoid culturally awkward idioms, fear-based framing, overly formal or technical language, and hedging words (e.g., 'hopefully', 'try to', 'might').",
         "Keep UI copy concise while keeping the action or benefit clear.",
     ],
 }
@@ -131,7 +131,7 @@ LANGUAGE_LOCALIZATION_RULES = {
 GLOSSARY_TERM_RULES = {
     "name": "Glossary Term Rules",
     "rules": [
-        "Use provided glossary terms exactly, including capitalization, spacing, market variants, and term-specific exceptions.",
+        "Use provided glossary terms exactly as given — including capitalization, spacing, and market variants. This overrides any localization style preference; do not adapt glossary terms for naturalness.",
         "Glossary capitalization is authoritative and overrides title case, sentence case, and heading/button capitalization rules.",
     ],
 }
@@ -187,12 +187,13 @@ AUDIT_CHECKLIST_RULES = [
         "정확성 및 현지화 품질",
         "원문의 의미와 뉘앙스가 충실히 보존되었는지 확인. "
         "동시에 원문 구조를 그대로 옮긴 직역이 아닌, 현지인이 실제로 쓸 법한 자연스러운 표현으로 옮겨졌는지 평가. "
-        "'의미가 전달됐는가'와 '현지화가 됐는가'를 함께 판단.",
+        "두 기준이 충돌하는 경우, 직역보다 현지어답게 자연스러운 표현을 우선한다.",
     ),
     (
         "용어집 준수",
         "제공된 glossary 데이터와 100% 일치하는지 확인 (대소문자, 띄어쓰기 포함). "
-        "항목별 예외 규칙(rule/remark)이 있는 경우 예외가 우선 적용되었는지 확인.",
+        "항목별 예외 규칙(rule/remark)이 있는 경우 예외가 우선 적용되었는지 확인. "
+        "현지화 자연스러움 여부와 관계없이 절대 적용되는 기준이다.",
     ),
     (
         "언어별 규칙 준수",
