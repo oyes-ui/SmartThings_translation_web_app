@@ -9,7 +9,9 @@ let selectedSheets = [];
 const sourceDropzone = document.getElementById('sourceDropzone');
 const sourceInput = document.getElementById('sourceInput');
 const startBtn = document.getElementById('startBtn');
-const sheetList = document.getElementById('sheetList');
+const sheetList = document.getElementById('sheetList'); // legacy ref (may be null after HTML update)
+const sourceGroupsContainer = document.getElementById('sourceGroupsContainer');
+let _cachedSheets = []; // sheets from last upload, used when adding groups
 const terminal = document.getElementById('terminal');
 const progressBar = document.getElementById('progressBar');
 const progressCount = document.getElementById('progressCount');
@@ -144,52 +146,110 @@ async function uploadSingleFile(type, file, zone) {
     }
 }
 
-function renderSheetList(sheets) {
-    sheetList.innerHTML = '';
-
-    // Get mapping from editor
+function renderSourceGroup(groupIndex, sheets, defaultSourceSheet = null) {
     const configStr = document.getElementById('sheetConfig').value;
     let sheetConfig = {};
     try { sheetConfig = JSON.parse(configStr); } catch (e) { }
 
+    const panel = document.createElement('div');
+    panel.className = 'source-group-panel';
+    panel.dataset.group = groupIndex;
+
+    const header = document.createElement('div');
+    header.className = 'source-group-header';
+    header.innerHTML = `
+        <span class="group-label">Source Group ${groupIndex + 1}</span>
+        <button type="button" class="remove-group-btn text-btn${groupIndex === 0 ? ' hidden' : ''}">✕ Remove</button>
+    `;
+    header.querySelector('.remove-group-btn').addEventListener('click', () => {
+        panel.remove();
+        // Re-number remaining panels
+        document.querySelectorAll('.source-group-panel').forEach((p, i) => {
+            p.dataset.group = i;
+            p.querySelector('.group-label').textContent = `Source Group ${i + 1}`;
+            const rmBtn = p.querySelector('.remove-group-btn');
+            if (i === 0) rmBtn.classList.add('hidden'); else rmBtn.classList.remove('hidden');
+            p.querySelectorAll('input[type=radio]').forEach(r => r.name = `sourceSheet-${i}`);
+        });
+    });
+
+    const listHeader = document.createElement('div');
+    listHeader.className = 'sheet-list-header';
+    listHeader.innerHTML = `
+        <span class="header-col src">Source</span>
+        <span class="header-col tgt">Target</span>
+        <span class="header-col name">Sheet Name</span>
+        <span class="header-col lang">Language Info</span>
+    `;
+
+    const listDiv = document.createElement('div');
+    listDiv.className = 'sheet-list';
+    listDiv.id = `sheetList-${groupIndex}`;
+
     sheets.forEach((sheet, index) => {
         const div = document.createElement('div');
         div.className = 'sheet-item';
-
         const info = sheetConfig[sheet] || { lang: 'Unknown', code: '?' };
-        const isDefaultSource = sheet === "KR(한국)" || index === 0;
-
+        const isDefaultSrc = defaultSourceSheet
+            ? sheet === defaultSourceSheet
+            : (sheet === "KR(한국)" || index === 0);
         div.innerHTML = `
             <div class="item-col src">
-                <input type="radio" name="sourceSheet" value="${sheet}" ${isDefaultSource ? 'checked' : ''}>
+                <input type="radio" name="sourceSheet-${groupIndex}" value="${sheet}" ${isDefaultSrc ? 'checked' : ''}>
             </div>
             <div class="item-col tgt">
-                <input type="checkbox" class="target-check" value="${sheet}" ${!isDefaultSource ? 'checked' : ''}>
+                <input type="checkbox" class="target-check" value="${sheet}" ${!isDefaultSrc ? 'checked' : ''}>
             </div>
-            <div class="item-col name">
-                <span>${sheet}</span>
-            </div>
+            <div class="item-col name"><span>${sheet}</span></div>
             <div class="item-col lang">
                 <span class="lang-info-tag">${info.lang}</span>
                 <span class="code-info">${info.code}</span>
             </div>
         `;
-        sheetList.appendChild(div);
+        // Auto-uncheck target when selected as source within this group
+        const radio = div.querySelector('input[type=radio]');
+        const checkbox = div.querySelector('.target-check');
+        radio.addEventListener('change', () => {
+            if (radio.checked) checkbox.checked = false;
+        });
+        listDiv.appendChild(div);
     });
+
+    panel.appendChild(header);
+    panel.appendChild(listHeader);
+    panel.appendChild(listDiv);
+    return panel;
+}
+
+function renderSheetList(sheets) {
+    _cachedSheets = sheets;
+    sourceGroupsContainer.innerHTML = '';
+    sourceGroupsContainer.appendChild(renderSourceGroup(0, sheets));
     document.getElementById('sheetSelectionArea').classList.remove('hidden');
     log(`Source analysis complete. Found ${sheets.length} sheets.`, "success");
     updatePromptModules();
 }
 
-// Select/Deselect All Buttons
+// Select/Deselect All Buttons (applies to group 0 / first panel)
 document.getElementById('selectAllSheets')?.addEventListener('click', () => {
-    sheetList.querySelectorAll('.target-check').forEach(cb => cb.checked = true);
+    sourceGroupsContainer.querySelectorAll('.target-check').forEach(cb => cb.checked = true);
     log("All target sheets selected.", "info");
 });
 
 document.getElementById('deselectAllSheets')?.addEventListener('click', () => {
-    sheetList.querySelectorAll('.target-check').forEach(cb => cb.checked = false);
+    sourceGroupsContainer.querySelectorAll('.target-check').forEach(cb => cb.checked = false);
     log("All target sheets deselected.", "info");
+});
+
+// Add Source Group button
+document.getElementById('addSourceGroupBtn')?.addEventListener('click', () => {
+    if (_cachedSheets.length === 0) {
+        log("Please upload a file first.", "error");
+        return;
+    }
+    const groupCount = document.querySelectorAll('.source-group-panel').length;
+    sourceGroupsContainer.appendChild(renderSourceGroup(groupCount, _cachedSheets));
+    log(`Source Group ${groupCount + 1} added.`, "info");
 });
 
 function checkStartReadiness() {
@@ -251,7 +311,6 @@ taskModeRadios.forEach(radio => {
 
 // Keep read-only prompt module summary in sync with visible settings.
 document.getElementById('sourceLangSelect')?.addEventListener('change', updatePromptModules);
-document.getElementById('bxStyleToggle')?.addEventListener('change', updatePromptModules);
 document.getElementById('sheetConfig')?.addEventListener('input', updatePromptModules);
 document.getElementById('cellRange')?.addEventListener('input', updatePromptModules);
 sheetList?.addEventListener('change', updatePromptModules);
@@ -269,19 +328,28 @@ startBtn.addEventListener('click', async () => {
         return;
     }
 
-    // Collect Sheets
-    const sourceSheet = sheetList.querySelector('input[name="sourceSheet"]:checked')?.value;
-    const targetSheets = Array.from(sheetList.querySelectorAll('.target-check:checked'))
-        .map(cb => cb.value);
+    // Collect Sheets — support single and multi-source groups
+    const groupPanels = document.querySelectorAll('.source-group-panel');
+    const sourceGroups = [];
+    groupPanels.forEach((panel, i) => {
+        const srcSheet = panel.querySelector(`input[name="sourceSheet-${i}"]:checked`)?.value;
+        const tgtSheets = Array.from(panel.querySelectorAll('.target-check:checked')).map(cb => cb.value);
+        if (srcSheet) sourceGroups.push({ source_sheet: srcSheet, target_sheets: tgtSheets });
+    });
 
-    if (!sourceSheet) {
+    if (sourceGroups.length === 0 || !sourceGroups[0].source_sheet) {
         log("Please select a source sheet.", "error");
         return;
     }
-    if (targetSheets.length === 0) {
+    if (sourceGroups.every(g => g.target_sheets.length === 0)) {
         log("Please select at least one target sheet.", "error");
         return;
     }
+
+    // Single-source compatibility: use group 0 as the primary source
+    const sourceSheet = sourceGroups[0].source_sheet;
+    const targetSheets = sourceGroups[0].target_sheets;
+    const isMultiSource = sourceGroups.length > 1;
 
     startBtn.disabled = true;
     startBtn.textContent = "Processing...";
@@ -311,6 +379,7 @@ startBtn.addEventListener('click', async () => {
             source_lang: document.getElementById('sourceLangSelect').value,
             task_mode: taskMode,
             rag_identity_match: document.getElementById('identityMatchCheck')?.checked ?? true,
+            ...(isMultiSource && { source_groups: sourceGroups }),
             ...(geminiKey && { gemini_api_key: geminiKey }),
             ...(openaiKey && { openai_api_key: openaiKey }),
         };
@@ -452,7 +521,6 @@ async function updatePromptModules() {
 
     const selectedSheets = Array.from(sheetList.querySelectorAll('.target-check:checked')).map(cb => cb.value);
     const sourceLang = document.getElementById('sourceLangSelect')?.value || 'English';
-    const bxStyleOn = document.getElementById('bxStyleToggle')?.checked ? 'true' : 'false';
     const glossaryAvailable = uploadedGlossaryId ? 'true' : 'false';
     const rowKey = '';
 
@@ -466,7 +534,7 @@ async function updatePromptModules() {
 
     const fetchForLang = async (lang) => {
         const p = new URLSearchParams({ target_lang: lang, source_lang: sourceLang,
-            bx_style_on: bxStyleOn, glossary_available: glossaryAvailable, row_key: rowKey });
+            glossary_available: glossaryAvailable, row_key: rowKey });
         const res = await fetch(`${API_BASE}/prompt_modules?${p}`);
         if (!res.ok) throw new Error(await res.text());
         return res.json();

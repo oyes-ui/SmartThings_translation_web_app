@@ -858,6 +858,37 @@ body {
     padding: 0 4px;
 }
 
+/* ─── Source Group Panels ──────────────────────────────────────────── */
+.source-group-panel {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.source-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.group-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.remove-group-btn {
+    color: #ef4444;
+    font-size: 0.75rem;
+}
+
+.remove-group-btn.hidden { display: none; }
+
 /* ─── Print / PDF Export Page Break Prevention ──────────────────────── */
 .card-wrapper,
 .review-card,

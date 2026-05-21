@@ -779,7 +779,6 @@ class TranslationChecker:
             rag_context=rag_context,
             row_key=row_key,
             glossary_context=glossary_context,
-            target_lang_code=target_lang_code,
         )
 
         try:
@@ -1149,7 +1148,8 @@ class TranslationChecker:
         selected_sheets: list = None,
         glossary_file_path: str = None,
         source_sheet_name: str = None,
-        rag_identity_match: bool = True
+        rag_identity_match: bool = True,
+        source_groups: list = None
     ):
         """
         Yields events:
@@ -1158,8 +1158,103 @@ class TranslationChecker:
         {"type": "result_chunk", "data": formatted_string}
         {"type": "complete", "total": m, "output_data": all_text}
         """
+        def _fmt_result(res):
+            return (
+                f"==========================================================================================\n"
+                f"[시트] {res['sheet_name']} | [셀] {res['cell_ref']}\n"
+                f"------------------------------------------------------------------------------------------\n\n"
+                f"[상세 - 원문]\n{res['source']}\n\n"
+                f"[상세 - 번역문]\n{res['target']}\n\n"
+                f"[상세 - 대소문자 점검]\n{res['case_section']}\n\n"
+                f"[상세 - 용어집 점검]\n{res['glossary_section']}\n\n"
+                f"[상세 - RAG 일관성 참고]\n{res.get('rag_text', '[별도 지적 사항 없음]')}\n\n"
+                f"[상세 - 역번역]\n{res['back_translation']}\n\n"
+                f"[상세 - AI 검수 결과]\n{res['ai_text']}\n\n"
+                f"[상세 - RAG Payload]\n{res.get('rag_json', '[]')}\n\n"
+                f"[상세 - AI Payload]\n{res['ai_json']}\n"
+            )
+
+        # --- Multi-Source Mode ---
+        if source_groups:
+            all_group_results = []
+            grand_total = 0
+
+            for g_idx, group in enumerate(source_groups):
+                g_src_sheet = group.get("source_sheet")
+                g_tgt_sheets = group.get("target_sheets", [])
+                g_src_info = sheet_lang_map.get(g_src_sheet, {})
+                g_src_lang = g_src_info.get("lang", source_lang)
+                g_src_code = g_src_info.get("code", g_src_lang)
+                label = f"[그룹 {g_idx + 1}: {g_src_sheet}]"
+
+                # Load glossary for this group's source
+                if glossary_file_path:
+                    yield {"type": "log", "message": f"{label} 용어집 로드 중 (기준: {g_src_code})..."}
+                    msg = await self.load_glossary_from_file(glossary_file_path, g_src_code)
+                    yield {"type": "log", "message": msg}
+
+                # Load Excel data for this group's target sheets
+                yield {"type": "log", "message": f"{label} 시트 데이터 추출 중..."}
+                try:
+                    g_logs = []
+                    g_data, g_sheets = self.load_excel_data(
+                        source_file_path, target_file_path,
+                        cell_range=cell_range,
+                        selected_sheets=g_tgt_sheets if g_tgt_sheets else None,
+                        log_func=lambda m: g_logs.append(m),
+                        source_sheet_name=g_src_sheet
+                    )
+                    for m in g_logs:
+                        yield {"type": "log", "message": m}
+                except Exception as e:
+                    yield {"type": "error", "message": f"{label} 데이터 로드 오류: {e}"}
+                    continue
+
+                g_total = len(g_data)
+                grand_total += g_total
+                yield {"type": "log", "message": f"{label} 검수 항목: {g_total}개"}
+                yield {"type": "progress", "current": 0, "total": grand_total, "percent": 0}
+
+                if g_total == 0:
+                    continue
+
+                async def _process(index, item, src_lang=g_src_lang):
+                    res = await self.process_item(item, src_lang, target_lang, sheet_lang_map, target_lang_code, rag_identity_match=rag_identity_match)
+                    return index, res
+
+                g_ordered = [None] * g_total
+                g_done = 0
+                g_tasks = [_process(i, item) for i, item in enumerate(g_data)]
+
+                for future in asyncio.as_completed(g_tasks):
+                    try:
+                        idx, res = await future
+                        g_done += 1
+                        g_ordered[idx] = _fmt_result(res)
+                        yield {
+                            "type": "progress",
+                            "current": len(all_group_results) + g_done,
+                            "total": grand_total,
+                            "percent": int((len(all_group_results) + g_done) / grand_total * 100) if grand_total else 0,
+                            "log": f"{label} [{res['sheet_name']}] {res['cell_ref']} 검수 완료"
+                        }
+                    except Exception as e:
+                        yield {"type": "log", "message": f"{label} 항목 오류: {e}"}
+
+                all_group_results.extend([r for r in g_ordered if r is not None])
+
+            header = (
+                f"--- 번역 검수 보고서 (Model: {self.model_name}) ---\n"
+                f"생성일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                f"총 검수 항목: {grand_total}개 ({len(source_groups)}개 소스 그룹)\n"
+                f"용어집 항목: {len(self.glossary)}\n\n"
+            )
+            yield {"type": "complete", "total": grand_total, "output_data": header + "".join(all_group_results)}
+            return
+        # --- End Multi-Source Mode ---
+
         yield {"type": "log", "message": "용어집 로드 시작..."}
-        
+
         # If source_sheet_name is provided, use it to infer source_lang
         if source_sheet_name and sheet_lang_map:
             source_info = sheet_lang_map.get(source_sheet_name)
@@ -1232,20 +1327,7 @@ class TranslationChecker:
                 completed_count += 1
                 
                 # Format result
-                fmt_result = (
-                    f"==========================================================================================\n"
-                    f"[시트] {res['sheet_name']} | [셀] {res['cell_ref']}\n"
-                    f"------------------------------------------------------------------------------------------\n\n"
-                    f"[상세 - 원문]\n{res['source']}\n\n"
-                    f"[상세 - 번역문]\n{res['target']}\n\n"
-                    f"[상세 - 대소문자 점검]\n{res['case_section']}\n\n"
-                    f"[상세 - 용어집 점검]\n{res['glossary_section']}\n\n"
-                    f"[상세 - RAG 일관성 참고]\n{res.get('rag_text', '[별도 지적 사항 없음]')}\n\n"
-                    f"[상세 - 역번역]\n{res['back_translation']}\n\n"
-                    f"[상세 - AI 검수 결과]\n{res['ai_text']}\n\n"
-                    f"[상세 - RAG Payload]\n{res.get('rag_json', '[]')}\n\n"
-                    f"[상세 - AI Payload]\n{res['ai_json']}\n"
-                )
+                fmt_result = _fmt_result(res)
                 
                 # Store in the correct slot
                 ordered_results[index] = fmt_result

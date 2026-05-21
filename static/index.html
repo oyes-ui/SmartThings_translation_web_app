@@ -200,14 +200,6 @@
                         </select>
                     </div>
 
-                    <div id="bxStyleItem" class="config-item">
-                        <label class="toggle-label">
-                            <input type="checkbox" id="bxStyleToggle">
-                            <span class="toggle-text">Samsung BX Style</span>
-                        </label>
-                        <p class="description">ON: Confident Explorer persona &amp; voice attributes</p>
-                    </div>
-
                     <div class="config-item">
                         <label>Source Language</label>
                         <select id="sourceLangSelect" class="styled-select">
@@ -288,18 +280,14 @@
                             <div class="sheet-selection-header">
                                 <h3>Sheet Mapping (Select Source &amp; Targets)</h3>
                                 <div class="sheet-controls">
+                                    <button type="button" id="addSourceGroupBtn" class="text-btn">+ Add Source Group</button>
+                                    <span class="sep">|</span>
                                     <button type="button" id="selectAllSheets" class="text-btn">Select All Targets</button>
                                     <span class="sep">|</span>
                                     <button type="button" id="deselectAllSheets" class="text-btn">Deselect All Targets</button>
                                 </div>
                             </div>
-                            <div class="sheet-list-header">
-                                <span class="header-col src">Source</span>
-                                <span class="header-col tgt">Target</span>
-                                <span class="header-col name">Sheet Name</span>
-                                <span class="header-col lang">Language Info</span>
-                            </div>
-                            <div class="sheet-list" id="sheetList"></div>
+                            <div id="sourceGroupsContainer"></div>
                         </div>
 
                         <!-- Two-column: Glossary + Cell Range -->

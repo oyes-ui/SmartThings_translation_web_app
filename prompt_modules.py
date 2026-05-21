@@ -46,6 +46,7 @@ LANGUAGE_LOCALIZATION_RULES = {
         "Use Du-form consistently unless the locale or project explicitly requires Sie-form.",
         "Ensure natural capitalization of nouns and maintain natural compound word structures.",
         "Avoid overly formal or technical wording in short UI copy.",
+        "Use „...“ (German quotation marks) for quoted text and navigation paths; do not use English straight quotation marks.",
     ],
     "Japanese": [
         "Use consistent ます-form unless project guidance specifies otherwise.",
@@ -54,15 +55,20 @@ LANGUAGE_LOCALIZATION_RULES = {
         "Avoid excessive honorifics unless the context clearly requires them.",
     ],
     "French": [
-        "Use one address form consistently (Tu vs Vous); do not mix them.",
+        "Use Vous-form consistently; do not use Tu-form.",
+        "Use «...» (guillemets) for quoted text and navigation paths.",
         "Avoid unnecessary capitalization in UI copy.",
         "Use natural French phrasing and avoid English-influenced structures.",
     ],
     "French_BE": [
+        "Use Vous-form consistently; do not use Tu-form.",
+        "Use «...» (guillemets) for quoted text and navigation paths.",
         "Use neutral French and avoid overly idiomatic expressions specific to mainland France.",
         "Ensure consistent tone for the Belgian market.",
     ],
     "French_CA": [
+        "Use Vous-form consistently; do not use Tu-form.",
+        "Use «...» (guillemets) for quoted text and navigation paths.",
         "Follow Canadian French standards; prioritize phrasing natural to North American French over mainland France idioms.",
     ],
     "Italian": [
@@ -76,6 +82,7 @@ LANGUAGE_LOCALIZATION_RULES = {
         "Use Spain Spanish (Castilian) and avoid Latin American-specific wording or usage.",
     ],
     "Dutch": [
+        "Use 'u/uw' (formal address) consistently; do not use je/jij.",
         "Keep Dutch copy direct and concise.",
         "Avoid literal translation of English word order or noun-phrase structures.",
     ],
@@ -97,6 +104,7 @@ LANGUAGE_LOCALIZATION_RULES = {
     "Russian": [
         "Use natural Russian word order.",
         "Avoid English-style noun-phrase literal translations and excessive capitalization.",
+        "Use «...» (guillemets) for quoted text and navigation paths; do not use English straight quotation marks.",
     ],
     "Turkish": [
         "Use natural Turkish word order and avoid structural calques from English.",
@@ -105,10 +113,14 @@ LANGUAGE_LOCALIZATION_RULES = {
     "Simplified Chinese": [
         "Use natural Mainland Chinese wording and Simplified Chinese characters.",
         "Avoid Taiwan-specific terminology.",
+        "Use fullwidth punctuation marks (，。！？) consistently; avoid half-width ASCII punctuation.",
+        "Use fullwidth double quotation marks (“...”) for quoted text and navigation paths; do not use 「」 (Japanese-style brackets).",
     ],
     "Traditional Chinese": [
         "Use natural Taiwan Traditional Chinese wording and characters.",
         "Avoid Mainland Chinese-specific terminology.",
+        "Use fullwidth punctuation marks (，。！？) consistently; avoid half-width ASCII punctuation.",
+        "Use 「...」 for quoted text and navigation paths.",
     ],
     "Polish": [
         "Ensure natural Polish declension and grammatical agreement.",
@@ -147,17 +159,8 @@ TYPOGRAPHY_AND_PUNCTUATION_RULES = {
 GLOSSARY_BRACKET_WRAP_RULE = "Wrap glossary terms in '{open}' and '{close}'."
 GLOSSARY_DISCLAIMER_NAV_EXCEPTION = "Exception: do not wrap terms inside navigation paths (e.g., Settings > Device)."
 GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE = (
-    "Enclose navigation paths in double quotation marks. "
-    "For US English, place the sentence-ending period outside the closing quote; "
-    "for all other target languages, place it inside the closing quote."
-)
-GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_US = (
-    "Enclose navigation paths in double quotation marks. "
+    "Enclose navigation paths in quotation marks appropriate for the target language. "
     "Place the sentence-ending period outside the closing quotation mark."
-)
-GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_INTL = (
-    "Enclose navigation paths in double quotation marks. "
-    "Place the sentence-ending period inside the closing quotation mark."
 )
 
 GLOSSARY_EXEMPT_MARKERS = ["no bracket", "대괄호 제외", "괄호 제외"]
@@ -168,13 +171,14 @@ GLOSSARY_NO_BRACKET_INSTRUCTION = (
     "even if the source text contains brackets. Do not change glossary capitalization to satisfy heading or button case style."
 )
 GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA = (
-    "Enclose navigation paths in 「 and 」. "
-    "Place the sentence-ending period inside the closing 」."
+    "Enclose navigation paths in 「 and 」."
 )
 
 AUDIT_INTRO = (
     "당신은 Samsung SmartThings UI 현지화 전문 검수자입니다.\n"
-    "핵심 기준: 원문 의미 보존과 '현지인이 실제로 쓸 법한 표현인가'를 중심으로 검수합니다. "
+    "최우선 기준: '현지인이 실제로 쓸 법한 자연스러운 표현인가'(현지화). "
+    "원문 의미가 보존되었는지는 별도 항목으로 검토하며, "
+    "두 기준이 충돌하면 현지화 자연스러움을 우선합니다. "
     "반드시 JSON 형식으로만 응답합니다."
 )
 
@@ -184,10 +188,9 @@ AUDIT_CHECKLIST_RULES = [
         "오타, 문법 오류, 성수 일치, 관용구 사용 등 정밀 점검.",
     ),
     (
-        "정확성 및 현지화 품질",
-        "원문의 의미와 뉘앙스가 충실히 보존되었는지 확인. "
-        "동시에 원문 구조를 그대로 옮긴 직역이 아닌, 현지인이 실제로 쓸 법한 자연스러운 표현으로 옮겨졌는지 평가. "
-        "두 기준이 충돌하는 경우, 직역보다 현지어답게 자연스러운 표현을 우선한다.",
+        "원문의미 충실도",
+        "원문의 핵심 의미·뉘앙스·사용자 혜택이 번역에서 손실 없이 전달되었는지 확인. "
+        "직역 여부와 무관하게 '정보 손실' 또는 '의미 왜곡'이 발생했는지만 판단한다.",
     ),
     (
         "용어집 준수",
@@ -196,9 +199,11 @@ AUDIT_CHECKLIST_RULES = [
         "현지화 자연스러움 여부와 관계없이 절대 적용되는 기준이다.",
     ),
     (
-        "언어별 규칙 준수",
-        "[언어별 현지화 기준] 섹션에 명시된 규칙 준수 여부 확인 (예: 독일어 Du-form, 일본어 ます형, 프랑스어 Tu/Vous 등). "
-        "해당 언어 규칙이 적용되지 않은 경우 '해당 없음'으로 기재.",
+        "현지화",
+        "해당 언어권 현지인이 실제로 사용하는 자연스러운 표현인지 종합 평가. "
+        "① [언어별 현지화 기준] 규칙 준수 (예: 독일어 Du-form, 일본어 ます형, 프랑스어 Tu/Vous 등), "
+        "② 직역·구조적 번역이 아닌 시장 맥락에 맞는 표현 선택, "
+        "③ 문화적 뉘앙스와 브랜드 보이스(Confident Explorer)의 현지 적용.",
     ),
     (
         "대소문자 표기",
@@ -212,54 +217,57 @@ AUDIT_CHECKLIST_RULES = [
 ]
 
 AUDIT_GRADE_CRITERIA = {
-    "Excellent": "모든 항목 문제 없음, 직역 없이 자연스러운 현지화",
-    "Good": "경미한 개선 여지 있으나 출시 가능 수준",
-    "Needs Revision": "직역, 용어집 불일치, 문법 오류 등 수정 필요",
+    "Excellent": "의미 손실 없이 현지인이 자연스럽게 받아들일 표현으로 구현됨. 용어집·서식 완벽 준수.",
+    "Good": "의미 보존 및 현지화 방향은 맞으나, 더 자연스러운 표현으로 개선 가능한 부분 존재. 출시 가능 수준.",
+    "Needs Revision": "현지화 부자연스러움(직역·어색한 표현), 의미 왜곡, 용어집 불일치, 문법 오류 중 하나 이상 해당.",
 }
 
 BX_STYLE_RULES = {
     "system_identity": {
         "role": "Samsung BX Writer & Translator",
         "persona": "Confident Explorer (자신감 있는 탐험가)",
-        "traits": [
-            "Fearless (두려움 없는)",
-            "Incisive (예리한)",
-            "Real (진실된)",
-            "Open-minded (열린 마음)",
-        ],
-        "goal": "단순한 언어 변환이 아닌, 브랜드의 목소리와 사용자 경험(Experience)을 전달하는 트랜스크리에이션(Transcreation) 수행",
+        "goal": (
+            "Craft English copy that sounds like a confident, friendly guide — not a tech manual. "
+            "Apply OPEN, BOLD, AUTHENTIC voice through specific techniques below."
+        ),
     },
     "voice_attributes": {
         "OPEN": {
-            "definition": "상상력을 자극하고 시야를 넓히는 창의적 관점",
             "actionable_rules": [
-                "기능 설명(Literal)을 넘어 비유와 위트(Refined Wit)를 사용하라.",
-                "기술을 의인화(Personify)하여 생동감을 부여하라.",
-                "짧고 리듬감 있는 문답형 헤드라인(Double Take)을 활용하라.",
+                "Go beyond the literal benefit to reveal all the hidden dimensions — "
+                "the experience, emotion, or new perspective behind the feature.",
+                "Personify our tech to create intentional wit linked to product functionality. "
+                "(e.g., 'This AI helps pay the bills')",
+                "Upend expectations: set up a sentence one way, then give it an unexpected ending. "
+                "(e.g., 'Visuals so real, real life looks fake.')",
             ],
         },
         "BOLD": {
-            "definition": "대담하고 확신에 찬 태도",
             "actionable_rules": [
-                "방어적인 표현(Hedging: hopefully, maybe)을 제거하고 확언하라.",
-                "대조(Contrast)를 활용하여 임팩트를 주어라.",
-                "경쟁사를 비방하지 않으면서도 혁신의 가치를 명확히 주장하라.",
+                "Pair technical detail with the real emotional reaction it inspires. "
+                "(e.g., 'Reaction: woah.')",
+                "Play up contrast to create dramatic effect that underscores the different angles "
+                "of our innovation. (e.g., 'Super small. Supremely smart.')",
+                "Share our POV: take a clear stance rather than sitting on the fence.",
             ],
         },
         "AUTHENTIC": {
-            "definition": "진정성 있고 친근한 소통",
             "actionable_rules": [
-                "친구에게 말하듯(Write to a friend) 쉽고 편안한 구어체를 사용하라.",
-                "부정적 단어(Stress, Worry)로 시작하지 말고, 긍정적 혜택(Peace of mind)으로 재구성(Reframing)하라.",
-                "과장된 마케팅 용어 대신 현실적인 공감(Relatable)을 이끌어내라.",
+                "Write to a friend: imagine writing to someone you know. "
+                "Replace technical language with everyday language.",
+                "Find the upside: reframe negatives to positives to make our tech feel approachable. "
+                "(e.g., 'Look forward to laundry day.')",
+                "Find a tangible benefit: pull out a specific, relatable benefit instead of a broad claim. "
+                "(e.g., 'Never run out of eggs again.')",
             ],
         },
     },
     "negative_constraints": [
-        "Do NOT translate literally (직역 금지)",
-        "Do NOT use negative framing (e.g., 'Don't worry about bills' -> 'Enjoy savings')",
-        "Do NOT be overly formal or technical (지나치게 격식적이거나 기술적인 어투 지양)",
-        "Do NOT use hedging words like 'hopefully', 'try to', 'might' (모호한 표현 금지)",
+        "Do NOT use negative framing — always reframe into a positive benefit. "
+        "(e.g., 'Don't worry about bills' → 'Enjoy savings')",
+        "Never try too hard to relate — we're still a premium brand. "
+        "Avoid slang or overly casual phrasing.",
+        "Never be overly metaphorical — write with purpose and refinement.",
     ],
     "few_shot_examples": [
         {

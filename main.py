@@ -74,6 +74,9 @@ class StartRequest(BaseModel):
     rag_identity_match: bool = True
     gemini_api_key: str = None
     openai_api_key: str = None
+    source_groups: list[dict] = []
+    # 형식: [{"source_sheet": "US(미국)", "target_sheets": ["DE(독일)", ...]},
+    #        {"source_sheet": "KR(한국)", "target_sheets": ["JA(일본)", ...]}]
 
 async def background_inspection_task(task_id, params):
     queue = TASK_STORE[task_id]["queue"]
@@ -106,7 +109,8 @@ async def background_inspection_task(task_id, params):
             glossary_file_path=glossary_path,
             selected_sheets=params.sheets, # These are the sheets to inspect
             source_sheet_name=params.source_sheet,
-            rag_identity_match=params.rag_identity_match
+            rag_identity_match=params.rag_identity_match,
+            source_groups=params.source_groups if params.source_groups else None
         )
         
         async for event in gen:
@@ -455,7 +459,6 @@ async def preview_prompt(
         rag_context=None,
         row_key=row_key,
         glossary_context=glossary_context,
-        target_lang_code=target_lang_code,
     )
     audit_prompt = PROMPT_BUILDER.build_audit_prompt(
         source_lang=source_lang,
@@ -543,7 +546,6 @@ async def preview_prompt_blocks(
     translation_sections = PROMPT_BUILDER.build_translation_prompt_sections(
         target_lang=target_lang, source_lang=source_lang, bx_style_on=bx_style_on,
         rag_context=rag_context, row_key=row_key, glossary_context=glossary_dict or None,
-        target_lang_code=target_lang_code,
     )
     audit_sections = PROMPT_BUILDER.build_audit_prompt_sections(
         target_lang=target_lang, target_lang_code=target_lang_code,

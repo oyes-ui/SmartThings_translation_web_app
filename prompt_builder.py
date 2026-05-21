@@ -17,9 +17,7 @@ from prompt_modules import (
     GLOSSARY_BRACKET_WRAP_RULE,
     GLOSSARY_DISCLAIMER_NAV_EXCEPTION,
     GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE,
-    GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_INTL,
     GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA,
-    GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_US,
     GLOSSARY_EXEMPT_MARKERS,
     GLOSSARY_NO_BRACKET_INSTRUCTION,
     GLOSSARY_TERM_RULES,
@@ -90,12 +88,6 @@ class PromptBuilder:
             return "title_button"
         return "description"
 
-    def _is_us_english(self, target_lang: str, target_lang_code: str = "") -> bool:
-        combined = f"{target_lang} {target_lang_code}".lower().replace("-", "_")
-        is_english = "english" in combined or "영어" in combined or "en_" in combined
-        is_us = "us" in combined or "미국" in combined or "american" in combined
-        return is_english and is_us
-
     def should_skip_brackets(self, row_key: str) -> bool:
         return self.get_glossary_context_mode(row_key) == "title_button"
 
@@ -128,7 +120,6 @@ class PromptBuilder:
         rag_context: str | None = None,
         row_key: str = "",
         glossary_context=None,
-        target_lang_code: str = "",
     ) -> str:
         sections = []
         sections.append(self._build_persona_section(target_lang, source_lang, bx_style_on))
@@ -138,7 +129,7 @@ class PromptBuilder:
         if language_section:
             sections.append(language_section)
 
-        if bx_style_on:
+        if bx_style_on or self._is_bx_lang(target_lang):
             sections.append(self._build_bx_section(target_lang))
 
         if rag_context:
@@ -148,7 +139,7 @@ class PromptBuilder:
                 "Use these examples as style and terminology reference to maintain consistency."
             )
 
-        sections.append(self._build_formatting_section(target_lang, row_key, target_lang_code, bool(glossary_context)))
+        sections.append(self._build_formatting_section(target_lang, row_key, bool(glossary_context)))
         sections.append('OUTPUT: Return ONLY a JSON object with a "translation" key.')
 
         return "\n\n".join(section for section in sections if section).strip()
@@ -167,7 +158,7 @@ class PromptBuilder:
         if language_section:
             sections.append(language_section)
 
-        sections.append(self._build_formatting_section(target_lang, row_key, target_lang_code or "", bool(glossary_context)))
+        sections.append(self._build_formatting_section(target_lang, row_key, bool(glossary_context)))
         sections.append(self._build_audit_checklist())
 
         if glossary_context:
@@ -252,7 +243,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         }
 
     def _build_persona_section(self, target_lang: str, source_lang: str, bx_style_on: bool) -> str:
-        if bx_style_on:
+        if bx_style_on or self._is_bx_lang(target_lang):
             role = BX_STYLE_RULES["system_identity"]["role"]
             return (
                 f"You are the {role}.\n"
@@ -280,20 +271,24 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         label = _LANGUAGE_RULE_LABELS.get(lang_key, lang_key)
         return f"{heading}\n{label}\n" + "\n".join(f"- {item}" for item in rules)
 
+    _BX_AUTO_LANGS = {"English_US", "English"}
+
+    def _is_bx_lang(self, target_lang: str) -> bool:
+        return target_lang in self._BX_AUTO_LANGS
+
     def _build_bx_section(self, target_lang: str) -> str:
         identity = BX_STYLE_RULES["system_identity"]
         voice = BX_STYLE_RULES["voice_attributes"]
         lines = [
             "[SAMSUNG BX STYLE]",
             f"Persona: {identity['persona']}",
-            f"Traits: {', '.join(identity['traits'])}",
             f"Goal: {identity['goal']}",
             f"Target Language: {target_lang}",
             "",
             "Voice Attributes:",
         ]
         for name, data in voice.items():
-            lines.append(f"- {name}: {data['definition']}")
+            lines.append(f"- {name}:")
             lines.extend(f"  - {rule}" for rule in data["actionable_rules"])
         lines.append("")
         lines.append("Negative Constraints:")
@@ -314,10 +309,9 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         rag_context: str | None = None,
         row_key: str = "",
         glossary_context=None,
-        target_lang_code: str = "",
     ) -> list[dict]:
         lang_content = self._build_language_section(target_lang)
-        bx_content = self._build_bx_section(target_lang) if bx_style_on else ""
+        bx_content = self._build_bx_section(target_lang) if (bx_style_on or self._is_bx_lang(target_lang)) else ""
         rag_content = (
             f"{self._normalize_rag_section(rag_context)}\n"
             "Use these examples as style and terminology reference to maintain consistency."
@@ -332,14 +326,14 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
              "active": bool(lang_content), "always": False,
              "content": lang_content or "(이 타겟 언어에 적용되는 언어별 규칙 없음)"},
             {"id": "bx", "label": "SAMSUNG BX STYLE", "module_key": "bx",
-             "active": bool(bx_style_on), "always": False,
+             "active": bool(bx_style_on or self._is_bx_lang(target_lang)), "always": False,
              "content": bx_content or "(BX 스타일 비활성화)"},
             {"id": "rag", "label": "RAG TRANSLATION MEMORY", "module_key": "rag",
              "active": bool(rag_content), "always": False,
              "content": rag_content or "(유사 번역 예시 없음 — RAG DB 미연결 또는 유사 항목 없음)"},
             {"id": "formatting", "label": "FORMAT & TYPOGRAPHY RULES", "module_key": "formatting",
              "active": True, "always": True,
-             "content": self._build_formatting_section(target_lang, row_key, target_lang_code, bool(glossary_context))},
+             "content": self._build_formatting_section(target_lang, row_key, bool(glossary_context))},
             {"id": "output", "label": "OUTPUT FORMAT", "module_key": None, "active": True, "always": True,
              "content": 'OUTPUT: Return ONLY a JSON object with a "translation" key.'},
         ]
@@ -360,7 +354,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
              "content": lang_content or "(이 타겟 언어에 적용되는 언어별 규칙 없음)"},
             {"id": "formatting", "label": "FORMAT & TYPOGRAPHY RULES", "module_key": "formatting",
              "active": True, "always": True,
-             "content": self._build_formatting_section(target_lang, row_key, target_lang_code or "", bool(glossary_context))},
+             "content": self._build_formatting_section(target_lang, row_key, bool(glossary_context))},
             {"id": "checklist", "label": "검수 가이드라인", "module_key": None, "active": True, "always": True,
              "content": self._build_audit_checklist()},
             {"id": "glossary_target", "label": "Glossary Target", "module_key": "glossary",
@@ -400,7 +394,6 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         self,
         target_lang: str,
         row_key: str,
-        target_lang_code: str = "",
         glossary_available: bool = True,
     ) -> str:
         lines = [
@@ -430,12 +423,8 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         # Nav path quote rule is typography, not glossary — always applies for disclaimer rows.
         if context_mode == "disclaimer":
             is_ja = target_lang and ("Japanese" in target_lang or "일본" in target_lang)
-            if self._is_us_english(target_lang, target_lang_code):
-                quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_US
-            elif is_ja:
+            if is_ja:
                 quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA
-            elif target_lang_code:
-                quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_INTL
             else:
                 quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE
             lines.append(f"- {quote_rule}")

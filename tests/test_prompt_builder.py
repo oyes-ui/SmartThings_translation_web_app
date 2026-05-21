@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import asyncio
+import json
 import unittest
 
 from fastapi.testclient import TestClient
@@ -214,7 +216,8 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertIn('"evaluation"', prompt)
         self.assertIn('"grade"', prompt)
         self.assertIn('"suggested_fix"', prompt)
-        self.assertIn("정확성 및 현지화 품질", prompt)
+        self.assertIn("원문의미 충실도", prompt)
+        self.assertIn("현지화", prompt)
 
     def test_checker_glossary_brackets_respect_row_key_context(self):
         checker = TranslationChecker()
@@ -299,6 +302,80 @@ class PromptBuilderTests(unittest.TestCase):
 
         self.assertEqual(title_context["Home insight"], "自宅分析")
         self.assertEqual(description_context["Home insight"], "自宅分析")
+
+    def test_glossary_context_can_skip_deactivated_terms(self):
+        checker = TranslationChecker()
+        checker.glossary = {
+            "Home insight": {
+                "targets": {"ja_JP": "自宅分析"},
+                "rule": "",
+            },
+            "Legacy mode": {
+                "targets": {"ja_JP": "レガシーモード"},
+                "rule": "비활성화",
+            },
+        }
+        checker._compile_glossary_re()
+
+        context = checker._get_glossary_context_as_dict(
+            "ja_JP",
+            source_text="Use Home insight with Legacy mode.",
+            skip_deactivated=True,
+            row_key="//section_045_1_description",
+        )
+
+        self.assertEqual(context, {"Home insight": "自宅分析"})
+
+    def test_audit_prompt_filters_deactivated_glossary_terms(self):
+        checker = TranslationChecker(model_name="fake-audit-model")
+        checker.glossary = {
+            "Home insight": {
+                "targets": {"ja_JP": "自宅分析"},
+                "rule": "",
+            },
+            "Legacy mode": {
+                "targets": {"ja_JP": "レガシーモード"},
+                "rule": "disable",
+            },
+        }
+        checker._compile_glossary_re()
+
+        captured = {}
+
+        async def fake_generate_content(prompt, model_name, system_instruction, response_json):
+            captured["prompt"] = prompt
+            captured["model_name"] = model_name
+            captured["system_instruction"] = system_instruction
+            captured["response_json"] = response_json
+            return {
+                "evaluation": [{"category": "Glossary", "comment": "ok"}],
+                "grade": "Pass",
+                "suggested_fix": "",
+            }
+
+        checker.model_handler.generate_content = fake_generate_content
+
+        ai_text, ai_json = asyncio.run(
+            checker.check_with_llm_qa(
+                "Use Home insight with Legacy mode.",
+                "自宅分析を使用します。",
+                "English",
+                "Japanese",
+                "ja_JP",
+                row_key="//section_045_1_description",
+            )
+        )
+
+        input_json = captured["prompt"].split("[Input Data]\n", 1)[1]
+        input_data = json.loads(input_json)
+
+        self.assertEqual(input_data["glossary"], {"Home insight": "自宅分析"})
+        self.assertIn("[Glossary Target]", captured["system_instruction"])
+        self.assertIn('"evaluation"', captured["system_instruction"])
+        self.assertEqual(captured["model_name"], "fake-audit-model")
+        self.assertTrue(captured["response_json"])
+        self.assertIn("Glossary", ai_text)
+        self.assertIn('"grade": "Pass"', ai_json)
 
     def test_title_button_postprocess_removes_glossary_brackets_only_in_title_button_context(self):
         checker = TranslationChecker()

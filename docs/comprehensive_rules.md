@@ -10,8 +10,8 @@
 
 - 원문의 의도, 뉘앙스 및 사용자 혜택을 보존할 것.
 - 직역보다는 해당 시장에 적합하고 자연스러운 표현을 우선할 것.
-- 삼성 SmartThings 브랜드 톤(명확함, 자신감, 유익함)을 유지할 것.
-- 문화적으로 어색한 관용구나 위험한 표현(공포 유발, 모호한 주장 등)을 피할 것.
+- 적절한 경우 세련된 위트, 비유, 의인화 등 창의적 표현을 사용하여 기술이 전문적이기보다 친근하게 느껴지도록 할 것.
+- 문화적으로 어색한 관용구, 공포 유발 프레이밍, 지나치게 격식적이거나 기술적인 어투, 모호한 확신을 주는 단어('hopefully', 'try to', 'might' 등)를 피할 것.
 - UI 문구는 간결하게 유지하되, 작업이나 혜택은 명확히 전달할 것.
 
 ---
@@ -31,11 +31,21 @@
 
 ---
 
-### 🇺🇸 US (미국) - English (`English` / `English_US`)
-> **💡 정책 요약**: US 철자 사용 (color, personalize). 특정 시장 변형이 지정되지 않은 경우 기본 영어로 작동하며, 디스클레이머 마침표는 따옴표 밖(`".`)에 위치.
+### 🌐 (글로벌 폴백) - English (`English`)
+> **💡 정책 요약**: 특정 시장 변형(US/UK/AU/SG)이 명시되지 않고 단순히 "English"로만 입력될 경우 적용되는 폴백 규칙. US 영어 철자를 기본으로 하며 디스클레이머 마침표 위치도 US 기준을 따름.
 
 ```text
 - Use US English spelling and wording (e.g., 'color', 'personalize') unless a more specific English market variant is specified.
+- Follow the project-specific rule for disclaimers: place the sentence-ending period outside the closing quotation mark.
+```
+
+---
+
+### 🇺🇸 US (미국) - English (`English_US`)
+> **💡 정책 요약**: US 철자 사용 (color, personalize). 디스클레이머 마침표는 따옴표 밖(`".`)에 위치.
+
+```text
+- Use US English spelling and wording (e.g., 'color', 'personalize').
 - Follow the project-specific rule for disclaimers: place the sentence-ending period outside the closing quotation mark.
 ```
 
@@ -72,10 +82,11 @@
 ---
 
 ### 🇫🇷 FR (프랑스) - French (`French`)
-> **💡 정책 요약**: `Tu/Vous` 중 하나를 일관되게 사용. 불필요한 대문자 사용 지양.
+> **💡 정책 요약**: `Vous-form` 일관 사용. 따옴표는 `«...»` (길르메) 사용. 불필요한 대문자 사용 지양.
 
 ```text
-- Use one address form consistently (Tu vs Vous); do not mix them.
+- Use Vous-form consistently; do not use Tu-form.
+- Use «...» (guillemets) for quoted text and navigation paths.
 - Avoid unnecessary capitalization in UI copy.
 - Use natural French phrasing and avoid English-influenced structures.
 ```
@@ -83,9 +94,11 @@
 ---
 
 ### 🇧🇪 BE (벨기에) - French (`French_BE` / `French_Belgium`)
-> **💡 정책 요약**: 벨기에 시장에 적합한 중립적 톤 유지. 프랑스 본토 전용 관용구 지양.
+> **💡 정책 요약**: `Vous-form` 일관 사용. 따옴표는 `«...»` (길르메) 사용. 벨기에 시장에 적합한 중립적 톤 유지. 프랑스 본토 전용 관용구 지양.
 
 ```text
+- Use Vous-form consistently; do not use Tu-form.
+- Use «...» (guillemets) for quoted text and navigation paths.
 - Use neutral French and avoid overly idiomatic expressions specific to mainland France.
 - Ensure consistent tone for the Belgian market.
 ```
@@ -93,21 +106,24 @@
 ---
 
 ### 🇨🇦 CA (캐나다) - French (`French_CA` / `French_Canada`)
-> **💡 정책 요약**: 북미 프랑스어 표준 및 자연스러운 어구 우선.
+> **💡 정책 요약**: `Vous-form` 일관 사용. 따옴표는 `«...»` (길르메) 사용. 북미 프랑스어 표준 및 자연스러운 어구 우선.
 
 ```text
+- Use Vous-form consistently; do not use Tu-form.
+- Use «...» (guillemets) for quoted text and navigation paths.
 - Follow Canadian French standards; prioritize phrasing natural to North American French over mainland France idioms.
 ```
 
 ---
 
 ### 🇩🇪 DE (독일) - German (`German`)
-> **💡 정책 요약**: `Du-form` 기본 사용. 명사 대문자 표기 및 복합어 구조 준수. 기술적 어투 지양.
+> **💡 정책 요약**: `Du-form` 기본 사용. 명사 대문자 표기 및 복합어 구조 준수. 기술적 어투 지양. 따옴표는 `„..."` (독일식 길르메) 사용.
 
 ```text
 - Use Du-form consistently unless the locale or project explicitly requires Sie-form.
 - Ensure natural capitalization of nouns and maintain natural compound word structures.
 - Avoid overly formal or technical wording in short UI copy.
+- Use „..." (German quotation marks) for quoted text and navigation paths; do not use English straight quotation marks.
 ```
 
 ---
@@ -133,9 +149,10 @@
 ---
 
 ### 🇳🇱 NL (네덜란드) - Dutch (`Dutch`)
-> **💡 정책 요약**: 직접적이고 간결한 문체. 영어식 어순이나 명사구 구조 지양.
+> **💡 정책 요약**: `u/uw` 공식체 일관 사용. 직접적이고 간결한 문체. 영어식 어순이나 명사구 구조 지양.
 
 ```text
+- Use 'u/uw' (formal address) consistently; do not use je/jij.
 - Keep Dutch copy direct and concise.
 - Avoid literal translation of English word order or noun-phrase structures.
 ```
@@ -182,11 +199,12 @@
 ---
 
 ### 🇷🇺 RU (러시아) - Russian (`Russian`)
-> **💡 정책 요약**: 러시아어 어순 준수. 영어식 명사구 직역 및 과도한 대문자 지양.
+> **💡 정책 요약**: 러시아어 어순 준수. 영어식 명사구 직역 및 과도한 대문자 지양. 따옴표는 `«...»` (길르메) 사용.
 
 ```text
 - Use natural Russian word order.
 - Avoid English-style noun-phrase literal translations and excessive capitalization.
+- Use «...» (guillemets) for quoted text and navigation paths; do not use English straight quotation marks.
 ```
 
 ---
@@ -202,27 +220,31 @@
 ---
 
 ### 🇨🇳 CN (중국) - Simplified Chinese (`Simplified Chinese`)
-> **💡 정책 요약**: 중국 본토 표준 용어 및 간체자 사용. 대만식 용어 지양.
+> **💡 정책 요약**: 중국 본토 표준 용어 및 간체자 사용. 대만식 용어 지양. 전각 구두점 사용. 따옴표는 전각 `"..."` 사용 (`「」` 금지).
 
 ```text
 - Use natural Mainland Chinese wording and Simplified Chinese characters.
 - Avoid Taiwan-specific terminology.
+- Use fullwidth punctuation marks (，。！？) consistently; avoid half-width ASCII punctuation.
+- Use fullwidth double quotation marks ("...") for quoted text and navigation paths; do not use 「」 (Japanese-style brackets).
 ```
 
 ---
 
 ### 🇹🇼 TW (대만) - Traditional Chinese (`Traditional Chinese`)
-> **💡 정책 요약**: 대만 표준 용어 및 번체자 사용. 중국 본토식 용어 지양.
+> **💡 정책 요약**: 대만 표준 용어 및 번체자 사용. 중국 본토식 용어 지양. 전각 구두점 사용. 따옴표는 `「...」` 사용.
 
 ```text
 - Use natural Taiwan Traditional Chinese wording and characters.
 - Avoid Mainland Chinese-specific terminology.
+- Use fullwidth punctuation marks (，。！？) consistently; avoid half-width ASCII punctuation.
+- Use 「...」 for quoted text and navigation paths.
 ```
 
 ---
 
 ### 🇯🇵 JA (일본) - Japanese (`Japanese`)
-> **💡 정책 요약**: `ます-form` 기본 사용. 자연스러운 UI 표현(操作/設定 등) 우선. 직역형 구조 지양. 내비게이션 경로는 `「 」` 사용 및 마침표를 안쪽에 배치.
+> **💡 정책 요약**: `ます-form` 기본 사용. 자연스러운 UI 표현(操作/設定 등) 우선. 직역형 구조 지양. 내비게이션 경로는 `「 」` 사용.
 
 ```text
 - Use consistent ます-form unless project guidance specifies otherwise.
@@ -274,28 +296,40 @@
 ---
 
 ## 3. 삼성 BX 스타일 가이드 (Samsung BX Style)
-`BX Style Transcreation` 모드 활성화 시 적용되는 고차원 규칙입니다.
+`target_lang`이 `English_US` 또는 `English`일 때 자동으로 적용되는 영문 브랜드 보이스 규칙입니다. (구 UI 전역 토글 제거됨)
 > **📌 매핑 변수**: `BX_STYLE_RULES` (`prompt_modules.py`)
 
 ### 3.1 페르소나 (Persona)
 > **📌 매핑 변수**: `BX_STYLE_RULES["system_identity"]`
 
-- **자신감 있는 탐험가 (Confident Explorer)**: 두려움 없고(Fearless), 예리하며(Incisive), 진실되고(Real), 열린 마음(Open-minded)을 가진 브랜드 보이스.
+- **자신감 있는 탐험가 (Confident Explorer)**: 기술 매뉴얼이 아닌 친근하고 자신감 있는 가이드처럼 영문 카피를 작성한다. OPEN/BOLD/AUTHENTIC 보이스를 아래 구체 기법으로 구현한다.
 
 ### 3.2 핵심 보이스 속성 (Voice Attributes)
 > **📌 매핑 변수**: `BX_STYLE_RULES["voice_attributes"]`
+> **📌 참고**: 직역 금지·hedging 금지·격식체 지양 등 COMMON과 중복되는 원칙은 여기서 제외하고 COMMON에 일원화됨.
 
-- **OPEN (창의적)**: 비유와 위트(Refined Wit) 사용, 기술의 의인화(Personify), 짧고 리듬감 있는 문답형 헤드라인(Double Take) 활용.
-- **BOLD (대담한)**: 모호한 표현(hopefully, maybe) 제거, 대조(Contrast)를 통한 임팩트, 확고한 혁신의 가치 주장.
-- **AUTHENTIC (진정성)**: 친구에게 말하듯 편안한 구어체, 부정적 단어 대신 긍정적 혜택으로 재구성(Positive Reframing).
+- **OPEN** (reveals, invites):
+  1. Go beyond the literal benefit — reveal the experience, emotion, or new perspective behind the feature.
+  2. Personify our tech to create intentional wit linked to product functionality. (e.g., 'This AI helps pay the bills')
+  3. Upend expectations: set up a sentence one way, then give it an unexpected ending. (e.g., 'Visuals so real, real life looks fake.')
+
+- **BOLD** (leads, takes a stance):
+  1. Pair technical detail with the real emotional reaction it inspires. (e.g., 'Reaction: woah.')
+  2. Play up contrast to create dramatic effect that underscores the different angles of our innovation. (e.g., 'Super small. Supremely smart.')
+  3. Share our POV: take a clear stance rather than sitting on the fence.
+
+- **AUTHENTIC** (grounds, connects):
+  1. Write to a friend: imagine writing to someone you know. Replace technical language with everyday language.
+  2. Find the upside: reframe negatives to positives to make our tech feel approachable. (e.g., 'Look forward to laundry day.')
+  3. Find a tangible benefit: pull out a specific, relatable benefit instead of a broad claim. (e.g., 'Never run out of eggs again.')
 
 ### 3.3 부정 제약 사항 (Negative Constraints)
 > **📌 매핑 변수**: `BX_STYLE_RULES["negative_constraints"]`
+> **📌 참고**: COMMON 중복 항목(직역 금지, hedging 금지, 격식 지양) 제거 후 BX 고유 제약만 유지.
 
-- 직역 금지.
-- 부정적 프레이밍(Stress, Worry 등) 지양.
-- 지나치게 격식적이거나 기술적인 어투 지양.
-- 모호한 확신(hopefully, might 등) 금지.
+- Do NOT use negative framing — always reframe into a positive benefit. (e.g., 'Don't worry about bills' → 'Enjoy savings')
+- Never try too hard to relate — we're still a premium brand. Avoid slang or overly casual phrasing.
+- Never be overly metaphorical — write with purpose and refinement.
 
 ---
 
@@ -308,11 +342,11 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 > - 채점 등급: `AUDIT_GRADE_CRITERIA` (`Excellent`, `Good`, `Needs Revision`)
 
 1. **문법/유창성**: 오타, 문법 오류, 성수 일치, 관용구 사용 등 정밀 점검.
-2. **정확성 및 현지화 품질**: 원문의 의미와 뉘앙스가 충실히 보존되었는지, 현지인이 쓸 법한 자연스러운 표현인지 평가.
-3. **용어집 준수**: 제공된 glossary 데이터와 100% 일치 여부 및 항목별 예외 규칙(rule/remark) 적용 확인.
-4. **언어별 규칙 준수**: 각 언어별 현지화 기준 섹션에 명시된 규칙 준수 여부.
-5. **대소문자 표기**: 타겟 언어의 일반적인 대소문자 표기 규칙(Sentence case 등) 준수 여부.
-6. **서식 및 표기**: 용어집 브래킷(`[]`, `「」`) 적용, 탐색 경로의 따옴표 및 마침표 위치, 타이포그래피 준수 여부.
+2. **원문의미 충실도**: 원문의 핵심 의미·뉘앙스·사용자 혜택이 번역에서 손실 없이 전달되었는지 확인. 직역 여부와 무관하게 '정보 손실' 또는 '의미 왜곡'이 발생했는지만 판단한다.
+3. **용어집 준수**: 제공된 glossary 데이터와 100% 일치하는지 확인 (대소문자, 띄어쓰기 포함). 항목별 예외 규칙(rule/remark)이 있는 경우 예외가 우선 적용되었는지 확인. 현지화 자연스러움 여부와 관계없이 절대 적용되는 기준이다.
+4. **현지화**: 해당 언어권 현지인이 실제로 사용하는 자연스러운 표현인지 종합 평가. ① [언어별 현지화 기준] 규칙 준수 (예: 독일어 Du-form, 일본어 ます형, 프랑스어 Tu/Vous 등), ② 직역·구조적 번역이 아닌 시장 맥락에 맞는 표현 선택, ③ 문화적 뉘앙스와 브랜드 보이스(Confident Explorer)의 현지 적용.
+5. **대소문자 표기**: 대상 언어의 문장형(sentence case) 또는 타이틀형(title case) 등 일반 대소문자 표기 규칙 준수 여부.
+6. **서식 및 표기**: [서식 규칙] 섹션 기준으로 점검: glossary 용어의 bracket 표기 적용 여부, 탐색 경로(nav path)의 따옴표 및 마침표 위치, 타이포그래피·구두점·간격 등 대상 언어 표기 규칙 준수 여부.
 
 ---
 
@@ -325,13 +359,13 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 > - 타이틀/버튼 대괄호 자동 제외: `GLOSSARY_NO_BRACKET_INSTRUCTION`
 
 - **Glossary Bracket**: `row_key` 문맥에 따라 용어집 단어를 감쌈. (Title/Button은 제외)
-- **Nav Path**: 메뉴 경로는 이중 따옴표(일본어는 `「 」`) 사용.
+- **Nav Path**: 메뉴 경로는 해당 언어에 맞는 따옴표로 감쌈.
+  (JA·TW: `「 」` / CN Simplified: 전각 `"..."` / DE: `„"` / FR·RU: `«»` / EN·기타: `""`)
   > **📌 예외 처리 변수**: `GLOSSARY_DISCLAIMER_NAV_EXCEPTION`
-- **Punctuation Position (US English)**: `"Navigation path".` (마침표가 따옴표 밖)
-  > **📌 매핑 변수**: `GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_US`
-- **Punctuation Position (International)**: `"Navigation path."` (마침표가 따옴표 안)
-  > **📌 매핑 변수**: `GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_INTL` (`GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE`)
-- **Punctuation Position (Japanese)**: `「Navigation path。」` (마침표가 `」` 안)
+- **Punctuation Position (범용 — 일본어 제외 전체)**: 마침표는 항상 닫는 따옴표 밖에 배치. 따옴표 종류는 대상 언어에 적합한 것을 사용(예: 독일어 „", 프랑스어/러시아어 «», 영어 "").
+  - 출력 예시: `"Settings > General".` / `«Einstellungen > Allgemein».`
+  > **📌 매핑 변수**: `GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE`
+- **Punctuation Position (Japanese)**: 내비게이션 경로는 `「 」`로 감쌈. 마침표 위치는 일본어 문장 구조에 따라 자연스럽게 배치 (`「path」から設定できます。` 구조).
   > **📌 매핑 변수**: `GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA`
 
 ---
@@ -354,13 +388,13 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 You are a professional {target_lang} localizer.
 Source Language: {source_lang}
 Target Language: {target_lang}
-TASK: Translate the source text naturally for a native speaker while preserving 100% of the original meaning.
+TASK: Translate the source text naturally for a native speaker while faithfully conveying the full intent and nuance of the original.
 
 # BX 모드 시:
 You are the Samsung BX Writer & Translator.
 Source Language: {source_lang}
 Target Language: {target_lang}
-TASK: Translate and polish the source text naturally for a native speaker while preserving 100% of the original meaning.
+TASK: Translate and polish the source text naturally for a native speaker while faithfully conveying the full intent and nuance of the original.
 ```
 
 #### [2] Common Section (공통 현지화 표준)
@@ -371,8 +405,8 @@ TASK: Translate and polish the source text naturally for a native speaker while 
 [COMMON LOCALIZATION STANDARD]
 - Preserve the original intent, nuance, and user benefit of the source.
 - Avoid overly literal translation when more natural, market-appropriate wording communicates the same intent better.
-- Keep Samsung SmartThings brand tone clear, confident, and helpful.
-- Avoid culturally awkward idioms, metaphors, or risky wording (e.g., fear-based claims, hedging).
+- Where appropriate, use creative expression — refined wit, metaphor, or personification — to make technology feel approachable rather than technical.
+- Avoid culturally awkward idioms, fear-based framing, overly formal or technical language, and hedging words (e.g., 'hopefully', 'try to', 'might').
 - Keep UI copy concise while keeping the action or benefit clear.
 ```
 
@@ -388,35 +422,33 @@ TASK: Translate and polish the source text naturally for a native speaker while 
 ```
 
 #### [4] BX Style Section (삼성 BX 브랜드 보이스 주입)
-> **💡 역할 해설**: 사용자가 UI에서 `BX Style Transcreation` 옵션을 켰을 때 추가되는 심층 지시문입니다. '자신감 있는 탐험가(Confident Explorer)' 페르소나와 3대 보이스 속성(OPEN, BOLD, AUTHENTIC)의 구체적인 행동 지침, 그리고 피해야 할 제약 사항(직역, 부정적 프레이밍 등)과 퓨샷(Few-shot) 예시를 제공하여 매력적인 마케팅/브랜드 문구로 트랜스크리에이션하도록 유도합니다.
+> **💡 역할 해설**: `target_lang`이 `English_US` 또는 `English`일 때 자동으로 삽입됩니다. Confident Explorer 페르소나와 3대 보이스 속성(OPEN/BOLD/AUTHENTIC)의 고유 행동 기법 및 Few-shot 예시를 제공합니다. COMMON과 중복되는 직역 금지·hedging 금지 등은 이 섹션에서 제거되어 COMMON에 일원화되었습니다.
 
 ```python
-# [4] BX Style Section (BX 모드 활성화 시 삽입)
+# [4] BX Style Section (target_lang이 English_US/English일 때 자동 삽입)
 [SAMSUNG BX STYLE]
 Persona: Confident Explorer (자신감 있는 탐험가)
-Traits: Fearless (두려움 없는), Incisive (예리한), Real (진실된), Open-minded (열린 마음)
-Goal: 단순한 언어 변환이 아닌, 브랜드의 목소리와 사용자 경험(Experience)을 전달하는 트랜스크리에이션(Transcreation) 수행
+Goal: Craft English copy that sounds like a confident, friendly guide — not a tech manual. Apply OPEN, BOLD, AUTHENTIC voice through specific techniques below.
 Target Language: {target_lang}
 
 Voice Attributes:
-- OPEN: 상상력을 자극하고 시야를 넓히는 창의적 관점
-  - 기능 설명(Literal)을 넘어 비유와 위트(Refined Wit)를 사용하라.
-  - 기술을 의인화(Personify)하여 생동감을 부여하라.
-  - 짧고 리듬감 있는 문답형 헤드라인(Double Take)을 활용하라.
-- BOLD: 대담하고 확신에 찬 태도
-  - 방어적인 표현(Hedging: hopefully, maybe)을 제거하고 확언하라.
-  - 대조(Contrast)를 활용하여 임팩트를 주어라.
-  - 경쟁사를 비방하지 않으면서도 혁신의 가치를 명확히 주장하라.
-- AUTHENTIC: 진정성 있고 친근한 소통
-  - 친구에게 말하듯(Write to a friend) 쉽고 편안한 구어체를 사용하라.
-  - 부정적 단어(Stress, Worry)로 시작하지 말고, 긍정적 혜택(Peace of mind)으로 재구성(Reframing)하라.
-  - 과장된 마케팅 용어 대신 현실적인 공감(Relatable)을 이끌어내라.
+- OPEN:
+  - Go beyond the literal benefit to reveal all the hidden dimensions — the experience, emotion, or new perspective behind the feature.
+  - Personify our tech to create intentional wit linked to product functionality. (e.g., 'This AI helps pay the bills')
+  - Upend expectations: set up a sentence one way, then give it an unexpected ending. (e.g., 'Visuals so real, real life looks fake.')
+- BOLD:
+  - Pair technical detail with the real emotional reaction it inspires. (e.g., 'Reaction: woah.')
+  - Play up contrast to create dramatic effect that underscores the different angles of our innovation. (e.g., 'Super small. Supremely smart.')
+  - Share our POV: take a clear stance rather than sitting on the fence.
+- AUTHENTIC:
+  - Write to a friend: imagine writing to someone you know. Replace technical language with everyday language.
+  - Find the upside: reframe negatives to positives to make our tech feel approachable. (e.g., 'Look forward to laundry day.')
+  - Find a tangible benefit: pull out a specific, relatable benefit instead of a broad claim. (e.g., 'Never run out of eggs again.')
 
 Negative Constraints:
-- Do NOT translate literally (직역 금지)
-- Do NOT use negative framing (e.g., 'Don't worry about bills' -> 'Enjoy savings')
-- Do NOT be overly formal or technical (지나치게 격식적이거나 기술적인 어투 지양)
-- Do NOT use hedging words like 'hopefully', 'try to', 'might' (모호한 표현 금지)
+- Do NOT use negative framing — always reframe into a positive benefit. (e.g., 'Don't worry about bills' → 'Enjoy savings')
+- Never try too hard to relate — we're still a premium brand. Avoid slang or overly casual phrasing.
+- Never be overly metaphorical — write with purpose and refinement.
 
 Few-shot Examples:
 Type: OPEN (Headlines)
@@ -441,9 +473,11 @@ Use these examples as style and terminology reference to maintain consistency.
 ```python
 # [6] Formatting & Glossary Section (용어집 및 서식 제어 기본 구조)
 [GLOSSARY RULES]
-- Use provided glossary terms exactly, including capitalization, spacing, market variants, and term-specific exceptions.
+- Use provided glossary terms exactly as given — including capitalization, spacing, and market variants. This overrides any localization style preference; do not adapt glossary terms for naturalness.
 - Apply term-specific rule or remark exceptions before generic formatting rules.
 ```
+
+> **📌 참고**: `GLOSSARY_TERM_RULES["rules"][1]` 상수(`Glossary capitalization is authoritative...`)는 `prompt_modules.py`에 정의되어 있으나, 현재 조립 로직(`prompt_builder.py` line 413)에서는 위 하드코딩 문구가 대신 삽입됩니다.
 
 ##### 🔹 문맥(`row_key`) 및 타겟 언어에 따른 동적 서식 분기 프롬프트
 
@@ -464,22 +498,21 @@ Use these examples as style and terminology reference to maintain consistency.
 ```
 
 **3) Disclaimer 문맥** (`disclaimer` 포함 시)
-> 법적 고지 문구 및 메뉴 탐색 경로(`Settings > General`) 안내 시, 괄호 래핑을 면제하고 국가별 표준 따옴표 및 문장 종결 마침표 위치를 제어합니다.
+> 법적 고지 문구 및 메뉴 탐색 경로(`Settings > General`) 안내 시, 괄호 래핑을 면제하고 언어에 맞는 따옴표 및 마침표 위치를 제어합니다.
 ```text
 # 공통 예외 규칙 삽입:
 - Exception: do not wrap terms inside navigation paths (e.g., Settings > Device).
 
-# US (미국 - English_US) 전용 규칙:
-- Enclose navigation paths in double quotation marks. Place the sentence-ending period outside the closing quotation mark.
-  (출력 예시: "Settings > General".)
-
-# 글로벌 국제 공통 규칙 (US 제외 타 국가):
-- Enclose navigation paths in double quotation marks. Place the sentence-ending period inside the closing quotation mark.
-  (출력 예시: "Settings > General.")
+# 범용 규칙 (JA 제외 전체 언어):
+- Enclose navigation paths in quotation marks appropriate for the target language.
+  Place the sentence-ending period outside the closing quotation mark.
+  (출력 예시 EN: "Settings > General".)
+  (출력 예시 DE: „Einstellungen > Allgemein".)
+  (출력 예시 FR/RU: «Paramètres > Général».)
 
 # JA (일본) 전용 규칙:
-- Enclose navigation paths in 「 and 」. Place the sentence-ending period inside the closing 」.
-  (출력 예시: 「設定 > 一般。」)
+- Enclose navigation paths in 「 and 」.
+  (출력 예시: 「設定 > 一般」から設定できます。)
 ```
 
 ##### 🔹 타이포그래피 및 구두점 규칙 (Typography and Punctuation Rules)
@@ -515,7 +548,7 @@ OUTPUT: Return ONLY a JSON object with a "translation" key.
 ```python
 # [1] Audit Intro (검수자 역할 정의)
 당신은 Samsung SmartThings UI 현지화 전문 검수자입니다.
-핵심 기준: 원문 의미 보존과 '현지인이 실제로 쓸 법한 표현인가'를 중심으로 검수합니다. 반드시 JSON 형식으로만 응답합니다.
+최우선 기준: '현지인이 실제로 쓸 법한 자연스러운 표현인가'(현지화). 원문 의미가 보존되었는지는 별도 항목으로 검토하며, 두 기준이 충돌하면 현지화 자연스러움을 우선합니다. 반드시 JSON 형식으로만 응답합니다.
 ```
 
 #### [2] Language Section (타겟 언어 규칙 점검)
@@ -540,15 +573,15 @@ OUTPUT: Return ONLY a JSON object with a "translation" key.
 ```
 
 #### [4] Checklist Section (6대 정밀 검수 항목)
-> **💡 역할 해설**: 문법/유창성, 정확성/자연스러움, 용어집 일치 여부, 언어별 규칙 준수, 대소문자 표기, 서식/기호 표기 등 6가지 다차원 평가 매트릭스를 제공하여 빠짐없이 정밀 분석하도록 이끕니다.
+> **💡 역할 해설**: 문법/유창성, 원문의미 충실도, 용어집 준수, 현지화, 대소문자 표기, 서식/기호 표기 등 6가지 다차원 평가 매트릭스를 제공하여 빠짐없이 정밀 분석하도록 이끕니다.
 
 ```python
 # [4] Checklist Section (6대 검수 항목)
 [검수 가이드라인]
 1. 문법/유창성: 오타, 문법 오류, 성수 일치, 관용구 사용 등 정밀 점검.
-2. 정확성 및 현지화 품질: 원문의 의미와 뉘앙스가 충실히 보존되었는지 확인. 동시에 원문 구조를 그대로 옮긴 직역이 아닌, 현지인이 실제로 쓸 법한 자연스러운 표현으로 옮겨졌는지 평가. '의미가 전달됐는가'와 '현지화가 됐는가'를 함께 판단.
-3. 용어집 준수: 제공된 glossary 데이터와 100% 일치하는지 확인 (대소문자, 띄어쓰기 포함). 항목별 예외 규칙(rule/remark)이 있는 경우 예외가 우선 적용되었는지 확인.
-4. 언어별 규칙 준수: [언어별 현지화 기준] 섹션에 명시된 규칙 준수 여부 확인 (예: 독일어 Du-form, 일본어 ます형, 프랑스어 Tu/Vous 등). 해당 언어 규칙이 적용되지 않은 경우 '해당 없음'으로 기재.
+2. 원문의미 충실도: 원문의 핵심 의미·뉘앙스·사용자 혜택이 번역에서 손실 없이 전달되었는지 확인. 직역 여부와 무관하게 '정보 손실' 또는 '의미 왜곡'이 발생했는지만 판단한다.
+3. 용어집 준수: 제공된 glossary 데이터와 100% 일치하는지 확인 (대소문자, 띄어쓰기 포함). 항목별 예외 규칙(rule/remark)이 있는 경우 예외가 우선 적용되었는지 확인. 현지화 자연스러움 여부와 관계없이 절대 적용되는 기준이다.
+4. 현지화: 해당 언어권 현지인이 실제로 사용하는 자연스러운 표현인지 종합 평가. ① [언어별 현지화 기준] 규칙 준수 (예: 독일어 Du-form, 일본어 ます형, 프랑스어 Tu/Vous 등), ② 직역·구조적 번역이 아닌 시장 맥락에 맞는 표현 선택, ③ 문화적 뉘앙스와 브랜드 보이스(Confident Explorer)의 현지 적용.
 5. 대소문자 표기: 대상 언어의 문장형(sentence case) 또는 타이틀형(title case) 등 일반 대소문자 표기 규칙 준수 여부.
 6. 서식 및 표기: [서식 규칙] 섹션 기준으로 점검: glossary 용어의 bracket 표기 적용 여부, 탐색 경로(nav path)의 따옴표 및 마침표 위치, 타이포그래피·구두점·간격 등 대상 언어 표기 규칙 준수 여부.
 ```
@@ -572,9 +605,9 @@ JSON 형식으로 반환하세요:
 {
   "evaluation": [
     {"category": "문법/유창성", "comment": "상세한 분석 결과"},
-    {"category": "정확성 및 현지화 품질", "comment": "상세한 분석 결과"},
+    {"category": "원문의미 충실도", "comment": "상세한 분석 결과"},
     {"category": "용어집 준수", "comment": "상세한 분석 결과"},
-    {"category": "언어별 규칙 준수", "comment": "상세한 분석 결과"},
+    {"category": "현지화", "comment": "상세한 분석 결과"},
     {"category": "대소문자 표기", "comment": "상세한 분석 결과"},
     {"category": "서식 및 표기", "comment": "상세한 분석 결과"}
   ],
@@ -582,9 +615,9 @@ JSON 형식으로 반환하세요:
   "suggested_fix": "가장 자연스럽고 정확한 전체 문장 수정안 (수정 불필요 시 빈 문자열)"
 }
 grade 기준:
-  - "Excellent": 모든 항목 문제 없음, 직역 없이 자연스러운 현지화
-  - "Good": 경미한 개선 여지 있으나 출시 가능 수준
-  - "Needs Revision": 직역, 용어집 불일치, 문법 오류 등 수정 필요
+  - "Excellent": 의미 손실 없이 현지인이 자연스럽게 받아들일 표현으로 구현됨. 용어집·서식 완벽 준수.
+  - "Good": 의미 보존 및 현지화 방향은 맞으나, 더 자연스러운 표현으로 개선 가능한 부분 존재. 출시 가능 수준.
+  - "Needs Revision": 현지화 부자연스러움(직역·어색한 표현), 의미 왜곡, 용어집 불일치, 문법 오류 중 하나 이상 해당.
 ```
 
 ---
