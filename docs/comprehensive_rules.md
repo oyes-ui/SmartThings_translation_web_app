@@ -4,7 +4,9 @@
 
 ---
 
-## 1. 공통 현지화 표준 (Common Standards)
+## 1. 번역 관련 (Translation Rules)
+
+### 1.1 공통 현지화 표준 (Common Standards)
 모든 언어에 공통적으로 적용되는 기본 원칙입니다.
 > **📌 매핑 변수**: `COMMON_LOCALIZATION_STANDARD` (`prompt_modules.py`)
 
@@ -16,7 +18,62 @@
 
 ---
 
-## 2. 언어별 상세 특화 규칙 (Detailed Localization Rules)
+### 1.2 삼성 BX 스타일 가이드 (Samsung BX Style)
+`target_lang`이 `English_US` 또는 `English`일 때 자동으로 적용되는 영문 브랜드 보이스 규칙입니다. (구 UI 전역 토글 제거됨)
+> **📌 매핑 변수**: `BX_STYLE_RULES` (`prompt_modules.py`)
+
+#### 1.2.1 페르소나 (Persona)
+> **📌 매핑 변수**: `BX_STYLE_RULES["system_identity"]`
+
+- **자신감 있는 탐험가 (Confident Explorer)**: 기술 매뉴얼이 아닌 친근하고 자신감 있는 가이드처럼 영문 카피를 작성한다. OPEN/BOLD/AUTHENTIC 보이스를 아래 구체 기법으로 구현한다.
+
+#### 1.2.2 핵심 보이스 속성 (Voice Attributes)
+> **📌 매핑 변수**: `BX_STYLE_RULES["voice_attributes"]`
+> **📌 참고**: 직역 금지·hedging 금지·격식체 지양 등 COMMON과 중복되는 원칙은 여기서 제외하고 COMMON에 일원화됨.
+
+- **OPEN** (reveals, invites):
+  1. Go beyond the literal benefit — reveal the experience, emotion, or new perspective behind the feature.
+  2. Personify our tech to create intentional wit linked to product functionality. (e.g., 'This AI helps pay the bills')
+  3. Upend expectations: set up a sentence one way, then give it an unexpected ending. (e.g., 'Visuals so real, real life looks fake.')
+
+- **BOLD** (leads, takes a stance):
+  1. Pair technical detail with the real emotional reaction it inspires. (e.g., 'Reaction: woah.')
+  2. Play up contrast to create dramatic effect that underscores the different angles of our innovation. (e.g., 'Super small. Supremely smart.')
+  3. Share our POV: take a clear stance rather than sitting on the fence.
+
+- **AUTHENTIC** (grounds, connects):
+  1. Write to a friend: imagine writing to someone you know. Replace technical language with everyday language.
+  2. Find the upside: reframe negatives to positives to make our tech feel approachable. (e.g., 'Look forward to laundry day.')
+  3. Find a tangible benefit: pull out a specific, relatable benefit instead of a broad claim. (e.g., 'Never run out of eggs again.')
+
+#### 1.2.3 부정 제약 사항 (Negative Constraints)
+> **📌 매핑 변수**: `BX_STYLE_RULES["negative_constraints"]`
+> **📌 참고**: COMMON 중복 항목(직역 금지, hedging 금지, 격식 지양) 제거 후 BX 고유 제약만 유지.
+
+- Do NOT use negative framing — always reframe into a positive benefit. (e.g., 'Don't worry about bills' → 'Enjoy savings')
+- Never try too hard to relate — we're still a premium brand. Avoid slang or overly casual phrasing.
+- Never be overly metaphorical — write with purpose and refinement.
+
+---
+
+## 2. 검수 관련 (Audit Criteria)
+
+AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
+> **📌 매핑 변수**: 
+> - 검수 도입부: `AUDIT_INTRO`
+> - 체크리스트: `AUDIT_CHECKLIST_RULES`
+> - 채점 등급: `AUDIT_GRADE_CRITERIA` (`Excellent`, `Good`, `Needs Revision`)
+
+1. **문법/유창성**: 오타, 문법 오류, 성수 일치, 관용구 사용 등 정밀 점검.
+2. **원문의미 충실도**: 원문의 핵심 의미·뉘앙스·사용자 혜택이 번역에서 손실 없이 전달되었는지 확인. 직역 여부와 무관하게 '정보 손실' 또는 '의미 왜곡'이 발생했는지만 판단한다.
+3. **용어집 준수**: 제공된 glossary 데이터와 100% 일치하는지 확인 (대소문자, 띄어쓰기 포함). 항목별 예외 규칙(rule/remark)이 있는 경우 예외가 우선 적용되었는지 확인. 현지화 자연스러움 여부와 관계없이 절대 적용되는 기준이다.
+4. **현지화**: 해당 언어권 현지인이 실제로 사용하는 자연스러운 표현인지 종합 평가. ① [언어별 현지화 기준] 규칙 준수 (예: 독일어 Du-form, 일본어 ます형, 프랑스어 Tu/Vous 등), ② 직역·구조적 번역이 아닌 시장 맥락에 맞는 표현 선택, ③ 문화적 뉘앙스와 브랜드 보이스(Confident Explorer)의 현지 적용.
+5. **대소문자 표기**: 대상 언어의 문장형(sentence case) 또는 타이틀형(title case) 등 일반 대소문자 표기 규칙 준수 여부.
+6. **서식 및 표기**: [서식 규칙] 섹션 기준으로 점검: glossary 용어의 bracket 표기 적용 여부, 탐색 경로(nav path)의 따옴표 및 마침표 위치, 타이포그래피·구두점·간격 등 대상 언어 표기 규칙 준수 여부.
+
+---
+
+## 3. 언어별 상세 특화 규칙 (Detailed Localization Rules)
 
 시스템은 아래와 같이 각 언어 및 시장별로 세분화된 규칙을 적용합니다.
 > **📌 매핑 변수**: `LANGUAGE_LOCALIZATION_RULES` (`prompt_modules.py`)
@@ -295,70 +352,31 @@
 
 ---
 
-## 3. 삼성 BX 스타일 가이드 (Samsung BX Style)
-`target_lang`이 `English_US` 또는 `English`일 때 자동으로 적용되는 영문 브랜드 보이스 규칙입니다. (구 UI 전역 토글 제거됨)
-> **📌 매핑 변수**: `BX_STYLE_RULES` (`prompt_modules.py`)
+## 4. 용어집 관련 (Glossary Rules)
 
-### 3.1 페르소나 (Persona)
-> **📌 매핑 변수**: `BX_STYLE_RULES["system_identity"]`
-
-- **자신감 있는 탐험가 (Confident Explorer)**: 기술 매뉴얼이 아닌 친근하고 자신감 있는 가이드처럼 영문 카피를 작성한다. OPEN/BOLD/AUTHENTIC 보이스를 아래 구체 기법으로 구현한다.
-
-### 3.2 핵심 보이스 속성 (Voice Attributes)
-> **📌 매핑 변수**: `BX_STYLE_RULES["voice_attributes"]`
-> **📌 참고**: 직역 금지·hedging 금지·격식체 지양 등 COMMON과 중복되는 원칙은 여기서 제외하고 COMMON에 일원화됨.
-
-- **OPEN** (reveals, invites):
-  1. Go beyond the literal benefit — reveal the experience, emotion, or new perspective behind the feature.
-  2. Personify our tech to create intentional wit linked to product functionality. (e.g., 'This AI helps pay the bills')
-  3. Upend expectations: set up a sentence one way, then give it an unexpected ending. (e.g., 'Visuals so real, real life looks fake.')
-
-- **BOLD** (leads, takes a stance):
-  1. Pair technical detail with the real emotional reaction it inspires. (e.g., 'Reaction: woah.')
-  2. Play up contrast to create dramatic effect that underscores the different angles of our innovation. (e.g., 'Super small. Supremely smart.')
-  3. Share our POV: take a clear stance rather than sitting on the fence.
-
-- **AUTHENTIC** (grounds, connects):
-  1. Write to a friend: imagine writing to someone you know. Replace technical language with everyday language.
-  2. Find the upside: reframe negatives to positives to make our tech feel approachable. (e.g., 'Look forward to laundry day.')
-  3. Find a tangible benefit: pull out a specific, relatable benefit instead of a broad claim. (e.g., 'Never run out of eggs again.')
-
-### 3.3 부정 제약 사항 (Negative Constraints)
-> **📌 매핑 변수**: `BX_STYLE_RULES["negative_constraints"]`
-> **📌 참고**: COMMON 중복 항목(직역 금지, hedging 금지, 격식 지양) 제거 후 BX 고유 제약만 유지.
-
-- Do NOT use negative framing — always reframe into a positive benefit. (e.g., 'Don't worry about bills' → 'Enjoy savings')
-- Never try too hard to relate — we're still a premium brand. Avoid slang or overly casual phrasing.
-- Never be overly metaphorical — write with purpose and refinement.
-
----
-
-## 4. 검수 및 채점 기준 (Audit Criteria)
-
-AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
-> **📌 매핑 변수**: 
-> - 검수 도입부: `AUDIT_INTRO`
-> - 체크리스트: `AUDIT_CHECKLIST_RULES`
-> - 채점 등급: `AUDIT_GRADE_CRITERIA` (`Excellent`, `Good`, `Needs Revision`)
-
-1. **문법/유창성**: 오타, 문법 오류, 성수 일치, 관용구 사용 등 정밀 점검.
-2. **원문의미 충실도**: 원문의 핵심 의미·뉘앙스·사용자 혜택이 번역에서 손실 없이 전달되었는지 확인. 직역 여부와 무관하게 '정보 손실' 또는 '의미 왜곡'이 발생했는지만 판단한다.
-3. **용어집 준수**: 제공된 glossary 데이터와 100% 일치하는지 확인 (대소문자, 띄어쓰기 포함). 항목별 예외 규칙(rule/remark)이 있는 경우 예외가 우선 적용되었는지 확인. 현지화 자연스러움 여부와 관계없이 절대 적용되는 기준이다.
-4. **현지화**: 해당 언어권 현지인이 실제로 사용하는 자연스러운 표현인지 종합 평가. ① [언어별 현지화 기준] 규칙 준수 (예: 독일어 Du-form, 일본어 ます형, 프랑스어 Tu/Vous 등), ② 직역·구조적 번역이 아닌 시장 맥락에 맞는 표현 선택, ③ 문화적 뉘앙스와 브랜드 보이스(Confident Explorer)의 현지 적용.
-5. **대소문자 표기**: 대상 언어의 문장형(sentence case) 또는 타이틀형(title case) 등 일반 대소문자 표기 규칙 준수 여부.
-6. **서식 및 표기**: [서식 규칙] 섹션 기준으로 점검: glossary 용어의 bracket 표기 적용 여부, 탐색 경로(nav path)의 따옴표 및 마침표 위치, 타이포그래피·구두점·간격 등 대상 언어 표기 규칙 준수 여부.
-
----
-
-## 5. 타이포그래피 및 서식 규칙
 > **📌 매핑 변수**: 
 > - 기본 용어집 규칙: `GLOSSARY_TERM_RULES`
-> - 타이포그래피 기본 규칙: `TYPOGRAPHY_AND_PUNCTUATION_RULES`
 > - 브래킷 래핑 규칙: `GLOSSARY_BRACKET_WRAP_RULE`
 > - 대괄호 수동 제외 키워드: `GLOSSARY_EXEMPT_MARKERS` (`["no bracket", "대괄호 제외", "괄호 제외"]`)
 > - 타이틀/버튼 대괄호 자동 제외: `GLOSSARY_NO_BRACKET_INSTRUCTION`
 
+> **📌 참고**: §4(용어집)와 §5(타이포)는 문서상 별도 섹션이지만, 실제 프롬프트 출력 시 `_build_formatting_section()`이 두 섹션을 `[GLOSSARY RULES]` → `[Typography and Punctuation Rules]` 순서로 하나의 블록으로 조립한다.
+
 - **Glossary Bracket**: `row_key` 문맥에 따라 용어집 단어를 감쌈. (Title/Button은 제외)
+  - 일반 문맥: `[용어]` (한국어·영어·서양권 언어 등)
+  - 일본어 문맥: `「용어」`
+  - Title/Button 문맥: 브래킷 없이 원문 단어 그대로 사용
+
+---
+
+## 5. 타이포그래피 및 서식 규칙 (Typography & Formatting)
+
+> **📌 매핑 변수**: 
+> - 타이포그래피 기본 규칙: `TYPOGRAPHY_AND_PUNCTUATION_RULES`
+> - Nav path 예외 처리: `GLOSSARY_DISCLAIMER_NAV_EXCEPTION`
+> - Nav path 범용 규칙: `GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE`
+> - Nav path JA 전용 규칙: `GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA`
+
 - **Nav Path**: 메뉴 경로는 해당 언어에 맞는 따옴표로 감쌈.
   (JA·TW: `「 」` / CN Simplified: 전각 `"..."` / DE: `„"` / FR·RU: `«»` / EN·기타: `""`)
   > **📌 예외 처리 변수**: `GLOSSARY_DISCLAIMER_NAV_EXCEPTION`
@@ -411,7 +429,7 @@ TASK: Translate and polish the source text naturally for a native speaker while 
 ```
 
 #### [3] Language Section (언어별 상세 특화 규칙)
-> **💡 역할 해설**: 번역 대상 언어가 시스템에 정의된 25개 언어 규칙(`LANGUAGE_LOCALIZATION_RULES`)에 부합할 경우 자동으로 삽입되는 섹션입니다. 존댓말/반말, 어순, 마침표 위치 등 해당 언어권 사용자에게 가장 익숙한 UI 규칙을 주입합니다.
+> **💡 역할 해설**: 번역 대상 언어가 시스템에 정의된 25개 언어 규칙(`LANGUAGE_LOCALIZATION_RULES`)에 부합할 경우 자동으로 삽입되는 섹션입니다. 존댓말/반말, 어순, 따옴표 등 해당 언어권 사용자에게 가장 익숙한 UI 규칙을 주입합니다.
 
 ```python
 # [3] Language Section (언어별 특화 규칙 - 해당 언어 매칭 시 삽입)
@@ -468,7 +486,7 @@ Use these examples as style and terminology reference to maintain consistency.
 ```
 
 #### [6] Formatting & Glossary Section (용어집 및 표기 규칙 제어)
-> **💡 역할 해설**: 번역 문맥(`row_key`)과 국가별 타이포그래피 표준을 결합하여 용어집(Glossary) 단어의 대괄호 래핑 규칙(`[]`, `「」`)과 내비게이션 경로 표기법을 동적으로 결정합니다.
+> **💡 역할 해설**: 번역 문맥(`row_key`)과 국가별 타이포그래피 표준을 결합하여 용어집(Glossary) 단어의 대괄호 래핑 규칙(`[]`, `「」`)과 내비게이션 경로 표기법을 동적으로 결정합니다. §4(용어집 관련)와 §5(타이포/서식)의 내용이 하나의 블록으로 조립됩니다.
 
 ```python
 # [6] Formatting & Glossary Section (용어집 및 서식 제어 기본 구조)
