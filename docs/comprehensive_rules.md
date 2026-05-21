@@ -380,11 +380,11 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 > **📌 매핑 변수**: `GLOSSARY_TERM_RULES`
 
 ```text
-- Use provided glossary terms exactly as given — including capitalization, spacing, and market variants. This overrides any localization style preference; do not adapt glossary terms for naturalness.
-- Glossary capitalization is authoritative and overrides title case, sentence case, and heading/button capitalization rules.
+- Use provided glossary terms exactly as given — including capitalization, spacing, and market variants. Glossary capitalization is authoritative and overrides title case, sentence case, and heading/button capitalization rules; do not adapt glossary terms for naturalness.
+- Apply term-specific rule or remark exceptions before generic formatting rules.
 ```
 
-> **📌 참고**: 두 번째 규칙(`Glossary capitalization is authoritative...`)은 `GLOSSARY_TERM_RULES["rules"][1]`에 정의되어 있으나, 실제 조립 로직에서는 `"Apply term-specific rule or remark exceptions before generic formatting rules."`가 대신 삽입된다.
+> **📌 참고**: 두 번째 줄은 `prompt_builder.py` `_build_formatting_section()`에 하드코딩된 문자열로, 개별 용어의 `rule` 필드(예: "대괄호 제외", "비활성화") 마커가 일반 포맷팅 규칙보다 먼저 처리되어야 함을 LLM에 지시한다.
 
 ---
 

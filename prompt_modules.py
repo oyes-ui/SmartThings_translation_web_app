@@ -143,8 +143,7 @@ LANGUAGE_LOCALIZATION_RULES = {
 GLOSSARY_TERM_RULES = {
     "name": "Glossary Term Rules",
     "rules": [
-        "Use provided glossary terms exactly as given — including capitalization, spacing, and market variants. This overrides any localization style preference; do not adapt glossary terms for naturalness.",
-        "Glossary capitalization is authoritative and overrides title case, sentence case, and heading/button capitalization rules.",
+        "Use provided glossary terms exactly as given — including capitalization, spacing, and market variants. Glossary capitalization is authoritative and overrides title case, sentence case, and heading/button capitalization rules; do not adapt glossary terms for naturalness.",
     ],
 }
 
