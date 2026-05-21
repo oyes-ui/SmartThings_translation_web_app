@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="card-title-group">
                             <span class="card-badge"><i class="ri-map-pin-line"></i> ${escapeHTML(item.header || `항목 ${index + 1}`)}</span>
                             ${statusTagHtml}
-                            <button class="copy-icon-btn copy-full-btn" onclick="window.copyViewerText(this)" title="이 셀의 전체 검수 결과 복사하기" style="margin-left: 8px;"><i class="ri-clipboard-line"></i></button>
+                            <button class="copy-icon-btn copy-full-btn" data-item-index="${index}" onclick="window.copyViewerText(this)" title="이 셀의 전체 검수 결과 복사하기" style="margin-left: 8px;"><i class="ri-clipboard-line"></i></button>
                         </div>
                         <div class="category-tags">${tagsHtml}</div>
                     </div>
@@ -570,6 +570,85 @@ document.addEventListener('DOMContentLoaded', () => {
         return res;
     }
 
+    function parseAiReviewPayload(rawPayload) {
+        const fallback = {
+            grade: "Unknown",
+            suggestedFix: "",
+            rawComment: rawPayload || ""
+        };
+        if (!rawPayload || !rawPayload.trim()) return fallback;
+
+        try {
+            const aiData = JSON.parse(rawPayload);
+            const comments = [];
+            if (aiData.evaluation && Array.isArray(aiData.evaluation)) {
+                aiData.evaluation.forEach(ev => {
+                    if (!ev || !ev.comment) return;
+                    const category = ev.category ? `${ev.category}: ` : "";
+                    comments.push(`- ${category}${ev.comment}`);
+                });
+            }
+
+            return {
+                grade: aiData.grade || (aiData.is_excellent === true ? "Excellent" : (aiData.is_excellent === false ? "Needs Revision" : "Unknown")),
+                suggestedFix: aiData.suggested_fix || "",
+                rawComment: comments.length ? comments.join('\n') : rawPayload
+            };
+        } catch (e) {
+            return fallback;
+        }
+    }
+
+    function formatReviewItemForAI(item) {
+        if (!item) return "";
+        const aiReview = parseAiReviewPayload(item.geminiQa || "");
+        const tags = item.tags && item.tags.length ? item.tags.join(', ') : "None";
+        const sheet = item.sheetName || "Unknown";
+        const cellMatch = (item.header || "").match(/\[셀\]\s*([^|\n]+)/);
+        const cell = cellMatch ? cellMatch[1].trim() : "Unknown";
+        const none = "(none)";
+
+        return `# SmartThings Translation Review Item
+
+## Reference
+- Sheet: ${sheet}
+- Cell: ${cell}
+- Status: ${item.status || "unknown"}
+- Tags: ${tags}
+
+## Source
+${item.sourceText || none}
+
+## Current Translation
+${item.targetText || none}
+
+## Checks
+### Casing
+${item.casingCheck || none}
+
+### Glossary
+${item.glossaryCheck || none}
+
+### RAG
+${item.ragCheck || none}
+
+## AI Review
+- Grade: ${aiReview.grade}
+- Suggested Fix: ${aiReview.suggestedFix || none}
+
+Raw Comment:
+${aiReview.rawComment || none}
+
+## Request
+SmartThings localization rules 기준으로 이 검수 지적이 타당한지 판단해주세요.
+반드시 Sheet/Cell 근거를 유지하고,
+1. 실제 수정 필요 여부
+2. 과잉 지적 가능성
+3. 권장 수정안
+4. 클라이언트에게 설명할 짧은 코멘트
+로 답해주세요.`;
+    }
+
     // --- Export PDF (Restored html2pdf/Canvas snapshot method) ---
     exportBtn.addEventListener('click', () => {
         const contentArea = document.querySelector('.content-area');
@@ -619,11 +698,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 1. Check if it's a full card copy
         if (btn.classList.contains('copy-full-btn')) {
-            const cardBody = btn.closest('.review-card').querySelector('.card-body');
-            if (!cardBody) return;
-            // Get text, prepend the header for context
-            const headerText = btn.closest('.card-header').querySelector('.card-badge').innerText;
-            textToCopy = headerText + '\n\n' + cardBody.innerText;
+            const itemIndex = Number(btn.getAttribute('data-item-index'));
+            const item = Number.isInteger(itemIndex) ? parsedData.items[itemIndex] : null;
+            if (!item) return;
+            textToCopy = formatReviewItemForAI(item);
         } else {
             // 2. Individual section copy
             const container = btn.closest('.diff-panel') || btn.closest('.action-card');
