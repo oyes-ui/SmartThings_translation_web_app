@@ -21,6 +21,7 @@
 ### 1.2 삼성 BX 스타일 가이드 (Samsung BX Style)
 `target_lang`이 `English_US` 또는 `English`일 때 자동으로 적용되는 영문 브랜드 보이스 규칙입니다. (구 UI 전역 토글 제거됨)
 > **📌 매핑 변수**: `BX_STYLE_RULES` (`prompt_modules.py`)
+> **📌 활성화 조건**: `target_lang ∈ {"English_US", "English"}` 일 때 자동 활성. 또는 `bx_style_on=True` 파라미터를 명시하면 임의 언어에도 강제 적용 가능.
 
 #### 1.2.1 페르소나 (Persona)
 > **📌 매핑 변수**: `BX_STYLE_RULES["system_identity"]`
@@ -77,6 +78,17 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 
 시스템은 아래와 같이 각 언어 및 시장별로 세분화된 규칙을 적용합니다.
 > **📌 매핑 변수**: `LANGUAGE_LOCALIZATION_RULES` (`prompt_modules.py`)
+
+### 언어 매칭 전략
+> **📌 생성 로직**: `PromptBuilder.get_language_rule()` (`prompt_builder.py`)
+
+`target_lang` 입력값을 아래 2단계로 매칭합니다.
+
+1. **Exact match** (대소문자 무시): `"english_us"` → `English_US` ✓
+2. **Fuzzy substring match** (최장 키 우선): 정확히 일치하는 키가 없으면, `LANGUAGE_LOCALIZATION_RULES`의 키를 길이 내림차순으로 정렬 후 `target_lang`에 포함된 키를 반환. 예: `"English_US_variant"` → `English_US` (`English`보다 먼저 매칭)
+3. **매칭 실패**: 두 단계 모두 해당 없으면 언어 섹션 자체가 프롬프트에서 생략됩니다.
+
+---
 
 ### 🇰🇷 KR (한국) - Korean (`Korean`)
 > **💡 정책 요약**: 존댓말(honorific) 또는 문어체 스타일 일관성 유지. UI 전체 용어 일관성 확보.
@@ -362,10 +374,90 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 
 > **📌 참고**: §4(용어집)와 §5(타이포)는 문서상 별도 섹션이지만, 실제 프롬프트 출력 시 `_build_formatting_section()`이 두 섹션을 `[GLOSSARY RULES]` → `[Typography and Punctuation Rules]` 순서로 하나의 블록으로 조립한다.
 
-- **Glossary Bracket**: `row_key` 문맥에 따라 용어집 단어를 감쌈. (Title/Button은 제외)
-  - 일반 문맥: `[용어]` (한국어·영어·서양권 언어 등)
-  - 일본어 문맥: `「용어」`
-  - Title/Button 문맥: 브래킷 없이 원문 단어 그대로 사용
+### 4.1 기본 용어집 사용 규칙
+
+프롬프트 내 `[GLOSSARY RULES]` 헤더 아래 항상 삽입되는 용어 사용 원칙입니다.
+> **📌 매핑 변수**: `GLOSSARY_TERM_RULES`
+
+```text
+- Use provided glossary terms exactly as given — including capitalization, spacing, and market variants. This overrides any localization style preference; do not adapt glossary terms for naturalness.
+- Glossary capitalization is authoritative and overrides title case, sentence case, and heading/button capitalization rules.
+```
+
+> **📌 참고**: 두 번째 규칙(`Glossary capitalization is authoritative...`)은 `GLOSSARY_TERM_RULES["rules"][1]`에 정의되어 있으나, 실제 조립 로직에서는 `"Apply term-specific rule or remark exceptions before generic formatting rules."`가 대신 삽입된다.
+
+---
+
+### 4.2 문맥(row_key) 기반 브래킷 분기
+
+`get_glossary_context_mode(row_key)` 함수가 `row_key`를 소문자 정규화 후 아래 순서로 모드를 판별합니다.
+> **📌 생성 로직**: `PromptBuilder.get_glossary_context_mode()` (`prompt_builder.py`)
+
+| 판별 순서 | 조건 | 결과 모드 |
+|---------|------|---------|
+| 1 | `"disclaimer"` 포함 | `disclaimer` |
+| 2 | `"description"` 포함 | `description` |
+| 3 | `"title"` 또는 `"button"` 포함, 또는 **숫자로 끝남** (`\d+$`) | `title_button` |
+| 4 | 해당 없음 | `description` (기본값) |
+
+> **📌 숫자 종료 규칙**: `row_key`가 숫자로 끝나는 경우 (예: `field_1`, `label_42`) 자동으로 `title_button` 모드로 처리되어 브래킷 없이 출력됩니다.
+
+#### `title_button` 모드
+> **📌 매핑 변수**: `GLOSSARY_NO_BRACKET_INSTRUCTION`
+
+```text
+- For title, section heading, and button copy, do not wrap glossary terms in any brackets. Use the glossary term text exactly as provided, without [], 「」, or any other surrounding bracket marks, even if the source text contains brackets. Do not change glossary capitalization to satisfy heading or button case style.
+```
+
+#### `description` 모드 (기본값)
+> **📌 매핑 변수**: `GLOSSARY_BRACKET_WRAP_RULE`
+
+브래킷 종류는 `get_brackets(target_lang)`으로 결정됩니다.
+
+| 언어 | 브래킷 | 판별 조건 |
+|------|--------|---------|
+| Japanese | `「 」` | `target_lang`에 `"Japanese"` 또는 `"일본"` 포함 |
+| 그 외 전체 | `[ ]` | 위 조건 해당 없음 |
+
+```text
+# 한국어·영어·서양권 등:
+- Wrap glossary terms in '[' and ']'.
+
+# 일본어 (JA):
+- Wrap glossary terms in '「' and '」'.
+```
+
+#### `disclaimer` 모드
+> **📌 매핑 변수**: `GLOSSARY_BRACKET_WRAP_RULE` + `GLOSSARY_DISCLAIMER_NAV_EXCEPTION`
+
+브래킷은 `description` 모드와 동일하게 적용하되, nav path 예외 규칙이 추가됩니다.
+
+```text
+- Wrap glossary terms in '[' and ']'. Exception: do not wrap terms inside navigation paths (e.g., Settings > Device).
+```
+
+---
+
+### 4.3 용어별 브래킷 수동 제외 (Per-Term Exemption)
+
+용어집 항목의 `rule` 또는 `remark` 필드에 아래 마커가 포함된 경우, 해당 용어는 문맥 모드와 무관하게 브래킷이 적용되지 않습니다.
+> **📌 매핑 변수**: `GLOSSARY_EXEMPT_MARKERS`
+
+```python
+GLOSSARY_EXEMPT_MARKERS = ["no bracket", "대괄호 제외", "괄호 제외"]
+```
+
+엑셀 용어집의 rule/remark 열에 위 문자열 중 하나를 입력하면 해당 용어의 브래킷이 자동 면제됩니다.
+
+---
+
+### 4.4 용어집 없음 (No Glossary Available)
+
+`glossary_context`가 전달되지 않은 경우, 프롬프트 내 용어집 규칙은 아래로 대체됩니다.
+
+```text
+No glossary terms are provided for this source text.
+```
 
 ---
 
@@ -477,6 +569,7 @@ Output: Lights? On. Mood? Up.
 
 #### [5] RAG Context Section (번역 메모리 참조)
 > **💡 역할 해설**: RAG 데이터베이스 조회 결과, 원문과 유사한 기존 번역 메모리(TM) 데이터가 존재할 경우 삽입됩니다. 과거에 번역된 문장 스타일과 용어 일관성을 참고하도록 하여 기존 앱 UI와의 이질감을 방지합니다.
+> **📌 삽입 조건**: `rag_context`가 truthy(non-None, non-empty)일 때만 삽입. `[Translation Memory Examples]` 헤더가 없으면 자동 추가 (`_normalize_rag_section()`).
 
 ```python
 # [5] RAG Context Section (RAG DB 유사 번역 메모리 존재 시 삽입)
@@ -606,11 +699,12 @@ OUTPUT: Return ONLY a JSON object with a "translation" key.
 
 #### [5] Glossary Target (용어집 타겟 언어 명시)
 > **💡 역할 해설**: 다국어 용어집 시트에서 어떤 타겟 언어 열(Column)을 기준으로 검증해야 하는지 LLM에게 명확히 알려줍니다.
+> **📌 삽입 조건**: `glossary_context`가 truthy일 때만 삽입. `target_lang_code`가 None이면 `target_lang` 값으로 폴백.
 
 ```python
 # [5] Glossary Target (용어집 대상 타겟 코드 명시)
 [Glossary Target]
-Target code: {target_lang_code}
+Target code: {target_lang_code}   # target_lang_code가 없으면 target_lang으로 대체
 ```
 
 #### [6] Output Format (응답 스키마 및 등급 기준)
