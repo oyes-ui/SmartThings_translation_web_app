@@ -559,27 +559,25 @@ No glossary terms are provided for this source text.
   Enclose navigation paths in quotation marks appropriate for the target language. Place the sentence-ending period outside the closing quotation mark.
   ```
 
-- **Nav Path 따옴표 및 마침표 위치 (Japanese)** (`GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA`): 일본어 disclaimer 행 전용. `「 」`로 감싸고 마침표 위치는 일본어 문장 구조에 따름.
-  - 출력 예시: `「設定 > 一般」から設定できます。`
+- **Nav Path 따옴표 (East Asian — 마침표 지시 없음)** (`GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_EAST_ASIAN`): Japanese / Simplified Chinese / Traditional Chinese disclaimer 행에 적용. 마침표 위치 지시를 제거한 이유: 동아시아어는 문장이 path만으로 끝나지 않거나(JA: `「path」で設定できます。`, TW: `「path」中設定。`) 라벨 포맷으로 마침표 자체가 없으므로(CN: `开启路径："path"`) period placement 규칙이 의미 없음.
+  - 판별 조건 — `target_lang`에 `"Japanese"`, `"일본"`, `"Chinese"`, `"중국"`, `"Taiwan"`, `"대만"` 중 하나 포함
 
   ```text
-  Enclose navigation paths in 「 and 」.
+  Enclose navigation paths in quotation marks appropriate for the target language.
   ```
 
-  > **📌 참고**: 일본어 판별 조건 — `target_lang`에 `"Japanese"` 또는 `"일본"` 포함 시 JA 룰 적용, 아니면 범용 룰 적용.
+**disclaimer 모드 최종 프롬프트 출력 (East Asian — JA 예시):**
 
-**disclaimer 모드 최종 프롬프트 출력 (비일본어):**
+```text
+- Wrap glossary terms in '「' and '」'. Exception: do not wrap terms inside navigation paths (e.g., Settings > Device).
+- Enclose navigation paths in quotation marks appropriate for the target language.
+```
+
+**disclaimer 모드 최종 프롬프트 출력 (비 East Asian):**
 
 ```text
 - Wrap glossary terms in '[' and ']'. Exception: do not wrap terms inside navigation paths (e.g., Settings > Device).
 - Enclose navigation paths in quotation marks appropriate for the target language. Place the sentence-ending period outside the closing quotation mark.
-```
-
-**disclaimer 모드 최종 프롬프트 출력 (Japanese):**
-
-```text
-- Wrap glossary terms in '「' and '」'. Exception: do not wrap terms inside navigation paths (e.g., Settings > Device).
-- Enclose navigation paths in 「 and 」.
 ```
 
 ---

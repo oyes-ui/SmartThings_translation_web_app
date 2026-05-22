@@ -169,8 +169,8 @@ GLOSSARY_NO_BRACKET_INSTRUCTION = (
     "Use the glossary term text exactly as provided, without [], 「」, or any other surrounding bracket marks, "
     "even if the source text contains brackets. Do not change glossary capitalization to satisfy heading or button case style."
 )
-GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA = (
-    "Enclose navigation paths in 「 and 」."
+GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_EAST_ASIAN = (
+    "Enclose navigation paths in quotation marks appropriate for the target language."
 )
 
 AUDIT_INTRO = (

@@ -17,7 +17,7 @@ from prompt_modules import (
     GLOSSARY_BRACKET_WRAP_RULE,
     GLOSSARY_DISCLAIMER_NAV_EXCEPTION,
     GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE,
-    GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA,
+    GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_EAST_ASIAN,
     GLOSSARY_EXEMPT_MARKERS,
     GLOSSARY_NO_BRACKET_INSTRUCTION,
     GLOSSARY_TERM_RULES,
@@ -422,9 +422,11 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
 
         # Nav path quote rule is typography, not glossary — always applies for disclaimer rows.
         if context_mode == "disclaimer":
-            is_ja = target_lang and ("Japanese" in target_lang or "일본" in target_lang)
-            if is_ja:
-                quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA
+            is_east_asian = target_lang and any(k in target_lang for k in (
+                "Japanese", "일본", "Chinese", "중국", "Taiwan", "대만"
+            ))
+            if is_east_asian:
+                quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_EAST_ASIAN
             else:
                 quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE
             lines.append(f"- {quote_rule}")

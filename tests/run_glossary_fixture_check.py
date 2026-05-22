@@ -112,12 +112,13 @@ def assert_prompt_builder() -> list[str]:
         assert builder.get_glossary_context_mode("//test_disclaimer_01") == "disclaimer"
         assert expected_wrap in prompt, f"{sheet_name}: missing {expected_wrap}"
         assert "navigation paths" in prompt, f"{sheet_name}: missing navigation path exception"
-        if sheet_name == "JA(일본)":
-            assert "Enclose navigation paths in 「 and 」" in prompt, f"{sheet_name}: missing Japanese path quote rule"
-            assert "inside the closing 」" in prompt, f"{sheet_name}: missing Japanese period placement rule"
+        is_east_asian = sheet_name in ("JA(일본)", "CN(중국)", "TW(대만)")
+        if is_east_asian:
+            assert "quotation marks appropriate for the target language" in prompt, f"{sheet_name}: missing east asian path quote rule"
+            assert "sentence-ending period" not in prompt, f"{sheet_name}: should not have period placement rule"
         else:
-            assert "double quotation marks" in prompt, f"{sheet_name}: missing path quote rule"
-            assert "inside the closing quotation mark" in prompt, f"{sheet_name}: missing intl period placement rule"
+            assert "quotation marks appropriate for the target language" in prompt, f"{sheet_name}: missing path quote rule"
+            assert "sentence-ending period outside the closing quotation mark" in prompt, f"{sheet_name}: missing period placement rule"
         assert "US English" not in prompt, f"{sheet_name}: should use concrete intl period placement rule"
         results.append(f"PASS prompt: {sheet_name} uses disclaimer wrap, path quote, and period placement rules")
     return results
