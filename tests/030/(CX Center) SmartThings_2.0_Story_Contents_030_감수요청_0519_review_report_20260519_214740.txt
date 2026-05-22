@@ -1,0 +1,746 @@
+--- 번역 검수 보고서 (Model: gemini-3-flash-preview) ---
+생성일시: 2026-05-19 21:47:40
+총 검수 항목: 16개
+용어집 항목: 135
+
+==========================================================================================
+[시트] BR(브라질) | [셀] C7
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+Experience sports up close with AI
+
+[상세 - 번역문]
+Sinta a energia do estádio com IA
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] SEMANTIC (41.0%) | story_045 | //story_045_title
+- 번역: Criadas pela IA, sugestões personalizadas para sua casa
+
+[사례 2] SEMANTIC (36.3%) | story_001 | //section_001_1
+- 번역: IA que ajuda a pagar as contas
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 문법적으로 완벽하며, 브라질 포르투갈어의 자연스러운 문장 구조를 따르고 있습니다.
+- 정확성 및 현지화 품질: 원문의 'Experience sports up close'를 단순히 직역하지 않고, 현지 사용자들이 스포츠 관람 시 기대하는 감정적 가치인 'stadium energy(energia do estádio)'로 의역하여 마케팅 문구로서의 효과를 극대화했습니다.
+- 용어집 준수: 제공된 용어집이 없으므로 해당 사항 없습니다.
+- 언어별 규칙 준수: 브라질 현지에서 주로 사용되는 표현과 어순을 정확하게 따르고 있습니다.
+- 대소문자 표기: 문장 첫 글자 대문자 및 약어(IA) 대문자 표기가 적절하게 적용되었습니다.
+- 서식 및 표기: 타이틀 형식에 맞게 마침표를 생략하였으며, 구두점 사용이 적절합니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "semantic", "score": 41.0, "story_id": "story_045", "section": "//story_045_title", "source": "Personalize your comfort at home with AI", "target": "Criadas pela IA, sugestões personalizadas para sua casa"}, {"type": "semantic", "score": 36.3, "story_id": "story_001", "section": "//section_001_1", "source": "This AI helps pay the bills", "target": "IA que ajuda a pagar as contas"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "문법적으로 완벽하며, 브라질 포르투갈어의 자연스러운 문장 구조를 따르고 있습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 'Experience sports up close'를 단순히 직역하지 않고, 현지 사용자들이 스포츠 관람 시 기대하는 감정적 가치인 'stadium energy(energia do estádio)'로 의역하여 마케팅 문구로서의 효과를 극대화했습니다."}, {"category": "용어집 준수", "comment": "제공된 용어집이 없으므로 해당 사항 없습니다."}, {"category": "언어별 규칙 준수", "comment": "브라질 현지에서 주로 사용되는 표현과 어순을 정확하게 따르고 있습니다."}, {"category": "대소문자 표기", "comment": "문장 첫 글자 대문자 및 약어(IA) 대문자 표기가 적절하게 적용되었습니다."}, {"category": "서식 및 표기", "comment": "타이틀 형식에 맞게 마침표를 생략하였으며, 구두점 사용이 적절합니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] BR(브라질) | [셀] C8
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+What could be better than feeling the energy of the stadium right in your living room? The AI features on your Samsung TV help make that possible. You can mute the commentators to only hear the live stadium sounds, or ask AI for win probabilities. Enjoy being closer to the game than ever before.
+
+[상세 - 번역문]
+Se você quer sentir a energia do estádio sem sair de casa, é hora de ativar os recursos de IA da sua TV Samsung. Dá para silenciar os comentaristas e ouvir apenas os sons reais da torcida e do campo, ou perguntar à IA as probabilidades de vitória quando quiser entender melhor o rumo da partida. Fique sempre um passo à frente no jogo!
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] SEMANTIC (46.1%) | story_023 | //section_023_2
+- 번역: Nunca fique de fora com notificações na sua TV
+
+[사례 2] SEMANTIC (45.9%) | story_044 | //story_044_description
+- 번역: Treine em casa de modo mais inteligente e conveniente. Está pronto para treinar? O SmartThings cria um ambiente confortável para você. Está focado no seu treino? O SmartThings exibe as informações dos seus exercícios do seu Galaxy Watch na tela da sua TV. Terminou o treino? O SmartThings automaticamente configura o ciclo de lavagem para as suas roupas de treino.
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 포르투갈어(브라질) 문법 및 유창성 측면에서 매우 우수합니다. 'Dá para silenciar'와 같은 구어체 표현이 자연스럽게 사용되었습니다.
+- 정확성 및 현지화 품질: 전반적인 의미는 통하지만, 마지막 문장에서 'closer to the game'(게임에 더 가까이)이라는 의미가 'um passo à frente'(한 발 앞서 나가다)로 의역되었습니다. 이는 원문의 몰입감 강조보다 경쟁 우위를 강조하는 뉘앙스로 변질되었습니다.
+- 용어집 준수: 용어집 준수 실패. Glossary에 'Energy'를 그대로 유지하라는 명시적 규칙(Exception)이 있음에도 불구하고 'energia'로 번역되었습니다.
+- 언어별 규칙 준수: 브라질 현지에서 사용되는 어휘와 표현(BP)을 일관되게 사용하였습니다.
+- 대소문자 표기: 문장 첫 글자와 고유 명사(Samsung, TV, IA)에 대한 대소문자 표기가 올바르게 적용되었습니다.
+- 서식 및 표기: 구두점 사용은 적절합니다. 용어집의 'Energy'에 대해 대괄호를 사용하지 말라는 예외 규칙이 있었으므로, 수정안에서도 이를 반영해야 합니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+O que poderia ser melhor do que sentir a Energy do estádio diretamente na sua sala? Os recursos de IA da sua TV Samsung tornam isso possível. Você pode silenciar os comentaristas para ouvir apenas os sons do estádio ao vivo ou perguntar à IA as probabilidades de vitória. Sinta-se mais perto do jogo do que nunca.
+
+[상세 - RAG Payload]
+[{"type": "semantic", "score": 46.1, "story_id": "story_023", "section": "//section_023_2", "source": "Never miss a beat with notifications on your TV", "target": "Nunca fique de fora com notificações na sua TV"}, {"type": "semantic", "score": 45.9, "story_id": "story_044", "section": "//story_044_description", "source": "Experience smarter, more convenient home training. Ready to exercise? SmartThings will prepare a comfortable environment for you. Focused on your workout? SmartThings will display the exercise information from your Galaxy Watch on your TV screen. Finished exercising? SmartThings will automatically set the wash course for your workout clothes.", "target": "Treine em casa de modo mais inteligente e conveniente. Está pronto para treinar? O SmartThings cria um ambiente confortável para você. Está focado no seu treino? O SmartThings exibe as informações dos seus exercícios do seu Galaxy Watch na tela da sua TV. Terminou o treino? O SmartThings automaticamente configura o ciclo de lavagem para as suas roupas de treino."}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "포르투갈어(브라질) 문법 및 유창성 측면에서 매우 우수합니다. 'Dá para silenciar'와 같은 구어체 표현이 자연스럽게 사용되었습니다."}, {"category": "정확성 및 현지화 품질", "comment": "전반적인 의미는 통하지만, 마지막 문장에서 'closer to the game'(게임에 더 가까이)이라는 의미가 'um passo à frente'(한 발 앞서 나가다)로 의역되었습니다. 이는 원문의 몰입감 강조보다 경쟁 우위를 강조하는 뉘앙스로 변질되었습니다."}, {"category": "용어집 준수", "comment": "용어집 준수 실패. Glossary에 'Energy'를 그대로 유지하라는 명시적 규칙(Exception)이 있음에도 불구하고 'energia'로 번역되었습니다."}, {"category": "언어별 규칙 준수", "comment": "브라질 현지에서 사용되는 어휘와 표현(BP)을 일관되게 사용하였습니다."}, {"category": "대소문자 표기", "comment": "문장 첫 글자와 고유 명사(Samsung, TV, IA)에 대한 대소문자 표기가 올바르게 적용되었습니다."}, {"category": "서식 및 표기", "comment": "구두점 사용은 적절합니다. 용어집의 'Energy'에 대해 대괄호를 사용하지 말라는 예외 규칙이 있었으므로, 수정안에서도 이를 반영해야 합니다."}], "grade": "Needs Revision", "suggested_fix": "O que poderia ser melhor do que sentir a Energy do estádio diretamente na sua sala? Os recursos de IA da sua TV Samsung tornam isso possível. Você pode silenciar os comentaristas para ouvir apenas os sons do estádio ao vivo ou perguntar à IA as probabilidades de vitória. Sinta-se mais perto do jogo do que nunca."}
+==========================================================================================
+[시트] BR(브라질) | [셀] C10
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+Bring soccer to life with AI
+
+[상세 - 번역문]
+Dê vida ao futebol com IA
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 대소문자 표기 점검:
+- [대소문자] 용어집 'Vida'의 표기가 'vida'로 사용됨 (용어집 대소문자는 제목/문장형 대소문자 규칙보다 우선)
+
+[상세 - RAG 일관성 참고]
+[사례 1] SEMANTIC (39.3%) | story_001 | //section_001_1
+- 번역: IA que ajuda a pagar as contas
+
+[사례 2] SEMANTIC (37.0%) | story_045 | //story_045_title
+- 번역: Criadas pela IA, sugestões personalizadas para sua casa
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 브라질 포르투갈어 문법에 완벽하게 부합하며, 'Bring to life'라는 관용구를 'Dê vida ao'로 매우 자연스럽고 유창하게 번역하였습니다.
+- 정확성 및 현지화 품질: 원문의 역동적인 뉘앙스를 잘 살렸으며, 단순 직역이 아닌 해당 언어권에서 마케팅 문구로 흔히 사용되는 자연스러운 표현을 선택했습니다.
+- 용어집 준수: Glossary의 'Life' -> 'Vida' 정의를 정확하게 준수하였습니다.
+- 언어별 규칙 준수: 브라질 포르투갈어의 관사 및 전치사 축약(a + o = ao)이 올바르게 적용되었으며, 유럽식 포르투갈어 흔적이 없는 현지화된 표현입니다.
+- 대소문자 표기: 문장의 시작을 대문자로 하고 약어 IA(Inteligência Artificial)를 대문자로 표기하여 표준 규칙을 준수했습니다.
+- 서식 및 표기: 불필요한 구두점이나 특수 기호 없이 깔끔하게 작성되었습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "semantic", "score": 39.3, "story_id": "story_001", "section": "//section_001_1", "source": "This AI helps pay the bills", "target": "IA que ajuda a pagar as contas"}, {"type": "semantic", "score": 37.0, "story_id": "story_045", "section": "//story_045_title", "source": "Personalize your comfort at home with AI", "target": "Criadas pela IA, sugestões personalizadas para sua casa"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "브라질 포르투갈어 문법에 완벽하게 부합하며, 'Bring to life'라는 관용구를 'Dê vida ao'로 매우 자연스럽고 유창하게 번역하였습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 역동적인 뉘앙스를 잘 살렸으며, 단순 직역이 아닌 해당 언어권에서 마케팅 문구로 흔히 사용되는 자연스러운 표현을 선택했습니다."}, {"category": "용어집 준수", "comment": "Glossary의 'Life' -> 'Vida' 정의를 정확하게 준수하였습니다."}, {"category": "언어별 규칙 준수", "comment": "브라질 포르투갈어의 관사 및 전치사 축약(a + o = ao)이 올바르게 적용되었으며, 유럽식 포르투갈어 흔적이 없는 현지화된 표현입니다."}, {"category": "대소문자 표기", "comment": "문장의 시작을 대문자로 하고 약어 IA(Inteligência Artificial)를 대문자로 표기하여 표준 규칙을 준수했습니다."}, {"category": "서식 및 표기", "comment": "불필요한 구두점이나 특수 기호 없이 깔끔하게 작성되었습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] BR(브라질) | [셀] C11
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+AI allows soccer lovers to experience the match at home in a completely new way. Press the mic button on your remote and say, "Turn on AI Soccer Mode." AI automatically recognizes live matches and optimizes the picture and sound to make you feel like you're right there in the stands. Want to focus purely on the game as if you're in the crowd? Press the mic button and say, "Mute the commentator's voice." The TV removes only the commentator's voice, making it easier than ever to feel the roar of the crowd.
+
+[상세 - 번역문]
+Se você adora assistir futebol, pressione o botão do microfone no controle remoto e diga: “Ativar Modo Futebol com IA”. A IA reconhece automaticamente partidas ao vivo e ajusta a imagem e o som para fazer você se sentir no estádio. Quer focar apenas no jogo, como se estivesse no meio da torcida? Pressione o botão do microfone e diga: “Silenciar comentarista”. A TV reduz a voz da narração para destacar ainda mais os sons da partida, deixando a experiência muito mais imersiva.
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] SEMANTIC (45.5%) | story_048 | //story_048_description
+- 번역: De lavar até secar e a utilização de produtos, agora você pode gerenciar tudo de forma mais inteligente ao falar com a IA. Além de personalizar o ciclo de lavagem conforme as condições das suas roupas, você pode iniciar a lavagem com suas configurações desejadas apenas com sua voz e obter respostas às suas perguntas. O uso complicado de eletrodomésticos na sua vida diária se torna muito mais fácil.
+
+[사례 2] SEMANTIC (44.9%) | story_045 | //story_045_title
+- 번역: Criadas pela IA, sugestões personalizadas para sua casa
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 포르투갈어 문법 및 문장 흐름은 매우 자연스럽고 유창합니다. 브라질 포르투갈어 원어민이 사용하는 구어체 표현(예: 'narração', 'torcida')이 적절히 활용되었습니다.
+- 정확성 및 현지화 품질: 원문의 첫 번째 문장('AI allows soccer lovers to experience the match at home in a completely new way')이 번역에서 생략되어 정보 손실이 발생했습니다. 또한, 'removes only'를 'reduz'(줄이다)로 번역하여 원문의 기능적 강조(음성만 제거)가 약화되었습니다.
+- 용어집 준수: 글로서리 항목인 'Modo Futebol com IA'를 정확하게 사용하였으며, 대괄호를 사용하지 말라는 예외 규칙(EXCEPTION)도 완벽하게 준수하였습니다.
+- 언어별 규칙 준수: 브라질 포르투갈어의 어휘 및 문장 구조를 일관되게 사용하였습니다. 해당 사항 없습니다.
+- 대소문자 표기: 문장형 대소문자(Sentence case) 표기 규칙을 잘 따르고 있습니다.
+- 서식 및 표기: 따옴표 사용 규칙 및 마침표 위치 등 전반적인 서식이 적절합니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+A IA permite que os fãs de futebol vivenciem a partida em casa de uma forma totalmente nova. Pressione o botão do microfone no controle remoto e diga: “Ativar Modo Futebol com IA”. A IA reconhece automaticamente partidas ao vivo e otimiza a imagem e o som para fazer você se sentir no estádio. Quer focar apenas no jogo como se estivesse no meio da torcida? Pressione o botão do microfone e diga: “Silenciar a voz do comentarista”. A TV remove apenas a voz do comentarista, tornando mais fácil do que nunca sentir o rugido da torcida.
+
+[상세 - RAG Payload]
+[{"type": "semantic", "score": 45.5, "story_id": "story_048", "section": "//story_048_description", "source": "From washing to drying and product use, you can now manage more intelligently by talking to AI. Along with customizing the wash course according to the condition of your laundry, you can execute your desired settings with just your voice and get answers to your questions. Complicated use of home appliances in your daily life will become much easier.", "target": "De lavar até secar e a utilização de produtos, agora você pode gerenciar tudo de forma mais inteligente ao falar com a IA. Além de personalizar o ciclo de lavagem conforme as condições das suas roupas, você pode iniciar a lavagem com suas configurações desejadas apenas com sua voz e obter respostas às suas perguntas. O uso complicado de eletrodomésticos na sua vida diária se torna muito mais fácil."}, {"type": "semantic", "score": 44.9, "story_id": "story_045", "section": "//story_045_title", "source": "Personalize your comfort at home with AI", "target": "Criadas pela IA, sugestões personalizadas para sua casa"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "포르투갈어 문법 및 문장 흐름은 매우 자연스럽고 유창합니다. 브라질 포르투갈어 원어민이 사용하는 구어체 표현(예: 'narração', 'torcida')이 적절히 활용되었습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 첫 번째 문장('AI allows soccer lovers to experience the match at home in a completely new way')이 번역에서 생략되어 정보 손실이 발생했습니다. 또한, 'removes only'를 'reduz'(줄이다)로 번역하여 원문의 기능적 강조(음성만 제거)가 약화되었습니다."}, {"category": "용어집 준수", "comment": "글로서리 항목인 'Modo Futebol com IA'를 정확하게 사용하였으며, 대괄호를 사용하지 말라는 예외 규칙(EXCEPTION)도 완벽하게 준수하였습니다."}, {"category": "언어별 규칙 준수", "comment": "브라질 포르투갈어의 어휘 및 문장 구조를 일관되게 사용하였습니다. 해당 사항 없습니다."}, {"category": "대소문자 표기", "comment": "문장형 대소문자(Sentence case) 표기 규칙을 잘 따르고 있습니다."}, {"category": "서식 및 표기", "comment": "따옴표 사용 규칙 및 마침표 위치 등 전반적인 서식이 적절합니다."}], "grade": "Needs Revision", "suggested_fix": "A IA permite que os fãs de futebol vivenciem a partida em casa de uma forma totalmente nova. Pressione o botão do microfone no controle remoto e diga: “Ativar Modo Futebol com IA”. A IA reconhece automaticamente partidas ao vivo e otimiza a imagem e o som para fazer você se sentir no estádio. Quer focar apenas no jogo como se estivesse no meio da torcida? Pressione o botão do microfone e diga: “Silenciar a voz do comentarista”. A TV remove apenas a voz do comentarista, tornando mais fácil do que nunca sentir o rugido da torcida."}
+==========================================================================================
+[시트] BR(브라질) | [셀] C12
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+* Viewing experience may vary according to types of content and format. 
+* Live match optimization is supported in [AI Soccer Mode Pro].
+
+[상세 - 번역문]
+* A experiência de visualização pode variar de acordo com o tipo e o formato do conteúdo.
+* O recurso de otimização de transmissão de partidas ao vivo é suportado no [Modo Futebol com IA Pro].
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] SEMANTIC (39.3%) | story_044 | //section_044_3_disclaimer
+- 번역: [Digitalizar etiquetas de cuidados] pode não ser suportado, dependendo do modelo.
+
+[사례 2] SEMANTIC (38.8%) | story_001 | //section_001_1_button
+- 번역: Ative o AI Energy Mode
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 브라질 포르투갈어(PT-BR) 문법에 맞게 자연스러운 어순으로 작성되었습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 정확하게 전달하고 있습니다. 'Live match optimization'을 'otimização de transmissão de partidas ao vivo'로 구체화하여 현지 사용자가 이해하기 쉽게 번역되었습니다. 다만, 원문의 'types'(복수)가 'tipo'(단수)로 번역된 점은 미세한 차이입니다.
+- 용어집 준수: 용어집의 [Modo Futebol com IA Pro]를 정확하게 사용하였으며, 대괄호(bracket) 표기 규칙 또한 완벽하게 준수했습니다.
+- 언어별 규칙 준수: 브라질 포르투갈어 환경에 적합한 표현을 사용하였습니다.
+- 대소문자 표기: 문장의 시작과 고유 명칭의 대소문자 표기가 표준 규칙에 부합합니다.
+- 서식 및 표기: 불렛 포인트(*)의 사용과 줄바꿈, 마침표 위치 등 모든 서식 규칙이 올바르게 적용되었습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[수정안 제안]:
+* A experiência de visualização pode variar de acordo com os tipos de conteúdo e formatos.
+* O recurso de otimização de transmissão de partidas ao vivo é suportado no [Modo Futebol com IA Pro].
+
+[상세 - RAG Payload]
+[{"type": "semantic", "score": 39.3, "story_id": "story_044", "section": "//section_044_3_disclaimer", "source": "[Scan care labels] may not be supported depending on the model.", "target": "[Digitalizar etiquetas de cuidados] pode não ser suportado, dependendo do modelo."}, {"type": "semantic", "score": 38.8, "story_id": "story_001", "section": "//section_001_1_button", "source": "Set AI Energy Mode", "target": "Ative o AI Energy Mode"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "브라질 포르투갈어(PT-BR) 문법에 맞게 자연스러운 어순으로 작성되었습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 정확하게 전달하고 있습니다. 'Live match optimization'을 'otimização de transmissão de partidas ao vivo'로 구체화하여 현지 사용자가 이해하기 쉽게 번역되었습니다. 다만, 원문의 'types'(복수)가 'tipo'(단수)로 번역된 점은 미세한 차이입니다."}, {"category": "용어집 준수", "comment": "용어집의 [Modo Futebol com IA Pro]를 정확하게 사용하였으며, 대괄호(bracket) 표기 규칙 또한 완벽하게 준수했습니다."}, {"category": "언어별 규칙 준수", "comment": "브라질 포르투갈어 환경에 적합한 표현을 사용하였습니다."}, {"category": "대소문자 표기", "comment": "문장의 시작과 고유 명칭의 대소문자 표기가 표준 규칙에 부합합니다."}, {"category": "서식 및 표기", "comment": "불렛 포인트(*)의 사용과 줄바꿈, 마침표 위치 등 모든 서식 규칙이 올바르게 적용되었습니다."}], "grade": "Excellent", "suggested_fix": "* A experiência de visualização pode variar de acordo com os tipos de conteúdo e formatos.\n* O recurso de otimização de transmissão de partidas ao vivo é suportado no [Modo Futebol com IA Pro]."}
+==========================================================================================
+[시트] BR(브라질) | [셀] C15
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+Stay ahead of the game with AI
+
+[상세 - 번역문]
+Chegou o guru dos esportes! Jogos emocionantes com a IA
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] SEMANTIC (42.5%) | story_001 | //section_001_1
+- 번역: IA que ajuda a pagar as contas
+
+[사례 2] SEMANTIC (41.0%) | story_045 | //section_045_2
+- 번역: A IA notifica você se os dispositivos estiverem ligados enquanto você está fora
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 문법적으로 오류가 없으며, 마케팅 문구로서의 활기찬 톤을 잘 유지하고 있습니다.
+- 정확성 및 현지화 품질: 원문의 'Stay ahead of the game'은 '한발 앞서 나가다'라는 관용구인데, 번역문은 이를 스포츠(esportes)에 한정된 표현인 '스포츠의 달인(guru)' 및 '흥미진진한 경기(jogos)'로 구체화하여 의역했습니다. 만약 해당 기능이 스포츠 관람에 특화된 것이라면 적절할 수 있으나, 일반적인 AI 기능을 의미한다면 원문의 비유적 의미를 지나치게 좁게 해석한 경향이 있습니다.
+- 용어집 준수: 제공된 용어집이 없으므로 해당 사항 없습니다.
+- 언어별 규칙 준수: 브라질 포르투갈어(PT-BR) 기준에 맞게 자연스럽게 작성되었습니다.
+- 대소문자 표기: 문장 첫 글자 대문자 및 적절한 대소문자 사용 규칙을 준수하였습니다.
+- 서식 및 표기: 원문에는 없는 느낌표를 사용하여 강조 효과를 주었으며, 이는 브라질 현지 마케팅 관습상 자연스러운 변형입니다.
+
+최종 평가: 양호 — 경미한 개선 여지 있으나 출시 가능 수준.
+
+[수정안 제안]:
+Saia na frente com a IA
+
+[상세 - RAG Payload]
+[{"type": "semantic", "score": 42.5, "story_id": "story_001", "section": "//section_001_1", "source": "This AI helps pay the bills", "target": "IA que ajuda a pagar as contas"}, {"type": "semantic", "score": 41.0, "story_id": "story_045", "section": "//section_045_2", "source": "Get notified when devices are left on with AI", "target": "A IA notifica você se os dispositivos estiverem ligados enquanto você está fora"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "문법적으로 오류가 없으며, 마케팅 문구로서의 활기찬 톤을 잘 유지하고 있습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 'Stay ahead of the game'은 '한발 앞서 나가다'라는 관용구인데, 번역문은 이를 스포츠(esportes)에 한정된 표현인 '스포츠의 달인(guru)' 및 '흥미진진한 경기(jogos)'로 구체화하여 의역했습니다. 만약 해당 기능이 스포츠 관람에 특화된 것이라면 적절할 수 있으나, 일반적인 AI 기능을 의미한다면 원문의 비유적 의미를 지나치게 좁게 해석한 경향이 있습니다."}, {"category": "용어집 준수", "comment": "제공된 용어집이 없으므로 해당 사항 없습니다."}, {"category": "언어별 규칙 준수", "comment": "브라질 포르투갈어(PT-BR) 기준에 맞게 자연스럽게 작성되었습니다."}, {"category": "대소문자 표기", "comment": "문장 첫 글자 대문자 및 적절한 대소문자 사용 규칙을 준수하였습니다."}, {"category": "서식 및 표기", "comment": "원문에는 없는 느낌표를 사용하여 강조 효과를 주었으며, 이는 브라질 현지 마케팅 관습상 자연스러운 변형입니다."}], "grade": "Good", "suggested_fix": "Saia na frente com a IA"}
+==========================================================================================
+[시트] BR(브라질) | [셀] C16
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+Ever found yourself watching a game and wondering, "Who's actually going to win today?" Don't guess—just press the AI button on your remote. Ask, "Who do you think will win the game I'm watching right now?" and AI will analyze the latest data to give you the win probability. When AI predicts potential drama, every second becomes a thrilling, edge-of-your-seat highlight.
+
+[상세 - 번역문]
+Já se pegou assistindo a um jogo e pensando: “Quem será que leva essa hoje?”. Não precisa mais ficar no achismo — basta apertar o botão de IA no controle remoto e perguntar: “Quem você acha que vai ganhar o jogo que estou assistindo agora?”. A IA analisa os dados mais recentes da partida e mostra rapidamente as probabilidades de vitória. Com a IA prevendo possíveis reviravoltas, cada lance fica ainda mais emocionante.
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] SEMANTIC (37.8%) | story_045 | //story_045_title
+- 번역: Criadas pela IA, sugestões personalizadas para sua casa
+
+[사례 2] SEMANTIC (36.2%) | story_035 | //section_035_2
+- 번역: Um controle remoto que aparece quando necessário
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 브라질 포르투갈어의 문법과 유창성 측면에서 매우 뛰어납니다. 'Ficar no achismo'와 같이 'Don't guess'를 현지 정서에 맞게 의역한 표현이 매우 자연스럽습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 유지하면서도 마케팅 문구답게 매끄럽게 현지화되었습니다. 특히 'Who's actually going to win today?'를 'Quem será que leva essa hoje?'로 번역한 점은 현지인이 스포츠 경기를 볼 때 실제로 사용하는 생생한 표현을 잘 살린 부분입니다.
+- 용어집 준수: 제공된 용어집이 없으나, 'AI'를 'IA'로 적절히 번역하였고 전반적인 용어 선택이 일관적입니다.
+- 언어별 규칙 준수: 브라질 포르투갈어의 특성에 맞춰 'você'를 사용하고, 유럽식 포르투갈어 표현 없이 브라질 현지 스타일을 일관되게 유지했습니다.
+- 대소문자 표기: 문장 첫 글자 대문자, 약어(IA) 대문자 표기 등 문장형(Sentence case) 규칙을 완벽하게 준수했습니다.
+- 서식 및 표기: 따옴표 사용, 대시(—)의 활용, 문장 부호의 위치 등 모든 서식 규칙이 브라질 언어 관습에 맞게 정확하게 적용되었습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "semantic", "score": 37.8, "story_id": "story_045", "section": "//story_045_title", "source": "Personalize your comfort at home with AI", "target": "Criadas pela IA, sugestões personalizadas para sua casa"}, {"type": "semantic", "score": 36.2, "story_id": "story_035", "section": "//section_035_2", "source": "A remote control that appears when necessary", "target": "Um controle remoto que aparece quando necessário"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "브라질 포르투갈어의 문법과 유창성 측면에서 매우 뛰어납니다. 'Ficar no achismo'와 같이 'Don't guess'를 현지 정서에 맞게 의역한 표현이 매우 자연스럽습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 유지하면서도 마케팅 문구답게 매끄럽게 현지화되었습니다. 특히 'Who's actually going to win today?'를 'Quem será que leva essa hoje?'로 번역한 점은 현지인이 스포츠 경기를 볼 때 실제로 사용하는 생생한 표현을 잘 살린 부분입니다."}, {"category": "용어집 준수", "comment": "제공된 용어집이 없으나, 'AI'를 'IA'로 적절히 번역하였고 전반적인 용어 선택이 일관적입니다."}, {"category": "언어별 규칙 준수", "comment": "브라질 포르투갈어의 특성에 맞춰 'você'를 사용하고, 유럽식 포르투갈어 표현 없이 브라질 현지 스타일을 일관되게 유지했습니다."}, {"category": "대소문자 표기", "comment": "문장 첫 글자 대문자, 약어(IA) 대문자 표기 등 문장형(Sentence case) 규칙을 완벽하게 준수했습니다."}, {"category": "서식 및 표기", "comment": "따옴표 사용, 대시(—)의 활용, 문장 부호의 위치 등 모든 서식 규칙이 브라질 언어 관습에 맞게 정확하게 적용되었습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] BR(브라질) | [셀] C17
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+* As of April 2026, Samsung Vision AI Companion is supported in 2025/2026 UHD models and above. Availability and supported features may vary and are subject to change. 
+* The conversational experience referring to the currently broadcasted match is supported after completing the TV broadcasting provider setup. (Supported countries: South Korea, US, Canada, Australia, India, France, Germany, Italy, Spain)
+
+[상세 - 번역문]
+* O Samsung Vision AI Companion é suportado em modelos UHD 2025/2026 e superiores, a partir de abril de 2026. O escopo dos recursos suportados (por país e modelo) está sujeito a alterações.
+* A experiência de conversação sobre a partida transmitida no momento é suportada após a conclusão da configuração do provedor de transmissão de TV. (Países suportados: Coreia do Sul, EUA, Canadá, Austrália, Índia, França, Alemanha, Itália, Espanha)
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] SEMANTIC (53.2%) | story_044 | //section_044_2_disclaimer
+- 번역: Ele é suportado em TVs Samsung 2024 e no Galaxy Watch 4 ou mais recente.
+
+[사례 2] SEMANTIC (47.9%) | story_047 | //section_047_1_disclaimer
+- 번역: [AI Vision Inside] é suportado por Bespoke AI Family Hub e Bespoke AI Hybrid.
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 브라질 포르투갈어 문법 및 구문이 매우 자연스럽고 정확합니다. 'suportado em' 및 'a partir de'와 같은 표현이 기술 문맥에서 적절하게 사용되었습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 충실히 전달하고 있습니다. 첫 번째 문장의 'Availability and supported features may vary' 부분이 'O escopo dos recursos suportados... está sujeito a alterações'로 약간 의역되었으나, 면책 조항으로서의 의미는 명확하며 현지 사용자에게 더 자연스럽게 읽힙니다.
+- 용어집 준수: 용어집의 예외 규칙(Exception: do NOT wrap 'Samsung Vision AI Companion' in brackets)에 따라 [ ] 기호를 사용하지 않고 올바르게 표기하였습니다.
+- 언어별 규칙 준수: 유럽식 포르투갈어 표현 없이 브라질 포르투갈어(PT-BR) 기준을 완벽하게 준수하였습니다.
+- 대소문자 표기: 문장 첫 글자 대문자 표기 및 고유 명사, 국가명의 대소문자가 타겟 언어의 규칙에 맞게 올바르게 적용되었습니다.
+- 서식 및 표기: 불렛 기호(*)와 괄호의 간격, 마침표 위치 등 서식 규칙을 잘 따르고 있습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "semantic", "score": 53.2, "story_id": "story_044", "section": "//section_044_2_disclaimer", "source": "It is supported on 2024 Samsung TVs and Galaxy Watch 4 or higher.", "target": "Ele é suportado em TVs Samsung 2024 e no Galaxy Watch 4 ou mais recente."}, {"type": "semantic", "score": 47.9, "story_id": "story_047", "section": "//section_047_1_disclaimer", "source": "[AI Vision Inside] is supported by Bespoke AI Family Hub and Bespoke AI Hybrid.", "target": "[AI Vision Inside] é suportado por Bespoke AI Family Hub e Bespoke AI Hybrid."}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "브라질 포르투갈어 문법 및 구문이 매우 자연스럽고 정확합니다. 'suportado em' 및 'a partir de'와 같은 표현이 기술 문맥에서 적절하게 사용되었습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 충실히 전달하고 있습니다. 첫 번째 문장의 'Availability and supported features may vary' 부분이 'O escopo dos recursos suportados... está sujeito a alterações'로 약간 의역되었으나, 면책 조항으로서의 의미는 명확하며 현지 사용자에게 더 자연스럽게 읽힙니다."}, {"category": "용어집 준수", "comment": "용어집의 예외 규칙(Exception: do NOT wrap 'Samsung Vision AI Companion' in brackets)에 따라 [ ] 기호를 사용하지 않고 올바르게 표기하였습니다."}, {"category": "언어별 규칙 준수", "comment": "유럽식 포르투갈어 표현 없이 브라질 포르투갈어(PT-BR) 기준을 완벽하게 준수하였습니다."}, {"category": "대소문자 표기", "comment": "문장 첫 글자 대문자 표기 및 고유 명사, 국가명의 대소문자가 타겟 언어의 규칙에 맞게 올바르게 적용되었습니다."}, {"category": "서식 및 표기", "comment": "불렛 기호(*)와 괄호의 간격, 마침표 위치 등 서식 규칙을 잘 따르고 있습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] RU(러시아) | [셀] C7
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+Experience sports up close with AI
+
+[상세 - 번역문]
+Прикоснитесь к атмосфере спорта с ИИ
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형 아님, 추가 대문자 수: 2개
+
+[단순 규칙 기반 문장형 변환안]:
+Прикоснитесь к атмосфере спорта с ии
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] SEMANTIC (41.0%) | story_045 | //story_045_title
+- 번역: Индивидуальные рекомендации для вашего дома, разработанные ИИ
+
+[사례 2] SEMANTIC (36.3%) | story_001 | //section_001_1
+- 번역: Этот ИИ помогает оплачивать счета
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 러시아어 문법상 오류가 없으며, 'Прикоснитесь к атмосфере'와 같은 표현을 사용하여 매우 유창하고 자연스러운 문장으로 번역되었습니다.
+- 정확성 및 현지화 품질: 원문의 'Experience sports up close'를 단순히 직역하지 않고, 마케팅 문구에 적합하도록 스포츠의 분위기를 생생하게 느낀다는 의미의 현지화된 표현으로 잘 전달했습니다.
+- 용어집 준수: 제공된 용어집 데이터가 없으며, 'ИИ(AI)'와 같은 일반 기술 용어가 올바르게 사용되었습니다.
+- 언어별 규칙 준수: 러시아어 특유의 자연스러운 어순을 따르고 있으며, 영어식 명사구 나열을 피하여 문장형으로 매끄럽게 구성되었습니다.
+- 대소문자 표기: 문장 첫 글자와 약어(ИИ)만 대문자로 표기하는 러시아어의 문장 케이스(Sentence case) 규칙을 완벽하게 준수했습니다.
+- 서식 및 표기: 불필요한 구두점이나 영문 스타일의 따옴표 사용 없이 깔끔하게 표기되었습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "semantic", "score": 41.0, "story_id": "story_045", "section": "//story_045_title", "source": "Personalize your comfort at home with AI", "target": "Индивидуальные рекомендации для вашего дома, разработанные ИИ"}, {"type": "semantic", "score": 36.3, "story_id": "story_001", "section": "//section_001_1", "source": "This AI helps pay the bills", "target": "Этот ИИ помогает оплачивать счета"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "러시아어 문법상 오류가 없으며, 'Прикоснитесь к атмосфере'와 같은 표현을 사용하여 매우 유창하고 자연스러운 문장으로 번역되었습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 'Experience sports up close'를 단순히 직역하지 않고, 마케팅 문구에 적합하도록 스포츠의 분위기를 생생하게 느낀다는 의미의 현지화된 표현으로 잘 전달했습니다."}, {"category": "용어집 준수", "comment": "제공된 용어집 데이터가 없으며, 'ИИ(AI)'와 같은 일반 기술 용어가 올바르게 사용되었습니다."}, {"category": "언어별 규칙 준수", "comment": "러시아어 특유의 자연스러운 어순을 따르고 있으며, 영어식 명사구 나열을 피하여 문장형으로 매끄럽게 구성되었습니다."}, {"category": "대소문자 표기", "comment": "문장 첫 글자와 약어(ИИ)만 대문자로 표기하는 러시아어의 문장 케이스(Sentence case) 규칙을 완벽하게 준수했습니다."}, {"category": "서식 및 표기", "comment": "불필요한 구두점이나 영문 스타일의 따옴표 사용 없이 깔끔하게 표기되었습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] RU(러시아) | [셀] C8
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+What could be better than feeling the energy of the stadium right in your living room? The AI features on your Samsung TV help make that possible. You can mute the commentators to only hear the live stadium sounds, or ask AI for win probabilities. Enjoy being closer to the game than ever before.
+
+[상세 - 번역문]
+Если хотите ощутить энергию стадиона, не выходя из дома, самое время опробовать ИИ-функции вашего телевизора Samsung. Можно полностью отключить речь комментатора, чтобы слышать только живой звук трибун. Или узнать у ИИ вероятность победы, если вам интересно заранее предположить, как сложится матч. Будьте на шаг впереди игры!
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형 아님, 추가 대문자 수: 3개
+- 문장 2: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+- 문장 3: 문장형 아님, 추가 대문자 수: 2개
+- 문장 4: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+
+[단순 규칙 기반 문장형 변환안]:
+Если хотите ощутить энергию стадиона, не выходя из дома, самое время опробовать ии-функции вашего телевизора samsung. Можно полностью отключить речь комментатора, чтобы слышать только живой звук трибун. Или узнать у ии вероятность победы, если вам интересно заранее предположить, как сложится матч. Будьте на шаг впереди игры!
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] SEMANTIC (46.1%) | story_023 | //section_023_2
+- 번역: Благодаря оповещениям на телевизоре вы никогда ничего не пропустите
+
+[사례 2] SEMANTIC (45.9%) | story_044 | //story_044_description
+- 번역: Тренируйтесь дома умнее и эффективнее. Готовы потренироваться? SmartThings подготовит для вас комфортную среду. Сосредоточены на тренировке? SmartThings покажет тренировочные параметры с часов Galaxy на экране телевизора. Закончили тренироваться? SmartThings автоматически установит порядок стирки одежды, в которой вы тренировались.
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 러시아어 문법상 오류가 없으며, 문장이 매우 자연스럽고 유창하게 다듬어졌습니다. 'не выходя из дома', 'живой звук трибун'과 같은 표현은 현지 정서에 잘 맞습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 효과적으로 전달하고 있으나, 마지막 문장에서 'Enjoy being closer to the game'을 'Будьте на шаг впереди игры(게임보다 한 발 앞서 나가세요)'로 의역한 점은 원문의 '경기에 더 가까워지다'라는 뉘앙스와 다소 차이가 있습니다. 또한 'living room'이 '집(дом)'으로 간략화되었습니다.
+- 용어집 준수: 용어집에 'Energy'를 'Energy'로 유지하도록 명시되어 있으나, 번역문에서는 이를 러시아어 'энергию'로 번역하였습니다. 이는 용어집 준수 원칙에 어긋납니다.
+- 언어별 규칙 준수: 러시아어의 자연스러운 어순을 따르고 있으며, 영어식 명사구 나열을 피하여 자연스럽게 서술되었습니다.
+- 대소문자 표기: 문장형 대소문자(Sentence case)를 올바르게 준수하였습니다.
+- 서식 및 표기: 용어집의 예외 규칙(Energy에 대괄호를 사용하지 말 것)은 결과적으로 대괄호를 쓰지 않았으므로 준수된 것으로 보이나, 용어 자체를 번역한 것이 근본적인 문제입니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+Что может быть лучше, чем ощутить Energy стадиона прямо в своей гостиной? Функции ИИ на вашем телевизоре Samsung помогут сделать это возможным. Вы можете отключить комментаторов, чтобы слышать только живой звук стадиона, или узнать у ИИ вероятность победы. Наслаждайтесь игрой, будучи к ней ближе, чем когда-либо прежде.
+
+[상세 - RAG Payload]
+[{"type": "semantic", "score": 46.1, "story_id": "story_023", "section": "//section_023_2", "source": "Never miss a beat with notifications on your TV", "target": "Благодаря оповещениям на телевизоре вы никогда ничего не пропустите"}, {"type": "semantic", "score": 45.9, "story_id": "story_044", "section": "//story_044_description", "source": "Experience smarter, more convenient home training. Ready to exercise? SmartThings will prepare a comfortable environment for you. Focused on your workout? SmartThings will display the exercise information from your Galaxy Watch on your TV screen. Finished exercising? SmartThings will automatically set the wash course for your workout clothes.", "target": "Тренируйтесь дома умнее и эффективнее. Готовы потренироваться? SmartThings подготовит для вас комфортную среду. Сосредоточены на тренировке? SmartThings покажет тренировочные параметры с часов Galaxy на экране телевизора. Закончили тренироваться? SmartThings автоматически установит порядок стирки одежды, в которой вы тренировались."}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "러시아어 문법상 오류가 없으며, 문장이 매우 자연스럽고 유창하게 다듬어졌습니다. 'не выходя из дома', 'живой звук трибун'과 같은 표현은 현지 정서에 잘 맞습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 효과적으로 전달하고 있으나, 마지막 문장에서 'Enjoy being closer to the game'을 'Будьте на шаг впереди игры(게임보다 한 발 앞서 나가세요)'로 의역한 점은 원문의 '경기에 더 가까워지다'라는 뉘앙스와 다소 차이가 있습니다. 또한 'living room'이 '집(дом)'으로 간략화되었습니다."}, {"category": "용어집 준수", "comment": "용어집에 'Energy'를 'Energy'로 유지하도록 명시되어 있으나, 번역문에서는 이를 러시아어 'энергию'로 번역하였습니다. 이는 용어집 준수 원칙에 어긋납니다."}, {"category": "언어별 규칙 준수", "comment": "러시아어의 자연스러운 어순을 따르고 있으며, 영어식 명사구 나열을 피하여 자연스럽게 서술되었습니다."}, {"category": "대소문자 표기", "comment": "문장형 대소문자(Sentence case)를 올바르게 준수하였습니다."}, {"category": "서식 및 표기", "comment": "용어집의 예외 규칙(Energy에 대괄호를 사용하지 말 것)은 결과적으로 대괄호를 쓰지 않았으므로 준수된 것으로 보이나, 용어 자체를 번역한 것이 근본적인 문제입니다."}], "grade": "Needs Revision", "suggested_fix": "Что может быть лучше, чем ощутить Energy стадиона прямо в своей гостиной? Функции ИИ на вашем телевизоре Samsung помогут сделать это возможным. Вы можете отключить комментаторов, чтобы слышать только живой звук стадиона, или узнать у ИИ вероятность победы. Наслаждайтесь игрой, будучи к ней ближе, чем когда-либо прежде."}
+==========================================================================================
+[시트] RU(러시아) | [셀] C10
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+Bring soccer to life with AI
+
+[상세 - 번역문]
+Оживите футбол с помощью ИИ
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형 아님, 추가 대문자 수: 2개
+
+[단순 규칙 기반 문장형 변환안]:
+Оживите футбол с помощью ии
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] 'Life' → 'Жизнь' 미적용
+
+[상세 - RAG 일관성 참고]
+[사례 1] SEMANTIC (39.3%) | story_001 | //section_001_1
+- 번역: Этот ИИ помогает оплачивать счета
+
+[사례 2] SEMANTIC (37.0%) | story_045 | //story_045_title
+- 번역: Индивидуальные рекомендации для вашего дома, разработанные ИИ
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 러시아어 문법상 오류가 없으며, 'Оживите'라는 표현은 'Bring to life'의 의미를 마케팅 문구로서 매우 자연스럽게 잘 전달하고 있습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 충실히 반영하면서도 러시아어 사용자가 자연스럽게 받아들일 수 있는 명령형 문장을 사용하였습니다.
+- 용어집 준수: 용어집에 'Life'가 'Жизнь'으로 명시되어 있으나, 'Bring to life'라는 구어적 표현을 번역함에 있어 명사(Жизнь)를 그대로 사용하는 것보다 동사형(Оживите)으로 번역하는 것이 문맥상 훨씬 자연스럽습니다. 다만, 용어집의 형태를 엄격히 준수해야 한다면 'Вдохните жизнь'과 같은 표현을 고려할 수 있습니다.
+- 언어별 규칙 준수: 러시아어의 자연스러운 어순을 따르고 있으며, 인공지능을 뜻하는 'ИИ' 표기도 적절합니다.
+- 대소문자 표기: 문장 첫 글자를 대문자로 시작하고 나머지는 소문자로 표기하는 문장식 대소문자(Sentence case) 규칙을 잘 준수하였습니다.
+- 서식 및 표기: 불필요한 구두점이 없으며, UI 가이드라인에 부합하는 깔끔한 표기를 유지하고 있습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "semantic", "score": 39.3, "story_id": "story_001", "section": "//section_001_1", "source": "This AI helps pay the bills", "target": "Этот ИИ помогает оплачивать счета"}, {"type": "semantic", "score": 37.0, "story_id": "story_045", "section": "//story_045_title", "source": "Personalize your comfort at home with AI", "target": "Индивидуальные рекомендации для вашего дома, разработанные ИИ"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "러시아어 문법상 오류가 없으며, 'Оживите'라는 표현은 'Bring to life'의 의미를 마케팅 문구로서 매우 자연스럽게 잘 전달하고 있습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 충실히 반영하면서도 러시아어 사용자가 자연스럽게 받아들일 수 있는 명령형 문장을 사용하였습니다."}, {"category": "용어집 준수", "comment": "용어집에 'Life'가 'Жизнь'으로 명시되어 있으나, 'Bring to life'라는 구어적 표현을 번역함에 있어 명사(Жизнь)를 그대로 사용하는 것보다 동사형(Оживите)으로 번역하는 것이 문맥상 훨씬 자연스럽습니다. 다만, 용어집의 형태를 엄격히 준수해야 한다면 'Вдохните жизнь'과 같은 표현을 고려할 수 있습니다."}, {"category": "언어별 규칙 준수", "comment": "러시아어의 자연스러운 어순을 따르고 있으며, 인공지능을 뜻하는 'ИИ' 표기도 적절합니다."}, {"category": "대소문자 표기", "comment": "문장 첫 글자를 대문자로 시작하고 나머지는 소문자로 표기하는 문장식 대소문자(Sentence case) 규칙을 잘 준수하였습니다."}, {"category": "서식 및 표기", "comment": "불필요한 구두점이 없으며, UI 가이드라인에 부합하는 깔끔한 표기를 유지하고 있습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] RU(러시아) | [셀] C11
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+AI allows soccer lovers to experience the match at home in a completely new way. Press the mic button on your remote and say, "Turn on AI Soccer Mode." AI automatically recognizes live matches and optimizes the picture and sound to make you feel like you're right there in the stands. Want to focus purely on the game as if you're in the crowd? Press the mic button and say, "Mute the commentator's voice." The TV removes only the commentator's voice, making it easier than ever to feel the roar of the crowd.
+
+[상세 - 번역문]
+Любите смотреть футбол? Нажмите кнопку микрофона на пульте и скажите: «Включи режим футбола с ИИ». ИИ автоматически распознает прямую трансляцию матча и настроит изображение и звук так, чтобы вы почувствовали, как будто сами сидите на трибунах. Хотите сосредоточиться исключительно на игре, как будто вы среди болельщиков? Нажмите кнопку микрофона и скажите: «Отключи голос комментатора». Телевизор уберет нужную звуковую дорожку и оставив только шум стадиона и атмосферу матча — для максимального эффекта присутствия.
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+- 문장 2: 문장형 아님, 추가 대문자 수: 3개
+- 문장 3: 문장형 아님, 추가 대문자 수: 1개
+- 문장 4: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+- 문장 5: 문장형 아님, 추가 대문자 수: 1개
+- 문장 6: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+
+[단순 규칙 기반 문장형 변환안]:
+Любите смотреть футбол? Нажмите кнопку микрофона на пульте и скажите: «включи режим футбола с ии». Ии автоматически распознает прямую трансляцию матча и настроит изображение и звук так, чтобы вы почувствовали, как будто сами сидите на трибунах. Хотите сосредоточиться исключительно на игре, как будто вы среди болельщиков? Нажмите кнопку микрофона и скажите: «отключи голос комментатора». Телевизор уберет нужную звуковую дорожку и оставив только шум стадиона и атмосферу матча — для максимального эффекта присутствия.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] 'AI Soccer Mode' → 'AI Футбольный режим' 미적용
+
+[상세 - RAG 일관성 참고]
+[사례 1] SEMANTIC (45.5%) | story_048 | //story_048_description
+- 번역: Теперь можно с умом организовать все от стирки до сушки благодаря разговорам с ИИ. Наряду с подбором порядка стирки в зависимости от загрязненности белья можно задавать нужные вам настройки своим голосом и получать ответы на свои вопросы. Пользоваться сложной бытовой техникой в повседневной жизни станет намного проще.
+
+[사례 2] SEMANTIC (44.9%) | story_045 | //story_045_title
+- 번역: Индивидуальные рекомендации для вашего дома, разработанные ИИ
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 마지막 문장에서 'уберет... и оставив'은 문법적으로 맞지 않습니다. 정동사(уберет)와 부동사(оставив)가 어색하게 연결되어 있으며, 'уберет... и оставит' 또는 'убирает... оставляя'로 수정해야 자연스럽습니다.
+- 정확성 및 현지화 품질: 첫 번째 문장에서 'AI allows soccer lovers to experience...'라는 원문의 핵심 내용을 'Любите смотреть футбол?'이라는 질문으로 대체하여 정보 전달이 누락되었습니다. 또한 마지막 문장에서 'roar of the crowd'를 'шум стадиона'으로 다소 밋밋하게 표현했습니다.
+- 용어집 준수: 제공된 용어집에 따르면 'AI Soccer Mode'는 'AI Футбольный режим'으로 번역되어야 하나, 본문에서는 'режим футбола с ИИ'로 번역되어 용어집을 준수하지 않았습니다. (괄호 제외 규칙은 잘 지켜졌으나 용어 자체가 다름)
+- 언어별 규칙 준수: 러시아어의 자연스러운 문장 구조를 사용하려고 시도했으나, 문법적 오류로 인해 유창성이 떨어집니다.
+- 대소문자 표기: 러시아어 문장 규칙에 따라 문장 첫 글자 대소문자 표기는 적절하게 이루어졌습니다.
+- 서식 및 표기: 러시아어 표준 따옴표(« »)를 사용한 점은 우수합니다. 다만 용어집 준수 실패가 큰 결함입니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+ИИ позволяет любителям футбола смотреть матчи дома совершенно по-новому. Нажмите кнопку микрофона на пульте и скажите: «Включи AI Футбольный режим». ИИ автоматически распознает прямую трансляцию матча и настроит изображение и звук так, чтобы вы почувствовали, как будто сами сидите на трибунах. Хотите сосредоточиться исключительно на игре, как будто вы среди болельщиков? Нажмите кнопку микрофона и скажите: «Отключи голос комментатора». Телевизор удаляет только голос комментатора, позволяя вам как никогда прежде прочувствовать рев трибун.
+
+[상세 - RAG Payload]
+[{"type": "semantic", "score": 45.5, "story_id": "story_048", "section": "//story_048_description", "source": "From washing to drying and product use, you can now manage more intelligently by talking to AI. Along with customizing the wash course according to the condition of your laundry, you can execute your desired settings with just your voice and get answers to your questions. Complicated use of home appliances in your daily life will become much easier.", "target": "Теперь можно с умом организовать все от стирки до сушки благодаря разговорам с ИИ. Наряду с подбором порядка стирки в зависимости от загрязненности белья можно задавать нужные вам настройки своим голосом и получать ответы на свои вопросы. Пользоваться сложной бытовой техникой в повседневной жизни станет намного проще."}, {"type": "semantic", "score": 44.9, "story_id": "story_045", "section": "//story_045_title", "source": "Personalize your comfort at home with AI", "target": "Индивидуальные рекомендации для вашего дома, разработанные ИИ"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "마지막 문장에서 'уберет... и оставив'은 문법적으로 맞지 않습니다. 정동사(уберет)와 부동사(оставив)가 어색하게 연결되어 있으며, 'уберет... и оставит' 또는 'убирает... оставляя'로 수정해야 자연스럽습니다."}, {"category": "정확성 및 현지화 품질", "comment": "첫 번째 문장에서 'AI allows soccer lovers to experience...'라는 원문의 핵심 내용을 'Любите смотреть футбол?'이라는 질문으로 대체하여 정보 전달이 누락되었습니다. 또한 마지막 문장에서 'roar of the crowd'를 'шум стадиона'으로 다소 밋밋하게 표현했습니다."}, {"category": "용어집 준수", "comment": "제공된 용어집에 따르면 'AI Soccer Mode'는 'AI Футбольный режим'으로 번역되어야 하나, 본문에서는 'режим футбола с ИИ'로 번역되어 용어집을 준수하지 않았습니다. (괄호 제외 규칙은 잘 지켜졌으나 용어 자체가 다름)"}, {"category": "언어별 규칙 준수", "comment": "러시아어의 자연스러운 문장 구조를 사용하려고 시도했으나, 문법적 오류로 인해 유창성이 떨어집니다."}, {"category": "대소문자 표기", "comment": "러시아어 문장 규칙에 따라 문장 첫 글자 대소문자 표기는 적절하게 이루어졌습니다."}, {"category": "서식 및 표기", "comment": "러시아어 표준 따옴표(« »)를 사용한 점은 우수합니다. 다만 용어집 준수 실패가 큰 결함입니다."}], "grade": "Needs Revision", "suggested_fix": "ИИ позволяет любителям футбола смотреть матчи дома совершенно по-новому. Нажмите кнопку микрофона на пульте и скажите: «Включи AI Футбольный режим». ИИ автоматически распознает прямую трансляцию матча и настроит изображение и звук так, чтобы вы почувствовали, как будто сами сидите на трибунах. Хотите сосредоточиться исключительно на игре, как будто вы среди болельщиков? Нажмите кнопку микрофона и скажите: «Отключи голос комментатора». Телевизор удаляет только голос комментатора, позволяя вам как никогда прежде прочувствовать рев трибун."}
+==========================================================================================
+[시트] RU(러시아) | [셀] C12
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+* Viewing experience may vary according to types of content and format. 
+* Live match optimization is supported in [AI Soccer Mode Pro].
+
+[상세 - 번역문]
+* Впечатления от просмотра могут различаться в зависимости от типа и формата контента.
+* Функция оптимизации прямых спортивных трансляций поддерживается в [Режиме футбола с ИИ Pro].
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+- 문장 2: 문장형 아님, 추가 대문자 수: 4개
+
+[단순 규칙 기반 문장형 변환안]:
+* Впечатления от просмотра могут различаться в зависимости от типа и формата контента. * Функция оптимизации прямых спортивных трансляций поддерживается в [режиме футбола с ии pro].
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] 'AI Soccer Mode Pro' → 'AI Футбольный режим Pro' 미적용
+
+[상세 - RAG 일관성 참고]
+[사례 1] SEMANTIC (39.3%) | story_044 | //section_044_3_disclaimer
+- 번역: Функция [Сканировать этикетки с указаниями по уходу] может не поддерживаться в некоторых моделях.
+
+[사례 2] SEMANTIC (38.8%) | story_001 | //section_001_1_button
+- 번역: Настроить режим AI Energy Mode
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 러시아어 문법과 문장 구조는 자연스럽습니다. 첫 번째 문장은 원문의 의미를 매끄럽게 전달하며, 두 번째 문장 역시 문법적으로 오류가 없습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 정확하게 전달하고 있습니다. 'Live match'를 'прямых спортивных трансляций'로 번역한 것은 문맥상 적절합니다.
+- 용어집 준수: 제공된 용어집(AI Soccer Mode Pro -> AI Футбольный режим Pro)을 준수하지 않았습니다. 번역문에서는 'Режиме футбола с ИИ Pro'로 임의 수정되었습니다. 용어집 규칙에 따라 용어는 대소문자와 띄어쓰기를 포함하여 제공된 그대로 사용해야 합니다.
+- 언어별 규칙 준수: 러시아어 특유의 격 변화를 고려하여 번역되었으나, 용어집 규칙이 자연스러움보다 우선하므로 용어집 형태를 그대로 유지해야 합니다. 그 외의 문장 구조는 러시아어의 자연스러운 어순을 따르고 있습니다.
+- 대소문자 표기: 문장 첫 글자의 대문자 표기 등 일반적인 대소문자 규칙은 준수되었습니다.
+- 서식 및 표기: 글머리 기호(*) 및 대괄호([]) 사용 규칙을 잘 준수하였습니다. 다만 대괄호 내부의 용어가 용어집과 일치하지 않습니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+* Впечатления от просмотра могут различаться в зависимости от типа и формата контента.
+* Оптимизация прямых трансляций матчей поддерживается в [AI Футбольный режим Pro].
+
+[상세 - RAG Payload]
+[{"type": "semantic", "score": 39.3, "story_id": "story_044", "section": "//section_044_3_disclaimer", "source": "[Scan care labels] may not be supported depending on the model.", "target": "Функция [Сканировать этикетки с указаниями по уходу] может не поддерживаться в некоторых моделях."}, {"type": "semantic", "score": 38.8, "story_id": "story_001", "section": "//section_001_1_button", "source": "Set AI Energy Mode", "target": "Настроить режим AI Energy Mode"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "러시아어 문법과 문장 구조는 자연스럽습니다. 첫 번째 문장은 원문의 의미를 매끄럽게 전달하며, 두 번째 문장 역시 문법적으로 오류가 없습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 정확하게 전달하고 있습니다. 'Live match'를 'прямых спортивных трансляций'로 번역한 것은 문맥상 적절합니다."}, {"category": "용어집 준수", "comment": "제공된 용어집(AI Soccer Mode Pro -> AI Футбольный режим Pro)을 준수하지 않았습니다. 번역문에서는 'Режиме футбола с ИИ Pro'로 임의 수정되었습니다. 용어집 규칙에 따라 용어는 대소문자와 띄어쓰기를 포함하여 제공된 그대로 사용해야 합니다."}, {"category": "언어별 규칙 준수", "comment": "러시아어 특유의 격 변화를 고려하여 번역되었으나, 용어집 규칙이 자연스러움보다 우선하므로 용어집 형태를 그대로 유지해야 합니다. 그 외의 문장 구조는 러시아어의 자연스러운 어순을 따르고 있습니다."}, {"category": "대소문자 표기", "comment": "문장 첫 글자의 대문자 표기 등 일반적인 대소문자 규칙은 준수되었습니다."}, {"category": "서식 및 표기", "comment": "글머리 기호(*) 및 대괄호([]) 사용 규칙을 잘 준수하였습니다. 다만 대괄호 내부의 용어가 용어집과 일치하지 않습니다."}], "grade": "Needs Revision", "suggested_fix": "* Впечатления от просмотра могут различаться в зависимости от типа и формата контента.\n* Оптимизация прямых трансляций матчей поддерживается в [AI Футбольный режим Pro]."}
+==========================================================================================
+[시트] RU(러시아) | [셀] C15
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+Stay ahead of the game with AI
+
+[상세 - 번역문]
+Встречайте спортивного ИИ-эксперта
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형 아님, 추가 대문자 수: 2개
+
+[단순 규칙 기반 문장형 변환안]:
+Встречайте спортивного ии-эксперта
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] SEMANTIC (42.5%) | story_001 | //section_001_1
+- 번역: Этот ИИ помогает оплачивать счета
+
+[사례 2] SEMANTIC (41.0%) | story_045 | //section_045_2
+- 번역: Когда устройства остаются включенными в ваше отсутствие, ИИ вас об этом уведомляет
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 러시아어 문법상 오류는 없으며, 'Встречайте'를 활용한 제안형 문장이 자연스럽게 구성되었습니다.
+- 정확성 및 현지화 품질: 원문의 'Stay ahead of the game'(남보다 앞서 나가다, 우위를 점하다)이라는 관용적 표현의 의미가 번역문에서는 '스포츠 AI 전문가를 만나보세요'로 의역되었습니다. 원문은 사용자가 얻는 이점에 초점이 맞춰져 있으나, 번역문은 기능을 소개하는 데 그치고 있어 원문의 뉘앙스가 다소 소실되었습니다.
+- 용어집 준수: 제공된 용어집 데이터가 없으므로 해당 사항 없습니다.
+- 언어별 규칙 준수: 러시아어의 자연스러운 어순을 따르고 있으며, 불필요한 대문자 사용 없이 문장형(Sentence case)으로 적절히 표기되었습니다.
+- 대소문자 표기: 문장 첫 글자와 고유 명사적 성격의 'ИИ'(AI)를 적절히 대문자로 표기하였습니다.
+- 서식 및 표기: 러시아어 구두점 관례를 잘 따르고 있으며 서식상 오류는 발견되지 않았습니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+Будьте на шаг впереди благодаря ИИ
+
+[상세 - RAG Payload]
+[{"type": "semantic", "score": 42.5, "story_id": "story_001", "section": "//section_001_1", "source": "This AI helps pay the bills", "target": "Этот ИИ помогает оплачивать счета"}, {"type": "semantic", "score": 41.0, "story_id": "story_045", "section": "//section_045_2", "source": "Get notified when devices are left on with AI", "target": "Когда устройства остаются включенными в ваше отсутствие, ИИ вас об этом уведомляет"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "러시아어 문법상 오류는 없으며, 'Встречайте'를 활용한 제안형 문장이 자연스럽게 구성되었습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 'Stay ahead of the game'(남보다 앞서 나가다, 우위를 점하다)이라는 관용적 표현의 의미가 번역문에서는 '스포츠 AI 전문가를 만나보세요'로 의역되었습니다. 원문은 사용자가 얻는 이점에 초점이 맞춰져 있으나, 번역문은 기능을 소개하는 데 그치고 있어 원문의 뉘앙스가 다소 소실되었습니다."}, {"category": "용어집 준수", "comment": "제공된 용어집 데이터가 없으므로 해당 사항 없습니다."}, {"category": "언어별 규칙 준수", "comment": "러시아어의 자연스러운 어순을 따르고 있으며, 불필요한 대문자 사용 없이 문장형(Sentence case)으로 적절히 표기되었습니다."}, {"category": "대소문자 표기", "comment": "문장 첫 글자와 고유 명사적 성격의 'ИИ'(AI)를 적절히 대문자로 표기하였습니다."}, {"category": "서식 및 표기", "comment": "러시아어 구두점 관례를 잘 따르고 있으며 서식상 오류는 발견되지 않았습니다."}], "grade": "Needs Revision", "suggested_fix": "Будьте на шаг впереди благодаря ИИ"}
+==========================================================================================
+[시트] RU(러시아) | [셀] C16
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+Ever found yourself watching a game and wondering, "Who's actually going to win today?" Don't guess—just press the AI button on your remote. Ask, "Who do you think will win the game I'm watching right now?" and AI will analyze the latest data to give you the win probability. When AI predicts potential drama, every second becomes a thrilling, edge-of-your-seat highlight.
+
+[상세 - 번역문]
+Во время просмотра матча ловили себя на мысли: «Интересно, кто победит сегодня»? Теперь можно не гадать — просто вызовите ИИ-помощника кнопкой на пульте. Спросите: «Как ты думаешь, кто победит в матче, который я сейчас смотрю?», и ИИ мгновенно проанализирует новейшие данные, чтобы показать вероятность победы каждой команды. Когда ИИ предсказывает возможные повороты игры, каждая секунда становится ярким моментом, который захватывает дух!
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형 아님, 추가 대문자 수: 1개
+- 문장 2: 문장형 아님, 추가 대문자 수: 2개
+- 문장 3: 문장형 아님, 추가 대문자 수: 3개
+- 문장 4: 문장형 아님, 추가 대문자 수: 2개
+
+[단순 규칙 기반 문장형 변환안]:
+Во время просмотра матча ловили себя на мысли: «интересно, кто победит сегодня»? Теперь можно не гадать — просто вызовите ии-помощника кнопкой на пульте. Спросите: «как ты думаешь, кто победит в матче, который я сейчас смотрю?», и ии мгновенно проанализирует новейшие данные, чтобы показать вероятность победы каждой команды. Когда ии предсказывает возможные повороты игры, каждая секунда становится ярким моментом, который захватывает дух!
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] SEMANTIC (37.8%) | story_045 | //story_045_title
+- 번역: Индивидуальные рекомендации для вашего дома, разработанные ИИ
+
+[사례 2] SEMANTIC (36.2%) | story_035 | //section_035_2
+- 번역: Пульт дистанционного управления, который появляется, когда вам нужно
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 러시아어 문법이 매우 정확하며, 'ловили себя на мысли'와 같은 자연스러운 관용구를 사용하여 원문의 뉘앙스를 훌륭하게 살렸습니다. 문장의 흐름이 매우 유창합니다.
+- 정확성 및 현지화 품질: 원문의 의도를 정확하게 전달하면서도, 'AI button'을 단순히 직역하지 않고 'вызовите ИИ-помощника кнопкой'라고 표현하여 사용자 경험 측면에서 더 명확하게 설명했습니다.
+- 용어집 준수: 제공된 용어집이 없으므로 해당 사항 없습니다.
+- 언어별 규칙 준수: 러시아어의 자연스러운 어순을 따르고 있으며, 영어식 명사구 나열을 피하고 자연스러운 문장 구조를 사용했습니다.
+- 대소문자 표기: 문장 첫 글자와 고유 명칭(ИИ) 등 러시아어 대소문자 표기 규칙을 정확하게 준수했습니다.
+- 서식 및 표기: 러시아어에서 사용하는 인용부호(« »)를 올바르게 사용하였으며, 문장 부호의 위치도 적절합니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "semantic", "score": 37.8, "story_id": "story_045", "section": "//story_045_title", "source": "Personalize your comfort at home with AI", "target": "Индивидуальные рекомендации для вашего дома, разработанные ИИ"}, {"type": "semantic", "score": 36.2, "story_id": "story_035", "section": "//section_035_2", "source": "A remote control that appears when necessary", "target": "Пульт дистанционного управления, который появляется, когда вам нужно"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "러시아어 문법이 매우 정확하며, 'ловили себя на мысли'와 같은 자연스러운 관용구를 사용하여 원문의 뉘앙스를 훌륭하게 살렸습니다. 문장의 흐름이 매우 유창합니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의도를 정확하게 전달하면서도, 'AI button'을 단순히 직역하지 않고 'вызовите ИИ-помощника кнопкой'라고 표현하여 사용자 경험 측면에서 더 명확하게 설명했습니다."}, {"category": "용어집 준수", "comment": "제공된 용어집이 없으므로 해당 사항 없습니다."}, {"category": "언어별 규칙 준수", "comment": "러시아어의 자연스러운 어순을 따르고 있으며, 영어식 명사구 나열을 피하고 자연스러운 문장 구조를 사용했습니다."}, {"category": "대소문자 표기", "comment": "문장 첫 글자와 고유 명칭(ИИ) 등 러시아어 대소문자 표기 규칙을 정확하게 준수했습니다."}, {"category": "서식 및 표기", "comment": "러시아어에서 사용하는 인용부호(« »)를 올바르게 사용하였으며, 문장 부호의 위치도 적절합니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] RU(러시아) | [셀] C17
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+* As of April 2026, Samsung Vision AI Companion is supported in 2025/2026 UHD models and above. Availability and supported features may vary and are subject to change. 
+* The conversational experience referring to the currently broadcasted match is supported after completing the TV broadcasting provider setup. (Supported countries: South Korea, US, Canada, Australia, India, France, Germany, Italy, Spain)
+
+[상세 - 번역문]
+* Samsung Vision AI Companion поддерживается на моделях UHD 2025/2026 года и выше по состоянию на апрель 2026 года. Список поддерживаемых функций (в зависимости от страны и модели) может быть изменен.
+* Возможность общения с ИИ о текущем транслируемом матче поддерживается после завершения настройки ТВ-провайдера. (Поддерживаемые страны: Южная Корея, США, Канада, Австралия, Индия, Франция, Германия, Италия, Испания)
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형 아님, 추가 대문자 수: 7개
+- 문장 2: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+- 문장 3: 문장형 아님, 추가 대문자 수: 4개
+- 문장 4: 문장형 아님, 추가 대문자 수: 12개
+
+[단순 규칙 기반 문장형 변환안]:
+* Samsung Vision AI Companion поддерживается на моделях uhd 2025/2026 года и выше по состоянию на апрель 2026 года. Список поддерживаемых функций (в зависимости от страны и модели) может быть изменен. * Возможность общения с ии о текущем транслируемом матче поддерживается после завершения настройки тв-провайдера. (Поддерживаемые страны: южная корея, сша, канада, австралия, индия, франция, германия, италия, испания)
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] SEMANTIC (53.2%) | story_044 | //section_044_2_disclaimer
+- 번역: Функция поддерживается на телевизорах Samsung 2024 г. и часах Galaxy Watch 4 или более новых моделях.
+
+[사례 2] SEMANTIC (47.9%) | story_047 | //section_047_1_disclaimer
+- 번역: Функция [AI Vision Inside] поддерживается в холодильниках Bespoke AI Family Hub и Bespoke AI Hybrid.
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 러시아어 문법과 문장 구조가 자연스럽고 매끄럽습니다. 특히 'conversational experience'를 'возможность общения с ИИ'로 의역하여 기술적 뉘앙스를 잘 살렸습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 정확하게 전달하고 있으며, 러시아 사용자가 이해하기 쉬운 전문적인 어조를 유지하고 있습니다.
+- 용어집 준수: Glossary에 명시된 'Samsung Vision AI Companion' 용어를 정확히 사용하였으며, 대괄호를 사용하지 말라는 예외 규칙(EXCEPTION)도 완벽하게 준수하였습니다.
+- 언어별 규칙 준수: 러시아어의 자연스러운 어순과 구두점 규칙을 잘 따르고 있습니다.
+- 대소문자 표기: 문장 첫 글자와 고유 명사의 대소문자 표기가 적절하게 적용되었습니다.
+- 서식 및 표기: 불렛포인트 및 줄바꿈 서식을 원문과 동일하게 유지하였으며, 괄호 안의 국가 명칭 표기도 표준화된 명칭을 사용하였습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "semantic", "score": 53.2, "story_id": "story_044", "section": "//section_044_2_disclaimer", "source": "It is supported on 2024 Samsung TVs and Galaxy Watch 4 or higher.", "target": "Функция поддерживается на телевизорах Samsung 2024 г. и часах Galaxy Watch 4 или более новых моделях."}, {"type": "semantic", "score": 47.9, "story_id": "story_047", "section": "//section_047_1_disclaimer", "source": "[AI Vision Inside] is supported by Bespoke AI Family Hub and Bespoke AI Hybrid.", "target": "Функция [AI Vision Inside] поддерживается в холодильниках Bespoke AI Family Hub и Bespoke AI Hybrid."}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "러시아어 문법과 문장 구조가 자연스럽고 매끄럽습니다. 특히 'conversational experience'를 'возможность общения с ИИ'로 의역하여 기술적 뉘앙스를 잘 살렸습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 정확하게 전달하고 있으며, 러시아 사용자가 이해하기 쉬운 전문적인 어조를 유지하고 있습니다."}, {"category": "용어집 준수", "comment": "Glossary에 명시된 'Samsung Vision AI Companion' 용어를 정확히 사용하였으며, 대괄호를 사용하지 말라는 예외 규칙(EXCEPTION)도 완벽하게 준수하였습니다."}, {"category": "언어별 규칙 준수", "comment": "러시아어의 자연스러운 어순과 구두점 규칙을 잘 따르고 있습니다."}, {"category": "대소문자 표기", "comment": "문장 첫 글자와 고유 명사의 대소문자 표기가 적절하게 적용되었습니다."}, {"category": "서식 및 표기", "comment": "불렛포인트 및 줄바꿈 서식을 원문과 동일하게 유지하였으며, 괄호 안의 국가 명칭 표기도 표준화된 명칭을 사용하였습니다."}], "grade": "Excellent", "suggested_fix": ""}

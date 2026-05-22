@@ -1,0 +1,2745 @@
+--- 번역 검수 보고서 (Model: gemini-3-flash-preview) ---
+생성일시: 2026-05-19 14:32:05
+총 검수 항목: 59개
+용어집 항목: 242
+
+==========================================================================================
+[시트] US(미국) | [셀] C7
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+에어컨이 알아서 쾌적하게, 똑똑하게
+
+[상세 - 번역문]
+Keep your home cool with the air conditioner
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //story_006_title
+- 번역: Keep your home cool with the air conditioner
+
+[사례 2] SEMANTIC (61.8%) | story_006 | //section_006_3
+- 번역: Self-optimizing Customized cooling
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 번역된 문장은 문법적으로는 완벽하며 유창한 영어 문장이지만, 원문의 리듬감과 마케팅적인 어조를 충분히 살리지 못했습니다.
+- 정확성 및 현지화 품질: 원문의 핵심 키워드인 '알아서(automatically/on its own)'와 '똑똑하게(smartly)'의 의미가 번역에서 누락되었습니다. 단순히 집을 시원하게 유지한다는 기능적 설명에 그쳐, AI나 자동화 기능을 강조하는 SmartThings의 브랜드 가치를 충분히 전달하지 못하고 있습니다.
+- 용어집 준수: 제공된 용어집이 없으므로 해당 없음.
+- 언어별 규칙 준수: 미국식 영어 철자 및 문장 구조를 적절히 사용하였습니다.
+- 대소문자 표기: 문장형 대소문자(Sentence case) 규칙을 잘 준수하였습니다.
+- 서식 및 표기: 문장 끝 마침표 등 기본적인 문장 부호 표기가 적절합니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+Smart, comfortable air conditioning, all on its own
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//story_006_title", "source": "에어컨이 알아서 쾌적하게, 똑똑하게", "target": "Keep your home cool with the air conditioner"}, {"type": "semantic", "score": 61.8, "story_id": "story_006", "section": "//section_006_3", "source": "알아서 맞춰주는 맞춤 냉방", "target": "Self-optimizing Customized cooling"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "번역된 문장은 문법적으로는 완벽하며 유창한 영어 문장이지만, 원문의 리듬감과 마케팅적인 어조를 충분히 살리지 못했습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 핵심 키워드인 '알아서(automatically/on its own)'와 '똑똑하게(smartly)'의 의미가 번역에서 누락되었습니다. 단순히 집을 시원하게 유지한다는 기능적 설명에 그쳐, AI나 자동화 기능을 강조하는 SmartThings의 브랜드 가치를 충분히 전달하지 못하고 있습니다."}, {"category": "용어집 준수", "comment": "제공된 용어집이 없으므로 해당 없음."}, {"category": "언어별 규칙 준수", "comment": "미국식 영어 철자 및 문장 구조를 적절히 사용하였습니다."}, {"category": "대소문자 표기", "comment": "문장형 대소문자(Sentence case) 규칙을 잘 준수하였습니다."}, {"category": "서식 및 표기", "comment": "문장 끝 마침표 등 기본적인 문장 부호 표기가 적절합니다."}], "grade": "Needs Revision", "suggested_fix": "Smart, comfortable air conditioning, all on its own"}
+==========================================================================================
+[시트] US(미국) | [셀] C8
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+무더운 여름, 스마트싱스로 에어컨을 더 섬세하고 똑똑하게 관리해 보세요. 집에 도착하기 전엔 미리 시원하게, 잠들 땐 조용하고 쾌적하게, 언제나 똑똑하게 냉방을 도와줘요. 내 일상에 딱 맞는 에어컨과 매일 더 시원하고 편안한 여름을 보내보세요.
+
+[상세 - 번역문]
+During the hot summer, manage your air conditioner more precisely and intelligently with SmartThings. It keeps your home cool before you arrive, stays quiet and comfortable when you go to sleep, and always provides intelligent cooling. Enjoy a cooler, more comfortable summer every day with air conditioning perfectly tailored to your lifestyle.
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형 아님, 추가 대문자 수: 2개
+- 문장 2: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+- 문장 3: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //story_006_description
+- 번역: During the hot summer, manage your air conditioner more precisely and intelligently with SmartThings. It keeps your home cool before you arrive, stays quiet and comfortable when you go to sleep, and always provides intelligent cooling. Enjoy a cooler, more comfortable summer every day with air conditioning perfectly tailored to your lifestyle.
+
+[사례 2] SEMANTIC (69.4%) | story_006 | //section_006_2_description
+- 번역: The [Welcome air care] mode in SmartThings welcomes you with cool air instead of hot air by turning on the air conditioner before you get home. With [AI comfort], optimal temperature and humidity are set so you can enjoy clean air at all times. When it detects no one is nearby, the air conditioner automatically switches to power saving mode and turns off to save energy smartly.
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 문법적으로 완벽하며, 마케팅 문구에 어울리는 유창한 영어 표현을 사용하였습니다.
+- 정확성 및 현지화 품질: 원문의 '섬세하고 똑똑하게', '조용하고 쾌적하게' 등의 뉘앙스를 'precisely and intelligently', 'quiet and comfortable' 등으로 자연스럽게 현지화하였습니다.
+- 용어집 준수: 제공된 용어집에 따라 'SmartThings'를 정확히 표기하였으며, 대괄호를 제외하라는 예외 규칙(EXCEPTION)을 완벽히 준수하였습니다.
+- 언어별 규칙 준수: 미국 영어(US English) 기준에 부합하며, 문장 구조가 현지 정서에 맞게 잘 구성되었습니다.
+- 대소문자 표기: 문장 시작의 대문자 및 고유 명사(SmartThings)의 대소문자 표기가 표준 규칙을 따르고 있습니다.
+- 서식 및 표기: 구두점 사용 및 띄어쓰기가 미국 영어 관례에 따라 정확하게 작성되었습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//story_006_description", "source": "무더운 여름, 스마트싱스로 에어컨을 더 섬세하고 똑똑하게 관리해 보세요. 집에 도착하기 전엔 미리 시원하게, 잠들 땐 조용하고 쾌적하게, 언제나 똑똑하게 냉방을 도와줘요. 내 일상에 딱 맞는 에어컨과 매일 더 시원하고 편안한 여름을 보내보세요.", "target": "During the hot summer, manage your air conditioner more precisely and intelligently with SmartThings. It keeps your home cool before you arrive, stays quiet and comfortable when you go to sleep, and always provides intelligent cooling. Enjoy a cooler, more comfortable summer every day with air conditioning perfectly tailored to your lifestyle."}, {"type": "semantic", "score": 69.4, "story_id": "story_006", "section": "//section_006_2_description", "source": "스마트싱스의 [웰컴 에어 케어]가 집에 도착하기 전 에어컨을 켜주니 더위 대신 시원함이 반겨줘요. [AI 쾌적]으로 최적의 온습도가 설정되어 언제나 쾌적한 공기를 만날 수 있어요. 주변에 사람이 없는 것이 감지되면 에어컨이 절전 운전된 후 알아서 꺼지니 에너지도 똑똑하게 아낄 수 있어요.", "target": "The [Welcome air care] mode in SmartThings welcomes you with cool air instead of hot air by turning on the air conditioner before you get home. With [AI comfort], optimal temperature and humidity are set so you can enjoy clean air at all times. When it detects no one is nearby, the air conditioner automatically switches to power saving mode and turns off to save energy smartly."}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "문법적으로 완벽하며, 마케팅 문구에 어울리는 유창한 영어 표현을 사용하였습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '섬세하고 똑똑하게', '조용하고 쾌적하게' 등의 뉘앙스를 'precisely and intelligently', 'quiet and comfortable' 등으로 자연스럽게 현지화하였습니다."}, {"category": "용어집 준수", "comment": "제공된 용어집에 따라 'SmartThings'를 정확히 표기하였으며, 대괄호를 제외하라는 예외 규칙(EXCEPTION)을 완벽히 준수하였습니다."}, {"category": "언어별 규칙 준수", "comment": "미국 영어(US English) 기준에 부합하며, 문장 구조가 현지 정서에 맞게 잘 구성되었습니다."}, {"category": "대소문자 표기", "comment": "문장 시작의 대문자 및 고유 명사(SmartThings)의 대소문자 표기가 표준 규칙을 따르고 있습니다."}, {"category": "서식 및 표기", "comment": "구두점 사용 및 띄어쓰기가 미국 영어 관례에 따라 정확하게 작성되었습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] US(미국) | [셀] C10
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+한밤중에도 시원하고 조용한 에어컨
+
+[상세 - 번역문]
+Keeping your room cool and quiet all night long
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_1
+- 번역: Keeping your room cool and quiet all night long
+
+[사례 2] SEMANTIC (54.3%) | story_006 | //section_006_1_description
+- 번역: Your home air conditioner is designed to ensure a comfortable sleep experience with precise control over temperature, fan speed, scheduled settings, and even display lights and sound effects. When paired with a Galaxy Watch, the air conditioner automatically adjusts to the optimal temperature and fan speed based on your sleep stage, as detected by the watch. This intelligent integration allows you to enjoy a restful and comfortable night's sleep.
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 분사구(~ing)를 활용하여 자연스럽고 세련된 영어 표현을 구사하였습니다. 문법적 오류가 없으며 원어민이 선호하는 마케팅 문구 스타일입니다.
+- 정확성 및 현지화 품질: 원문의 '에어컨'이라는 명사를 직접 번역하지 않았으나, SmartThings 앱 내 에어컨 제어 섹션임을 감안할 때 사용자에게 전달되는 효용(시원하고 조용한 방 안 환경)을 강조한 번역은 매우 훌륭한 의역입니다. '한밤중에도'를 'all night long'으로 표현하여 지속성의 의미를 더한 점도 우수합니다.
+- 용어집 준수: 제공된 용어집이 없으므로 해당 사항 없습니다.
+- 언어별 규칙 준수: 미국식 영어 표현 및 관용적 표현을 적절히 사용하였습니다.
+- 대소문자 표기: 문장형 대소문자(Sentence case)를 준수하여 첫 글자만 대문자로 표기한 점이 UI 타이틀로서 적절합니다.
+- 서식 및 표기: 불필요한 구두점 없이 깔끔하게 마무리되었습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_1", "source": "한밤중에도 시원하고 조용한 에어컨", "target": "Keeping your room cool and quiet all night long"}, {"type": "semantic", "score": 54.3, "story_id": "story_006", "section": "//section_006_1_description", "source": "우리 집 에어컨은 내 편안한 잠자리를 위해 매일 세심하게 챙겨주고 있어요. 온도와 바람 세기, 예약 설정은 물론 디스플레이의 불빛부터 효과음까지도 제어할 수 있죠. 갤럭시 워치를 착용하고 있다면 워치가 인식한 나의 수면 단계에 맞춰 에어컨이 최적의 온도와 바람 세기로 조절해 줘요. 덕분에 밤새 편안하게 잠들 수 있어요.", "target": "Your home air conditioner is designed to ensure a comfortable sleep experience with precise control over temperature, fan speed, scheduled settings, and even display lights and sound effects. When paired with a Galaxy Watch, the air conditioner automatically adjusts to the optimal temperature and fan speed based on your sleep stage, as detected by the watch. This intelligent integration allows you to enjoy a restful and comfortable night's sleep."}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "분사구(~ing)를 활용하여 자연스럽고 세련된 영어 표현을 구사하였습니다. 문법적 오류가 없으며 원어민이 선호하는 마케팅 문구 스타일입니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '에어컨'이라는 명사를 직접 번역하지 않았으나, SmartThings 앱 내 에어컨 제어 섹션임을 감안할 때 사용자에게 전달되는 효용(시원하고 조용한 방 안 환경)을 강조한 번역은 매우 훌륭한 의역입니다. '한밤중에도'를 'all night long'으로 표현하여 지속성의 의미를 더한 점도 우수합니다."}, {"category": "용어집 준수", "comment": "제공된 용어집이 없으므로 해당 사항 없습니다."}, {"category": "언어별 규칙 준수", "comment": "미국식 영어 표현 및 관용적 표현을 적절히 사용하였습니다."}, {"category": "대소문자 표기", "comment": "문장형 대소문자(Sentence case)를 준수하여 첫 글자만 대문자로 표기한 점이 UI 타이틀로서 적절합니다."}, {"category": "서식 및 표기", "comment": "불필요한 구두점 없이 깔끔하게 마무리되었습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] US(미국) | [셀] C11
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+우리 집 에어컨은 내 편안한 잠자리를 위해 매일 세심하게 챙겨주고 있어요. 온도와 바람 세기, 예약 설정은 물론 디스플레이의 불빛부터 효과음까지도 제어할 수 있죠. 갤럭시 워치를 착용하고 있다면 워치가 인식한 나의 수면 단계에 맞춰 에어컨이 최적의 온도와 바람 세기로 조절해 줘요. 덕분에 밤새 편안하게 잠들 수 있어요.
+
+[상세 - 번역문]
+Your home air conditioner is designed to ensure a comfortable sleep experience with precise control over temperature, fan speed, scheduled settings, and even display lights and sound effects. When paired with a Galaxy Watch, the air conditioner automatically adjusts to the optimal temperature and fan speed based on your sleep stage, as detected by the watch. This intelligent integration allows you to enjoy a restful and comfortable night's sleep.
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+- 문장 2: 문장형 아님, 추가 대문자 수: 2개
+- 문장 3: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+
+[단순 규칙 기반 문장형 변환안]:
+Your home air conditioner is designed to ensure a comfortable sleep experience with precise control over temperature, fan speed, scheduled Settings, and even display lights and sound effects. When paired with a Galaxy watch, the air conditioner automatically adjusts to the optimal temperature and fan speed based on your sleep stage, as detected by the watch. This intelligent integration allows you to enjoy a restful and comfortable night's sleep.
+
+[상세 - 용어집 점검]
+용어집 대소문자 표기 점검:
+- [대소문자] 용어집 'Settings'의 표기가 'settings'로 사용됨 (용어집 대소문자는 제목/문장형 대소문자 규칙보다 우선)
+
+용어집 괄호 규정 점검:
+- [괄호 오류] 'Settings'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_1_description
+- 번역: Your home air conditioner is designed to ensure a comfortable sleep experience with precise control over temperature, fan speed, scheduled settings, and even display lights and sound effects. When paired with a Galaxy Watch, the air conditioner automatically adjusts to the optimal temperature and fan speed based on your sleep stage, as detected by the watch. This intelligent integration allows you to enjoy a restful and comfortable night's sleep.
+
+[사례 2] SEMANTIC (65.6%) | story_016 | //section_016_1_description
+- 번역: SmartThings creates your own optimal sleeping environment. When you fall asleep, the lights in your bedroom are turned off naturally, the curtains are closed, and a comfortable atmosphere is created. The air conditioner and air purifier also start operating quietly when you sleep to help you sleep comfortably. When you wear a Galaxy Watch or a Galaxy Ring, it automatically recognizes when you fall asleep, so all these changes happen seamlessly.
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 미국식 영어(US English) 표현이 매우 자연스럽고 유창합니다. 문장 간의 연결성도 뛰어나며 문법적인 오류가 없습니다.
+- 정확성 및 현지화 품질: 원문의 의도를 잘 파악하여 현지 사용자에게 친숙한 톤앤매너로 번역되었습니다. 한국어의 의인화된 표현('세심하게 챙겨주고 있어요')을 영어권 UI에서 흔히 쓰이는 기능 중심의 서술('is designed to ensure')로 적절히 변역하였습니다.
+- 용어집 준수: 'Galaxy'에 대한 예외 규칙(대괄호 제외)은 완벽히 준수되었습니다. 다만, glossary에 정의된 '설정(Settings)'은 일반 포맷팅 규칙에 따라 대괄호를 씌워야 하나 적용되지 않았습니다.
+- 언어별 규칙 준수: 미국식 철자법 및 구두점 규칙을 잘 따르고 있습니다.
+- 대소문자 표기: 문장형 대소문자(Sentence case)를 일관되게 사용하였습니다.
+- 서식 및 표기: Glossary 항목인 'Settings'를 [Settings]로 표기해야 하는 서식 규칙이 누락되었습니다.
+
+최종 평가: 양호 — 경미한 개선 여지 있으나 출시 가능 수준.
+
+[수정안 제안]:
+Your home air conditioner is designed to ensure a comfortable sleep experience with precise control over temperature, fan speed, scheduled [Settings], and even display lights and sound effects. When paired with a Galaxy Watch, the air conditioner automatically adjusts to the optimal temperature and fan speed based on your sleep stage, as detected by the watch. This intelligent integration allows you to enjoy a restful and comfortable night's sleep.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_1_description", "source": "우리 집 에어컨은 내 편안한 잠자리를 위해 매일 세심하게 챙겨주고 있어요. 온도와 바람 세기, 예약 설정은 물론 디스플레이의 불빛부터 효과음까지도 제어할 수 있죠. 갤럭시 워치를 착용하고 있다면 워치가 인식한 나의 수면 단계에 맞춰 에어컨이 최적의 온도와 바람 세기로 조절해 줘요. 덕분에 밤새 편안하게 잠들 수 있어요.", "target": "Your home air conditioner is designed to ensure a comfortable sleep experience with precise control over temperature, fan speed, scheduled settings, and even display lights and sound effects. When paired with a Galaxy Watch, the air conditioner automatically adjusts to the optimal temperature and fan speed based on your sleep stage, as detected by the watch. This intelligent integration allows you to enjoy a restful and comfortable night's sleep."}, {"type": "semantic", "score": 65.6, "story_id": "story_016", "section": "//section_016_1_description", "source": "스마트싱스가 나만의 최적 수면 환경을 만들어줘요. 내가 잠이 들면, 침실의 조명은 자연스럽게 꺼지고 커튼은 닫히며 안락한 분위기가 완성돼요. 에어컨과 공기청정기도 모두 나의 수면에 맞춰 조용히 동작하니 쾌적한 숙면을 즐길 수 있어요. 갤럭시 워치나 갤럭시 링을 착용하면 내가 잠든 순간을 자동으로 인식해 이 모든 변화가 더욱 자연스럽게 이어져요.", "target": "SmartThings creates your own optimal sleeping environment. When you fall asleep, the lights in your bedroom are turned off naturally, the curtains are closed, and a comfortable atmosphere is created. The air conditioner and air purifier also start operating quietly when you sleep to help you sleep comfortably. When you wear a Galaxy Watch or a Galaxy Ring, it automatically recognizes when you fall asleep, so all these changes happen seamlessly."}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "미국식 영어(US English) 표현이 매우 자연스럽고 유창합니다. 문장 간의 연결성도 뛰어나며 문법적인 오류가 없습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의도를 잘 파악하여 현지 사용자에게 친숙한 톤앤매너로 번역되었습니다. 한국어의 의인화된 표현('세심하게 챙겨주고 있어요')을 영어권 UI에서 흔히 쓰이는 기능 중심의 서술('is designed to ensure')로 적절히 변역하였습니다."}, {"category": "용어집 준수", "comment": "'Galaxy'에 대한 예외 규칙(대괄호 제외)은 완벽히 준수되었습니다. 다만, glossary에 정의된 '설정(Settings)'은 일반 포맷팅 규칙에 따라 대괄호를 씌워야 하나 적용되지 않았습니다."}, {"category": "언어별 규칙 준수", "comment": "미국식 철자법 및 구두점 규칙을 잘 따르고 있습니다."}, {"category": "대소문자 표기", "comment": "문장형 대소문자(Sentence case)를 일관되게 사용하였습니다."}, {"category": "서식 및 표기", "comment": "Glossary 항목인 'Settings'를 [Settings]로 표기해야 하는 서식 규칙이 누락되었습니다."}], "grade": "Good", "suggested_fix": "Your home air conditioner is designed to ensure a comfortable sleep experience with precise control over temperature, fan speed, scheduled [Settings], and even display lights and sound effects. When paired with a Galaxy Watch, the air conditioner automatically adjusts to the optimal temperature and fan speed based on your sleep stage, as detected by the watch. This intelligent integration allows you to enjoy a restful and comfortable night's sleep."}
+==========================================================================================
+[시트] US(미국) | [셀] C12
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+수면 단계에 따른 에어컨 자동 제어는 2026년부터 출시되는 삼성 에어컨 및 갤럭시 워치 7 이상부터 적용됩니다.
+
+[상세 - 번역문]
+Automatic air conditioner control based on sleep stages is supported only on Samsung air conditioners released from 2026 onward and on Galaxy Watch Series 7 or later.
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형 아님, 추가 대문자 수: 4개
+
+[단순 규칙 기반 문장형 변환안]:
+Automatic air conditioner control based on sleep stages is supported only on samsung air conditioners released from 2026 onward and on Galaxy watch series 7 or later.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_1_disclaimer
+- 번역: Automatic air conditioner control based on sleep stages is supported only on Samsung air conditioners released from 2026 onward and on Galaxy Watch Series 7 or later.
+
+[사례 2] SEMANTIC (56.1%) | story_006 | //section_006_1_description
+- 번역: Your home air conditioner is designed to ensure a comfortable sleep experience with precise control over temperature, fan speed, scheduled settings, and even display lights and sound effects. When paired with a Galaxy Watch, the air conditioner automatically adjusts to the optimal temperature and fan speed based on your sleep stage, as detected by the watch. This intelligent integration allows you to enjoy a restful and comfortable night's sleep.
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 영문법상 오류가 없으며, disclaimer 문구에 적합한 격식 있고 정중한 표현을 사용하였습니다.
+- 정확성 및 현지화 품질: 원문의 의미(2026년 이후 모델 및 갤럭시 워치 7 이상 지원)를 정확하게 전달합니다. 'supported only on'과 같은 표현을 통해 지원 범위를 명확히 한 점이 우수합니다.
+- 용어집 준수: Glossary의 예외 규칙(Galaxy에 대괄호를 사용하지 않음)을 정확하게 준수하였습니다.
+- 언어별 규칙 준수: 미국 영어 철자(air conditioner) 및 표현 방식을 따르고 있으며, 타겟 언어의 관례에 맞게 번역되었습니다.
+- 대소문자 표기: 문장 첫 글자 대문자 및 제품명(Samsung, Galaxy Watch)의 대소문자 표기가 표준 규칙에 부합합니다.
+- 서식 및 표기: 문장 끝 마침표 위치 등 기본적인 문장 부호 사용이 적절합니다. 불필요한 대괄호 사용을 지양하라는 지시가 잘 반영되었습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_1_disclaimer", "source": "수면 단계에 따른 에어컨 자동 제어는 2026년부터 출시되는 삼성 에어컨 및 갤럭시 워치 7 이상부터 적용됩니다.", "target": "Automatic air conditioner control based on sleep stages is supported only on Samsung air conditioners released from 2026 onward and on Galaxy Watch Series 7 or later."}, {"type": "semantic", "score": 56.1, "story_id": "story_006", "section": "//section_006_1_description", "source": "우리 집 에어컨은 내 편안한 잠자리를 위해 매일 세심하게 챙겨주고 있어요. 온도와 바람 세기, 예약 설정은 물론 디스플레이의 불빛부터 효과음까지도 제어할 수 있죠. 갤럭시 워치를 착용하고 있다면 워치가 인식한 나의 수면 단계에 맞춰 에어컨이 최적의 온도와 바람 세기로 조절해 줘요. 덕분에 밤새 편안하게 잠들 수 있어요.", "target": "Your home air conditioner is designed to ensure a comfortable sleep experience with precise control over temperature, fan speed, scheduled settings, and even display lights and sound effects. When paired with a Galaxy Watch, the air conditioner automatically adjusts to the optimal temperature and fan speed based on your sleep stage, as detected by the watch. This intelligent integration allows you to enjoy a restful and comfortable night's sleep."}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "영문법상 오류가 없으며, disclaimer 문구에 적합한 격식 있고 정중한 표현을 사용하였습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미(2026년 이후 모델 및 갤럭시 워치 7 이상 지원)를 정확하게 전달합니다. 'supported only on'과 같은 표현을 통해 지원 범위를 명확히 한 점이 우수합니다."}, {"category": "용어집 준수", "comment": "Glossary의 예외 규칙(Galaxy에 대괄호를 사용하지 않음)을 정확하게 준수하였습니다."}, {"category": "언어별 규칙 준수", "comment": "미국 영어 철자(air conditioner) 및 표현 방식을 따르고 있으며, 타겟 언어의 관례에 맞게 번역되었습니다."}, {"category": "대소문자 표기", "comment": "문장 첫 글자 대문자 및 제품명(Samsung, Galaxy Watch)의 대소문자 표기가 표준 규칙에 부합합니다."}, {"category": "서식 및 표기", "comment": "문장 끝 마침표 위치 등 기본적인 문장 부호 사용이 적절합니다. 불필요한 대괄호 사용을 지양하라는 지시가 잘 반영되었습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] US(미국) | [셀] C15
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+내 위치에 따라 켜지고 꺼지는 에어컨
+
+[상세 - 번역문]
+Air conditioner that turns on and off based on your location
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_2
+- 번역: Air conditioner that turns on and off based on your location
+
+[사례 2] SEMANTIC (53.9%) | story_006 | //story_006_title
+- 번역: Keep your home cool with the air conditioner
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 문법적으로 완벽하며, 원문의 의미를 매끄럽고 유창하게 영어로 옮겼습니다.
+- 정확성 및 현지화 품질: 원문의 '내 위치에 따라 켜지고 꺼지는'이라는 동작의 핵심을 'turns on and off based on your location'으로 정확하게 표현하였습니다. 현지 사용자가 이해하기 매우 직관적입니다.
+- 용어집 준수: 제공된 용어집이 없으므로 해당 사항 없습니다.
+- 언어별 규칙 준수: US English 기준에 부합하며, 자연스러운 문장 구조를 가지고 있습니다.
+- 대소문자 표기: 문장의 시작을 대문자로 표기하는 Sentence case를 적절히 준수하였습니다.
+- 서식 및 표기: 불필요한 구두점 없이 깔끔하게 작성되었습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_2", "source": "내 위치에 따라 켜지고 꺼지는 에어컨", "target": "Air conditioner that turns on and off based on your location"}, {"type": "semantic", "score": 53.9, "story_id": "story_006", "section": "//story_006_title", "source": "에어컨이 알아서 쾌적하게, 똑똑하게", "target": "Keep your home cool with the air conditioner"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "문법적으로 완벽하며, 원문의 의미를 매끄럽고 유창하게 영어로 옮겼습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '내 위치에 따라 켜지고 꺼지는'이라는 동작의 핵심을 'turns on and off based on your location'으로 정확하게 표현하였습니다. 현지 사용자가 이해하기 매우 직관적입니다."}, {"category": "용어집 준수", "comment": "제공된 용어집이 없으므로 해당 사항 없습니다."}, {"category": "언어별 규칙 준수", "comment": "US English 기준에 부합하며, 자연스러운 문장 구조를 가지고 있습니다."}, {"category": "대소문자 표기", "comment": "문장의 시작을 대문자로 표기하는 Sentence case를 적절히 준수하였습니다."}, {"category": "서식 및 표기", "comment": "불필요한 구두점 없이 깔끔하게 작성되었습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] US(미국) | [셀] C16
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+스마트싱스의 [웰컴 에어 케어]가 집에 도착하기 전 에어컨을 켜주니 더위 대신 시원함이 반겨줘요. [AI 쾌적]으로 최적의 온습도가 설정되어 언제나 쾌적한 공기를 만날 수 있어요. 주변에 사람이 없는 것이 감지되면 에어컨이 절전 운전된 후 알아서 꺼지니 에너지도 똑똑하게 아낄 수 있어요.
+
+[상세 - 번역문]
+The [Welcome air care] mode in SmartThings welcomes you with cool air instead of hot air by turning on the air conditioner before you get home. With [AI comfort], optimal temperature and humidity are set so you can enjoy clean air at all times. When it detects no one is nearby, the air conditioner automatically switches to power saving mode and turns off to save energy smartly.
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형 아님, 추가 대문자 수: 3개
+- 문장 2: 문장형 아님, 추가 대문자 수: 2개
+- 문장 3: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+
+[단순 규칙 기반 문장형 변환안]:
+The [Welcome air care] mode in SmartThings welcomes you with cool air instead of hot air by turning on the air conditioner before you get home. With [AI comfort], optimal temperature and humidity are set so you can enjoy clean air at all times. When it detects no one is nearby, the air conditioner automatically switches to power saving mode and turns off to save Energy smartly.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_2_description
+- 번역: The [Welcome air care] mode in SmartThings welcomes you with cool air instead of hot air by turning on the air conditioner before you get home. With [AI comfort], optimal temperature and humidity are set so you can enjoy clean air at all times. When it detects no one is nearby, the air conditioner automatically switches to power saving mode and turns off to save energy smartly.
+
+[사례 2] SEMANTIC (63.4%) | story_006 | //story_006_description
+- 번역: During the hot summer, manage your air conditioner more precisely and intelligently with SmartThings. It keeps your home cool before you arrive, stays quiet and comfortable when you go to sleep, and always provides intelligent cooling. Enjoy a cooler, more comfortable summer every day with air conditioning perfectly tailored to your lifestyle.
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 문법적으로 완벽하며, 영어권 사용자가 읽기에 자연스러운 흐름을 가지고 있습니다. 'instead of hot air' 보다는 'instead of the heat'이 약간 더 자연스러울 수 있으나 현재 번역도 충분히 유창합니다.
+- 정확성 및 현지화 품질: 원문의 의미를 정확하게 전달하고 있습니다. '쾌적한 공기'를 'clean air'로 번역했는데, 문맥상 'comfortable conditions' 혹은 'perfect air'가 더 가깝지만 마케팅 문구로서 수용 가능한 수준입니다.
+- 용어집 준수: SmartThings와 Energy에 대해 대괄호를 생략하라는 예외 규칙을 완벽하게 준수하였으며, [Welcome air care]와 [AI comfort]에도 대괄호를 정확히 적용했습니다.
+- 언어별 규칙 준수: 미국 영어 스펠링을 준수하였으며, SmartThings UI 스타일 가이드에 부합합니다.
+- 대소문자 표기: 문장형 대소문자(Sentence case)를 적절하게 사용하였고, 용어집에 명시된 대소문자 표기를 정확히 따랐습니다.
+- 서식 및 표기: 용어집의 대괄호 사용 규칙 및 마침표 위치 등 서식 규칙을 모두 충실히 이행했습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_2_description", "source": "스마트싱스의 [웰컴 에어 케어]가 집에 도착하기 전 에어컨을 켜주니 더위 대신 시원함이 반겨줘요. [AI 쾌적]으로 최적의 온습도가 설정되어 언제나 쾌적한 공기를 만날 수 있어요. 주변에 사람이 없는 것이 감지되면 에어컨이 절전 운전된 후 알아서 꺼지니 에너지도 똑똑하게 아낄 수 있어요.", "target": "The [Welcome air care] mode in SmartThings welcomes you with cool air instead of hot air by turning on the air conditioner before you get home. With [AI comfort], optimal temperature and humidity are set so you can enjoy clean air at all times. When it detects no one is nearby, the air conditioner automatically switches to power saving mode and turns off to save energy smartly."}, {"type": "semantic", "score": 63.4, "story_id": "story_006", "section": "//story_006_description", "source": "무더운 여름, 스마트싱스로 에어컨을 더 섬세하고 똑똑하게 관리해 보세요. 집에 도착하기 전엔 미리 시원하게, 잠들 땐 조용하고 쾌적하게, 언제나 똑똑하게 냉방을 도와줘요. 내 일상에 딱 맞는 에어컨과 매일 더 시원하고 편안한 여름을 보내보세요.", "target": "During the hot summer, manage your air conditioner more precisely and intelligently with SmartThings. It keeps your home cool before you arrive, stays quiet and comfortable when you go to sleep, and always provides intelligent cooling. Enjoy a cooler, more comfortable summer every day with air conditioning perfectly tailored to your lifestyle."}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "문법적으로 완벽하며, 영어권 사용자가 읽기에 자연스러운 흐름을 가지고 있습니다. 'instead of hot air' 보다는 'instead of the heat'이 약간 더 자연스러울 수 있으나 현재 번역도 충분히 유창합니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 정확하게 전달하고 있습니다. '쾌적한 공기'를 'clean air'로 번역했는데, 문맥상 'comfortable conditions' 혹은 'perfect air'가 더 가깝지만 마케팅 문구로서 수용 가능한 수준입니다."}, {"category": "용어집 준수", "comment": "SmartThings와 Energy에 대해 대괄호를 생략하라는 예외 규칙을 완벽하게 준수하였으며, [Welcome air care]와 [AI comfort]에도 대괄호를 정확히 적용했습니다."}, {"category": "언어별 규칙 준수", "comment": "미국 영어 스펠링을 준수하였으며, SmartThings UI 스타일 가이드에 부합합니다."}, {"category": "대소문자 표기", "comment": "문장형 대소문자(Sentence case)를 적절하게 사용하였고, 용어집에 명시된 대소문자 표기를 정확히 따랐습니다."}, {"category": "서식 및 표기", "comment": "용어집의 대괄호 사용 규칙 및 마침표 위치 등 서식 규칙을 모두 충실히 이행했습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] US(미국) | [셀] C17
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+[웰컴 에어 케어]는 [기기 > 에어컨 > 기기 제어 > 웰컴 에어 케어]에서 설정할 수 있습니다. 
+[부재 절전]은 [(스탠드형 모델) 기기 > 에어컨 > 기기 제어 > 동작 감지 > 부재 절전], [(벽걸이형 모델) 기기 > 에어컨 > 기기 제어 > 동작 감지 > 사람이 없을 때]에서 설정할 수 있습니다.
+
+[상세 - 번역문]
+[Welcome air care] can be set in "Device > Air Conditioner > Device control > Welcome air care."
+[Power saving while away] can be set in "(Floor-standing model) Device > Air Conditioner > Device control > Motion detection > Power saving while away, (Wall-mount model) Device > Air Conditioner > Device control > Motion detection > While away."
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형 아님, 추가 대문자 수: 20개
+
+[단순 규칙 기반 문장형 변환안]:
+[Welcome air care] can be set in "Device > air conditioner > Device control > Welcome air care."
+[Power saving While away] can be set in "(floor-standing model) Device > air conditioner > Device control > Motion detection > Power saving While away, (wall-mount model) Device > air conditioner > Device control > Motion detection > While away."
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+용어집 대소문자 표기 점검:
+- [대소문자] 용어집 'While away'의 표기가 'while away'로 사용됨 (용어집 대소문자는 제목/문장형 대소문자 규칙보다 우선)
+
+용어집 괄호 규정 점검:
+- [괄호 오류] 'While away'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_2_disclaimer
+- 번역: [Welcome air care] can be set in "Device > Air Conditioner > Device control > Welcome air care."
+[Power saving while away] can be set in "(Floor-standing model) Device > Air Conditioner > Device control > Motion detection > Power saving while away, (Wall-mount model) Device > Air Conditioner > Device control > Motion detection > While away."
+
+[사례 2] SEMANTIC (59.0%) | story_006 | //section_006_2_description
+- 번역: The [Welcome air care] mode in SmartThings welcomes you with cool air instead of hot air by turning on the air conditioner before you get home. With [AI comfort], optimal temperature and humidity are set so you can enjoy clean air at all times. When it detects no one is nearby, the air conditioner automatically switches to power saving mode and turns off to save energy smartly.
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 문법적으로 완벽하며, 안내 문구에 적합한 수동태(can be set in)를 사용하여 자연스럽게 번역되었습니다.
+- 정확성 및 현지화 품질: 원문의 정보를 누락 없이 전달하고 있으며, 기기별 설정 경로를 명확하게 구분하여 설명하였습니다.
+- 용어집 준수: [Welcome air care], [Power saving while away], [Device] 등 모든 용어가 용어집과 100% 일치하며 대괄호 규칙도 잘 준수되었습니다.
+- 언어별 규칙 준수: US English 철자를 준수하였습니다.
+- 대소문자 표기: 용어집에 기재된 소문자 표기(Welcome air care 등)를 그대로 유지하며 일관성을 유지했습니다.
+- 서식 및 표기: 프로젝트의 특수 규칙(Disclaimer 문장의 마침표를 닫는 따옴표 밖에 표기)이 준수되지 않았습니다. 현재 번역은 마침표가 따옴표 안에(.") 위치해 있으나, 규칙에 따라 따옴표 밖(".)으로 수정해야 합니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+[Welcome air care] can be set in "Device > Air Conditioner > Device control > Welcome air care".
+[Power saving while away] can be set in "(Floor-standing model) Device > Air Conditioner > Device control > Motion detection > Power saving while away", or "(Wall-mount model) Device > Air Conditioner > Device control > Motion detection > While away".
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_2_disclaimer", "source": "[웰컴 에어 케어]는 [기기 > 에어컨 > 기기 제어 > 웰컴 에어 케어]에서 설정할 수 있습니다. \n[부재 절전]은 [(스탠드형 모델) 기기 > 에어컨 > 기기 제어 > 동작 감지 > 부재 절전], [(벽걸이형 모델) 기기 > 에어컨 > 기기 제어 > 동작 감지 > 사람이 없을 때]에서 설정할 수 있습니다.", "target": "[Welcome air care] can be set in \"Device > Air Conditioner > Device control > Welcome air care.\"\n[Power saving while away] can be set in \"(Floor-standing model) Device > Air Conditioner > Device control > Motion detection > Power saving while away, (Wall-mount model) Device > Air Conditioner > Device control > Motion detection > While away.\""}, {"type": "semantic", "score": 59.0, "story_id": "story_006", "section": "//section_006_2_description", "source": "스마트싱스의 [웰컴 에어 케어]가 집에 도착하기 전 에어컨을 켜주니 더위 대신 시원함이 반겨줘요. [AI 쾌적]으로 최적의 온습도가 설정되어 언제나 쾌적한 공기를 만날 수 있어요. 주변에 사람이 없는 것이 감지되면 에어컨이 절전 운전된 후 알아서 꺼지니 에너지도 똑똑하게 아낄 수 있어요.", "target": "The [Welcome air care] mode in SmartThings welcomes you with cool air instead of hot air by turning on the air conditioner before you get home. With [AI comfort], optimal temperature and humidity are set so you can enjoy clean air at all times. When it detects no one is nearby, the air conditioner automatically switches to power saving mode and turns off to save energy smartly."}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "문법적으로 완벽하며, 안내 문구에 적합한 수동태(can be set in)를 사용하여 자연스럽게 번역되었습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 정보를 누락 없이 전달하고 있으며, 기기별 설정 경로를 명확하게 구분하여 설명하였습니다."}, {"category": "용어집 준수", "comment": "[Welcome air care], [Power saving while away], [Device] 등 모든 용어가 용어집과 100% 일치하며 대괄호 규칙도 잘 준수되었습니다."}, {"category": "언어별 규칙 준수", "comment": "US English 철자를 준수하였습니다."}, {"category": "대소문자 표기", "comment": "용어집에 기재된 소문자 표기(Welcome air care 등)를 그대로 유지하며 일관성을 유지했습니다."}, {"category": "서식 및 표기", "comment": "프로젝트의 특수 규칙(Disclaimer 문장의 마침표를 닫는 따옴표 밖에 표기)이 준수되지 않았습니다. 현재 번역은 마침표가 따옴표 안에(.\") 위치해 있으나, 규칙에 따라 따옴표 밖(\".)으로 수정해야 합니다."}], "grade": "Needs Revision", "suggested_fix": "[Welcome air care] can be set in \"Device > Air Conditioner > Device control > Welcome air care\".\n[Power saving while away] can be set in \"(Floor-standing model) Device > Air Conditioner > Device control > Motion detection > Power saving while away\", or \"(Wall-mount model) Device > Air Conditioner > Device control > Motion detection > While away\"."}
+==========================================================================================
+[시트] US(미국) | [셀] C20
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+알아서 맞춰주는 맞춤 냉방
+
+[상세 - 번역문]
+Self-optimizing Customized cooling
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형 아님, 추가 대문자 수: 1개
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3
+- 번역: Self-optimizing Customized cooling
+
+[사례 2] SEMANTIC (65.9%) | story_006 | //section_006_3_description
+- 번역: Optimize energy efficiency while maintaining comfort with [Customized cooling]. This feature recommends the most economical and comfortable air conditioner temperature or automatically adjusts it for you. When a ceiling fan is installed in the same room, it activates automatically upon air conditioner startup, enhancing air circulation and improving cooling efficiency. Let [Customized cooling] manage the details, allowing you to simply enjoy a refreshing and pleasant coolness.
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 영문법상 오류는 없으나, 'Self-optimizing'과 'Customized'가 연달아 수식어로 사용되어 약간 중복적인 느낌을 줄 수 있습니다. 다만, 원문의 '알아서 맞춰주는'과 '맞춤 냉방'의 뉘앙스를 모두 살리기 위한 선택으로 이해됩니다.
+- 정확성 및 현지화 품질: 원문의 '알아서 맞춰주는'이라는 자동화/최적화의 의미를 'Self-optimizing'으로, '맞춤 냉방'을 용어집에 따라 'Customized cooling'으로 정확하게 번역하였습니다.
+- 용어집 준수: Glossary 항목인 '맞춤 냉방'을 'Customized cooling'으로 대소문자 및 띄어쓰기까지 정확하게 준수하였습니다.
+- 언어별 규칙 준수: 미국 영어(US English) 기준에 부합하며, 특별히 위배되는 현지화 규칙은 없습니다.
+- 대소문자 표기: 문장의 시작인 'Self-optimizing'의 첫 글자를 대문자로 표기하였고, 용어집의 대소문자(Customized cooling)를 그대로 유지하여 규칙을 잘 따랐습니다.
+- 서식 및 표기: 용어집 용어에 브래킷을 사용하지 않아야 한다는 규칙을 준수하였으며, 구두점 사용도 적절합니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3", "source": "알아서 맞춰주는 맞춤 냉방", "target": "Self-optimizing Customized cooling"}, {"type": "semantic", "score": 65.9, "story_id": "story_006", "section": "//section_006_3_description", "source": "에너지는 절약하고 시원함은 더하는 방법! [맞춤 냉방]이 가장 알뜰하고 쾌적한 에어컨 온도를 알려주거나 직접 조절해 줘요. 같은 공간에 실링팬이 있다면, 에어컨이 켜질 때 알아서 함께 켤 수도 있어요. 실링팬이 시원한 공기를 구석구석 빠르게 순환시켜 냉방 효율이 높아지죠. 이제 복잡한 고민은 [맞춤 냉방]에 맡기고, 기분 좋은 시원함만 누려 보세요.", "target": "Optimize energy efficiency while maintaining comfort with [Customized cooling]. This feature recommends the most economical and comfortable air conditioner temperature or automatically adjusts it for you. When a ceiling fan is installed in the same room, it activates automatically upon air conditioner startup, enhancing air circulation and improving cooling efficiency. Let [Customized cooling] manage the details, allowing you to simply enjoy a refreshing and pleasant coolness."}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "영문법상 오류는 없으나, 'Self-optimizing'과 'Customized'가 연달아 수식어로 사용되어 약간 중복적인 느낌을 줄 수 있습니다. 다만, 원문의 '알아서 맞춰주는'과 '맞춤 냉방'의 뉘앙스를 모두 살리기 위한 선택으로 이해됩니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '알아서 맞춰주는'이라는 자동화/최적화의 의미를 'Self-optimizing'으로, '맞춤 냉방'을 용어집에 따라 'Customized cooling'으로 정확하게 번역하였습니다."}, {"category": "용어집 준수", "comment": "Glossary 항목인 '맞춤 냉방'을 'Customized cooling'으로 대소문자 및 띄어쓰기까지 정확하게 준수하였습니다."}, {"category": "언어별 규칙 준수", "comment": "미국 영어(US English) 기준에 부합하며, 특별히 위배되는 현지화 규칙은 없습니다."}, {"category": "대소문자 표기", "comment": "문장의 시작인 'Self-optimizing'의 첫 글자를 대문자로 표기하였고, 용어집의 대소문자(Customized cooling)를 그대로 유지하여 규칙을 잘 따랐습니다."}, {"category": "서식 및 표기", "comment": "용어집 용어에 브래킷을 사용하지 않아야 한다는 규칙을 준수하였으며, 구두점 사용도 적절합니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] US(미국) | [셀] C21
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+에너지는 절약하고 시원함은 더하는 방법! [맞춤 냉방]이 가장 알뜰하고 쾌적한 에어컨 온도를 알려주거나 직접 조절해 줘요. 같은 공간에 실링팬이 있다면, 에어컨이 켜질 때 알아서 함께 켤 수도 있어요. 실링팬이 시원한 공기를 구석구석 빠르게 순환시켜 냉방 효율이 높아지죠. 이제 복잡한 고민은 [맞춤 냉방]에 맡기고, 기분 좋은 시원함만 누려 보세요.
+
+[상세 - 번역문]
+Optimize energy efficiency while maintaining comfort with [Customized cooling]. This feature recommends the most economical and comfortable air conditioner temperature or automatically adjusts it for you. When a ceiling fan is installed in the same room, it activates automatically upon air conditioner startup, enhancing air circulation and improving cooling efficiency. Let [Customized cooling] manage the details, allowing you to simply enjoy a refreshing and pleasant coolness.
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형 아님, 추가 대문자 수: 1개
+- 문장 2: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+- 문장 3: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+- 문장 4: 문장형 아님, 추가 대문자 수: 1개
+
+[단순 규칙 기반 문장형 변환안]:
+Optimize Energy efficiency while maintaining comfort with [Customized cooling]. This feature recommends the most economical and comfortable air conditioner temperature or automatically adjusts it for you. When a ceiling fan is installed in the same room, it activates automatically upon air conditioner startup, enhancing air circulation and improving cooling efficiency. Let [Customized cooling] manage the details, allowing you to simply enjoy a refreshing and pleasant coolness.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_description
+- 번역: Optimize energy efficiency while maintaining comfort with [Customized cooling]. This feature recommends the most economical and comfortable air conditioner temperature or automatically adjusts it for you. When a ceiling fan is installed in the same room, it activates automatically upon air conditioner startup, enhancing air circulation and improving cooling efficiency. Let [Customized cooling] manage the details, allowing you to simply enjoy a refreshing and pleasant coolness.
+
+[사례 2] SEMANTIC (68.0%) | story_006 | //section_006_3_disclaimer
+- 번역: [Customized cooling] requires the air‑conditioner to be connected and can be enabled in 'Settings > Energy > Save > Customized cooling.'
+[Turn on fan to circulate cool air] requires a connected WWST‑certified ceiling‑fan.
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 문법적으로 완벽하며, IT 기기나 스마트홈 서비스 설명에 적합한 신뢰감 있고 전문적인 어조를 유지하고 있습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 정확하게 전달하고 있습니다. '복잡한 고민'을 'manage the details'로 의역한 점은 영어권 사용자에게 훨씬 자연스럽게 느껴지는 훌륭한 현지화입니다.
+- 용어집 준수: [Customized cooling]과 Energy(대괄호 제외 규칙)는 잘 준수되었습니다. 다만, '절약'에 대해 지정된 용어인 'Save' 대신 'Optimize energy efficiency'라는 의역을 사용하여 용어집 준수 측면에서 보완이 필요합니다.
+- 언어별 규칙 준수: US English 철자와 관용적 표현이 적절하게 사용되었습니다.
+- 대소문자 표기: 문장형 대소문자(Sentence case) 표기 규칙을 일관성 있게 준수하였습니다.
+- 서식 및 표기: 용어집 항목에 대괄호([])를 사용하는 규칙과 Energy 항목의 예외 처리(bracket 제외)가 완벽하게 적용되었습니다.
+
+최종 평가: 양호 — 경미한 개선 여지 있으나 출시 가능 수준.
+
+[수정안 제안]:
+Ways to [Save] Energy and stay cool! [Customized cooling] recommends or automatically adjusts the air conditioner to the most economical and comfortable temperature. If there's a ceiling fan in the same room, it can turn on automatically when the air conditioner starts. The ceiling fan circulates cool air to every corner, improving cooling efficiency. Leave the complicated details to [Customized cooling] and just enjoy the refreshing breeze.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_description", "source": "에너지는 절약하고 시원함은 더하는 방법! [맞춤 냉방]이 가장 알뜰하고 쾌적한 에어컨 온도를 알려주거나 직접 조절해 줘요. 같은 공간에 실링팬이 있다면, 에어컨이 켜질 때 알아서 함께 켤 수도 있어요. 실링팬이 시원한 공기를 구석구석 빠르게 순환시켜 냉방 효율이 높아지죠. 이제 복잡한 고민은 [맞춤 냉방]에 맡기고, 기분 좋은 시원함만 누려 보세요.", "target": "Optimize energy efficiency while maintaining comfort with [Customized cooling]. This feature recommends the most economical and comfortable air conditioner temperature or automatically adjusts it for you. When a ceiling fan is installed in the same room, it activates automatically upon air conditioner startup, enhancing air circulation and improving cooling efficiency. Let [Customized cooling] manage the details, allowing you to simply enjoy a refreshing and pleasant coolness."}, {"type": "semantic", "score": 68.0, "story_id": "story_006", "section": "//section_006_3_disclaimer", "source": "[맞춤 냉방] 설정은 에어컨 연결이 필요하며 [에너지 > 절약 > 맞춤 냉방]에서 설정할 수 있습니다. \n[팬을 켜서 냉기 순환 시키기]는 WWST 인증을 받은 실링팬 연결이 필요합니다.", "target": "[Customized cooling] requires the air‑conditioner to be connected and can be enabled in 'Settings > Energy > Save > Customized cooling.'\n[Turn on fan to circulate cool air] requires a connected WWST‑certified ceiling‑fan."}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "문법적으로 완벽하며, IT 기기나 스마트홈 서비스 설명에 적합한 신뢰감 있고 전문적인 어조를 유지하고 있습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 정확하게 전달하고 있습니다. '복잡한 고민'을 'manage the details'로 의역한 점은 영어권 사용자에게 훨씬 자연스럽게 느껴지는 훌륭한 현지화입니다."}, {"category": "용어집 준수", "comment": "[Customized cooling]과 Energy(대괄호 제외 규칙)는 잘 준수되었습니다. 다만, '절약'에 대해 지정된 용어인 'Save' 대신 'Optimize energy efficiency'라는 의역을 사용하여 용어집 준수 측면에서 보완이 필요합니다."}, {"category": "언어별 규칙 준수", "comment": "US English 철자와 관용적 표현이 적절하게 사용되었습니다."}, {"category": "대소문자 표기", "comment": "문장형 대소문자(Sentence case) 표기 규칙을 일관성 있게 준수하였습니다."}, {"category": "서식 및 표기", "comment": "용어집 항목에 대괄호([])를 사용하는 규칙과 Energy 항목의 예외 처리(bracket 제외)가 완벽하게 적용되었습니다."}], "grade": "Good", "suggested_fix": "Ways to [Save] Energy and stay cool! [Customized cooling] recommends or automatically adjusts the air conditioner to the most economical and comfortable temperature. If there's a ceiling fan in the same room, it can turn on automatically when the air conditioner starts. The ceiling fan circulates cool air to every corner, improving cooling efficiency. Leave the complicated details to [Customized cooling] and just enjoy the refreshing breeze."}
+==========================================================================================
+[시트] US(미국) | [셀] C22
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+[맞춤 냉방] 설정은 에어컨 연결이 필요하며 [에너지 > 절약 > 맞춤 냉방]에서 설정할 수 있습니다. 
+[팬을 켜서 냉기 순환 시키기]는 WWST 인증을 받은 실링팬 연결이 필요합니다.
+
+[상세 - 번역문]
+[Customized cooling] requires the air‑conditioner to be connected and can be enabled in 'Settings > Energy > Save > Customized cooling.'
+[Turn on fan to circulate cool air] requires a connected WWST‑certified ceiling‑fan.
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형 아님, 추가 대문자 수: 9개
+
+[단순 규칙 기반 문장형 변환안]:
+[Customized cooling] requires the air‑conditioner to be connected and can be enabled in 'Settings > Energy > Save > customized cooling.'
+[Turn on fan to circulate cool air] requires a connected wwst‑certified ceiling‑fan.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '맞춤 냉방' → 'Customized cooling' 미적용
+
+용어집 괄호 규정 점검:
+- [괄호 오류] 'Settings'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_disclaimer
+- 번역: [Customized cooling] requires the air‑conditioner to be connected and can be enabled in 'Settings > Energy > Save > Customized cooling.'
+[Turn on fan to circulate cool air] requires a connected WWST‑certified ceiling‑fan.
+
+[사례 2] SEMANTIC (66.8%) | story_006 | //section_006_3_description
+- 번역: Optimize energy efficiency while maintaining comfort with [Customized cooling]. This feature recommends the most economical and comfortable air conditioner temperature or automatically adjusts it for you. When a ceiling fan is installed in the same room, it activates automatically upon air conditioner startup, enhancing air circulation and improving cooling efficiency. Let [Customized cooling] manage the details, allowing you to simply enjoy a refreshing and pleasant coolness.
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 전반적으로 자연스러우나 'air-conditioner'와 'ceiling-fan'은 미국 영어(US English) 관례상 복합 명사로 쓰일 때 하이픈 없이 'air conditioner', 'ceiling fan'으로 표기하는 것이 더 일반적입니다.
+- 정확성 및 현지화 품질: 원문의 의미를 정확하게 전달하고 있으며, 스마트홈 환경에 적합한 명료한 문장 구조를 사용했습니다.
+- 용어집 준수: 제공된 glossary의 용어들을 정확하게 반영했습니다. 특히 'Energy'에 대한 예외 규칙(브라켓 제외)을 잘 준수했습니다.
+- 언어별 규칙 준수: 미국 영어 맞춤법을 준수했으나, 안내 문구(disclaimer)의 마침표 위치 규칙이 적용되지 않았습니다.
+- 대소문자 표기: 문장 첫 글자와 고유 명사(WWST) 등의 대소문자 표기가 적절하게 이루어졌습니다.
+- 서식 및 표기: 탐색 경로(nav path)에 대해 큰따옴표("")를 사용해야 하며, 문장 끝 마침표를 따옴표 밖에 배치해야 한다는 프로젝트 규칙이 준수되지 않았습니다. 현재 번역본은 작은따옴표를 사용했고 마침표가 따옴표 안에 위치합니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+[Customized cooling] requires a connected air conditioner and can be set in "Settings > Energy > Save > Customized cooling".
+[Turn on fan to circulate cool air] requires a connected WWST-certified ceiling fan.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_disclaimer", "source": "[맞춤 냉방] 설정은 에어컨 연결이 필요하며 [에너지 > 절약 > 맞춤 냉방]에서 설정할 수 있습니다. \n[팬을 켜서 냉기 순환 시키기]는 WWST 인증을 받은 실링팬 연결이 필요합니다.", "target": "[Customized cooling] requires the air‑conditioner to be connected and can be enabled in 'Settings > Energy > Save > Customized cooling.'\n[Turn on fan to circulate cool air] requires a connected WWST‑certified ceiling‑fan."}, {"type": "semantic", "score": 66.8, "story_id": "story_006", "section": "//section_006_3_description", "source": "에너지는 절약하고 시원함은 더하는 방법! [맞춤 냉방]이 가장 알뜰하고 쾌적한 에어컨 온도를 알려주거나 직접 조절해 줘요. 같은 공간에 실링팬이 있다면, 에어컨이 켜질 때 알아서 함께 켤 수도 있어요. 실링팬이 시원한 공기를 구석구석 빠르게 순환시켜 냉방 효율이 높아지죠. 이제 복잡한 고민은 [맞춤 냉방]에 맡기고, 기분 좋은 시원함만 누려 보세요.", "target": "Optimize energy efficiency while maintaining comfort with [Customized cooling]. This feature recommends the most economical and comfortable air conditioner temperature or automatically adjusts it for you. When a ceiling fan is installed in the same room, it activates automatically upon air conditioner startup, enhancing air circulation and improving cooling efficiency. Let [Customized cooling] manage the details, allowing you to simply enjoy a refreshing and pleasant coolness."}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "전반적으로 자연스러우나 'air-conditioner'와 'ceiling-fan'은 미국 영어(US English) 관례상 복합 명사로 쓰일 때 하이픈 없이 'air conditioner', 'ceiling fan'으로 표기하는 것이 더 일반적입니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 정확하게 전달하고 있으며, 스마트홈 환경에 적합한 명료한 문장 구조를 사용했습니다."}, {"category": "용어집 준수", "comment": "제공된 glossary의 용어들을 정확하게 반영했습니다. 특히 'Energy'에 대한 예외 규칙(브라켓 제외)을 잘 준수했습니다."}, {"category": "언어별 규칙 준수", "comment": "미국 영어 맞춤법을 준수했으나, 안내 문구(disclaimer)의 마침표 위치 규칙이 적용되지 않았습니다."}, {"category": "대소문자 표기", "comment": "문장 첫 글자와 고유 명사(WWST) 등의 대소문자 표기가 적절하게 이루어졌습니다."}, {"category": "서식 및 표기", "comment": "탐색 경로(nav path)에 대해 큰따옴표(\"\")를 사용해야 하며, 문장 끝 마침표를 따옴표 밖에 배치해야 한다는 프로젝트 규칙이 준수되지 않았습니다. 현재 번역본은 작은따옴표를 사용했고 마침표가 따옴표 안에 위치합니다."}], "grade": "Needs Revision", "suggested_fix": "[Customized cooling] requires a connected air conditioner and can be set in \"Settings > Energy > Save > Customized cooling\".\n[Turn on fan to circulate cool air] requires a connected WWST-certified ceiling fan."}
+==========================================================================================
+[시트] US(미국) | [셀] C23
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+설정 바로가기
+
+[상세 - 번역문]
+Go to Settings
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형 아님, 추가 대문자 수: 1개
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_button
+- 번역: Go to Settings
+
+[사례 2] SEMANTIC (51.2%) | story_045 | //section_045_1_button
+- 번역: Set up Home insight
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 영문법상 오류가 없으며, UI 버튼에 적합한 간결하고 명확한 표현입니다.
+- 정확성 및 현지화 품질: 원문의 '설정 바로가기'라는 기능을 사용자에게 직접적인 행동을 유도하는 'Go to Settings'로 자연스럽게 현지화하였습니다.
+- 용어집 준수: 용어집의 '설정(Settings)' 항목을 정확히 준수하여 번역에 반영하였습니다.
+- 언어별 규칙 준수: 미국 영어(US English) 기준을 따르고 있으며, UI 가이드라인에 부합합니다.
+- 대소문자 표기: 버튼 요소에 적합한 Title Case를 사용하여 가독성을 높였습니다.
+- 서식 및 표기: 용어집 규칙에 따라 버튼 텍스트에서 용어에 별도의 대괄호를 사용하지 않았으며, 마침표 생략 등 UI 서식 규칙을 잘 지켰습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_button", "source": "설정 바로가기", "target": "Go to Settings"}, {"type": "semantic", "score": 51.2, "story_id": "story_045", "section": "//section_045_1_button", "source": "홈 인사이트 설정하기", "target": "Set up Home insight"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "영문법상 오류가 없으며, UI 버튼에 적합한 간결하고 명확한 표현입니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '설정 바로가기'라는 기능을 사용자에게 직접적인 행동을 유도하는 'Go to Settings'로 자연스럽게 현지화하였습니다."}, {"category": "용어집 준수", "comment": "용어집의 '설정(Settings)' 항목을 정확히 준수하여 번역에 반영하였습니다."}, {"category": "언어별 규칙 준수", "comment": "미국 영어(US English) 기준을 따르고 있으며, UI 가이드라인에 부합합니다."}, {"category": "대소문자 표기", "comment": "버튼 요소에 적합한 Title Case를 사용하여 가독성을 높였습니다."}, {"category": "서식 및 표기", "comment": "용어집 규칙에 따라 버튼 텍스트에서 용어에 별도의 대괄호를 사용하지 않았으며, 마침표 생략 등 UI 서식 규칙을 잘 지켰습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] US(미국) | [셀] C25
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+스마트싱스로 냉방 효율 UP
+
+[상세 - 번역문]
+Improve the cooling effect with SmartThings
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형 아님, 추가 대문자 수: 2개
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3
+- 번역: Improve the cooling effect with SmartThings
+
+[사례 2] SEMANTIC (68.0%) | story_006 | //story_006_description
+- 번역: During the hot summer, manage your air conditioner more precisely and intelligently with SmartThings. It keeps your home cool before you arrive, stays quiet and comfortable when you go to sleep, and always provides intelligent cooling. Enjoy a cooler, more comfortable summer every day with air conditioning perfectly tailored to your lifestyle.
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 문법적으로 완벽하며 매끄러운 영어 문장입니다.
+- 정확성 및 현지화 품질: 원문의 '냉방 효율(cooling efficiency)'이 'cooling effect(냉방 효과)'로 번역되었습니다. 의미상 유사할 수 있으나, 가전 및 에너지 관리 맥락에서는 'efficiency'가 더 정확한 표현입니다. 또한 한국어 'UP'의 뉘앙스를 살려 'Boost'나 'Maximize' 같은 역동적인 동사를 사용하는 것이 더 현지화된 느낌을 줍니다.
+- 용어집 준수: 용어집의 'SmartThings'를 정확하게 사용하였습니다.
+- 언어별 규칙 준수: 미국 영어 스펠링 및 표준 문장 구조를 잘 따르고 있습니다.
+- 대소문자 표기: 문장형 대소문자(Sentence case) 규칙을 적절히 준수하였습니다.
+- 서식 및 표기: 용어집 용어에 브래킷을 사용하지 않는 등 제시된 서식 규칙을 모두 준수하였습니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+Improve cooling efficiency with SmartThings
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3", "source": "스마트싱스로 냉방 효율 UP", "target": "Improve the cooling effect with SmartThings"}, {"type": "semantic", "score": 68.0, "story_id": "story_006", "section": "//story_006_description", "source": "무더운 여름, 스마트싱스로 에어컨을 더 섬세하고 똑똑하게 관리해 보세요. 집에 도착하기 전엔 미리 시원하게, 잠들 땐 조용하고 쾌적하게, 언제나 똑똑하게 냉방을 도와줘요. 내 일상에 딱 맞는 에어컨과 매일 더 시원하고 편안한 여름을 보내보세요.", "target": "During the hot summer, manage your air conditioner more precisely and intelligently with SmartThings. It keeps your home cool before you arrive, stays quiet and comfortable when you go to sleep, and always provides intelligent cooling. Enjoy a cooler, more comfortable summer every day with air conditioning perfectly tailored to your lifestyle."}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "문법적으로 완벽하며 매끄러운 영어 문장입니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '냉방 효율(cooling efficiency)'이 'cooling effect(냉방 효과)'로 번역되었습니다. 의미상 유사할 수 있으나, 가전 및 에너지 관리 맥락에서는 'efficiency'가 더 정확한 표현입니다. 또한 한국어 'UP'의 뉘앙스를 살려 'Boost'나 'Maximize' 같은 역동적인 동사를 사용하는 것이 더 현지화된 느낌을 줍니다."}, {"category": "용어집 준수", "comment": "용어집의 'SmartThings'를 정확하게 사용하였습니다."}, {"category": "언어별 규칙 준수", "comment": "미국 영어 스펠링 및 표준 문장 구조를 잘 따르고 있습니다."}, {"category": "대소문자 표기", "comment": "문장형 대소문자(Sentence case) 규칙을 적절히 준수하였습니다."}, {"category": "서식 및 표기", "comment": "용어집 용어에 브래킷을 사용하지 않는 등 제시된 서식 규칙을 모두 준수하였습니다."}], "grade": "Needs Revision", "suggested_fix": "Improve cooling efficiency with SmartThings"}
+==========================================================================================
+[시트] US(미국) | [셀] C26
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+올여름을 시원함으로 가득 채워 보세요. 깜빡하고 창문을 연 채로 에어컨을 켜면, 문 열림 센서가 이를 인식해 스마트싱스로 알려주니 걱정 없어요. 강렬한 햇빛 때문에 금방 시원해지지 않는다면 [자동 블라인드]를 사용해 보세요. 에어컨이 켜지면 블라인드가 내려와 시원함이 더 빠르게 채워질 거예요.
+
+[상세 - 번역문]
+Enjoy this summer full of cool air. If you forgot to close the window before turning on the air conditioner, the door open sensor will detect it and notify you through SmartThings. If it doesn’t cool down quickly due to strong sunlight, try using [Automatic blinds]. The blinds will come down when you turn on the air conditioner, helping the room cool down faster.
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+- 문장 2: 문장형 아님, 추가 대문자 수: 2개
+- 문장 3: 문장형 아님, 추가 대문자 수: 1개
+- 문장 4: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_description
+- 번역: Enjoy this summer full of cool air. If you forgot to close the window before turning on the air conditioner, the door open sensor will detect it and notify you through SmartThings. If it doesn’t cool down quickly due to strong sunlight, try using [Automatic blinds]. The blinds will come down when you turn on the air conditioner, helping the room cool down faster.
+
+[사례 2] SEMANTIC (62.4%) | story_006 | //section_006_3_disclaimer
+- 번역: Automation settings are required to receive notifications through the door open sensor. 
+[Automatic blinds] settings require connection to the air conditioner, and they can be configured in "Life > Energy > Save > Automatic blinds."
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 전반적으로 문법이 정확하며 유창합니다. 'If you forgot'은 문맥상 'If you forget'으로 현재 시제를 사용하는 것이 더 자연스럽지만, 의미 전달에는 문제가 없습니다.
+- 정확성 및 현지화 품질: 원문의 메시지를 영어권 사용자가 이해하기 쉽게 잘 전달했습니다. 'full of cool air'는 약간 직역된 느낌이 있으나, 전체적인 흐름은 매끄럽습니다.
+- 용어집 준수: Glossary를 완벽하게 준수했습니다. 특히 'SmartThings'에 브라켓을 적용하지 말라는 예외 규칙과 '[Automatic blinds]'의 브라켓 적용 규칙이 정확하게 지켜졌습니다.
+- 언어별 규칙 준수: US English 철자법을 따르고 있으며, 미국 현지 마케팅 문구에서 흔히 사용되는 스타일을 유지하고 있습니다.
+- 대소문자 표기: 문장의 첫 글자와 고유 명사(SmartThings)의 대소문자 표기가 표준 규칙에 맞게 적용되었습니다.
+- 서식 및 표기: 구두점과 공백, 그리고 용어 표기를 위한 대괄호 사용이 가이드라인에 맞게 올바르게 배치되었습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[수정안 제안]:
+Stay cool all summer long. If you forget to close the window before turning on the air conditioner, the door sensor will detect it and notify you through SmartThings. If it’s not cooling down quickly due to strong sunlight, try using [Automatic blinds]. The blinds will lower when the air conditioner turns on, helping the room cool down faster.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_description", "source": "올여름을 시원함으로 가득 채워 보세요. 깜빡하고 창문을 연 채로 에어컨을 켜면, 문 열림 센서가 이를 인식해 스마트싱스로 알려주니 걱정 없어요. 강렬한 햇빛 때문에 금방 시원해지지 않는다면 [자동 블라인드]를 사용해 보세요. 에어컨이 켜지면 블라인드가 내려와 시원함이 더 빠르게 채워질 거예요.", "target": "Enjoy this summer full of cool air. If you forgot to close the window before turning on the air conditioner, the door open sensor will detect it and notify you through SmartThings. If it doesn’t cool down quickly due to strong sunlight, try using [Automatic blinds]. The blinds will come down when you turn on the air conditioner, helping the room cool down faster."}, {"type": "semantic", "score": 62.4, "story_id": "story_006", "section": "//section_006_3_disclaimer", "source": "문 열림 센서를 통해 알림을 받기 위해서는 자동화 설정이 필요합니다. \n[자동 블라인드] 설정은 에어컨 연결이 필요하며, [라이프 > 에너지 > 절약 > 자동 블라인드]에서 설정할 수 있습니다.", "target": "Automation settings are required to receive notifications through the door open sensor. \n[Automatic blinds] settings require connection to the air conditioner, and they can be configured in \"Life > Energy > Save > Automatic blinds.\""}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "전반적으로 문법이 정확하며 유창합니다. 'If you forgot'은 문맥상 'If you forget'으로 현재 시제를 사용하는 것이 더 자연스럽지만, 의미 전달에는 문제가 없습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 메시지를 영어권 사용자가 이해하기 쉽게 잘 전달했습니다. 'full of cool air'는 약간 직역된 느낌이 있으나, 전체적인 흐름은 매끄럽습니다."}, {"category": "용어집 준수", "comment": "Glossary를 완벽하게 준수했습니다. 특히 'SmartThings'에 브라켓을 적용하지 말라는 예외 규칙과 '[Automatic blinds]'의 브라켓 적용 규칙이 정확하게 지켜졌습니다."}, {"category": "언어별 규칙 준수", "comment": "US English 철자법을 따르고 있으며, 미국 현지 마케팅 문구에서 흔히 사용되는 스타일을 유지하고 있습니다."}, {"category": "대소문자 표기", "comment": "문장의 첫 글자와 고유 명사(SmartThings)의 대소문자 표기가 표준 규칙에 맞게 적용되었습니다."}, {"category": "서식 및 표기", "comment": "구두점과 공백, 그리고 용어 표기를 위한 대괄호 사용이 가이드라인에 맞게 올바르게 배치되었습니다."}], "grade": "Excellent", "suggested_fix": "Stay cool all summer long. If you forget to close the window before turning on the air conditioner, the door sensor will detect it and notify you through SmartThings. If it’s not cooling down quickly due to strong sunlight, try using [Automatic blinds]. The blinds will lower when the air conditioner turns on, helping the room cool down faster."}
+==========================================================================================
+[시트] US(미국) | [셀] C27
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+문 열림 센서를 통해 알림을 받기 위해서는 자동화 설정이 필요합니다. 
+[자동 블라인드] 설정은 에어컨 연결이 필요하며, [라이프 > 에너지 > 절약 > 자동 블라인드]에서 설정할 수 있습니다.
+
+[상세 - 번역문]
+Automation settings are required to receive notifications through the door open sensor. 
+[Automatic blinds] settings require connection to the air conditioner, and they can be configured in "Life > Energy > Save > Automatic blinds."
+
+[상세 - 대소문자 점검]
+대소문자 하드룰(문장형) 점검:
+- 문장 1: 문장형(첫 글자만 대문자), 추가 대문자 수: 0개
+- 문장 2: 문장형 아님, 추가 대문자 수: 4개
+
+[단순 규칙 기반 문장형 변환안]:
+Automation Settings are required to receive notifications through the door open sensor. [Automatic blinds] Settings require connection to the air conditioner, and they can be configured in "Life > Energy > Save > Automatic blinds."
+
+[상세 - 용어집 점검]
+용어집 대소문자 표기 점검:
+- [대소문자] 용어집 'Settings'의 표기가 'settings'로 사용됨 (용어집 대소문자는 제목/문장형 대소문자 규칙보다 우선)
+
+용어집 괄호 규정 점검:
+- [괄호 오류] 'Settings'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_disclaimer
+- 번역: Automation settings are required to receive notifications through the door open sensor. 
+[Automatic blinds] settings require connection to the air conditioner, and they can be configured in "Life > Energy > Save > Automatic blinds."
+
+[사례 2] SEMANTIC (60.4%) | story_006 | //section_006_3_description
+- 번역: Enjoy this summer full of cool air. If you forgot to close the window before turning on the air conditioner, the door open sensor will detect it and notify you through SmartThings. If it doesn’t cool down quickly due to strong sunlight, try using [Automatic blinds]. The blinds will come down when you turn on the air conditioner, helping the room cool down faster.
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 문장 구조와 문법은 매우 정확하며, 미국 영어 사용자에게 자연스럽게 읽힙니다.
+- 정확성 및 현지화 품질: 원문의 의미를 정확하게 전달하고 있습니다. '문 열림 센서'를 'door open sensor'로 적절히 번역하였습니다.
+- 용어집 준수: 용어집에 등재된 'Settings(설정)'와 'Notification(알림)'에 대괄호([ ])가 누락되었습니다. 'Automatic blinds'의 대괄호 표기는 잘 지켜졌습니다.
+- 언어별 규칙 준수: 미국 영어 및 면책 조항(disclaimer) 규칙에 따라 문장 끝 마침표는 닫는 따옴표 밖에 위치해야 합니다. 현재 번역은 따옴표 안에 마침표가 있어 수정이 필요합니다.
+- 대소문자 표기: Sentence case를 적절히 준수하였으며, 용어집의 대소문자 표기를 정확히 따랐습니다.
+- 서식 및 표기: 탐색 경로(nav path)를 큰따옴표로 감싼 것은 규칙에 부합하나, 마침표의 위치가 잘못되었습니다. 또한 'Life'와 'Energy'에 대괄호를 제외하라는 예외 규칙은 탐색 경로 내부에서 자동으로 적용되므로 적절히 처리되었습니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+Automation [Settings] are required to receive [Notifications] through the door open sensor. 
+[Automatic blinds] [Settings] require connection to the air conditioner and can be configured in "Life > Energy > Save > Automatic blinds".
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_disclaimer", "source": "문 열림 센서를 통해 알림을 받기 위해서는 자동화 설정이 필요합니다. \n[자동 블라인드] 설정은 에어컨 연결이 필요하며, [라이프 > 에너지 > 절약 > 자동 블라인드]에서 설정할 수 있습니다.", "target": "Automation settings are required to receive notifications through the door open sensor. \n[Automatic blinds] settings require connection to the air conditioner, and they can be configured in \"Life > Energy > Save > Automatic blinds.\""}, {"type": "semantic", "score": 60.4, "story_id": "story_006", "section": "//section_006_3_description", "source": "올여름을 시원함으로 가득 채워 보세요. 깜빡하고 창문을 연 채로 에어컨을 켜면, 문 열림 센서가 이를 인식해 스마트싱스로 알려주니 걱정 없어요. 강렬한 햇빛 때문에 금방 시원해지지 않는다면 [자동 블라인드]를 사용해 보세요. 에어컨이 켜지면 블라인드가 내려와 시원함이 더 빠르게 채워질 거예요.", "target": "Enjoy this summer full of cool air. If you forgot to close the window before turning on the air conditioner, the door open sensor will detect it and notify you through SmartThings. If it doesn’t cool down quickly due to strong sunlight, try using [Automatic blinds]. The blinds will come down when you turn on the air conditioner, helping the room cool down faster."}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "문장 구조와 문법은 매우 정확하며, 미국 영어 사용자에게 자연스럽게 읽힙니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 정확하게 전달하고 있습니다. '문 열림 센서'를 'door open sensor'로 적절히 번역하였습니다."}, {"category": "용어집 준수", "comment": "용어집에 등재된 'Settings(설정)'와 'Notification(알림)'에 대괄호([ ])가 누락되었습니다. 'Automatic blinds'의 대괄호 표기는 잘 지켜졌습니다."}, {"category": "언어별 규칙 준수", "comment": "미국 영어 및 면책 조항(disclaimer) 규칙에 따라 문장 끝 마침표는 닫는 따옴표 밖에 위치해야 합니다. 현재 번역은 따옴표 안에 마침표가 있어 수정이 필요합니다."}, {"category": "대소문자 표기", "comment": "Sentence case를 적절히 준수하였으며, 용어집의 대소문자 표기를 정확히 따랐습니다."}, {"category": "서식 및 표기", "comment": "탐색 경로(nav path)를 큰따옴표로 감싼 것은 규칙에 부합하나, 마침표의 위치가 잘못되었습니다. 또한 'Life'와 'Energy'에 대괄호를 제외하라는 예외 규칙은 탐색 경로 내부에서 자동으로 적용되므로 적절히 처리되었습니다."}], "grade": "Needs Revision", "suggested_fix": "Automation [Settings] are required to receive [Notifications] through the door open sensor. \n[Automatic blinds] [Settings] require connection to the air conditioner and can be configured in \"Life > Energy > Save > Automatic blinds\"."}
+==========================================================================================
+[시트] CN(중국) | [셀] C7
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+에어컨이 알아서 쾌적하게, 똑똑하게
+
+[상세 - 번역문]
+智能空调，舒适随时
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //story_006_title
+- 번역: 智能空调，舒适随时
+
+[사례 2] SEMANTIC (61.8%) | story_006 | //section_006_3
+- 번역: 如您所愿，智控制冷
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 중국어 문법상 오류가 없으며, 간결한 대구 구조를 사용하여 제목(Title)으로서의 리듬감이 좋습니다.
+- 정확성 및 현지화 품질: 원문의 '쾌적하게, 똑똑하게'를 '舒适(쾌적), 智能(똑똑)'으로 잘 옮겼습니다. 다만 원문의 '알아서(스스로/자동으로)'라는 핵심적인 스마트 기능의 뉘앙스가 번역본의 '随时(언제든)'에서는 다소 약하게 전달됩니다.
+- 용어집 준수: 제공된 용어집이 없으므로 해당 사항 없습니다.
+- 언어별 규칙 준수: 중국 본토에서 사용하는 간체자 및 표현 습관을 잘 준수하였습니다.
+- 대소문자 표기: 해당 언어는 대소문자 구분이 없으므로 해당 사항 없습니다.
+- 서식 및 표기: 중국어 문장 부호(쉼표)를 적절하게 사용하였으며, 문장 끝에 마침표를 찍지 않은 타이틀 형식을 잘 유지했습니다.
+
+최종 평가: 양호 — 경미한 개선 여지 있으나 출시 가능 수준.
+
+[수정안 제안]:
+智能空调，智享舒适
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//story_006_title", "source": "에어컨이 알아서 쾌적하게, 똑똑하게", "target": "智能空调，舒适随时"}, {"type": "semantic", "score": 61.8, "story_id": "story_006", "section": "//section_006_3", "source": "알아서 맞춰주는 맞춤 냉방", "target": "如您所愿，智控制冷"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "중국어 문법상 오류가 없으며, 간결한 대구 구조를 사용하여 제목(Title)으로서의 리듬감이 좋습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '쾌적하게, 똑똑하게'를 '舒适(쾌적), 智能(똑똑)'으로 잘 옮겼습니다. 다만 원문의 '알아서(스스로/자동으로)'라는 핵심적인 스마트 기능의 뉘앙스가 번역본의 '随时(언제든)'에서는 다소 약하게 전달됩니다."}, {"category": "용어집 준수", "comment": "제공된 용어집이 없으므로 해당 사항 없습니다."}, {"category": "언어별 규칙 준수", "comment": "중국 본토에서 사용하는 간체자 및 표현 습관을 잘 준수하였습니다."}, {"category": "대소문자 표기", "comment": "해당 언어는 대소문자 구분이 없으므로 해당 사항 없습니다."}, {"category": "서식 및 표기", "comment": "중국어 문장 부호(쉼표)를 적절하게 사용하였으며, 문장 끝에 마침표를 찍지 않은 타이틀 형식을 잘 유지했습니다."}], "grade": "Good", "suggested_fix": "智能空调，智享舒适"}
+==========================================================================================
+[시트] CN(중국) | [셀] C8
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+무더운 여름, 스마트싱스로 에어컨을 더 섬세하고 똑똑하게 관리해 보세요. 집에 도착하기 전엔 미리 시원하게, 잠들 땐 조용하고 쾌적하게, 언제나 똑똑하게 냉방을 도와줘요. 내 일상에 딱 맞는 에어컨과 매일 더 시원하고 편안한 여름을 보내보세요.
+
+[상세 - 번역문]
+炎炎夏日，用 SmartThings 让空调管理更细致、更智能。到家前远程预降温，入睡前自动调至静音舒眠模式，每一刻皆可享受恰如其分的清凉体验。这是一台真正契合您生活节奏的空调，让整个夏季始终清爽宜人。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //story_006_description
+- 번역: 炎炎夏日，用 SmartThings 让空调管理更细致、更智能。到家前远程预降温，入睡前自动调至静音舒眠模式，每一刻皆可享受恰如其分的清凉体验。这是一台真正契合您生活节奏的空调，让整个夏季始终清爽宜人。
+
+[사례 2] SEMANTIC (69.4%) | story_006 | //section_006_2_description
+- 번역: SmartThings「智能净化」功能可在您归家前自动启动空调，让清新凉风率先迎接；依托「AI 舒适」算法，系统实时分析环境数据，智能设定最优温湿度组合，确保舒适空气即刻可享。当传感器检测到室内长时间无人时，空调将自动转入节能模式并最终关闭，实现高效省电。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 중국어 문장이 매우 자연스럽고 매끄럽습니다. '炎炎夏日', '恰如其분' 등 격조 있는 표현을 사용하여 마케팅 문구로서의 유창함이 돋보입니다.
+- 정확성 및 현지화 품질: 원문의 의미를 유지하면서도 '远程预降温(원격 사전 냉각)', '静音舒眠模式(저소음 수면 모드)'와 같이 실제 중국 가전/스마트 홈 환경에서 사용하는 현지화된 용어를 사용하여 품질이 매우 높습니다.
+- 용어집 준수: Glossary의 'SmartThings' 표기 및 대괄호 제외 예외 규칙(Do NOT wrap in brackets)을 완벽하게 준수하였습니다.
+- 언어별 규칙 준수: 중국 본토(Mainland)에서 주로 사용하는 단어(空调, 智能 등)와 간체자 표기 규칙을 정확히 따랐습니다.
+- 대소문자 표기: 영문 브랜드명 'SmartThings'의 대소문자 표기가 표준에 맞게 작성되었습니다.
+- 서식 및 표기: 중국어 문장 부호와 띄어쓰기 규정을 준수하였으며, 전체적인 가독성이 우수합니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//story_006_description", "source": "무더운 여름, 스마트싱스로 에어컨을 더 섬세하고 똑똑하게 관리해 보세요. 집에 도착하기 전엔 미리 시원하게, 잠들 땐 조용하고 쾌적하게, 언제나 똑똑하게 냉방을 도와줘요. 내 일상에 딱 맞는 에어컨과 매일 더 시원하고 편안한 여름을 보내보세요.", "target": "炎炎夏日，用 SmartThings 让空调管理更细致、更智能。到家前远程预降温，入睡前自动调至静音舒眠模式，每一刻皆可享受恰如其分的清凉体验。这是一台真正契合您生活节奏的空调，让整个夏季始终清爽宜人。"}, {"type": "semantic", "score": 69.4, "story_id": "story_006", "section": "//section_006_2_description", "source": "스마트싱스의 [웰컴 에어 케어]가 집에 도착하기 전 에어컨을 켜주니 더위 대신 시원함이 반겨줘요. [AI 쾌적]으로 최적의 온습도가 설정되어 언제나 쾌적한 공기를 만날 수 있어요. 주변에 사람이 없는 것이 감지되면 에어컨이 절전 운전된 후 알아서 꺼지니 에너지도 똑똑하게 아낄 수 있어요.", "target": "SmartThings「智能净化」功能可在您归家前自动启动空调，让清新凉风率先迎接；依托「AI 舒适」算法，系统实时分析环境数据，智能设定最优温湿度组合，确保舒适空气即刻可享。当传感器检测到室内长时间无人时，空调将自动转入节能模式并最终关闭，实现高效省电。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "중국어 문장이 매우 자연스럽고 매끄럽습니다. '炎炎夏日', '恰如其분' 등 격조 있는 표현을 사용하여 마케팅 문구로서의 유창함이 돋보입니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 유지하면서도 '远程预降温(원격 사전 냉각)', '静音舒眠模式(저소음 수면 모드)'와 같이 실제 중국 가전/스마트 홈 환경에서 사용하는 현지화된 용어를 사용하여 품질이 매우 높습니다."}, {"category": "용어집 준수", "comment": "Glossary의 'SmartThings' 표기 및 대괄호 제외 예외 규칙(Do NOT wrap in brackets)을 완벽하게 준수하였습니다."}, {"category": "언어별 규칙 준수", "comment": "중국 본토(Mainland)에서 주로 사용하는 단어(空调, 智能 등)와 간체자 표기 규칙을 정확히 따랐습니다."}, {"category": "대소문자 표기", "comment": "영문 브랜드명 'SmartThings'의 대소문자 표기가 표준에 맞게 작성되었습니다."}, {"category": "서식 및 표기", "comment": "중국어 문장 부호와 띄어쓰기 규정을 준수하였으며, 전체적인 가독성이 우수합니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] CN(중국) | [셀] C10
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+한밤중에도 시원하고 조용한 에어컨
+
+[상세 - 번역문]
+深宵静谧，凉意入梦
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_1
+- 번역: 深宵静谧，凉意入梦
+
+[사례 2] SEMANTIC (54.3%) | story_006 | //section_006_1_description
+- 번역: 每晚，空调化身专属睡眠管家，悉心营造理想就寝环境。不仅支持温度、风速及定时启停等基础调节，还可精准控制屏幕亮度与提示音效。通过与 Galaxy Watch 深度联动，空调可依据watch识别的实时睡眠阶段，动态优化运行参数, 自动调整温度与风速，全程静音低扰，助您安享整夜深度睡眠。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 4자 성어 대구 형식을 사용하여 매우 유창하고 문학적인 표현을 사용했습니다. 중국 현지 마케팅 문구로 손색이 없는 수준입니다.
+- 정확성 및 현지화 품질: 원문의 '한밤중(深宵)', '조용한(静谧)', '시원한(凉意)'의 의미를 의역하여 현지 정서에 맞게 잘 전달했습니다. 다만, 원문의 '에어컨'이라는 명사가 생략되었으나, 가전 제어 UI나 배너 문맥이라면 자연스러운 생략으로 간주됩니다.
+- 용어집 준수: 제공된 용어집이 없으며, 일반적인 용어 사용에 문제가 없습니다.
+- 언어별 규칙 준수: 간체 중국어 규범에 부합하며, 대륙(Mainland)에서 주로 사용하는 단어와 문장 구조를 따르고 있습니다.
+- 대소문자 표기: 중국어 문장이므로 대소문자 표기 규칙의 영향이 없습니다.
+- 서식 및 표기: 중국어 쉼표(，)를 올바르게 사용하였으며, 문장 끝 마침표 생략 등 UI/광고 카피의 특성을 잘 반영했습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_1", "source": "한밤중에도 시원하고 조용한 에어컨", "target": "深宵静谧，凉意入梦"}, {"type": "semantic", "score": 54.3, "story_id": "story_006", "section": "//section_006_1_description", "source": "우리 집 에어컨은 내 편안한 잠자리를 위해 매일 세심하게 챙겨주고 있어요. 온도와 바람 세기, 예약 설정은 물론 디스플레이의 불빛부터 효과음까지도 제어할 수 있죠. 갤럭시 워치를 착용하고 있다면 워치가 인식한 나의 수면 단계에 맞춰 에어컨이 최적의 온도와 바람 세기로 조절해 줘요. 덕분에 밤새 편안하게 잠들 수 있어요.", "target": "每晚，空调化身专属睡眠管家，悉心营造理想就寝环境。不仅支持温度、风速及定时启停等基础调节，还可精准控制屏幕亮度与提示音效。通过与 Galaxy Watch 深度联动，空调可依据watch识别的实时睡眠阶段，动态优化运行参数, 自动调整温度与风速，全程静音低扰，助您安享整夜深度睡眠。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "4자 성어 대구 형식을 사용하여 매우 유창하고 문학적인 표현을 사용했습니다. 중국 현지 마케팅 문구로 손색이 없는 수준입니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '한밤중(深宵)', '조용한(静谧)', '시원한(凉意)'의 의미를 의역하여 현지 정서에 맞게 잘 전달했습니다. 다만, 원문의 '에어컨'이라는 명사가 생략되었으나, 가전 제어 UI나 배너 문맥이라면 자연스러운 생략으로 간주됩니다."}, {"category": "용어집 준수", "comment": "제공된 용어집이 없으며, 일반적인 용어 사용에 문제가 없습니다."}, {"category": "언어별 규칙 준수", "comment": "간체 중국어 규범에 부합하며, 대륙(Mainland)에서 주로 사용하는 단어와 문장 구조를 따르고 있습니다."}, {"category": "대소문자 표기", "comment": "중국어 문장이므로 대소문자 표기 규칙의 영향이 없습니다."}, {"category": "서식 및 표기", "comment": "중국어 쉼표(，)를 올바르게 사용하였으며, 문장 끝 마침표 생략 등 UI/광고 카피의 특성을 잘 반영했습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] CN(중국) | [셀] C11
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+우리 집 에어컨은 내 편안한 잠자리를 위해 매일 세심하게 챙겨주고 있어요. 온도와 바람 세기, 예약 설정은 물론 디스플레이의 불빛부터 효과음까지도 제어할 수 있죠. 갤럭시 워치를 착용하고 있다면 워치가 인식한 나의 수면 단계에 맞춰 에어컨이 최적의 온도와 바람 세기로 조절해 줘요. 덕분에 밤새 편안하게 잠들 수 있어요.
+
+[상세 - 번역문]
+每晚，空调化身专属睡眠管家，悉心营造理想就寝环境。不仅支持温度、风速及定时启停等基础调节，还可精准控制屏幕亮度与提示音效。通过与 Galaxy Watch 深度联动，空调可依据watch识别的实时睡眠阶段，动态优化运行参数, 自动调整温度与风速，全程静音低扰，助您安享整夜深度睡眠。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_1_description
+- 번역: 每晚，空调化身专属睡眠管家，悉心营造理想就寝环境。不仅支持温度、风速及定时启停等基础调节，还可精准控制屏幕亮度与提示音效。通过与 Galaxy Watch 深度联动，空调可依据watch识别的实时睡眠阶段，动态优化运行参数, 自动调整温度与风速，全程静音低扰，助您安享整夜深度睡眠。
+
+[사례 2] SEMANTIC (65.6%) | story_016 | //section_016_1_description
+- 번역: SmartThings 为您营造专属最佳睡眠环境。当我入睡时，卧室灯光自动关闭、百叶窗合上，营造舒适氛围。空调与空气净化器也会安静运行，营造舒适睡眠环境。佩戴 Galaxy Watch或 Galaxy Ring，可自动感知您的入睡时刻，悄然营造舒适氛围。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 전체적으로 문장이 유려하고 한국어 원문의 뉘앙스를 중국식 성어와 표현(化身, 悉心营造)을 사용해 자연스럽게 번역했습니다. 다만 '运行参数, 自动' 부분에서 쉼표 뒤에 불필요한 공백이 포함되어 있으며, 문장 중간에 소문자 'watch'를 사용한 점은 격식에 어긋납니다.
+- 정확성 및 현지화 품질: 원문의 의미를 충실히 반영하면서도 '전용 수면 집사(专属睡眠管家)'와 같은 표현을 통해 현지 사용자에게 친숙하게 다가갈 수 있도록 현지화되었습니다.
+- 용어집 준수: 갤럭시(Galaxy)에 브래킷을 적용하지 않은 점은 준수되었으나, 용어집에 명시된 '설정'에 해당하는 '[Settings]'가 번역문에 반영되지 않았습니다. '定时启停' 대신 용어집 단어를 포함한 표현이 필요합니다.
+- 언어별 규칙 준수: 중국 본토에서 사용하는 간체자와 용어(提示音效 등)를 올바르게 사용하였습니다.
+- 대소문자 표기: 문장 중간의 'watch'가 소문자로 표기되었습니다. 브랜드 명칭이나 제품군을 언급할 때는 고유 명사 표기법(Galaxy Watch)을 따르는 것이 권장됩니다.
+- 서식 및 표기: 중국어 문장 부호(전각) 사용 시 쉼표 뒤에 공백을 두지 않는 것이 표준입니다. 또한 용어집의 브래킷 규칙이 '설정' 항목에 적용되지 않았습니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+每晚，空调化身专属睡眠管家，悉心营造理想就寝环境。不仅支持温度、风速及预约[Settings]，还可精准控制屏幕亮度与提示音效。佩戴 Galaxy Watch 时，空调可根据 Galaxy Watch 识别的实时睡眠阶段，自动调整温度与风速，助您安享整夜深度睡眠。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_1_description", "source": "우리 집 에어컨은 내 편안한 잠자리를 위해 매일 세심하게 챙겨주고 있어요. 온도와 바람 세기, 예약 설정은 물론 디스플레이의 불빛부터 효과음까지도 제어할 수 있죠. 갤럭시 워치를 착용하고 있다면 워치가 인식한 나의 수면 단계에 맞춰 에어컨이 최적의 온도와 바람 세기로 조절해 줘요. 덕분에 밤새 편안하게 잠들 수 있어요.", "target": "每晚，空调化身专属睡眠管家，悉心营造理想就寝环境。不仅支持温度、风速及定时启停等基础调节，还可精准控制屏幕亮度与提示音效。通过与 Galaxy Watch 深度联动，空调可依据watch识别的实时睡眠阶段，动态优化运行参数, 自动调整温度与风速，全程静音低扰，助您安享整夜深度睡眠。"}, {"type": "semantic", "score": 65.6, "story_id": "story_016", "section": "//section_016_1_description", "source": "스마트싱스가 나만의 최적 수면 환경을 만들어줘요. 내가 잠이 들면, 침실의 조명은 자연스럽게 꺼지고 커튼은 닫히며 안락한 분위기가 완성돼요. 에어컨과 공기청정기도 모두 나의 수면에 맞춰 조용히 동작하니 쾌적한 숙면을 즐길 수 있어요. 갤럭시 워치나 갤럭시 링을 착용하면 내가 잠든 순간을 자동으로 인식해 이 모든 변화가 더욱 자연스럽게 이어져요.", "target": "SmartThings 为您营造专属最佳睡眠环境。当我入睡时，卧室灯光自动关闭、百叶窗合上，营造舒适氛围。空调与空气净化器也会安静运行，营造舒适睡眠环境。佩戴 Galaxy Watch或 Galaxy Ring，可自动感知您的入睡时刻，悄然营造舒适氛围。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "전체적으로 문장이 유려하고 한국어 원문의 뉘앙스를 중국식 성어와 표현(化身, 悉心营造)을 사용해 자연스럽게 번역했습니다. 다만 '运行参数, 自动' 부분에서 쉼표 뒤에 불필요한 공백이 포함되어 있으며, 문장 중간에 소문자 'watch'를 사용한 점은 격식에 어긋납니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 충실히 반영하면서도 '전용 수면 집사(专属睡眠管家)'와 같은 표현을 통해 현지 사용자에게 친숙하게 다가갈 수 있도록 현지화되었습니다."}, {"category": "용어집 준수", "comment": "갤럭시(Galaxy)에 브래킷을 적용하지 않은 점은 준수되었으나, 용어집에 명시된 '설정'에 해당하는 '[Settings]'가 번역문에 반영되지 않았습니다. '定时启停' 대신 용어집 단어를 포함한 표현이 필요합니다."}, {"category": "언어별 규칙 준수", "comment": "중국 본토에서 사용하는 간체자와 용어(提示音效 등)를 올바르게 사용하였습니다."}, {"category": "대소문자 표기", "comment": "문장 중간의 'watch'가 소문자로 표기되었습니다. 브랜드 명칭이나 제품군을 언급할 때는 고유 명사 표기법(Galaxy Watch)을 따르는 것이 권장됩니다."}, {"category": "서식 및 표기", "comment": "중국어 문장 부호(전각) 사용 시 쉼표 뒤에 공백을 두지 않는 것이 표준입니다. 또한 용어집의 브래킷 규칙이 '설정' 항목에 적용되지 않았습니다."}], "grade": "Needs Revision", "suggested_fix": "每晚，空调化身专属睡眠管家，悉心营造理想就寝环境。不仅支持温度、风速及预约[Settings]，还可精准控制屏幕亮度与提示音效。佩戴 Galaxy Watch 时，空调可根据 Galaxy Watch 识别的实时睡眠阶段，自动调整温度与风速，助您安享整夜深度睡眠。"}
+==========================================================================================
+[시트] CN(중국) | [셀] C12
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+수면 단계에 따른 에어컨 자동 제어는 2026년부터 출시되는 삼성 에어컨 및 갤럭시 워치 7 이상부터 적용됩니다.
+
+[상세 - 번역문]
+睡眠阶段联动控制功能自 2026 年起上市的三星空调机型开始支持，需搭配 Galaxy Watch 7 或更新版本使用。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_1_disclaimer
+- 번역: 睡眠阶段联动控制功能自 2026 年起上市的三星空调机型开始支持，需搭配 Galaxy Watch 7 或更新版本使用。
+
+[사례 2] SEMANTIC (56.1%) | story_006 | //section_006_1_description
+- 번역: 每晚，空调化身专属睡眠管家，悉心营造理想就寝环境。不仅支持温度、风速及定时启停等基础调节，还可精准控制屏幕亮度与提示音效。通过与 Galaxy Watch 深度联动，空调可依据watch识别的实时睡眠阶段，动态优化运行参数, 自动调整温度与风速，全程静音低扰，助您安享整夜深度睡眠。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 문장이 매우 매끄럽고 자연스럽습니다. '联动控制'(연동 제어)라는 표현을 사용하여 기술적인 맥락을 잘 살렸으며, 문법적 오류가 전혀 없습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 정확하게 전달하고 있습니다. '갤럭시 워치 7 이상'을 'Galaxy Watch 7 或更新版本'(또는 더 새로운 버전)으로 번역하여 기술 문서의 명확성을 높였습니다.
+- 용어집 준수: 용어집의 예외 규칙(Do NOT wrap 'Galaxy' in brackets)을 정확히 준수하여 [Galaxy]가 아닌 Galaxy로 표기하였습니다.
+- 언어별 규칙 준수: 중국 본토(Mainland)에서 사용되는 표준 간체자 및 전문 용어를 사용하였으며, 대만식 표현이 섞이지 않았습니다.
+- 대소문자 표기: 제품명인 'Galaxy Watch'의 대소문자 표기가 정확합니다.
+- 서식 및 표기: 중국어 텍스트 내 숫자 및 영문 전후에 공백을 적절히 배치하여 가독성을 높였으며, 마침표 등 구두점 사용이 적절합니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_1_disclaimer", "source": "수면 단계에 따른 에어컨 자동 제어는 2026년부터 출시되는 삼성 에어컨 및 갤럭시 워치 7 이상부터 적용됩니다.", "target": "睡眠阶段联动控制功能自 2026 年起上市的三星空调机型开始支持，需搭配 Galaxy Watch 7 或更新版本使用。"}, {"type": "semantic", "score": 56.1, "story_id": "story_006", "section": "//section_006_1_description", "source": "우리 집 에어컨은 내 편안한 잠자리를 위해 매일 세심하게 챙겨주고 있어요. 온도와 바람 세기, 예약 설정은 물론 디스플레이의 불빛부터 효과음까지도 제어할 수 있죠. 갤럭시 워치를 착용하고 있다면 워치가 인식한 나의 수면 단계에 맞춰 에어컨이 최적의 온도와 바람 세기로 조절해 줘요. 덕분에 밤새 편안하게 잠들 수 있어요.", "target": "每晚，空调化身专属睡眠管家，悉心营造理想就寝环境。不仅支持温度、风速及定时启停等基础调节，还可精准控制屏幕亮度与提示音效。通过与 Galaxy Watch 深度联动，空调可依据watch识别的实时睡眠阶段，动态优化运行参数, 自动调整温度与风速，全程静音低扰，助您安享整夜深度睡眠。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "문장이 매우 매끄럽고 자연스럽습니다. '联动控制'(연동 제어)라는 표현을 사용하여 기술적인 맥락을 잘 살렸으며, 문법적 오류가 전혀 없습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 정확하게 전달하고 있습니다. '갤럭시 워치 7 이상'을 'Galaxy Watch 7 或更新版本'(또는 더 새로운 버전)으로 번역하여 기술 문서의 명확성을 높였습니다."}, {"category": "용어집 준수", "comment": "용어집의 예외 규칙(Do NOT wrap 'Galaxy' in brackets)을 정확히 준수하여 [Galaxy]가 아닌 Galaxy로 표기하였습니다."}, {"category": "언어별 규칙 준수", "comment": "중국 본토(Mainland)에서 사용되는 표준 간체자 및 전문 용어를 사용하였으며, 대만식 표현이 섞이지 않았습니다."}, {"category": "대소문자 표기", "comment": "제품명인 'Galaxy Watch'의 대소문자 표기가 정확합니다."}, {"category": "서식 및 표기", "comment": "중국어 텍스트 내 숫자 및 영문 전후에 공백을 적절히 배치하여 가독성을 높였으며, 마침표 등 구두점 사용이 적절합니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] CN(중국) | [셀] C15
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+내 위치에 따라 켜지고 꺼지는 에어컨
+
+[상세 - 번역문]
+智感位置，随需启停
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_2
+- 번역: 智感位置，随需启停
+
+[사례 2] SEMANTIC (53.9%) | story_006 | //story_006_title
+- 번역: 智能空调，舒适随时
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 중국어 특유의 4자 대구 형식을 사용하여 매우 리듬감 있고 전문적인 마케팅 문구처럼 번역되었습니다. '智感'과 '启停' 같은 표현은 가독성이 높고 자연스럽습니다.
+- 정확성 및 현지화 품질: 원문의 핵심 의미인 '내 위치에 따른 제어'를 '智感位置(위치 지능 감지)'로, '켜지고 꺼지는'을 '随需启停(필요에 따라 시작 및 정지)'으로 의역하여 현지화 품질이 매우 높습니다. 다만, 원문에 명시된 '에어컨(空调)'이라는 구체적인 기기 명칭이 번역본에서는 생략되었습니다. UI 컨텍스트상 에어컨 카테고리 내에 있다면 문제가 없으나, 명확성을 위해 기기명을 포함하는 것이 더 안전할 수 있습니다.
+- 용어집 준수: 제공된 용어집이 없으며, 일반적인 IT/가전 용어 관례를 잘 따르고 있습니다.
+- 언어별 규칙 준수: 중국 본토에서 주로 사용하는 간체자 및 전문 용어를 사용하였으며, 마침표 생략 등 모바일 UI 타이포그래피 규칙을 잘 준수했습니다.
+- 대소문자 표기: 해당 사항 없음 (중국어).
+- 서식 및 표기: 문장 중간의 쉼표(，) 사용이 적절하며 전체적인 서식이 깔끔합니다.
+
+최종 평가: 양호 — 경미한 개선 여지 있으나 출시 가능 수준.
+
+[수정안 제안]:
+智感 위치，空调随需启停
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_2", "source": "내 위치에 따라 켜지고 꺼지는 에어컨", "target": "智感位置，随需启停"}, {"type": "semantic", "score": 53.9, "story_id": "story_006", "section": "//story_006_title", "source": "에어컨이 알아서 쾌적하게, 똑똑하게", "target": "智能空调，舒适随时"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "중국어 특유의 4자 대구 형식을 사용하여 매우 리듬감 있고 전문적인 마케팅 문구처럼 번역되었습니다. '智感'과 '启停' 같은 표현은 가독성이 높고 자연스럽습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 핵심 의미인 '내 위치에 따른 제어'를 '智感位置(위치 지능 감지)'로, '켜지고 꺼지는'을 '随需启停(필요에 따라 시작 및 정지)'으로 의역하여 현지화 품질이 매우 높습니다. 다만, 원문에 명시된 '에어컨(空调)'이라는 구체적인 기기 명칭이 번역본에서는 생략되었습니다. UI 컨텍스트상 에어컨 카테고리 내에 있다면 문제가 없으나, 명확성을 위해 기기명을 포함하는 것이 더 안전할 수 있습니다."}, {"category": "용어집 준수", "comment": "제공된 용어집이 없으며, 일반적인 IT/가전 용어 관례를 잘 따르고 있습니다."}, {"category": "언어별 규칙 준수", "comment": "중국 본토에서 주로 사용하는 간체자 및 전문 용어를 사용하였으며, 마침표 생략 등 모바일 UI 타이포그래피 규칙을 잘 준수했습니다."}, {"category": "대소문자 표기", "comment": "해당 사항 없음 (중국어)."}, {"category": "서식 및 표기", "comment": "문장 중간의 쉼표(，) 사용이 적절하며 전체적인 서식이 깔끔합니다."}], "grade": "Good", "suggested_fix": "智感 위치，空调随需启停"}
+==========================================================================================
+[시트] CN(중국) | [셀] C16
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+스마트싱스의 [웰컴 에어 케어]가 집에 도착하기 전 에어컨을 켜주니 더위 대신 시원함이 반겨줘요. [AI 쾌적]으로 최적의 온습도가 설정되어 언제나 쾌적한 공기를 만날 수 있어요. 주변에 사람이 없는 것이 감지되면 에어컨이 절전 운전된 후 알아서 꺼지니 에너지도 똑똑하게 아낄 수 있어요.
+
+[상세 - 번역문]
+SmartThings「智能净化」功能可在您归家前自动启动空调，让清新凉风率先迎接；依托「AI 舒适」算法，系统实时分析环境数据，智能设定最优温湿度组合，确保舒适空气即刻可享。当传感器检测到室内长时间无人时，空调将自动转入节能模式并最终关闭，实现高效省电。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+용어집 괄호 규정 점검:
+- [괄호 오류] '智能净化'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+- [괄호 오류] 'AI 舒适'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_2_description
+- 번역: SmartThings「智能净化」功能可在您归家前自动启动空调，让清新凉风率先迎接；依托「AI 舒适」算法，系统实时分析环境数据，智能设定最优温湿度组合，确保舒适空气即刻可享。当传感器检测到室内长时间无人时，空调将自动转入节能模式并最终关闭，实现高效省电。
+
+[사례 2] SEMANTIC (63.4%) | story_006 | //story_006_description
+- 번역: 炎炎夏日，用 SmartThings 让空调管理更细致、更智能。到家前远程预降温，入睡前自动调至静音舒眠模式，每一刻皆可享受恰如其分的清凉体验。这是一台真正契合您生活节奏的空调，让整个夏季始终清爽宜人。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 번역된 문장은 문법적으로 매우 매끄러우며, '让清新凉风率先迎接'와 같은 표현은 마케팅 문구로서 수준이 높고 세련되었습니다.
+- 정확성 및 현지화 품질: 원문의 '더위 대신 시원함'을 단순히 직역하지 않고 의역하여 의미를 잘 전달했습니다. 다만, '에너지(Energy)' 항목이 '省电(전기 절약)'으로 의역되면서 용어집에서 지정한 특정 단어가 누락되었습니다.
+- 용어집 준수: 용어집 준수 사항에서 여러 오류가 발견되었습니다. 1) [智能净化], [AI 舒适]에 대괄호 [ ] 대신 중국식 따옴표 「 」를 사용했습니다. 2) '에너지'를 용어집에 명시된 'Energy'가 아닌 '省电'으로 번역했습니다. 3) '설정'에 해당하는 'Settings'가 반영되지 않았습니다.
+- 언어별 규칙 준수: 중국 본토(Mainland China)의 어휘 습관과 문장 부호 규칙을 잘 따르고 있습니다.
+- 대소문자 표기: SmartThings 브랜드명의 대소문자를 정확하게 표기했습니다.
+- 서식 및 표기: 용어집 단어를 [ ]로 감싸야 한다는 규칙이 준수되지 않았으며, 'SmartThings'와 'Energy'에 대한 대괄호 제외 예외 규칙은 잘 인지하였으나 해당 단어들이 정확히 삽입되지 않았습니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+SmartThings [智能净化] 功能可在您归家前提前开启空调，让清凉感迎接您的到来。通过 [AI 舒适] [Settings] 最优温湿度，确保您随时享受舒适空气。当检测到无人时，空调将自动进入省电模式并随后关闭，助您智慧节省 Energy。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_2_description", "source": "스마트싱스의 [웰컴 에어 케어]가 집에 도착하기 전 에어컨을 켜주니 더위 대신 시원함이 반겨줘요. [AI 쾌적]으로 최적의 온습도가 설정되어 언제나 쾌적한 공기를 만날 수 있어요. 주변에 사람이 없는 것이 감지되면 에어컨이 절전 운전된 후 알아서 꺼지니 에너지도 똑똑하게 아낄 수 있어요.", "target": "SmartThings「智能净化」功能可在您归家前自动启动空调，让清新凉风率先迎接；依托「AI 舒适」算法，系统实时分析环境数据，智能设定最优温湿度组合，确保舒适空气即刻可享。当传感器检测到室内长时间无人时，空调将自动转入节能模式并最终关闭，实现高效省电。"}, {"type": "semantic", "score": 63.4, "story_id": "story_006", "section": "//story_006_description", "source": "무더운 여름, 스마트싱스로 에어컨을 더 섬세하고 똑똑하게 관리해 보세요. 집에 도착하기 전엔 미리 시원하게, 잠들 땐 조용하고 쾌적하게, 언제나 똑똑하게 냉방을 도와줘요. 내 일상에 딱 맞는 에어컨과 매일 더 시원하고 편안한 여름을 보내보세요.", "target": "炎炎夏日，用 SmartThings 让空调管理更细致、更智能。到家前远程预降温，入睡前自动调至静音舒眠模式，每一刻皆可享受恰如其分的清凉体验。这是一台真正契合您生活节奏的空调，让整个夏季始终清爽宜人。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "번역된 문장은 문법적으로 매우 매끄러우며, '让清新凉风率先迎接'와 같은 표현은 마케팅 문구로서 수준이 높고 세련되었습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '더위 대신 시원함'을 단순히 직역하지 않고 의역하여 의미를 잘 전달했습니다. 다만, '에너지(Energy)' 항목이 '省电(전기 절약)'으로 의역되면서 용어집에서 지정한 특정 단어가 누락되었습니다."}, {"category": "용어집 준수", "comment": "용어집 준수 사항에서 여러 오류가 발견되었습니다. 1) [智能净化], [AI 舒适]에 대괄호 [ ] 대신 중국식 따옴표 「 」를 사용했습니다. 2) '에너지'를 용어집에 명시된 'Energy'가 아닌 '省电'으로 번역했습니다. 3) '설정'에 해당하는 'Settings'가 반영되지 않았습니다."}, {"category": "언어별 규칙 준수", "comment": "중국 본토(Mainland China)의 어휘 습관과 문장 부호 규칙을 잘 따르고 있습니다."}, {"category": "대소문자 표기", "comment": "SmartThings 브랜드명의 대소문자를 정확하게 표기했습니다."}, {"category": "서식 및 표기", "comment": "용어집 단어를 [ ]로 감싸야 한다는 규칙이 준수되지 않았으며, 'SmartThings'와 'Energy'에 대한 대괄호 제외 예외 규칙은 잘 인지하였으나 해당 단어들이 정확히 삽입되지 않았습니다."}], "grade": "Needs Revision", "suggested_fix": "SmartThings [智能净化] 功能可在您归家前提前开启空调，让清凉感迎接您的到来。通过 [AI 舒适] [Settings] 最优温湿度，确保您随时享受舒适空气。当检测到无人时，空调将自动进入省电模式并随后关闭，助您智慧节省 Energy。"}
+==========================================================================================
+[시트] CN(중국) | [셀] C17
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+[웰컴 에어 케어]는 [기기 > 에어컨 > 기기 제어 > 웰컴 에어 케어]에서 설정할 수 있습니다. 
+[부재 절전]은 [(스탠드형 모델) 기기 > 에어컨 > 기기 제어 > 동작 감지 > 부재 절전], [(벽걸이형 모델) 기기 > 에어컨 > 기기 제어 > 동작 감지 > 사람이 없을 때]에서 설정할 수 있습니다.
+
+[상세 - 번역문]
+「智能净化」设置路径：设备 > 空调 > 设备控制 > 智能净化
+「外出时省电」设置路径（立式机型）：设备 > 空调 > 设备控制 > 运动检测 > 外出时省电
+「不在家时」设置路径（壁挂机型）：设备 > 空调 > 设备控制 > 运动检测 > 不在家时
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+용어집 괄호 규정 점검:
+- [괄호 오류] '外出时省电'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+- [괄호 오류] '不在家时'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+- [괄호 오류] '智能净化'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+- [괄호 오류] '设备控制'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+- [괄호 오류] '运动检测'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_2_disclaimer
+- 번역: 「智能净化」设置路径：设备 > 空调 > 设备控制 > 智能净化
+「外出时省电」设置路径（立式机型）：设备 > 空调 > 设备控制 > 运动检测 > 外出时省电
+「不在家时」设置路径（壁挂机型）：设备 > 空调 > 设备控制 > 运动检测 > 不在家时
+
+[사례 2] SEMANTIC (59.0%) | story_006 | //section_006_2_description
+- 번역: SmartThings「智能净化」功能可在您归家前自动启动空调，让清新凉风率先迎接；依托「AI 舒适」算法，系统实时分析环境数据，智能设定最优温湿度组合，确保舒适空气即刻可享。当传感器检测到室内长时间无人时，空调将自动转入节能模式并最终关闭，实现高效省电。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 중국어 번역 자체는 자연스러우나, 원문의 서술형 문장 구조를 '항목: 경로' 식의 요약 형태로 변경하였습니다. 이는 정보 전달에는 문제가 없으나 원문과의 문체 정합성은 다소 떨어집니다.
+- 정확성 및 현지화 품질: 의미는 정확하게 전달되었습니다. 특히 스탠드형(立式)과 벽걸이형(壁挂)에 대한 중국 가전 시장의 표준 명칭을 잘 반영하였습니다.
+- 용어집 준수: 용어의 번역은 용어집과 일치합니다. 하지만 용어집 용어를 대괄호 '[' 및 ']'로 감싸야 한다는 규칙을 위반하고 '「' 및 '」'를 사용했습니다.
+- 언어별 규칙 준수: 중국 본토(Mainland China)의 간체자 표기 및 문장 부호 관례를 잘 따르고 있습니다.
+- 대소문자 표기: 중국어 문장이므로 해당 사항 없습니다.
+- 서식 및 표기: 탐색 경로를 큰따옴표 " "로 감싸고, 문장 마침표를 닫는 따옴표 안에 배치해야 한다는 서식 규칙이 준수되지 않았습니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+[智能净化]可在"设备 > 空调 > 设备控制 > 智能净化。"中进行设置。
+[外出时省电]可在"(立式机型) 设备 > 空调 > 设备控制 > 运动检测 > 外出时省电。"中进行设置，[不在家时]可在"(壁挂机型) 设备 > 空调 > 设备控制 > 运动检测 > 不在家时。"中进行设置。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_2_disclaimer", "source": "[웰컴 에어 케어]는 [기기 > 에어컨 > 기기 제어 > 웰컴 에어 케어]에서 설정할 수 있습니다. \n[부재 절전]은 [(스탠드형 모델) 기기 > 에어컨 > 기기 제어 > 동작 감지 > 부재 절전], [(벽걸이형 모델) 기기 > 에어컨 > 기기 제어 > 동작 감지 > 사람이 없을 때]에서 설정할 수 있습니다.", "target": "「智能净化」设置路径：设备 > 空调 > 设备控制 > 智能净化\n「外出时省电」设置路径（立式机型）：设备 > 空调 > 设备控制 > 运动检测 > 外出时省电\n「不在家时」设置路径（壁挂机型）：设备 > 空调 > 设备控制 > 运动检测 > 不在家时"}, {"type": "semantic", "score": 59.0, "story_id": "story_006", "section": "//section_006_2_description", "source": "스마트싱스의 [웰컴 에어 케어]가 집에 도착하기 전 에어컨을 켜주니 더위 대신 시원함이 반겨줘요. [AI 쾌적]으로 최적의 온습도가 설정되어 언제나 쾌적한 공기를 만날 수 있어요. 주변에 사람이 없는 것이 감지되면 에어컨이 절전 운전된 후 알아서 꺼지니 에너지도 똑똑하게 아낄 수 있어요.", "target": "SmartThings「智能净化」功能可在您归家前自动启动空调，让清新凉风率先迎接；依托「AI 舒适」算法，系统实时分析环境数据，智能设定最优温湿度组合，确保舒适空气即刻可享。当传感器检测到室内长时间无人时，空调将自动转入节能模式并最终关闭，实现高效省电。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "중국어 번역 자체는 자연스러우나, 원문의 서술형 문장 구조를 '항목: 경로' 식의 요약 형태로 변경하였습니다. 이는 정보 전달에는 문제가 없으나 원문과의 문체 정합성은 다소 떨어집니다."}, {"category": "정확성 및 현지화 품질", "comment": "의미는 정확하게 전달되었습니다. 특히 스탠드형(立式)과 벽걸이형(壁挂)에 대한 중국 가전 시장의 표준 명칭을 잘 반영하였습니다."}, {"category": "용어집 준수", "comment": "용어의 번역은 용어집과 일치합니다. 하지만 용어집 용어를 대괄호 '[' 및 ']'로 감싸야 한다는 규칙을 위반하고 '「' 및 '」'를 사용했습니다."}, {"category": "언어별 규칙 준수", "comment": "중국 본토(Mainland China)의 간체자 표기 및 문장 부호 관례를 잘 따르고 있습니다."}, {"category": "대소문자 표기", "comment": "중국어 문장이므로 해당 사항 없습니다."}, {"category": "서식 및 표기", "comment": "탐색 경로를 큰따옴표 \" \"로 감싸고, 문장 마침표를 닫는 따옴표 안에 배치해야 한다는 서식 규칙이 준수되지 않았습니다."}], "grade": "Needs Revision", "suggested_fix": "[智能净化]可在\"设备 > 空调 > 设备控制 > 智能净化。\"中进行设置。\n[外出时省电]可在\"(立式机型) 设备 > 空调 > 设备控制 > 运动检测 > 外出时省电。\"中进行设置，[不在家时]可在\"(壁挂机型) 设备 > 空调 > 设备控制 > 运动检测 > 不在家时。\"中进行设置。"}
+==========================================================================================
+[시트] CN(중국) | [셀] C20
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+알아서 맞춰주는 맞춤 냉방
+
+[상세 - 번역문]
+如您所愿，智控制冷
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '맞춤 냉방' → '自定义制冷' 미적용
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3
+- 번역: 如您所愿，智控制冷
+
+[사례 2] SEMANTIC (65.9%) | story_006 | //section_006_3_description
+- 번역: 节能有方，凉爽升级！「自定义制冷」功能可基于实时环境与用户习惯，为您推荐或自动执行最优温控策略。
+若同一空间内配备吊扇，空调启动时亦可同步联动开启。
+吊扇加速冷气循环，使低温均匀覆盖全屋角落，显著提升整体制冷效率与体感舒适度。
+告别繁琐参数设置，将温控交由「自定义制冷」智能系统，静享从容清凉。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 句子结构简洁，'如您所愿' 具有一定的市场营销感，表达流畅且符合简体中文习惯。
+- 정확성 및 현지화 품질: 原文 '알아서 맞춰주는' 强调的是设备能够自动感应并调整，译文 '如您所愿' 侧重于满足用户心愿，虽然意译尚可，但未能完全体现出 '自动调整' 的智能化核心含义。
+- 용어집 준수: 未遵守术语库。术语库明确要求将 '맞춤 냉방' 译为 '自定义制冷'，但译文中使用了 '智控制冷'。
+- 언어별 규칙 준수: 使用了规范的简体中文，无繁体或台湾地区特定用语，符合 Mainland Chinese 规范。
+- 대소문자 표기: 中文不涉及大写规则，符合标准。
+- 서식 및 표기: 标点符号（逗号）使用正确，符合中文排版习惯。
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+自动调节的自定义制冷
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3", "source": "알아서 맞춰주는 맞춤 냉방", "target": "如您所愿，智控制冷"}, {"type": "semantic", "score": 65.9, "story_id": "story_006", "section": "//section_006_3_description", "source": "에너지는 절약하고 시원함은 더하는 방법! [맞춤 냉방]이 가장 알뜰하고 쾌적한 에어컨 온도를 알려주거나 직접 조절해 줘요. 같은 공간에 실링팬이 있다면, 에어컨이 켜질 때 알아서 함께 켤 수도 있어요. 실링팬이 시원한 공기를 구석구석 빠르게 순환시켜 냉방 효율이 높아지죠. 이제 복잡한 고민은 [맞춤 냉방]에 맡기고, 기분 좋은 시원함만 누려 보세요.", "target": "节能有方，凉爽升级！「自定义制冷」功能可基于实时环境与用户习惯，为您推荐或自动执行最优温控策略。\n若同一空间内配备吊扇，空调启动时亦可同步联动开启。\n吊扇加速冷气循环，使低温均匀覆盖全屋角落，显著提升整体制冷效率与体感舒适度。\n告别繁琐参数设置，将温控交由「自定义制冷」智能系统，静享从容清凉。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "句子结构简洁，'如您所愿' 具有一定的市场营销感，表达流畅且符合简体中文习惯。"}, {"category": "정확성 및 현지화 품질", "comment": "原文 '알아서 맞춰주는' 强调的是设备能够自动感应并调整，译文 '如您所愿' 侧重于满足用户心愿，虽然意译尚可，但未能完全体现出 '自动调整' 的智能化核心含义。"}, {"category": "용어집 준수", "comment": "未遵守术语库。术语库明确要求将 '맞춤 냉방' 译为 '自定义制冷'，但译文中使用了 '智控制冷'。"}, {"category": "언어별 규칙 준수", "comment": "使用了规范的简体中文，无繁体或台湾地区特定用语，符合 Mainland Chinese 规范。"}, {"category": "대소문자 표기", "comment": "中文不涉及大写规则，符合标准。"}, {"category": "서식 및 표기", "comment": "标点符号（逗号）使用正确，符合中文排版习惯。"}], "grade": "Needs Revision", "suggested_fix": "自动调节的自定义制冷"}
+==========================================================================================
+[시트] CN(중국) | [셀] C21
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+에너지는 절약하고 시원함은 더하는 방법! [맞춤 냉방]이 가장 알뜰하고 쾌적한 에어컨 온도를 알려주거나 직접 조절해 줘요. 같은 공간에 실링팬이 있다면, 에어컨이 켜질 때 알아서 함께 켤 수도 있어요. 실링팬이 시원한 공기를 구석구석 빠르게 순환시켜 냉방 효율이 높아지죠. 이제 복잡한 고민은 [맞춤 냉방]에 맡기고, 기분 좋은 시원함만 누려 보세요.
+
+[상세 - 번역문]
+节能有方，凉爽升级！「自定义制冷」功能可基于实时环境与用户习惯，为您推荐或自动执行最优温控策略。
+若同一空间内配备吊扇，空调启动时亦可同步联动开启。
+吊扇加速冷气循环，使低温均匀覆盖全屋角落，显著提升整体制冷效率与体感舒适度。
+告别繁琐参数设置，将温控交由「自定义制冷」智能系统，静享从容清凉。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 괄호 규정 점검:
+- [괄호 오류] '自定义制冷'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_description
+- 번역: 节能有方，凉爽升级！「自定义制冷」功能可基于实时环境与用户习惯，为您推荐或自动执行最优温控策略。
+若同一空间内配备吊扇，空调启动时亦可同步联动开启。
+吊扇加速冷气循环，使低温均匀覆盖全屋角落，显著提升整体制冷效率与体感舒适度。
+告别繁琐参数设置，将温控交由「自定义制冷」智能系统，静享从容清凉。
+
+[사례 2] SEMANTIC (68.0%) | story_006 | //section_006_3_disclaimer
+- 번역: 「自定义制冷」功能需空调已接入 SmartThings，开启路径：Energy > 节省 > 自定义制冷
+「开启风扇，让冷空气循环起来」功能需连接 WWST 认证吊扇。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 번역문은 문법적으로 완벽하며, '节能有方，凉爽升级', '静享从容清凉' 등 현지인들이 선호하는 세련된 문어체 표현을 사용하여 유창성이 매우 높습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 유지하면서도 단순 직역에 그치지 않고 '温控策略', '体感舒适度' 등 UI와 가전 제품 맥락에 적합한 자연스러운 전문 용어를 사용하여 현지화 품질이 우수합니다.
+- 용어집 준수: 용어집 준수 측면에서 몇 가지 수정이 필요합니다. 1) '에너지(Energy)'와 '절약(节省)'을 합쳐 '节能(에너지 절약)'으로 의역했으나, 용어집에 명시된 개별 용어를 최대한 반영해야 합니다. 2) '맞춤 냉방'의 번역어 '自定义制冷'은 준수하였으나, 서식 규칙인 대괄호 '[' ']' 대신 중국식 따옴표 '「' '」'를 사용했습니다.
+- 언어별 규칙 준수: 중국 본토(Mainland China)에서 사용하는 간체자와 용어(吊扇, 联动 등)를 정확하게 사용하였습니다.
+- 대소문자 표기: 해당 사항 없음 (중국어 문장으로 대소문자 규칙에서 자유로움). 다만 Glossary상의 'Energy'는 영문 표기 시 첫 글자 대문자 유지가 필요할 수 있습니다.
+- 서식 및 표기: Glossary 용어를 감싸는 대괄호 서식이 규칙인 '[' ']'가 아닌 '「' '」'로 적용되었습니다. SmartThings UI 가이드라인에 따라 표준 대괄호 사용이 권장됩니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+节省Energy，凉爽升级！[自定义制冷]功能可为您推荐最省钱、最舒适的空调温度，或直接进行调节。若同一空间内配有吊扇，空调启动时亦可同步联动开启。吊扇能让冷气快速循环至每个角落，提升制冷效率。现在就把繁琐的设置交给[自定义制冷]，尽情享受清凉吧。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_description", "source": "에너지는 절약하고 시원함은 더하는 방법! [맞춤 냉방]이 가장 알뜰하고 쾌적한 에어컨 온도를 알려주거나 직접 조절해 줘요. 같은 공간에 실링팬이 있다면, 에어컨이 켜질 때 알아서 함께 켤 수도 있어요. 실링팬이 시원한 공기를 구석구석 빠르게 순환시켜 냉방 효율이 높아지죠. 이제 복잡한 고민은 [맞춤 냉방]에 맡기고, 기분 좋은 시원함만 누려 보세요.", "target": "节能有方，凉爽升级！「自定义制冷」功能可基于实时环境与用户习惯，为您推荐或自动执行最优温控策略。\n若同一空间内配备吊扇，空调启动时亦可同步联动开启。\n吊扇加速冷气循环，使低温均匀覆盖全屋角落，显著提升整体制冷效率与体感舒适度。\n告别繁琐参数设置，将温控交由「自定义制冷」智能系统，静享从容清凉。"}, {"type": "semantic", "score": 68.0, "story_id": "story_006", "section": "//section_006_3_disclaimer", "source": "[맞춤 냉방] 설정은 에어컨 연결이 필요하며 [에너지 > 절약 > 맞춤 냉방]에서 설정할 수 있습니다. \n[팬을 켜서 냉기 순환 시키기]는 WWST 인증을 받은 실링팬 연결이 필요합니다.", "target": "「自定义制冷」功能需空调已接入 SmartThings，开启路径：Energy > 节省 > 自定义制冷\n「开启风扇，让冷空气循环起来」功能需连接 WWST 认证吊扇。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "번역문은 문법적으로 완벽하며, '节能有方，凉爽升级', '静享从容清凉' 등 현지인들이 선호하는 세련된 문어체 표현을 사용하여 유창성이 매우 높습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 유지하면서도 단순 직역에 그치지 않고 '温控策略', '体感舒适度' 등 UI와 가전 제품 맥락에 적합한 자연스러운 전문 용어를 사용하여 현지화 품질이 우수합니다."}, {"category": "용어집 준수", "comment": "용어집 준수 측면에서 몇 가지 수정이 필요합니다. 1) '에너지(Energy)'와 '절약(节省)'을 합쳐 '节能(에너지 절약)'으로 의역했으나, 용어집에 명시된 개별 용어를 최대한 반영해야 합니다. 2) '맞춤 냉방'의 번역어 '自定义制冷'은 준수하였으나, 서식 규칙인 대괄호 '[' ']' 대신 중국식 따옴표 '「' '」'를 사용했습니다."}, {"category": "언어별 규칙 준수", "comment": "중국 본토(Mainland China)에서 사용하는 간체자와 용어(吊扇, 联动 등)를 정확하게 사용하였습니다."}, {"category": "대소문자 표기", "comment": "해당 사항 없음 (중국어 문장으로 대소문자 규칙에서 자유로움). 다만 Glossary상의 'Energy'는 영문 표기 시 첫 글자 대문자 유지가 필요할 수 있습니다."}, {"category": "서식 및 표기", "comment": "Glossary 용어를 감싸는 대괄호 서식이 규칙인 '[' ']'가 아닌 '「' '」'로 적용되었습니다. SmartThings UI 가이드라인에 따라 표준 대괄호 사용이 권장됩니다."}], "grade": "Needs Revision", "suggested_fix": "节省Energy，凉爽升级！[自定义制冷]功能可为您推荐最省钱、最舒适的空调温度，或直接进行调节。若同一空间内配有吊扇，空调启动时亦可同步联动开启。吊扇能让冷气快速循环至每个角落，提升制冷效率。现在就把繁琐的设置交给[自定义制冷]，尽情享受清凉吧。"}
+==========================================================================================
+[시트] CN(중국) | [셀] C22
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+[맞춤 냉방] 설정은 에어컨 연결이 필요하며 [에너지 > 절약 > 맞춤 냉방]에서 설정할 수 있습니다. 
+[팬을 켜서 냉기 순환 시키기]는 WWST 인증을 받은 실링팬 연결이 필요합니다.
+
+[상세 - 번역문]
+「自定义制冷」功能需空调已接入 SmartThings，开启路径：Energy > 节省 > 自定义制冷
+「开启风扇，让冷空气循环起来」功能需连接 WWST 认证吊扇。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+용어집 괄호 규정 점검:
+- [괄호 오류] '自定义制冷'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+- [괄호 오류] '开启风扇，让冷空气循环起来'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_disclaimer
+- 번역: 「自定义制冷」功能需空调已接入 SmartThings，开启路径：Energy > 节省 > 自定义制冷
+「开启风扇，让冷空气循环起来」功能需连接 WWST 认证吊扇。
+
+[사례 2] SEMANTIC (66.8%) | story_006 | //section_006_3_description
+- 번역: 节能有方，凉爽升级！「自定义制冷」功能可基于实时环境与用户习惯，为您推荐或自动执行最优温控策略。
+若同一空间内配备吊扇，空调启动时亦可同步联动开启。
+吊扇加速冷气循环，使低温均匀覆盖全屋角落，显著提升整体制冷效率与体感舒适度。
+告别繁琐参数设置，将温控交由「自定义制冷」智能系统，静享从容清凉。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 전체적인 문장 구조는 자연스러우며 중국어 사용자에게 친숙한 표현을 사용했습니다. 다만, 한국어 원문의 문장 구조를 반영하는 과정에서 서식 규칙이 누락되었습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 정확하게 전달하고 있습니다. '에어컨 연결이 필요하며'를 '需空调已接入 SmartThings'로 번역하여 에코시스템의 맥락을 잘 살렸으나, 서식 가이드라인 미준수로 인해 수정이 필요합니다.
+- 용어집 준수: 용어 자체는 용어집과 일치하지만, 용어집 용어를 [ ](대괄호)로 감싸라는 규칙을 지키지 않고 「 」(낫표)를 사용했습니다. 'Energy'의 대괄호 제외 규칙은 잘 준수되었습니다.
+- 언어별 규칙 준수: 중국 간체 규칙에 부합하며, Mainland Chinese에서 사용하지 않는 대만식 표현 등은 발견되지 않았습니다.
+- 대소문자 표기: Energy, SmartThings, WWST 등 영문 용어의 대소문자 표기는 적절합니다.
+- 서식 및 표기: 서식 규칙 위반이 많습니다. 용어집 용어는 [ ]를 사용해야 하며, 탐색 경로(navigation path)는 큰따옴표(" ")로 감싸야 합니다. 또한 탐색 경로에 대한 마침표 위치 규칙이 적용되지 않았습니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+[自定义制冷] 设置需 연결 空调，您可以在 “Energy > 节省 > 自定义制冷” 中进行设置。
+[开启风扇，让冷空气循环起来] 需连接 WWST 认证의 吊扇。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_disclaimer", "source": "[맞춤 냉방] 설정은 에어컨 연결이 필요하며 [에너지 > 절약 > 맞춤 냉방]에서 설정할 수 있습니다. \n[팬을 켜서 냉기 순환 시키기]는 WWST 인증을 받은 실링팬 연결이 필요합니다.", "target": "「自定义制冷」功能需空调已接入 SmartThings，开启路径：Energy > 节省 > 自定义制冷\n「开启风扇，让冷空气循环起来」功能需连接 WWST 认证吊扇。"}, {"type": "semantic", "score": 66.8, "story_id": "story_006", "section": "//section_006_3_description", "source": "에너지는 절약하고 시원함은 더하는 방법! [맞춤 냉방]이 가장 알뜰하고 쾌적한 에어컨 온도를 알려주거나 직접 조절해 줘요. 같은 공간에 실링팬이 있다면, 에어컨이 켜질 때 알아서 함께 켤 수도 있어요. 실링팬이 시원한 공기를 구석구석 빠르게 순환시켜 냉방 효율이 높아지죠. 이제 복잡한 고민은 [맞춤 냉방]에 맡기고, 기분 좋은 시원함만 누려 보세요.", "target": "节能有方，凉爽升级！「自定义制冷」功能可基于实时环境与用户习惯，为您推荐或自动执行最优温控策略。\n若同一空间内配备吊扇，空调启动时亦可同步联动开启。\n吊扇加速冷气循环，使低温均匀覆盖全屋角落，显著提升整体制冷效率与体感舒适度。\n告别繁琐参数设置，将温控交由「自定义制冷」智能系统，静享从容清凉。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "전체적인 문장 구조는 자연스러우며 중국어 사용자에게 친숙한 표현을 사용했습니다. 다만, 한국어 원문의 문장 구조를 반영하는 과정에서 서식 규칙이 누락되었습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 정확하게 전달하고 있습니다. '에어컨 연결이 필요하며'를 '需空调已接入 SmartThings'로 번역하여 에코시스템의 맥락을 잘 살렸으나, 서식 가이드라인 미준수로 인해 수정이 필요합니다."}, {"category": "용어집 준수", "comment": "용어 자체는 용어집과 일치하지만, 용어집 용어를 [ ](대괄호)로 감싸라는 규칙을 지키지 않고 「 」(낫표)를 사용했습니다. 'Energy'의 대괄호 제외 규칙은 잘 준수되었습니다."}, {"category": "언어별 규칙 준수", "comment": "중국 간체 규칙에 부합하며, Mainland Chinese에서 사용하지 않는 대만식 표현 등은 발견되지 않았습니다."}, {"category": "대소문자 표기", "comment": "Energy, SmartThings, WWST 등 영문 용어의 대소문자 표기는 적절합니다."}, {"category": "서식 및 표기", "comment": "서식 규칙 위반이 많습니다. 용어집 용어는 [ ]를 사용해야 하며, 탐색 경로(navigation path)는 큰따옴표(\" \")로 감싸야 합니다. 또한 탐색 경로에 대한 마침표 위치 규칙이 적용되지 않았습니다."}], "grade": "Needs Revision", "suggested_fix": "[自定义制冷] 设置需 연결 空调，您可以在 “Energy > 节省 > 自定义制冷” 中进行设置。\n[开启风扇，让冷空气循环起来] 需连接 WWST 认证의 吊扇。"}
+==========================================================================================
+[시트] CN(중국) | [셀] C25
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+스마트싱스로 냉방 효율 UP
+
+[상세 - 번역문]
+用 SmartThings 全面提升制冷效能
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3
+- 번역: 用 SmartThings 全面提升制冷效能
+
+[사례 2] SEMANTIC (68.0%) | story_006 | //story_006_description
+- 번역: 炎炎夏日，用 SmartThings 让空调管理更细致、更智能。到家前远程预降温，入睡前自动调至静音舒眠模式，每一刻皆可享受恰如其分的清凉体验。这是一台真正契合您生活节奏的空调，让整个夏季始终清爽宜人。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 중국어 문법에 어긋남이 없으며, '用...提升' 구조를 사용하여 문장이 매우 매끄럽고 유창하게 구성되었습니다.
+- 정확성 및 현지화 품질: 원문의 'UP'이라는 표현을 단순히 직역하지 않고 '全面提升(전면 향상)'이라는 마케팅적인 표현을 사용하여 냉방 효율이 개선됨을 강조하는 등 현지화 품질이 우수합니다.
+- 용어집 준수: 글로서리 용어인 'SmartThings'를 대소문자와 띄어쓰기까지 정확하게 준수하였습니다.
+- 언어별 규칙 준수: 중국 본토(Mainland China)에서 주로 사용하는 '制冷' 및 '效能' 용어를 적절히 선택하여 사용하였습니다.
+- 대소문자 표기: 글로서리에 정의된 SmartThings의 대소문자 표기 규칙을 정확히 따랐습니다.
+- 서식 및 표기: 글로서리 용어에 불필요한 브래킷을 사용하지 않았으며, 원문과 동일하게 마침표를 생략하여 UI 문구의 일관성을 유지했습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3", "source": "스마트싱스로 냉방 효율 UP", "target": "用 SmartThings 全面提升制冷效能"}, {"type": "semantic", "score": 68.0, "story_id": "story_006", "section": "//story_006_description", "source": "무더운 여름, 스마트싱스로 에어컨을 더 섬세하고 똑똑하게 관리해 보세요. 집에 도착하기 전엔 미리 시원하게, 잠들 땐 조용하고 쾌적하게, 언제나 똑똑하게 냉방을 도와줘요. 내 일상에 딱 맞는 에어컨과 매일 더 시원하고 편안한 여름을 보내보세요.", "target": "炎炎夏日，用 SmartThings 让空调管理更细致、更智能。到家前远程预降温，入睡前自动调至静音舒眠模式，每一刻皆可享受恰如其分的清凉体验。这是一台真正契合您生活节奏的空调，让整个夏季始终清爽宜人。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "중국어 문법에 어긋남이 없으며, '用...提升' 구조를 사용하여 문장이 매우 매끄럽고 유창하게 구성되었습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 'UP'이라는 표현을 단순히 직역하지 않고 '全面提升(전면 향상)'이라는 마케팅적인 표현을 사용하여 냉방 효율이 개선됨을 강조하는 등 현지화 품질이 우수합니다."}, {"category": "용어집 준수", "comment": "글로서리 용어인 'SmartThings'를 대소문자와 띄어쓰기까지 정확하게 준수하였습니다."}, {"category": "언어별 규칙 준수", "comment": "중국 본토(Mainland China)에서 주로 사용하는 '制冷' 및 '效能' 용어를 적절히 선택하여 사용하였습니다."}, {"category": "대소문자 표기", "comment": "글로서리에 정의된 SmartThings의 대소문자 표기 규칙을 정확히 따랐습니다."}, {"category": "서식 및 표기", "comment": "글로서리 용어에 불필요한 브래킷을 사용하지 않았으며, 원문과 동일하게 마침표를 생략하여 UI 문구의 일관성을 유지했습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] CN(중국) | [셀] C26
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+올여름을 시원함으로 가득 채워 보세요. 깜빡하고 창문을 연 채로 에어컨을 켜면, 문 열림 센서가 이를 인식해 스마트싱스로 알려주니 걱정 없어요. 강렬한 햇빛 때문에 금방 시원해지지 않는다면 [자동 블라인드]를 사용해 보세요. 에어컨이 켜지면 블라인드가 내려와 시원함이 더 빠르게 채워질 거예요.
+
+[상세 - 번역문]
+让整个夏天始终清爽无忧。若开空调时门窗未关严，门窗传感器将即时通过 SmartThings 向您推送提醒，避免冷气外泄与能源浪费；当阳光直射导致降温迟滞，启用「自动关闭百叶窗」功能，空调启动时百叶窗将自动闭合，有效阻隔热辐射，加速室内降温进程。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 괄호 규정 점검:
+- [괄호 오류] '自动关闭百叶窗'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_description
+- 번역: 让整个夏天始终清爽无忧。若开空调时门窗未关严，门窗传感器将即时通过 SmartThings 向您推送提醒，避免冷气外泄与能源浪费；当阳光直射导致降温迟滞，启用「自动关闭百叶窗」功能，空调启动时百叶窗将自动闭合，有效阻隔热辐射，加速室内降温进程。
+
+[사례 2] SEMANTIC (62.4%) | story_006 | //section_006_3_disclaimer
+- 번역: 门窗传感器通知需预先完成自动化场景配置。
+「自动关闭百叶窗」功能需空调已接入 SmartThings，开启路径：生活 > Energy > 节省 > 自动关闭百叶窗
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 중국어 번역은 매우 유창하며, 단순히 단어를 옮기는 대신 '清爽无忧'(청량함과 걱정 없음), '降温迟滞'(냉방 지연) 등 전문적이고 세련된 마케팅 어휘를 사용하여 현지화 품질이 매우 높습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 충실히 전달하면서도, '에너지 낭비 방지'나 '열복사 차단'과 같은 부가적인 설명을 덧붙여 중국 사용자들에게 기능의 장점을 더 효과적으로 어필하고 있습니다.
+- 용어집 준수: Glossary에 명시된 'SmartThings'(괄호 제외)와 '自动关闭百叶窗' 용어를 정확히 사용했습니다. 다만, 용어집 적용 시 대괄호([ ])를 사용하라는 지침 대신 중국식 낫표(「 」)를 사용한 점은 수정이 필요합니다.
+- 언어별 규칙 준수: 중국 본토에서 사용하는 간체자와 어휘를 정확하게 사용하였으며, 문장 구조가 자연스럽습니다.
+- 대소문자 표기: SmartThings의 대소문자 표기 규칙을 준수했습니다.
+- 서식 및 표기: 지침상 용어집 용어는 [ ](대괄호)로 감싸야 하지만, 현재 번역본에서는 「 」를 사용했습니다. 이는 현지 문장 부호 관습에는 맞을 수 있으나 주어진 서식 규칙에는 어긋납니다.
+
+최종 평가: 양호 — 경미한 개선 여지 있으나 출시 가능 수준.
+
+[수정안 제안]:
+让整个夏天始终清爽无忧。若开空调时门窗未关严，门窗传感器将即时通过 SmartThings 向您推送提醒，避免冷气外泄与能源浪费；当阳光直射导致降温迟滞，启用[自动关闭百叶窗]功能，空调启动时百叶窗将自动闭合，有效阻隔热辐射，加速室内降温进程。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_description", "source": "올여름을 시원함으로 가득 채워 보세요. 깜빡하고 창문을 연 채로 에어컨을 켜면, 문 열림 센서가 이를 인식해 스마트싱스로 알려주니 걱정 없어요. 강렬한 햇빛 때문에 금방 시원해지지 않는다면 [자동 블라인드]를 사용해 보세요. 에어컨이 켜지면 블라인드가 내려와 시원함이 더 빠르게 채워질 거예요.", "target": "让整个夏天始终清爽无忧。若开空调时门窗未关严，门窗传感器将即时通过 SmartThings 向您推送提醒，避免冷气外泄与能源浪费；当阳光直射导致降温迟滞，启用「自动关闭百叶窗」功能，空调启动时百叶窗将自动闭合，有效阻隔热辐射，加速室内降温进程。"}, {"type": "semantic", "score": 62.4, "story_id": "story_006", "section": "//section_006_3_disclaimer", "source": "문 열림 센서를 통해 알림을 받기 위해서는 자동화 설정이 필요합니다. \n[자동 블라인드] 설정은 에어컨 연결이 필요하며, [라이프 > 에너지 > 절약 > 자동 블라인드]에서 설정할 수 있습니다.", "target": "门窗传感器通知需预先完成自动化场景配置。\n「自动关闭百叶窗」功能需空调已接入 SmartThings，开启路径：生活 > Energy > 节省 > 自动关闭百叶窗"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "중국어 번역은 매우 유창하며, 단순히 단어를 옮기는 대신 '清爽无忧'(청량함과 걱정 없음), '降温迟滞'(냉방 지연) 등 전문적이고 세련된 마케팅 어휘를 사용하여 현지화 품질이 매우 높습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 충실히 전달하면서도, '에너지 낭비 방지'나 '열복사 차단'과 같은 부가적인 설명을 덧붙여 중국 사용자들에게 기능의 장점을 더 효과적으로 어필하고 있습니다."}, {"category": "용어집 준수", "comment": "Glossary에 명시된 'SmartThings'(괄호 제외)와 '自动关闭百叶窗' 용어를 정확히 사용했습니다. 다만, 용어집 적용 시 대괄호([ ])를 사용하라는 지침 대신 중국식 낫표(「 」)를 사용한 점은 수정이 필요합니다."}, {"category": "언어별 규칙 준수", "comment": "중국 본토에서 사용하는 간체자와 어휘를 정확하게 사용하였으며, 문장 구조가 자연스럽습니다."}, {"category": "대소문자 표기", "comment": "SmartThings의 대소문자 표기 규칙을 준수했습니다."}, {"category": "서식 및 표기", "comment": "지침상 용어집 용어는 [ ](대괄호)로 감싸야 하지만, 현재 번역본에서는 「 」를 사용했습니다. 이는 현지 문장 부호 관습에는 맞을 수 있으나 주어진 서식 규칙에는 어긋납니다."}], "grade": "Good", "suggested_fix": "让整个夏天始终清爽无忧。若开空调时门窗未关严，门窗传感器将即时通过 SmartThings 向您推送提醒，避免冷气外泄与能源浪费；当阳光直射导致降温迟滞，启用[自动关闭百叶窗]功能，空调启动时百叶窗将自动闭合，有效阻隔热辐射，加速室内降温进程。"}
+==========================================================================================
+[시트] CN(중국) | [셀] C27
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+문 열림 센서를 통해 알림을 받기 위해서는 자동화 설정이 필요합니다. 
+[자동 블라인드] 설정은 에어컨 연결이 필요하며, [라이프 > 에너지 > 절약 > 자동 블라인드]에서 설정할 수 있습니다.
+
+[상세 - 번역문]
+门窗传感器通知需预先完成自动化场景配置。
+「自动关闭百叶窗」功能需空调已接入 SmartThings，开启路径：生活 > Energy > 节省 > 自动关闭百叶窗
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+용어집 괄호 규정 점검:
+- [괄호 오류] '自动关闭百叶窗'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_disclaimer
+- 번역: 门窗传感器通知需预先完成自动化场景配置。
+「自动关闭百叶窗」功能需空调已接入 SmartThings，开启路径：生活 > Energy > 节省 > 自动关闭百叶窗
+
+[사례 2] SEMANTIC (60.4%) | story_006 | //section_006_3_description
+- 번역: 让整个夏天始终清爽无忧。若开空调时门窗未关严，门窗传感器将即时通过 SmartThings 向您推送提醒，避免冷气外泄与能源浪费；当阳光直射导致降温迟滞，启用「自动关闭百叶窗」功能，空调启动时百叶窗将自动闭合，有效阻隔热辐射，加速室内降温进程。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 중국어 문장 자체는 문법적으로 완벽하고 유창하게 작성되었습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 정확하게 전달하고 있으며, '门窗传感器'(문 열림 센서)와 같이 현지에서 통용되는 용어를 적절히 사용했습니다.
+- 용어집 준수: 용어집에 명시된 [通知], [自动关闭百叶窗]에 대괄호([ ])를 사용하지 않았거나 다른 기호(「 」)를 사용했습니다. 또한 '설정'에 지정된 용어인 [Settings]가 번역에 반영되지 않았습니다.
+- 언어별 규칙 준수: 중국 본토에서 사용하는 간체자 및 '空调' 등 대륙 용어 기준을 잘 준수하였습니다.
+- 대소문자 표기: 용어집에 명시된 'Energy'의 대소문자를 정확하게 표기했습니다.
+- 서식 및 표기: 탐색 경로를 큰따옴표(“ ”)로 묶어야 하며, 문장 마침표가 닫는 따옴표 안에 위치해야 한다는 규칙이 준수되지 않았습니다. 또한 용어 대괄호 표기 규칙이 누락되었습니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+门窗传感器[通知]需预先完成自动化[Settings]。
+[自动关闭百叶窗][Settings]需连接空调，可在“生活 > Energy > 节省 > 自动关闭百叶窗。”中进行[Settings]。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_disclaimer", "source": "문 열림 센서를 통해 알림을 받기 위해서는 자동화 설정이 필요합니다. \n[자동 블라인드] 설정은 에어컨 연결이 필요하며, [라이프 > 에너지 > 절약 > 자동 블라인드]에서 설정할 수 있습니다.", "target": "门窗传感器通知需预先完成自动化场景配置。\n「自动关闭百叶窗」功能需空调已接入 SmartThings，开启路径：生活 > Energy > 节省 > 自动关闭百叶窗"}, {"type": "semantic", "score": 60.4, "story_id": "story_006", "section": "//section_006_3_description", "source": "올여름을 시원함으로 가득 채워 보세요. 깜빡하고 창문을 연 채로 에어컨을 켜면, 문 열림 센서가 이를 인식해 스마트싱스로 알려주니 걱정 없어요. 강렬한 햇빛 때문에 금방 시원해지지 않는다면 [자동 블라인드]를 사용해 보세요. 에어컨이 켜지면 블라인드가 내려와 시원함이 더 빠르게 채워질 거예요.", "target": "让整个夏天始终清爽无忧。若开空调时门窗未关严，门窗传感器将即时通过 SmartThings 向您推送提醒，避免冷气外泄与能源浪费；当阳光直射导致降温迟滞，启用「自动关闭百叶窗」功能，空调启动时百叶窗将自动闭合，有效阻隔热辐射，加速室内降温进程。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "중국어 문장 자체는 문법적으로 완벽하고 유창하게 작성되었습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 정확하게 전달하고 있으며, '门窗传感器'(문 열림 센서)와 같이 현지에서 통용되는 용어를 적절히 사용했습니다."}, {"category": "용어집 준수", "comment": "용어집에 명시된 [通知], [自动关闭百叶窗]에 대괄호([ ])를 사용하지 않았거나 다른 기호(「 」)를 사용했습니다. 또한 '설정'에 지정된 용어인 [Settings]가 번역에 반영되지 않았습니다."}, {"category": "언어별 규칙 준수", "comment": "중국 본토에서 사용하는 간체자 및 '空调' 등 대륙 용어 기준을 잘 준수하였습니다."}, {"category": "대소문자 표기", "comment": "용어집에 명시된 'Energy'의 대소문자를 정확하게 표기했습니다."}, {"category": "서식 및 표기", "comment": "탐색 경로를 큰따옴표(“ ”)로 묶어야 하며, 문장 마침표가 닫는 따옴표 안에 위치해야 한다는 규칙이 준수되지 않았습니다. 또한 용어 대괄호 표기 규칙이 누락되었습니다."}], "grade": "Needs Revision", "suggested_fix": "门窗传感器[通知]需预先完成自动化[Settings]。\n[自动关闭百叶窗][Settings]需连接空调，可在“生活 > Energy > 节省 > 自动关闭百叶窗。”中进行[Settings]。"}
+==========================================================================================
+[시트] TW(대만) | [셀] C7
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+에어컨이 알아서 쾌적하게, 똑똑하게
+
+[상세 - 번역문]
+空調自動判斷，舒適又聰明
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //story_006_title
+- 번역: 空調自動判斷，舒適又聰明
+
+[사례 2] SEMANTIC (61.8%) | story_006 | //section_006_3
+- 번역: 自動調整的自訂冷風設定
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 대만 번체 문법에 어긋남이 없으며, 간결하고 자연스러운 문장 구조를 가지고 있습니다.
+- 정확성 및 현지화 품질: 원문의 '알아서'를 '自動判斷(자동 판단)'으로, '쾌적하게, 똑똑하게'를 '舒適又聰明(쾌적하고 똑똑하게)'으로 의역하여 의미를 명확하게 전달하면서도 현지에서 선호하는 마케팅 톤을 유지하고 있습니다.
+- 용어집 준수: 제공된 용어집이 없으며, 일반적인 가전 제품 용어(空調)를 적절하게 사용했습니다.
+- 언어별 규칙 준수: 대만 현지에서 사용하는 표현과 어휘(空調)를 사용하였으며, 문장 부호 또한 현지 관습에 맞게 표기되었습니다.
+- 대소문자 표기: 해당 사항 없음 (중문).
+- 서식 및 표기: 전각 쉼표(，) 사용 등 대만 번체 타이포그래피 규칙을 준수했습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//story_006_title", "source": "에어컨이 알아서 쾌적하게, 똑똑하게", "target": "空調自動判斷，舒適又聰明"}, {"type": "semantic", "score": 61.8, "story_id": "story_006", "section": "//section_006_3", "source": "알아서 맞춰주는 맞춤 냉방", "target": "自動調整的自訂冷風設定"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "대만 번체 문법에 어긋남이 없으며, 간결하고 자연스러운 문장 구조를 가지고 있습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '알아서'를 '自動判斷(자동 판단)'으로, '쾌적하게, 똑똑하게'를 '舒適又聰明(쾌적하고 똑똑하게)'으로 의역하여 의미를 명확하게 전달하면서도 현지에서 선호하는 마케팅 톤을 유지하고 있습니다."}, {"category": "용어집 준수", "comment": "제공된 용어집이 없으며, 일반적인 가전 제품 용어(空調)를 적절하게 사용했습니다."}, {"category": "언어별 규칙 준수", "comment": "대만 현지에서 사용하는 표현과 어휘(空調)를 사용하였으며, 문장 부호 또한 현지 관습에 맞게 표기되었습니다."}, {"category": "대소문자 표기", "comment": "해당 사항 없음 (중문)."}, {"category": "서식 및 표기", "comment": "전각 쉼표(，) 사용 등 대만 번체 타이포그래피 규칙을 준수했습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] TW(대만) | [셀] C8
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+무더운 여름, 스마트싱스로 에어컨을 더 섬세하고 똑똑하게 관리해 보세요. 집에 도착하기 전엔 미리 시원하게, 잠들 땐 조용하고 쾌적하게, 언제나 똑똑하게 냉방을 도와줘요. 내 일상에 딱 맞는 에어컨과 매일 더 시원하고 편안한 여름을 보내보세요.
+
+[상세 - 번역문]
+炎炎夏日，用 SmartThings讓空調管控更細緻、也更聰明。還沒回家就可以先預冷，入睡時則安靜又舒適，無論什麼時候都能幫您聰明降溫。選擇最適合您日常的空調，每天都能過得更涼爽更自在。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //story_006_description
+- 번역: 炎炎夏日，用 SmartThings讓空調管控更細緻、也更聰明。還沒回家就可以先預冷，入睡時則安靜又舒適，無論什麼時候都能幫您聰明降溫。選擇最適合您日常的空調，每天都能過得更涼爽更自在。
+
+[사례 2] SEMANTIC (69.4%) | story_006 | //section_006_2_description
+- 번역: SmartThings的[Welcome air care]會在您回家前自動開啟空調，一進門便清涼迎接。開啟[智慧空調]功能即可自動調整最佳溫溼度，隨時維持宜人空氣。當感測不到人時，空調會自動進入節能運作並自動關閉，幫您聰明省電。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 전체적으로 문장이 매끄럽고 '炎炎夏日(염염하일)'과 같은 성어를 사용하여 현지 정서에 맞게 잘 번역되었습니다.
+- 정확성 및 현지화 품질: '미리 시원하게'를 '預冷(예냉)'으로, '쾌적하게'를 '舒適'로 번역하여 원문의 의미를 효과적으로 전달했습니다. 다만, '日常(일상)'은 대만 번체에서 단독 명사로 쓰이기보다 '日常生活'로 쓰는 것이 더 자연스럽습니다.
+- 용어집 준수: glossary에 명시된 'SmartThings'를 정확하게 사용하였으며, 대괄호를 사용하지 말라는 예외 규칙(Exception)도 완벽하게 준수되었습니다.
+- 언어별 규칙 준수: 대만 현지에서 주로 사용하는 용어인 '空調(공조)'를 사용하여 지역적 특성을 잘 반영하였습니다.
+- 대소문자 표기: 고유 명사인 'SmartThings'의 대소문자 표기가 정확합니다.
+- 서식 및 표기: 영문(SmartThings)과 중문 한자 사이에는 반각 공백을 추가하는 것이 대만 현지 타이포그래피 관습상 가독성을 높이는 데 권장됩니다.
+
+최종 평가: 양호 — 경미한 개선 여지 있으나 출시 가능 수준.
+
+[수정안 제안]:
+炎炎夏日，用 SmartThings 讓空調管控更細緻、也更聰明。還沒回家就可以先預冷，入睡時則安靜又舒適，無論什麼時候都能幫您聰明降溫。選擇最適合您日常生活的空調，每天都能過得更涼爽更自在。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//story_006_description", "source": "무더운 여름, 스마트싱스로 에어컨을 더 섬세하고 똑똑하게 관리해 보세요. 집에 도착하기 전엔 미리 시원하게, 잠들 땐 조용하고 쾌적하게, 언제나 똑똑하게 냉방을 도와줘요. 내 일상에 딱 맞는 에어컨과 매일 더 시원하고 편안한 여름을 보내보세요.", "target": "炎炎夏日，用 SmartThings讓空調管控更細緻、也更聰明。還沒回家就可以先預冷，入睡時則安靜又舒適，無論什麼時候都能幫您聰明降溫。選擇最適合您日常的空調，每天都能過得更涼爽更自在。"}, {"type": "semantic", "score": 69.4, "story_id": "story_006", "section": "//section_006_2_description", "source": "스마트싱스의 [웰컴 에어 케어]가 집에 도착하기 전 에어컨을 켜주니 더위 대신 시원함이 반겨줘요. [AI 쾌적]으로 최적의 온습도가 설정되어 언제나 쾌적한 공기를 만날 수 있어요. 주변에 사람이 없는 것이 감지되면 에어컨이 절전 운전된 후 알아서 꺼지니 에너지도 똑똑하게 아낄 수 있어요.", "target": "SmartThings的[Welcome air care]會在您回家前自動開啟空調，一進門便清涼迎接。開啟[智慧空調]功能即可自動調整最佳溫溼度，隨時維持宜人空氣。當感測不到人時，空調會自動進入節能運作並自動關閉，幫您聰明省電。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "전체적으로 문장이 매끄럽고 '炎炎夏日(염염하일)'과 같은 성어를 사용하여 현지 정서에 맞게 잘 번역되었습니다."}, {"category": "정확성 및 현지화 품질", "comment": "'미리 시원하게'를 '預冷(예냉)'으로, '쾌적하게'를 '舒適'로 번역하여 원문의 의미를 효과적으로 전달했습니다. 다만, '日常(일상)'은 대만 번체에서 단독 명사로 쓰이기보다 '日常生活'로 쓰는 것이 더 자연스럽습니다."}, {"category": "용어집 준수", "comment": "glossary에 명시된 'SmartThings'를 정확하게 사용하였으며, 대괄호를 사용하지 말라는 예외 규칙(Exception)도 완벽하게 준수되었습니다."}, {"category": "언어별 규칙 준수", "comment": "대만 현지에서 주로 사용하는 용어인 '空調(공조)'를 사용하여 지역적 특성을 잘 반영하였습니다."}, {"category": "대소문자 표기", "comment": "고유 명사인 'SmartThings'의 대소문자 표기가 정확합니다."}, {"category": "서식 및 표기", "comment": "영문(SmartThings)과 중문 한자 사이에는 반각 공백을 추가하는 것이 대만 현지 타이포그래피 관습상 가독성을 높이는 데 권장됩니다."}], "grade": "Good", "suggested_fix": "炎炎夏日，用 SmartThings 讓空調管控更細緻、也更聰明。還沒回家就可以先預冷，入睡時則安靜又舒適，無論什麼時候都能幫您聰明降溫。選擇最適合您日常生活的空調，每天都能過得更涼爽更自在。"}
+==========================================================================================
+[시트] TW(대만) | [셀] C10
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+한밤중에도 시원하고 조용한 에어컨
+
+[상세 - 번역문]
+半夜也安靜又涼爽的冷氣
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_1
+- 번역: 半夜也安靜又涼爽的冷氣
+
+[사례 2] SEMANTIC (54.3%) | story_006 | //section_006_1_description
+- 번역: 家裡的冷氣每天都細心守護你的舒適睡眠。除了能調整溫度、風速和定時設定外，連顯示燈光和提示音也都能控制。
+如果你有配戴Galaxy Watch，冷氣還能依照Watch偵測到的睡眠階段，自動調整到最合適的溫度與風速，讓你整晚都能舒適好眠。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 문법적으로 오류가 없으며, 대만 현지에서 자연스럽게 사용되는 어순과 표현입니다.
+- 정확성 및 현지화 품질: 원문의 '한밤중에도 시원하고 조용한'이라는 의미를 잘 살렸습니다. 특히 '에어컨'을 대만 현지 용어인 '冷氣'로 적절히 번역하였습니다.
+- 용어집 준수: 제공된 용어집이 없으며, 일반적인 가전 제품 용어를 대만 표준에 맞춰 사용했습니다.
+- 언어별 규칙 준수: 대만 정체자(Traditional Chinese) 표기 규칙을 완벽하게 준수하였습니다.
+- 대소문자 표기: 해당 사항 없음 (중문).
+- 서식 및 표기: 원문의 서술형 형식을 잘 유지하고 있으며, 구두점 사용 등 대만 표준 표기법에 부합합니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[수정안 제안]:
+深夜也能享有涼爽安靜的冷氣
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_1", "source": "한밤중에도 시원하고 조용한 에어컨", "target": "半夜也安靜又涼爽的冷氣"}, {"type": "semantic", "score": 54.3, "story_id": "story_006", "section": "//section_006_1_description", "source": "우리 집 에어컨은 내 편안한 잠자리를 위해 매일 세심하게 챙겨주고 있어요. 온도와 바람 세기, 예약 설정은 물론 디스플레이의 불빛부터 효과음까지도 제어할 수 있죠. 갤럭시 워치를 착용하고 있다면 워치가 인식한 나의 수면 단계에 맞춰 에어컨이 최적의 온도와 바람 세기로 조절해 줘요. 덕분에 밤새 편안하게 잠들 수 있어요.", "target": "家裡的冷氣每天都細心守護你的舒適睡眠。除了能調整溫度、風速和定時設定外，連顯示燈光和提示音也都能控制。\n如果你有配戴Galaxy Watch，冷氣還能依照Watch偵測到的睡眠階段，自動調整到最合適的溫度與風速，讓你整晚都能舒適好眠。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "문법적으로 오류가 없으며, 대만 현지에서 자연스럽게 사용되는 어순과 표현입니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '한밤중에도 시원하고 조용한'이라는 의미를 잘 살렸습니다. 특히 '에어컨'을 대만 현지 용어인 '冷氣'로 적절히 번역하였습니다."}, {"category": "용어집 준수", "comment": "제공된 용어집이 없으며, 일반적인 가전 제품 용어를 대만 표준에 맞춰 사용했습니다."}, {"category": "언어별 규칙 준수", "comment": "대만 정체자(Traditional Chinese) 표기 규칙을 완벽하게 준수하였습니다."}, {"category": "대소문자 표기", "comment": "해당 사항 없음 (중문)."}, {"category": "서식 및 표기", "comment": "원문의 서술형 형식을 잘 유지하고 있으며, 구두점 사용 등 대만 표준 표기법에 부합합니다."}], "grade": "Excellent", "suggested_fix": "深夜也能享有涼爽安靜的冷氣"}
+==========================================================================================
+[시트] TW(대만) | [셀] C11
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+우리 집 에어컨은 내 편안한 잠자리를 위해 매일 세심하게 챙겨주고 있어요. 온도와 바람 세기, 예약 설정은 물론 디스플레이의 불빛부터 효과음까지도 제어할 수 있죠. 갤럭시 워치를 착용하고 있다면 워치가 인식한 나의 수면 단계에 맞춰 에어컨이 최적의 온도와 바람 세기로 조절해 줘요. 덕분에 밤새 편안하게 잠들 수 있어요.
+
+[상세 - 번역문]
+家裡的冷氣每天都細心守護你的舒適睡眠。除了能調整溫度、風速和定時設定外，連顯示燈光和提示音也都能控制。
+如果你有配戴Galaxy Watch，冷氣還能依照Watch偵測到的睡眠階段，自動調整到最合適的溫度與風速，讓你整晚都能舒適好眠。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_1_description
+- 번역: 家裡的冷氣每天都細心守護你的舒適睡眠。除了能調整溫度、風速和定時設定外，連顯示燈光和提示音也都能控制。
+如果你有配戴Galaxy Watch，冷氣還能依照Watch偵測到的睡眠階段，自動調整到最合適的溫度與風速，讓你整晚都能舒適好眠。
+
+[사례 2] SEMANTIC (65.6%) | story_016 | //section_016_1_description
+- 번역: SmartThings為您打造專屬的最佳睡眠環境。當您入睡時，臥室燈光會自然熄滅、窗簾閉合，營造舒適的氛圍。空調和空氣清淨機也會配合您的睡眠狀態靜音運作，讓您享受舒適的安眠時光。配戴 Galaxy Watch或 Galaxy Ring後，系統會自動識別您入睡的瞬間，讓這些變化更加自然地進行。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 대만 현지에서 사용하는 자연스러운 어투와 어휘('冷氣', '提示音' 등)를 사용하여 문장이 매끄럽게 읽힙니다.
+- 정확성 및 현지화 품질: 원문은 '우리 집', '내 편안한 잠자리', '나의 수면 단계' 등 1인칭 화자의 경험을 서술하고 있으나, 번역문은 '你的', '讓你' 등 2인칭으로 번역되어 화자가 변경되었습니다. 사용자 중심의 경험을 전달하는 맥락에 맞춰 1인칭 또는 중립적인 표현으로 수정이 필요합니다.
+- 용어집 준수: 용어집의 '갤럭시(Galaxy)'는 예외 규칙(브라켓 제외)에 따라 적절히 표기되었습니다. 그러나 '설정(Settings)'은 용어집에 정의된 대로 '[Settings]'로 표기되어야 함에도 불구하고 '設定'으로 일반 번역되었습니다.
+- 언어별 규칙 준수: 대만 번체 지역화 기준(Traditional Chinese/Taiwan)에 부합하는 용어 선택과 문장 구조를 갖추고 있습니다.
+- 대소문자 표기: Galaxy Watch 등 영문 제품명에 대한 대소문자 표기 규칙을 준수하였습니다.
+- 서식 및 표기: 용어집 적용 시 필수인 브라켓('[ ]') 표기가 '설정' 부분에서 누락되었습니다. 또한 한문과 영문 사이의 공백(띄어쓰기)을 확보하여 가독성을 높이는 것이 권장됩니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+家裡的冷氣每天都細心守護我的舒適睡眠。除了能調整溫度、風速和預約 [Settings] 外，連顯示燈光과 提示音也都能控制。
+如果你有配戴 Galaxy Watch，冷氣還能依照 Watch 偵測到的睡眠階段，自動調整到最合適的溫度與風速，讓我整晚都能舒適好眠。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_1_description", "source": "우리 집 에어컨은 내 편안한 잠자리를 위해 매일 세심하게 챙겨주고 있어요. 온도와 바람 세기, 예약 설정은 물론 디스플레이의 불빛부터 효과음까지도 제어할 수 있죠. 갤럭시 워치를 착용하고 있다면 워치가 인식한 나의 수면 단계에 맞춰 에어컨이 최적의 온도와 바람 세기로 조절해 줘요. 덕분에 밤새 편안하게 잠들 수 있어요.", "target": "家裡的冷氣每天都細心守護你的舒適睡眠。除了能調整溫度、風速和定時設定外，連顯示燈光和提示音也都能控制。\n如果你有配戴Galaxy Watch，冷氣還能依照Watch偵測到的睡眠階段，自動調整到最合適的溫度與風速，讓你整晚都能舒適好眠。"}, {"type": "semantic", "score": 65.6, "story_id": "story_016", "section": "//section_016_1_description", "source": "스마트싱스가 나만의 최적 수면 환경을 만들어줘요. 내가 잠이 들면, 침실의 조명은 자연스럽게 꺼지고 커튼은 닫히며 안락한 분위기가 완성돼요. 에어컨과 공기청정기도 모두 나의 수면에 맞춰 조용히 동작하니 쾌적한 숙면을 즐길 수 있어요. 갤럭시 워치나 갤럭시 링을 착용하면 내가 잠든 순간을 자동으로 인식해 이 모든 변화가 더욱 자연스럽게 이어져요.", "target": "SmartThings為您打造專屬的最佳睡眠環境。當您入睡時，臥室燈光會自然熄滅、窗簾閉合，營造舒適的氛圍。空調和空氣清淨機也會配合您的睡眠狀態靜音運作，讓您享受舒適的安眠時光。配戴 Galaxy Watch或 Galaxy Ring後，系統會自動識別您入睡的瞬間，讓這些變化更加自然地進行。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "대만 현지에서 사용하는 자연스러운 어투와 어휘('冷氣', '提示音' 등)를 사용하여 문장이 매끄럽게 읽힙니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문은 '우리 집', '내 편안한 잠자리', '나의 수면 단계' 등 1인칭 화자의 경험을 서술하고 있으나, 번역문은 '你的', '讓你' 등 2인칭으로 번역되어 화자가 변경되었습니다. 사용자 중심의 경험을 전달하는 맥락에 맞춰 1인칭 또는 중립적인 표현으로 수정이 필요합니다."}, {"category": "용어집 준수", "comment": "용어집의 '갤럭시(Galaxy)'는 예외 규칙(브라켓 제외)에 따라 적절히 표기되었습니다. 그러나 '설정(Settings)'은 용어집에 정의된 대로 '[Settings]'로 표기되어야 함에도 불구하고 '設定'으로 일반 번역되었습니다."}, {"category": "언어별 규칙 준수", "comment": "대만 번체 지역화 기준(Traditional Chinese/Taiwan)에 부합하는 용어 선택과 문장 구조를 갖추고 있습니다."}, {"category": "대소문자 표기", "comment": "Galaxy Watch 등 영문 제품명에 대한 대소문자 표기 규칙을 준수하였습니다."}, {"category": "서식 및 표기", "comment": "용어집 적용 시 필수인 브라켓('[ ]') 표기가 '설정' 부분에서 누락되었습니다. 또한 한문과 영문 사이의 공백(띄어쓰기)을 확보하여 가독성을 높이는 것이 권장됩니다."}], "grade": "Needs Revision", "suggested_fix": "家裡的冷氣每天都細心守護我的舒適睡眠。除了能調整溫度、風速和預約 [Settings] 外，連顯示燈光과 提示音也都能控制。\n如果你有配戴 Galaxy Watch，冷氣還能依照 Watch 偵測到的睡眠階段，自動調整到最合適的溫度與風速，讓我整晚都能舒適好眠。"}
+==========================================================================================
+[시트] TW(대만) | [셀] C12
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+수면 단계에 따른 에어컨 자동 제어는 2026년부터 출시되는 삼성 에어컨 및 갤럭시 워치 7 이상부터 적용됩니다.
+
+[상세 - 번역문]
+依睡眠階段自動調整冷氣的功能，將適用於2026年起推出的三星冷氣以及Galaxy Watch 7以上機型。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_1_disclaimer
+- 번역: 依睡眠階段自動調整冷氣的功能，將適用於2026年起推出的三星冷氣以及Galaxy Watch 7以上機型。
+
+[사례 2] SEMANTIC (56.1%) | story_006 | //section_006_1_description
+- 번역: 家裡的冷氣每天都細心守護你的舒適睡眠。除了能調整溫度、風速和定時設定外，連顯示燈光和提示音也都能控制。
+如果你有配戴Galaxy Watch，冷氣還能依照Watch偵測到的睡眠階段，自動調整到最合適的溫度與風速，讓你整晚都能舒適好眠。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 대만 번체 문법에 어긋남이 없으며, '依...將適用於...' 구조를 사용하여 공식적인 면책 조항(Disclaimer)에 어울리는 유창한 문장으로 번역되었습니다.
+- 정확성 및 현지화 품질: 원문의 '자동 제어'를 '自動調整'로, '에어컨'을 대만 현지에서 보편적으로 사용하는 '冷氣'로 적절히 번역하여 의미를 정확하게 전달하고 현지화 품질도 우수합니다.
+- 용어집 준수: 용어집의 예외 규칙인 'Galaxy'에 대해 대괄호([])를 적용하지 말라는 지침을 완벽하게 준수하여 'Galaxy Watch 7'로 표기하였습니다.
+- 언어별 규칙 준수: 대만 현지에서 사용하는 단어 선택(冷氣, 機型 등)과 문장 구조를 사용하여 자연스럽게 현지화되었습니다.
+- 대소문자 표기: 'Galaxy Watch'와 같은 고유 명사의 대소문자 표기가 정확합니다.
+- 서식 및 표기: 대만 번체 표준 구두점인 온점(。)을 올바르게 사용하였으며, 불필요한 공백 없이 서식이 깔끔하게 적용되었습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_1_disclaimer", "source": "수면 단계에 따른 에어컨 자동 제어는 2026년부터 출시되는 삼성 에어컨 및 갤럭시 워치 7 이상부터 적용됩니다.", "target": "依睡眠階段自動調整冷氣的功能，將適用於2026年起推出的三星冷氣以及Galaxy Watch 7以上機型。"}, {"type": "semantic", "score": 56.1, "story_id": "story_006", "section": "//section_006_1_description", "source": "우리 집 에어컨은 내 편안한 잠자리를 위해 매일 세심하게 챙겨주고 있어요. 온도와 바람 세기, 예약 설정은 물론 디스플레이의 불빛부터 효과음까지도 제어할 수 있죠. 갤럭시 워치를 착용하고 있다면 워치가 인식한 나의 수면 단계에 맞춰 에어컨이 최적의 온도와 바람 세기로 조절해 줘요. 덕분에 밤새 편안하게 잠들 수 있어요.", "target": "家裡的冷氣每天都細心守護你的舒適睡眠。除了能調整溫度、風速和定時設定外，連顯示燈光和提示音也都能控制。\n如果你有配戴Galaxy Watch，冷氣還能依照Watch偵測到的睡眠階段，自動調整到最合適的溫度與風速，讓你整晚都能舒適好眠。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "대만 번체 문법에 어긋남이 없으며, '依...將適用於...' 구조를 사용하여 공식적인 면책 조항(Disclaimer)에 어울리는 유창한 문장으로 번역되었습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '자동 제어'를 '自動調整'로, '에어컨'을 대만 현지에서 보편적으로 사용하는 '冷氣'로 적절히 번역하여 의미를 정확하게 전달하고 현지화 품질도 우수합니다."}, {"category": "용어집 준수", "comment": "용어집의 예외 규칙인 'Galaxy'에 대해 대괄호([])를 적용하지 말라는 지침을 완벽하게 준수하여 'Galaxy Watch 7'로 표기하였습니다."}, {"category": "언어별 규칙 준수", "comment": "대만 현지에서 사용하는 단어 선택(冷氣, 機型 등)과 문장 구조를 사용하여 자연스럽게 현지화되었습니다."}, {"category": "대소문자 표기", "comment": "'Galaxy Watch'와 같은 고유 명사의 대소문자 표기가 정확합니다."}, {"category": "서식 및 표기", "comment": "대만 번체 표준 구두점인 온점(。)을 올바르게 사용하였으며, 불필요한 공백 없이 서식이 깔끔하게 적용되었습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] TW(대만) | [셀] C15
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+내 위치에 따라 켜지고 꺼지는 에어컨
+
+[상세 - 번역문]
+隨著位置自動開關的空調
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_2
+- 번역: 隨著位置自動開關的空調
+
+[사례 2] SEMANTIC (53.9%) | story_006 | //story_006_title
+- 번역: 空調自動判斷，舒適又聰明
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 문법적으로 완벽하며 대만 번체 표현으로 자연스럽게 구성되었습니다.
+- 정확성 및 현지화 품질: 원문의 '내 위치'라는 의미에서 '내(我的)'가 생략되었으나, 문맥상 의미 전달에는 큰 지장이 없습니다. 다만, 보다 정확한 의미 전달을 위해 '내(我的)'를 포함하는 것이 좋습니다.
+- 용어집 준수: 제공된 용어집이 없으므로 해당 사항 없음.
+- 언어별 규칙 준수: 대만에서 사용하는 번체 표현(空調, 位置)을 적절하게 사용하였습니다.
+- 대소문자 표기: 해당 언어에 해당 사항 없음.
+- 서식 및 표기: 문장 끝에 마침표가 없는 원문의 형식을 잘 따랐습니다.
+
+최종 평가: 양호 — 경미한 개선 여지 있으나 출시 가능 수준.
+
+[수정안 제안]:
+根據我的位置自動開關的空調
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_2", "source": "내 위치에 따라 켜지고 꺼지는 에어컨", "target": "隨著位置自動開關的空調"}, {"type": "semantic", "score": 53.9, "story_id": "story_006", "section": "//story_006_title", "source": "에어컨이 알아서 쾌적하게, 똑똑하게", "target": "空調自動判斷，舒適又聰明"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "문법적으로 완벽하며 대만 번체 표현으로 자연스럽게 구성되었습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '내 위치'라는 의미에서 '내(我的)'가 생략되었으나, 문맥상 의미 전달에는 큰 지장이 없습니다. 다만, 보다 정확한 의미 전달을 위해 '내(我的)'를 포함하는 것이 좋습니다."}, {"category": "용어집 준수", "comment": "제공된 용어집이 없으므로 해당 사항 없음."}, {"category": "언어별 규칙 준수", "comment": "대만에서 사용하는 번체 표현(空調, 位置)을 적절하게 사용하였습니다."}, {"category": "대소문자 표기", "comment": "해당 언어에 해당 사항 없음."}, {"category": "서식 및 표기", "comment": "문장 끝에 마침표가 없는 원문의 형식을 잘 따랐습니다."}], "grade": "Good", "suggested_fix": "根據我的位置自動開關的空調"}
+==========================================================================================
+[시트] TW(대만) | [셀] C16
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+스마트싱스의 [웰컴 에어 케어]가 집에 도착하기 전 에어컨을 켜주니 더위 대신 시원함이 반겨줘요. [AI 쾌적]으로 최적의 온습도가 설정되어 언제나 쾌적한 공기를 만날 수 있어요. 주변에 사람이 없는 것이 감지되면 에어컨이 절전 운전된 후 알아서 꺼지니 에너지도 똑똑하게 아낄 수 있어요.
+
+[상세 - 번역문]
+SmartThings的[Welcome air care]會在您回家前自動開啟空調，一進門便清涼迎接。開啟[智慧空調]功能即可自動調整最佳溫溼度，隨時維持宜人空氣。當感測不到人時，空調會自動進入節能運作並自動關閉，幫您聰明省電。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_2_description
+- 번역: SmartThings的[Welcome air care]會在您回家前自動開啟空調，一進門便清涼迎接。開啟[智慧空調]功能即可自動調整最佳溫溼度，隨時維持宜人空氣。當感測不到人時，空調會自動進入節能運作並自動關閉，幫您聰明省電。
+
+[사례 2] SEMANTIC (63.4%) | story_006 | //story_006_description
+- 번역: 炎炎夏日，用 SmartThings讓空調管控更細緻、也更聰明。還沒回家就可以先預冷，入睡時則安靜又舒適，無論什麼時候都能幫您聰明降溫。選擇最適合您日常的空調，每天都能過得更涼爽更自在。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 전체적인 문장이 매우 자연스럽고 유창합니다. '一進門便清涼迎接'와 같은 표현은 원문의 의미를 살리면서도 현지 정서에 잘 맞는 우수한 번역입니다.
+- 정확성 및 현지화 품질: 원문의 맥락을 정확하게 파악하여 번역되었습니다. '에어컨'을 대만 현지 용어인 '空調'로, '온습도'를 '溫溼度'로 올바르게 현지화하였습니다.
+- 용어집 준수: [Welcome air care], [智慧空調] 등 주요 용어와 브래킷 규칙을 잘 준수하였습니다. 다만, 용어집에서 '에너지'를 'Energy'로, '설정'을 'Settings'로 지정하였으나 번역문에서는 '省電' 및 '調整'으로 의역되었습니다. 일관성을 위해 용어집 반영이 권장됩니다.
+- 언어별 규칙 준수: 대만 번체자 표현(空調, 溫溼度) 및 문장 구조를 정확하게 사용하였습니다.
+- 대소문자 표기: 용어집에 기재된 'Welcome air care'의 소문자 표기를 그대로 잘 따랐습니다.
+- 서식 및 표기: 브래킷 사용 규칙(SmartThings 및 Energy는 제외, 그 외 용어는 포함)을 적절히 준수하려고 노력한 점이 보입니다.
+
+최종 평가: 양호 — 경미한 개선 여지 있으나 출시 가능 수준.
+
+[수정안 제안]:
+SmartThings的[Welcome air care]會在您回家前自動開啟空調，一進門便清涼迎接。開啟[智慧空調]即可自動進行最佳溫溼度 Settings，隨時維持宜人空氣。當感測不到人時，空調會自動進入節能運作並自動關閉，讓您能聰明地節省 Energy。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_2_description", "source": "스마트싱스의 [웰컴 에어 케어]가 집에 도착하기 전 에어컨을 켜주니 더위 대신 시원함이 반겨줘요. [AI 쾌적]으로 최적의 온습도가 설정되어 언제나 쾌적한 공기를 만날 수 있어요. 주변에 사람이 없는 것이 감지되면 에어컨이 절전 운전된 후 알아서 꺼지니 에너지도 똑똑하게 아낄 수 있어요.", "target": "SmartThings的[Welcome air care]會在您回家前自動開啟空調，一進門便清涼迎接。開啟[智慧空調]功能即可自動調整最佳溫溼度，隨時維持宜人空氣。當感測不到人時，空調會自動進入節能運作並自動關閉，幫您聰明省電。"}, {"type": "semantic", "score": 63.4, "story_id": "story_006", "section": "//story_006_description", "source": "무더운 여름, 스마트싱스로 에어컨을 더 섬세하고 똑똑하게 관리해 보세요. 집에 도착하기 전엔 미리 시원하게, 잠들 땐 조용하고 쾌적하게, 언제나 똑똑하게 냉방을 도와줘요. 내 일상에 딱 맞는 에어컨과 매일 더 시원하고 편안한 여름을 보내보세요.", "target": "炎炎夏日，用 SmartThings讓空調管控更細緻、也更聰明。還沒回家就可以先預冷，入睡時則安靜又舒適，無論什麼時候都能幫您聰明降溫。選擇最適合您日常的空調，每天都能過得更涼爽更自在。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "전체적인 문장이 매우 자연스럽고 유창합니다. '一進門便清涼迎接'와 같은 표현은 원문의 의미를 살리면서도 현지 정서에 잘 맞는 우수한 번역입니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 맥락을 정확하게 파악하여 번역되었습니다. '에어컨'을 대만 현지 용어인 '空調'로, '온습도'를 '溫溼度'로 올바르게 현지화하였습니다."}, {"category": "용어집 준수", "comment": "[Welcome air care], [智慧空調] 등 주요 용어와 브래킷 규칙을 잘 준수하였습니다. 다만, 용어집에서 '에너지'를 'Energy'로, '설정'을 'Settings'로 지정하였으나 번역문에서는 '省電' 및 '調整'으로 의역되었습니다. 일관성을 위해 용어집 반영이 권장됩니다."}, {"category": "언어별 규칙 준수", "comment": "대만 번체자 표현(空調, 溫溼度) 및 문장 구조를 정확하게 사용하였습니다."}, {"category": "대소문자 표기", "comment": "용어집에 기재된 'Welcome air care'의 소문자 표기를 그대로 잘 따랐습니다."}, {"category": "서식 및 표기", "comment": "브래킷 사용 규칙(SmartThings 및 Energy는 제외, 그 외 용어는 포함)을 적절히 준수하려고 노력한 점이 보입니다."}], "grade": "Good", "suggested_fix": "SmartThings的[Welcome air care]會在您回家前自動開啟空調，一進門便清涼迎接。開啟[智慧空調]即可自動進行最佳溫溼度 Settings，隨時維持宜人空氣。當感測不到人時，空調會自動進入節能運作並自動關閉，讓您能聰明地節省 Energy。"}
+==========================================================================================
+[시트] TW(대만) | [셀] C17
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+[웰컴 에어 케어]는 [기기 > 에어컨 > 기기 제어 > 웰컴 에어 케어]에서 설정할 수 있습니다. 
+[부재 절전]은 [(스탠드형 모델) 기기 > 에어컨 > 기기 제어 > 동작 감지 > 부재 절전], [(벽걸이형 모델) 기기 > 에어컨 > 기기 제어 > 동작 감지 > 사람이 없을 때]에서 설정할 수 있습니다.
+
+[상세 - 번역문]
+[Welcome air care]可在「裝置 > 空調 > 裝置操控 > Welcome air care」中設定。 
+[外出時啟用省電]則可在「（立式機型）裝置 > 空調 > 裝置操控 > 動作偵測 > 外出時啟用省電，或（壁掛型）裝置 > 空調 > 裝置操控 > 動作偵測 > 離開時」中設定。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+용어집 괄호 규정 점검:
+- [괄호 오류] '外出時啟用省電'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+- [괄호 오류] '離開時'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+- [괄호 오류] 'Welcome air care'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+- [괄호 오류] '裝置操控'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+- [괄호 오류] '動作偵測'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_2_disclaimer
+- 번역: [Welcome air care]可在「裝置 > 空調 > 裝置操控 > Welcome air care」中設定。 
+[外出時啟用省電]則可在「（立式機型）裝置 > 空調 > 裝置操控 > 動作偵測 > 外出時啟用省電，或（壁掛型）裝置 > 空調 > 裝置操控 > 動作偵測 > 離開時」中設定。
+
+[사례 2] SEMANTIC (59.0%) | story_006 | //section_006_2_description
+- 번역: SmartThings的[Welcome air care]會在您回家前自動開啟空調，一進門便清涼迎接。開啟[智慧空調]功能即可自動調整最佳溫溼度，隨時維持宜人空氣。當感測不到人時，空調會自動進入節能運作並自動關閉，幫您聰明省電。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 대만 번체 문법에 어긋남 없이 자연스럽게 번역되었습니다. 특히 '立式機型(스탠드형)'과 '壁掛型(벽걸이형)' 등 현지 가전 용어를 적절히 사용하였습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 정확하게 전달하고 있습니다. 기기별 설정 경로의 차이를 명확하게 구분하여 사용자가 이해하기 쉽게 구성되었습니다.
+- 용어집 준수: [Welcome air care], [外出時啟用省電], [離開時], [裝置], [裝置操控], [動作偵測] 등 모든 용어가 용어집과 100% 일치하며, 경로 내부에서는 브래킷을 제외하는 규칙도 잘 준수되었습니다.
+- 언어별 규칙 준수: 대만 현지에서 사용하는 용어와 문장 구조를 잘 따르고 있습니다.
+- 대소문자 표기: 해당 사항 없음(중문). 영문 용어인 'Welcome air care'의 대소문자도 용어집에 따라 정확히 표기되었습니다.
+- 서식 및 표기: 서식 규칙상 탐색 경로는 큰따옴표("")를 사용해야 하나, 현재 번역본에서는 대만식 괄호(「」)를 사용했습니다. 또한, 마침표를 따옴표 안에 배치하라는 규칙(Place the sentence-ending period inside the closing quotation mark)이 적용되지 않았습니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+[Welcome air care]可在 "裝置 > 空調 > 裝置操控 > Welcome air care."
+[外出時啟用省電]則可在 "(立式機型) 裝置 > 空調 > 裝置操控 > 動作偵測 > 外出時啟用省電" 或 "(壁掛型) 裝置 > 空調 > 裝置操控 > 動作偵測 > 離開時."
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_2_disclaimer", "source": "[웰컴 에어 케어]는 [기기 > 에어컨 > 기기 제어 > 웰컴 에어 케어]에서 설정할 수 있습니다. \n[부재 절전]은 [(스탠드형 모델) 기기 > 에어컨 > 기기 제어 > 동작 감지 > 부재 절전], [(벽걸이형 모델) 기기 > 에어컨 > 기기 제어 > 동작 감지 > 사람이 없을 때]에서 설정할 수 있습니다.", "target": "[Welcome air care]可在「裝置 > 空調 > 裝置操控 > Welcome air care」中設定。 \n[外出時啟用省電]則可在「（立式機型）裝置 > 空調 > 裝置操控 > 動作偵測 > 外出時啟用省電，或（壁掛型）裝置 > 空調 > 裝置操控 > 動作偵測 > 離開時」中設定。"}, {"type": "semantic", "score": 59.0, "story_id": "story_006", "section": "//section_006_2_description", "source": "스마트싱스의 [웰컴 에어 케어]가 집에 도착하기 전 에어컨을 켜주니 더위 대신 시원함이 반겨줘요. [AI 쾌적]으로 최적의 온습도가 설정되어 언제나 쾌적한 공기를 만날 수 있어요. 주변에 사람이 없는 것이 감지되면 에어컨이 절전 운전된 후 알아서 꺼지니 에너지도 똑똑하게 아낄 수 있어요.", "target": "SmartThings的[Welcome air care]會在您回家前自動開啟空調，一進門便清涼迎接。開啟[智慧空調]功能即可自動調整最佳溫溼度，隨時維持宜人空氣。當感測不到人時，空調會自動進入節能運作並自動關閉，幫您聰明省電。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "대만 번체 문법에 어긋남 없이 자연스럽게 번역되었습니다. 특히 '立式機型(스탠드형)'과 '壁掛型(벽걸이형)' 등 현지 가전 용어를 적절히 사용하였습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 정확하게 전달하고 있습니다. 기기별 설정 경로의 차이를 명확하게 구분하여 사용자가 이해하기 쉽게 구성되었습니다."}, {"category": "용어집 준수", "comment": "[Welcome air care], [外出時啟用省電], [離開時], [裝置], [裝置操控], [動作偵測] 등 모든 용어가 용어집과 100% 일치하며, 경로 내부에서는 브래킷을 제외하는 규칙도 잘 준수되었습니다."}, {"category": "언어별 규칙 준수", "comment": "대만 현지에서 사용하는 용어와 문장 구조를 잘 따르고 있습니다."}, {"category": "대소문자 표기", "comment": "해당 사항 없음(중문). 영문 용어인 'Welcome air care'의 대소문자도 용어집에 따라 정확히 표기되었습니다."}, {"category": "서식 및 표기", "comment": "서식 규칙상 탐색 경로는 큰따옴표(\"\")를 사용해야 하나, 현재 번역본에서는 대만식 괄호(「」)를 사용했습니다. 또한, 마침표를 따옴표 안에 배치하라는 규칙(Place the sentence-ending period inside the closing quotation mark)이 적용되지 않았습니다."}], "grade": "Needs Revision", "suggested_fix": "[Welcome air care]可在 \"裝置 > 空調 > 裝置操控 > Welcome air care.\"\n[外出時啟用省電]則可在 \"(立式機型) 裝置 > 空調 > 裝置操控 > 動作偵測 > 外出時啟用省電\" 或 \"(壁掛型) 裝置 > 空調 > 裝置操控 > 動作偵測 > 離開時.\""}
+==========================================================================================
+[시트] TW(대만) | [셀] C20
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+알아서 맞춰주는 맞춤 냉방
+
+[상세 - 번역문]
+自動調整的自訂冷風設定
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3
+- 번역: 自動調整的自訂冷風設定
+
+[사례 2] SEMANTIC (65.9%) | story_006 | //section_006_3_description
+- 번역: 想同時節能又更涼爽？【自訂冷風設定】會為你推薦最節能又舒適的冷氣溫度，或直接自動調整。若同一空間內有吊扇，冷氣開啟時也能自動一併啟動。吊扇可讓涼爽的空氣快速在室內各個角落循環，進一步提升冷房效率。把複雜的設定交給【自訂冷風設定】，輕鬆享受舒適清涼。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 대만 번체 문법에 어긋남이 없으며, '알아서 맞춰주는'이라는 형용 표현을 '自動調整的'으로 자연스럽게 번역하였습니다.
+- 정확성 및 현지화 품질: 원문의 의미(스스로 조정되는 맞춤형 기능)를 정확하게 전달하고 있습니다. '맞춤'의 의미가 glossary에 따라 '自訂(사용자 설정)'으로 고정되었음에도 불구하고, '自動調整(자동 조절)'을 앞에 배치하여 스마트 기능을 잘 설명했습니다.
+- 용어집 준수: 제시된 glossary 항목 '맞춤 냉방' : '自訂冷風設定'을 정확하게 준수하였습니다.
+- 언어별 규칙 준수: 대만 현지에서 사용하는 용어와 문체(번체자, '設定' 등)를 적절하게 사용하였습니다.
+- 대소문자 표기: 해당 사항 없음 (중문).
+- 서식 및 표기: 문장 끝에 불필요한 마침표가 없으며, glossary 용어를 포함한 전체적인 서식이 깔끔합니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3", "source": "알아서 맞춰주는 맞춤 냉방", "target": "自動調整的自訂冷風設定"}, {"type": "semantic", "score": 65.9, "story_id": "story_006", "section": "//section_006_3_description", "source": "에너지는 절약하고 시원함은 더하는 방법! [맞춤 냉방]이 가장 알뜰하고 쾌적한 에어컨 온도를 알려주거나 직접 조절해 줘요. 같은 공간에 실링팬이 있다면, 에어컨이 켜질 때 알아서 함께 켤 수도 있어요. 실링팬이 시원한 공기를 구석구석 빠르게 순환시켜 냉방 효율이 높아지죠. 이제 복잡한 고민은 [맞춤 냉방]에 맡기고, 기분 좋은 시원함만 누려 보세요.", "target": "想同時節能又更涼爽？【自訂冷風設定】會為你推薦最節能又舒適的冷氣溫度，或直接自動調整。若同一空間內有吊扇，冷氣開啟時也能自動一併啟動。吊扇可讓涼爽的空氣快速在室內各個角落循環，進一步提升冷房效率。把複雜的設定交給【自訂冷風設定】，輕鬆享受舒適清涼。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "대만 번체 문법에 어긋남이 없으며, '알아서 맞춰주는'이라는 형용 표현을 '自動調整的'으로 자연스럽게 번역하였습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미(스스로 조정되는 맞춤형 기능)를 정확하게 전달하고 있습니다. '맞춤'의 의미가 glossary에 따라 '自訂(사용자 설정)'으로 고정되었음에도 불구하고, '自動調整(자동 조절)'을 앞에 배치하여 스마트 기능을 잘 설명했습니다."}, {"category": "용어집 준수", "comment": "제시된 glossary 항목 '맞춤 냉방' : '自訂冷風設定'을 정확하게 준수하였습니다."}, {"category": "언어별 규칙 준수", "comment": "대만 현지에서 사용하는 용어와 문체(번체자, '設定' 등)를 적절하게 사용하였습니다."}, {"category": "대소문자 표기", "comment": "해당 사항 없음 (중문)."}, {"category": "서식 및 표기", "comment": "문장 끝에 불필요한 마침표가 없으며, glossary 용어를 포함한 전체적인 서식이 깔끔합니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] TW(대만) | [셀] C21
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+에너지는 절약하고 시원함은 더하는 방법! [맞춤 냉방]이 가장 알뜰하고 쾌적한 에어컨 온도를 알려주거나 직접 조절해 줘요. 같은 공간에 실링팬이 있다면, 에어컨이 켜질 때 알아서 함께 켤 수도 있어요. 실링팬이 시원한 공기를 구석구석 빠르게 순환시켜 냉방 효율이 높아지죠. 이제 복잡한 고민은 [맞춤 냉방]에 맡기고, 기분 좋은 시원함만 누려 보세요.
+
+[상세 - 번역문]
+想同時節能又更涼爽？【自訂冷風設定】會為你推薦最節能又舒適的冷氣溫度，或直接自動調整。若同一空間內有吊扇，冷氣開啟時也能自動一併啟動。吊扇可讓涼爽的空氣快速在室內各個角落循環，進一步提升冷房效率。把複雜的設定交給【自訂冷風設定】，輕鬆享受舒適清涼。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 괄호 규정 점검:
+- [괄호 오류] '自訂冷風設定'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_description
+- 번역: 想同時節能又更涼爽？【自訂冷風設定】會為你推薦最節能又舒適的冷氣溫度，或直接自動調整。若同一空間內有吊扇，冷氣開啟時也能自動一併啟動。吊扇可讓涼爽的空氣快速在室內各個角落循環，進一步提升冷房效率。把複雜的設定交給【自訂冷風設定】，輕鬆享受舒適清涼。
+
+[사례 2] SEMANTIC (68.0%) | story_006 | //section_006_3_disclaimer
+- 번역: 【自訂冷風設定】需先連接冷氣，並可在【Energy > 儲存 > 自訂冷風設定】中進行設定。
+【開啟風扇進行冷空氣循環】需連接通過WWST認證的吊扇。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 번체 대만(Taiwan Traditional Chinese) 환경에 맞는 자연스러운 문장 구조를 사용하였습니다. '冷氣', '吊扇', '冷房效率' 등 현지에서 보편적으로 쓰이는 용어를 적절히 선택하여 문맥이 매우 매끄럽습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 효과적으로 전달하고 있습니다. '에너지는 절약하고'를 '想同時節能'으로 의역하여 사용자에게 혜택을 강조하는 문구로 잘 다듬어졌습니다.
+- 용어집 준수: 제공된 용어집과 불일치하는 부분이 있습니다. '절약'의 용어집 정의인 '儲存'과 '에너지'의 정의인 'Energy'를 사용하지 않고 '節能'으로 통합 번역되었습니다. 또한 [맞춤 냉방]에 해당하는 '自訂冷風設定'은 사용되었으나 대괄호 형식이 규칙과 다릅니다.
+- 언어별 규칙 준수: 대만 현지 표현 규칙을 잘 따르고 있습니다. '一併啟動' 등의 표현이 자연스럽습니다.
+- 대소문자 표기: 해당 사항 없음 (한자 문장).
+- 서식 및 표기: 용어집 적용 시 대괄호를 '[' 및 ']'로 사용하라는 서식 규칙이 있으나, 번역문에서는 '【' 및 '】'를 사용하였습니다. 또한 'Energy' 용어는 대괄호를 씌우지 말라는 예외 규칙이 적용되어야 합니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+想同時[儲存] Energy 又更涼爽？[自訂冷風設定]會為你推薦最[儲存]又舒適的冷氣溫度，或直接自動調整。若同一空間內有吊扇，冷氣開啟時也能自動一併啟動。吊扇可讓涼爽의空氣快速在室內各個角落循環，進一步提升冷房效率。把複雜的設定交給[自訂冷風設定]，輕鬆享受舒適清涼。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_description", "source": "에너지는 절약하고 시원함은 더하는 방법! [맞춤 냉방]이 가장 알뜰하고 쾌적한 에어컨 온도를 알려주거나 직접 조절해 줘요. 같은 공간에 실링팬이 있다면, 에어컨이 켜질 때 알아서 함께 켤 수도 있어요. 실링팬이 시원한 공기를 구석구석 빠르게 순환시켜 냉방 효율이 높아지죠. 이제 복잡한 고민은 [맞춤 냉방]에 맡기고, 기분 좋은 시원함만 누려 보세요.", "target": "想同時節能又更涼爽？【自訂冷風設定】會為你推薦最節能又舒適的冷氣溫度，或直接自動調整。若同一空間內有吊扇，冷氣開啟時也能自動一併啟動。吊扇可讓涼爽的空氣快速在室內各個角落循環，進一步提升冷房效率。把複雜的設定交給【自訂冷風設定】，輕鬆享受舒適清涼。"}, {"type": "semantic", "score": 68.0, "story_id": "story_006", "section": "//section_006_3_disclaimer", "source": "[맞춤 냉방] 설정은 에어컨 연결이 필요하며 [에너지 > 절약 > 맞춤 냉방]에서 설정할 수 있습니다. \n[팬을 켜서 냉기 순환 시키기]는 WWST 인증을 받은 실링팬 연결이 필요합니다.", "target": "【自訂冷風設定】需先連接冷氣，並可在【Energy > 儲存 > 自訂冷風設定】中進行設定。\n【開啟風扇進行冷空氣循環】需連接通過WWST認證的吊扇。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "번체 대만(Taiwan Traditional Chinese) 환경에 맞는 자연스러운 문장 구조를 사용하였습니다. '冷氣', '吊扇', '冷房效率' 등 현지에서 보편적으로 쓰이는 용어를 적절히 선택하여 문맥이 매우 매끄럽습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 효과적으로 전달하고 있습니다. '에너지는 절약하고'를 '想同時節能'으로 의역하여 사용자에게 혜택을 강조하는 문구로 잘 다듬어졌습니다."}, {"category": "용어집 준수", "comment": "제공된 용어집과 불일치하는 부분이 있습니다. '절약'의 용어집 정의인 '儲存'과 '에너지'의 정의인 'Energy'를 사용하지 않고 '節能'으로 통합 번역되었습니다. 또한 [맞춤 냉방]에 해당하는 '自訂冷風設定'은 사용되었으나 대괄호 형식이 규칙과 다릅니다."}, {"category": "언어별 규칙 준수", "comment": "대만 현지 표현 규칙을 잘 따르고 있습니다. '一併啟動' 등의 표현이 자연스럽습니다."}, {"category": "대소문자 표기", "comment": "해당 사항 없음 (한자 문장)."}, {"category": "서식 및 표기", "comment": "용어집 적용 시 대괄호를 '[' 및 ']'로 사용하라는 서식 규칙이 있으나, 번역문에서는 '【' 및 '】'를 사용하였습니다. 또한 'Energy' 용어는 대괄호를 씌우지 말라는 예외 규칙이 적용되어야 합니다."}], "grade": "Needs Revision", "suggested_fix": "想同時[儲存] Energy 又更涼爽？[自訂冷風設定]會為你推薦最[儲存]又舒適的冷氣溫度，或直接自動調整。若同一空間內有吊扇，冷氣開啟時也能自動一併啟動。吊扇可讓涼爽의空氣快速在室內各個角落循環，進一步提升冷房效率。把複雜的設定交給[自訂冷風設定]，輕鬆享受舒適清涼。"}
+==========================================================================================
+[시트] TW(대만) | [셀] C22
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+[맞춤 냉방] 설정은 에어컨 연결이 필요하며 [에너지 > 절약 > 맞춤 냉방]에서 설정할 수 있습니다. 
+[팬을 켜서 냉기 순환 시키기]는 WWST 인증을 받은 실링팬 연결이 필요합니다.
+
+[상세 - 번역문]
+【自訂冷風設定】需先連接冷氣，並可在【Energy > 儲存 > 自訂冷風設定】中進行設定。
+【開啟風扇進行冷空氣循環】需連接通過WWST認證的吊扇。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+용어집 괄호 규정 점검:
+- [괄호 오류] '自訂冷風設定'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+- [괄호 오류] '開啟風扇進行冷空氣循環'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_disclaimer
+- 번역: 【自訂冷風設定】需先連接冷氣，並可在【Energy > 儲存 > 自訂冷風設定】中進行設定。
+【開啟風扇進行冷空氣循環】需連接通過WWST認證的吊扇。
+
+[사례 2] SEMANTIC (66.8%) | story_006 | //section_006_3_description
+- 번역: 想同時節能又更涼爽？【自訂冷風設定】會為你推薦最節能又舒適的冷氣溫度，或直接自動調整。若同一空間內有吊扇，冷氣開啟時也能自動一併啟動。吊扇可讓涼爽的空氣快速在室內各個角落循環，進一步提升冷房效率。把複雜的設定交給【自訂冷風設定】，輕鬆享受舒適清涼。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 전반적인 문장 구조는 자연스러우나, 특수 문구(괄호 및 탐색 경로)의 서식 처리가 SmartThings 가이드라인을 따르지 않았습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 정확하게 전달하고 있습니다. '에어컨'을 '冷氣'로, '실링팬'을 '吊扇'으로 번역한 것은 대만 현지 용어에 부합하는 올바른 현지화입니다.
+- 용어집 준수: [맞춤 냉방]을 '自訂冷風設定'으로, [절약]을 '儲存'으로 용어집에 따라 잘 반영하였습니다. 다만, '설정'의 경우 용어집상 'Settings'이나 번역문에서는 '設定'으로 번역되었습니다. 또한 '에너지'는 용어집 예외 규칙에 따라 대괄호를 사용하지 않아야 합니다.
+- 언어별 규칙 준수: 대만 번체자 표기법을 올바르게 준수하고 있으며, Mainland 중국 용어가 아닌 현지 용어를 적절히 선택했습니다.
+- 대소문자 표기: 용어집에 명시된 영문 용어(Energy, Settings, WWST)의 대소문자를 정확히 유지해야 합니다.
+- 서식 및 표기: SmartThings 서식 규칙에 따라 glossary 용어는 일반 대괄호([ ])를 사용해야 하며, 탐색 경로(navigation path)는 큰따옴표(" ")로 감싸야 합니다. 현재 번역은 대만식 괄호(【 】)를 사용하고 있어 수정이 필요합니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+[自訂冷風設定] [Settings] 需先連接冷氣，並可在 "Energy > 儲存 > 自訂冷風設定" 中進行 [Settings]。
+[開啟風扇進行冷空氣循環] 需連接通過 WWST 認證的吊扇。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_disclaimer", "source": "[맞춤 냉방] 설정은 에어컨 연결이 필요하며 [에너지 > 절약 > 맞춤 냉방]에서 설정할 수 있습니다. \n[팬을 켜서 냉기 순환 시키기]는 WWST 인증을 받은 실링팬 연결이 필요합니다.", "target": "【自訂冷風設定】需先連接冷氣，並可在【Energy > 儲存 > 自訂冷風設定】中進行設定。\n【開啟風扇進行冷空氣循環】需連接通過WWST認證的吊扇。"}, {"type": "semantic", "score": 66.8, "story_id": "story_006", "section": "//section_006_3_description", "source": "에너지는 절약하고 시원함은 더하는 방법! [맞춤 냉방]이 가장 알뜰하고 쾌적한 에어컨 온도를 알려주거나 직접 조절해 줘요. 같은 공간에 실링팬이 있다면, 에어컨이 켜질 때 알아서 함께 켤 수도 있어요. 실링팬이 시원한 공기를 구석구석 빠르게 순환시켜 냉방 효율이 높아지죠. 이제 복잡한 고민은 [맞춤 냉방]에 맡기고, 기분 좋은 시원함만 누려 보세요.", "target": "想同時節能又更涼爽？【自訂冷風設定】會為你推薦最節能又舒適的冷氣溫度，或直接自動調整。若同一空間內有吊扇，冷氣開啟時也能自動一併啟動。吊扇可讓涼爽的空氣快速在室內各個角落循環，進一步提升冷房效率。把複雜的設定交給【自訂冷風設定】，輕鬆享受舒適清涼。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "전반적인 문장 구조는 자연스러우나, 특수 문구(괄호 및 탐색 경로)의 서식 처리가 SmartThings 가이드라인을 따르지 않았습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 정확하게 전달하고 있습니다. '에어컨'을 '冷氣'로, '실링팬'을 '吊扇'으로 번역한 것은 대만 현지 용어에 부합하는 올바른 현지화입니다."}, {"category": "용어집 준수", "comment": "[맞춤 냉방]을 '自訂冷風設定'으로, [절약]을 '儲存'으로 용어집에 따라 잘 반영하였습니다. 다만, '설정'의 경우 용어집상 'Settings'이나 번역문에서는 '設定'으로 번역되었습니다. 또한 '에너지'는 용어집 예외 규칙에 따라 대괄호를 사용하지 않아야 합니다."}, {"category": "언어별 규칙 준수", "comment": "대만 번체자 표기법을 올바르게 준수하고 있으며, Mainland 중국 용어가 아닌 현지 용어를 적절히 선택했습니다."}, {"category": "대소문자 표기", "comment": "용어집에 명시된 영문 용어(Energy, Settings, WWST)의 대소문자를 정확히 유지해야 합니다."}, {"category": "서식 및 표기", "comment": "SmartThings 서식 규칙에 따라 glossary 용어는 일반 대괄호([ ])를 사용해야 하며, 탐색 경로(navigation path)는 큰따옴표(\" \")로 감싸야 합니다. 현재 번역은 대만식 괄호(【 】)를 사용하고 있어 수정이 필요합니다."}], "grade": "Needs Revision", "suggested_fix": "[自訂冷風設定] [Settings] 需先連接冷氣，並可在 \"Energy > 儲存 > 自訂冷風設定\" 中進行 [Settings]。\n[開啟風扇進行冷空氣循環] 需連接通過 WWST 認證的吊扇。"}
+==========================================================================================
+[시트] TW(대만) | [셀] C23
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+설정 바로가기
+
+[상세 - 번역문]
+前往Settings
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_button
+- 번역: 前往Settings
+
+[사례 2] SEMANTIC (51.2%) | story_045 | //section_045_1_button
+- 번역: 設定住家情報
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 문법적으로 오류가 없으며, 버튼 문구로서의 기능이 명확합니다. 다만, 대만 현지 관습상 한자와 영문 사이에는 반각 공백(half-width space)을 두는 것이 가독성과 심미성 측면에서 더 자연스럽습니다.
+- 정확성 및 현지화 품질: 원문의 '바로가기' 의미를 대만 UI에서 흔히 쓰이는 '前往(Go to)'으로 적절히 번역하였습니다.
+- 용어집 준수: 용어집에 따라 '설정'을 'Settings'로 정확하게 표기하였습니다.
+- 언어별 규칙 준수: 대만 번체(Traditional Chinese Taiwan) 환경에서 통용되는 '前往' 표현을 적절히 사용하였습니다.
+- 대소문자 표기: 용어집에 명시된 대소문자(Settings)를 정확하게 준수하였습니다.
+- 서식 및 표기: 버튼 복사본(button copy) 규칙에 따라 glossary 용어에 대괄호나 따옴표를 사용하지 않은 규칙을 완벽히 준수하였습니다.
+
+최종 평가: 양호 — 경미한 개선 여지 있으나 출시 가능 수준.
+
+[수정안 제안]:
+前往 Settings
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_button", "source": "설정 바로가기", "target": "前往Settings"}, {"type": "semantic", "score": 51.2, "story_id": "story_045", "section": "//section_045_1_button", "source": "홈 인사이트 설정하기", "target": "設定住家情報"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "문법적으로 오류가 없으며, 버튼 문구로서의 기능이 명확합니다. 다만, 대만 현지 관습상 한자와 영문 사이에는 반각 공백(half-width space)을 두는 것이 가독성과 심미성 측면에서 더 자연스럽습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '바로가기' 의미를 대만 UI에서 흔히 쓰이는 '前往(Go to)'으로 적절히 번역하였습니다."}, {"category": "용어집 준수", "comment": "용어집에 따라 '설정'을 'Settings'로 정확하게 표기하였습니다."}, {"category": "언어별 규칙 준수", "comment": "대만 번체(Traditional Chinese Taiwan) 환경에서 통용되는 '前往' 표현을 적절히 사용하였습니다."}, {"category": "대소문자 표기", "comment": "용어집에 명시된 대소문자(Settings)를 정확하게 준수하였습니다."}, {"category": "서식 및 표기", "comment": "버튼 복사본(button copy) 규칙에 따라 glossary 용어에 대괄호나 따옴표를 사용하지 않은 규칙을 완벽히 준수하였습니다."}], "grade": "Good", "suggested_fix": "前往 Settings"}
+==========================================================================================
+[시트] TW(대만) | [셀] C25
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+스마트싱스로 냉방 효율 UP
+
+[상세 - 번역문]
+SmartThings 讓冷房效率再升級
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3
+- 번역: SmartThings 讓冷房效率再升級
+
+[사례 2] SEMANTIC (68.0%) | story_006 | //story_006_description
+- 번역: 炎炎夏日，用 SmartThings讓空調管控更細緻、也更聰明。還沒回家就可以先預冷，入睡時則安靜又舒適，無論什麼時候都能幫您聰明降溫。選擇最適合您日常的空調，每天都能過得更涼爽更自在。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 대만 번체 문법에 어긋남이 없으며, '讓...再升級'과 같은 표현을 사용하여 문장이 매우 매끄럽고 자연스럽습니다.
+- 정확성 및 현지화 품질: 원문의 '냉방 효율 UP'이라는 의미를 '냉방 효율을 한 단계 더 업그레이드하다'는 뉘앙스로 현지 정서에 맞게 잘 의역하였습니다.
+- 용어집 준수: 용어집에 명시된 'SmartThings'를 대소문자 및 띄어쓰기까지 정확하게 준수하였습니다.
+- 언어별 규칙 준수: 대만에서 사용하는 표준 번체자 표기를 정확히 따랐으며, '냉방'을 의미하는 '冷房' 표현도 적절합니다.
+- 대소문자 표기: SmartThings의 고유 대소문자 표기법을 준수하였습니다.
+- 서식 및 표기: 헤드라인 성격의 문구에 불필요한 마침표를 찍지 않았으며, 용어집 용어에 브래킷을 사용하지 않는 규칙을 잘 지켰습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3", "source": "스마트싱스로 냉방 효율 UP", "target": "SmartThings 讓冷房效率再升級"}, {"type": "semantic", "score": 68.0, "story_id": "story_006", "section": "//story_006_description", "source": "무더운 여름, 스마트싱스로 에어컨을 더 섬세하고 똑똑하게 관리해 보세요. 집에 도착하기 전엔 미리 시원하게, 잠들 땐 조용하고 쾌적하게, 언제나 똑똑하게 냉방을 도와줘요. 내 일상에 딱 맞는 에어컨과 매일 더 시원하고 편안한 여름을 보내보세요.", "target": "炎炎夏日，用 SmartThings讓空調管控更細緻、也更聰明。還沒回家就可以先預冷，入睡時則安靜又舒適，無論什麼時候都能幫您聰明降溫。選擇最適合您日常的空調，每天都能過得更涼爽更自在。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "대만 번체 문법에 어긋남이 없으며, '讓...再升級'과 같은 표현을 사용하여 문장이 매우 매끄럽고 자연스럽습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '냉방 효율 UP'이라는 의미를 '냉방 효율을 한 단계 더 업그레이드하다'는 뉘앙스로 현지 정서에 맞게 잘 의역하였습니다."}, {"category": "용어집 준수", "comment": "용어집에 명시된 'SmartThings'를 대소문자 및 띄어쓰기까지 정확하게 준수하였습니다."}, {"category": "언어별 규칙 준수", "comment": "대만에서 사용하는 표준 번체자 표기를 정확히 따랐으며, '냉방'을 의미하는 '冷房' 표현도 적절합니다."}, {"category": "대소문자 표기", "comment": "SmartThings의 고유 대소문자 표기법을 준수하였습니다."}, {"category": "서식 및 표기", "comment": "헤드라인 성격의 문구에 불필요한 마침표를 찍지 않았으며, 용어집 용어에 브래킷을 사용하지 않는 규칙을 잘 지켰습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] TW(대만) | [셀] C26
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+올여름을 시원함으로 가득 채워 보세요. 깜빡하고 창문을 연 채로 에어컨을 켜면, 문 열림 센서가 이를 인식해 스마트싱스로 알려주니 걱정 없어요. 강렬한 햇빛 때문에 금방 시원해지지 않는다면 [자동 블라인드]를 사용해 보세요. 에어컨이 켜지면 블라인드가 내려와 시원함이 더 빠르게 채워질 거예요.
+
+[상세 - 번역문]
+今年夏天，讓家中時刻清涼。若開著窗就啟動空調，門窗感測器會自動通知您，避免浪費電力。日照強烈時，搭配[自動開關窗簾]功能，只要空調啟動，自動開關窗簾就會自動放下，房間很快就能涼起來。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '스마트싱스' → 'SmartThings' 미적용
+
+용어집 괄호 규정 점검:
+- [괄호 오류] '自動開關窗簾'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_description
+- 번역: 今年夏天，讓家中時刻清涼。若開著窗就啟動空調，門窗感測器會自動通知您，避免浪費電力。日照強烈時，搭配[自動開關窗簾]功能，只要空調啟動，自動開關窗簾就會自動放下，房間很快就能涼起來。
+
+[사례 2] SEMANTIC (62.4%) | story_006 | //section_006_3_disclaimer
+- 번역: 若要用門窗感測器接收通知，請先進行自動化設定。 
+[自動開關窗簾]需與空調聯動，並可於「生活 > Energy > 儲存> 自動開關窗簾」中設定。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 전체적으로 자연스러운 대만 번식 중국어로 번역되었습니다. 다만, 원문의 '시원함이 채워진다'는 감성적인 표현을 '浪費電力(전력 낭비)'와 같은 기능적 설명으로 대체하여 뉘앙스가 다소 경직된 부분은 있습니다.
+- 정확성 및 현지화 품질: 원문에 명시된 핵심 용어인 '스마트싱스(SmartThings)'가 번역문에서 누락되었습니다. 이는 기능의 주체를 설명하는 중요한 정보이므로 누락되어서는 안 됩니다. 또한 '걱정 없어요'와 같은 뉘앙스가 생략되었습니다.
+- 용어집 준수: '자동 블라인드'를 용어집에 따라 '[自動開關窗簾]'으로 잘 번역하였으나, 두 번째 언급 시 브라켓([]) 표기가 누락되었습니다. 'SmartThings'는 용어집 규칙(Do NOT wrap in brackets)에 따라 노출되어야 하나 텍스트 자체가 누락되었습니다.
+- 언어별 규칙 준수: 대만에서 주로 사용하는 '空調' 또는 '冷氣' 표현을 적절히 사용하였으며, 문장 부호 체계도 적절합니다.
+- 대소문자 표기: SmartThings의 대소문자 표기 규칙은 용어집에 명시되어 있으나 본문에 누락되어 적용 여부를 확인할 수 없습니다.
+- 서식 및 표기: 가이드라인에 따라 모든 glossary 용어는 브라켓 '[' 및 ']'으로 감싸야 합니다. '[自動開關窗簾]'이 문장 중간에 다시 나올 때도 브라켓을 유지해야 합니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+今年夏天，讓家中充滿清涼感。若忘記關窗就開啟冷氣，門窗感測器會自動辨識並透過 SmartThings 通知您，讓您無需擔心。若強烈日照導致室內遲遲無法降溫，請嘗試使用[自動開關窗簾]。只要冷氣開啟，[自動開關窗簾]便會自動放下，讓室內更快速地充滿清涼感。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_description", "source": "올여름을 시원함으로 가득 채워 보세요. 깜빡하고 창문을 연 채로 에어컨을 켜면, 문 열림 센서가 이를 인식해 스마트싱스로 알려주니 걱정 없어요. 강렬한 햇빛 때문에 금방 시원해지지 않는다면 [자동 블라인드]를 사용해 보세요. 에어컨이 켜지면 블라인드가 내려와 시원함이 더 빠르게 채워질 거예요.", "target": "今年夏天，讓家中時刻清涼。若開著窗就啟動空調，門窗感測器會自動通知您，避免浪費電力。日照強烈時，搭配[自動開關窗簾]功能，只要空調啟動，自動開關窗簾就會自動放下，房間很快就能涼起來。"}, {"type": "semantic", "score": 62.4, "story_id": "story_006", "section": "//section_006_3_disclaimer", "source": "문 열림 센서를 통해 알림을 받기 위해서는 자동화 설정이 필요합니다. \n[자동 블라인드] 설정은 에어컨 연결이 필요하며, [라이프 > 에너지 > 절약 > 자동 블라인드]에서 설정할 수 있습니다.", "target": "若要用門窗感測器接收通知，請先進行自動化設定。 \n[自動開關窗簾]需與空調聯動，並可於「生活 > Energy > 儲存> 自動開關窗簾」中設定。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "전체적으로 자연스러운 대만 번식 중국어로 번역되었습니다. 다만, 원문의 '시원함이 채워진다'는 감성적인 표현을 '浪費電力(전력 낭비)'와 같은 기능적 설명으로 대체하여 뉘앙스가 다소 경직된 부분은 있습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문에 명시된 핵심 용어인 '스마트싱스(SmartThings)'가 번역문에서 누락되었습니다. 이는 기능의 주체를 설명하는 중요한 정보이므로 누락되어서는 안 됩니다. 또한 '걱정 없어요'와 같은 뉘앙스가 생략되었습니다."}, {"category": "용어집 준수", "comment": "'자동 블라인드'를 용어집에 따라 '[自動開關窗簾]'으로 잘 번역하였으나, 두 번째 언급 시 브라켓([]) 표기가 누락되었습니다. 'SmartThings'는 용어집 규칙(Do NOT wrap in brackets)에 따라 노출되어야 하나 텍스트 자체가 누락되었습니다."}, {"category": "언어별 규칙 준수", "comment": "대만에서 주로 사용하는 '空調' 또는 '冷氣' 표현을 적절히 사용하였으며, 문장 부호 체계도 적절합니다."}, {"category": "대소문자 표기", "comment": "SmartThings의 대소문자 표기 규칙은 용어집에 명시되어 있으나 본문에 누락되어 적용 여부를 확인할 수 없습니다."}, {"category": "서식 및 표기", "comment": "가이드라인에 따라 모든 glossary 용어는 브라켓 '[' 및 ']'으로 감싸야 합니다. '[自動開關窗簾]'이 문장 중간에 다시 나올 때도 브라켓을 유지해야 합니다."}], "grade": "Needs Revision", "suggested_fix": "今年夏天，讓家中充滿清涼感。若忘記關窗就開啟冷氣，門窗感測器會自動辨識並透過 SmartThings 通知您，讓您無需擔心。若強烈日照導致室內遲遲無法降溫，請嘗試使用[自動開關窗簾]。只要冷氣開啟，[自動開關窗簾]便會自動放下，讓室內更快速地充滿清涼感。"}
+==========================================================================================
+[시트] TW(대만) | [셀] C27
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+문 열림 센서를 통해 알림을 받기 위해서는 자동화 설정이 필요합니다. 
+[자동 블라인드] 설정은 에어컨 연결이 필요하며, [라이프 > 에너지 > 절약 > 자동 블라인드]에서 설정할 수 있습니다.
+
+[상세 - 번역문]
+若要用門窗感測器接收通知，請先進行自動化設定。 
+[自動開關窗簾]需與空調聯動，並可於「生活 > Energy > 儲存> 自動開關窗簾」中設定。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+용어집 괄호 규정 점검:
+- [괄호 오류] '自動開關窗簾'에 괄호([])가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_disclaimer
+- 번역: 若要用門窗感測器接收通知，請先進行自動化設定。 
+[自動開關窗簾]需與空調聯動，並可於「生活 > Energy > 儲存> 自動開關窗簾」中設定。
+
+[사례 2] SEMANTIC (60.4%) | story_006 | //section_006_3_description
+- 번역: 今年夏天，讓家中時刻清涼。若開著窗就啟動空調，門窗感測器會自動通知您，避免浪費電力。日照強烈時，搭配[自動開關窗簾]功能，只要空調啟動，自動開關窗簾就會自動放下，房間很快就能涼起來。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 전반적인 문장 구조는 자연스러우나, '聯動' 보다는 '連接'이 기기 연결 맥락에서 더 보편적입니다. '用' 보다는 '透過'를 사용하는 것이 더 정중한 표현입니다.
+- 정확성 및 현지화 품질: 용어집에 따라 '절약'을 '儲存'으로 번역하였으나, 이는 대만 현지 맥락(節電/節約)에서 어색할 수 있습니다. 다만 가이드라인에 따라 용어집을 준수해야 합니다. 또한 탐색 경로의 마침표 위치와 따옴표 형식이 가이드라인과 일치하지 않습니다.
+- 용어집 준수: 용어집의 '通知'와 'Settings'(설정)에 대괄호([])가 누락되었습니다. 또한 '설정'을 용어집에 명시된 'Settings'가 아닌 '設定'으로 번역하였습니다. '生活'과 'Energy'에 대괄호를 사용하지 않은 예외 사항은 잘 준수되었습니다.
+- 언어별 규칙 준수: 대만 번체자 표현(感測器, 空調 등)을 적절하게 사용하였습니다.
+- 대소문자 표기: 용어집에 명시된 'Energy'의 대소문자를 정확하게 유지하였습니다.
+- 서식 및 표기: 탐색 경로를 큰따옴표("")로 묶어야 하며, 문장 끝 마침표를 닫는 따옴표 안에 배치해야 한다는 규칙이 지켜지지 않았습니다. 또한 탐색 경로 내 '>' 기호 앞뒤의 공백이 불일치합니다(儲存>).
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+若要透過門窗感測器接收 [通知]，請先進行自動化 [Settings]。 
+[自動開關窗簾] [Settings] 需與空調連接，並可於 "生活 > Energy > 儲存 > 自動開關窗簾。"
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_disclaimer", "source": "문 열림 센서를 통해 알림을 받기 위해서는 자동화 설정이 필요합니다. \n[자동 블라인드] 설정은 에어컨 연결이 필요하며, [라이프 > 에너지 > 절약 > 자동 블라인드]에서 설정할 수 있습니다.", "target": "若要用門窗感測器接收通知，請先進行自動化設定。 \n[自動開關窗簾]需與空調聯動，並可於「生活 > Energy > 儲存> 自動開關窗簾」中設定。"}, {"type": "semantic", "score": 60.4, "story_id": "story_006", "section": "//section_006_3_description", "source": "올여름을 시원함으로 가득 채워 보세요. 깜빡하고 창문을 연 채로 에어컨을 켜면, 문 열림 센서가 이를 인식해 스마트싱스로 알려주니 걱정 없어요. 강렬한 햇빛 때문에 금방 시원해지지 않는다면 [자동 블라인드]를 사용해 보세요. 에어컨이 켜지면 블라인드가 내려와 시원함이 더 빠르게 채워질 거예요.", "target": "今年夏天，讓家中時刻清涼。若開著窗就啟動空調，門窗感測器會自動通知您，避免浪費電力。日照強烈時，搭配[自動開關窗簾]功能，只要空調啟動，自動開關窗簾就會自動放下，房間很快就能涼起來。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "전반적인 문장 구조는 자연스러우나, '聯動' 보다는 '連接'이 기기 연결 맥락에서 더 보편적입니다. '用' 보다는 '透過'를 사용하는 것이 더 정중한 표현입니다."}, {"category": "정확성 및 현지화 품질", "comment": "용어집에 따라 '절약'을 '儲存'으로 번역하였으나, 이는 대만 현지 맥락(節電/節約)에서 어색할 수 있습니다. 다만 가이드라인에 따라 용어집을 준수해야 합니다. 또한 탐색 경로의 마침표 위치와 따옴표 형식이 가이드라인과 일치하지 않습니다."}, {"category": "용어집 준수", "comment": "용어집의 '通知'와 'Settings'(설정)에 대괄호([])가 누락되었습니다. 또한 '설정'을 용어집에 명시된 'Settings'가 아닌 '設定'으로 번역하였습니다. '生活'과 'Energy'에 대괄호를 사용하지 않은 예외 사항은 잘 준수되었습니다."}, {"category": "언어별 규칙 준수", "comment": "대만 번체자 표현(感測器, 空調 등)을 적절하게 사용하였습니다."}, {"category": "대소문자 표기", "comment": "용어집에 명시된 'Energy'의 대소문자를 정확하게 유지하였습니다."}, {"category": "서식 및 표기", "comment": "탐색 경로를 큰따옴표(\"\")로 묶어야 하며, 문장 끝 마침표를 닫는 따옴표 안에 배치해야 한다는 규칙이 지켜지지 않았습니다. 또한 탐색 경로 내 '>' 기호 앞뒤의 공백이 불일치합니다(儲存>)."}], "grade": "Needs Revision", "suggested_fix": "若要透過門窗感測器接收 [通知]，請先進行自動化 [Settings]。 \n[自動開關窗簾] [Settings] 需與空調連接，並可於 \"生活 > Energy > 儲存 > 自動開關窗簾。\""}
+==========================================================================================
+[시트] JA(일본) | [셀] C7
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+에어컨이 알아서 쾌적하게, 똑똑하게
+
+[상세 - 번역문]
+毎日の冷房を賢くコントロール
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //story_006_title
+- 번역: 毎日の冷房を賢くコントロール
+
+[사례 2] SEMANTIC (61.8%) | story_006 | //section_006_3
+- 번역: カスタマイズされた冷房で涼しさも効率もUP
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 일본어 문법상 오류가 없으며, 마케팅 문구 및 타이틀에 적합한 명사형 종결 어미를 사용하여 매끄럽게 표현되었습니다.
+- 정확성 및 현지화 품질: 원문의 '똑똑하게'는 '賢く'로 잘 번역되었습니다. 다만, 원문의 핵심 요소인 '쾌적하게(快適に)'와 '알아서(자동으로)'라는 뉘앙스가 번역본에서는 '毎日の冷房(매일의 냉방)', 'コントロール(컨트롤)'로 의역되면서 다소 약해진 측면이 있습니다.
+- 용어집 준수: 제공된 용어집 데이터가 없으므로 해당 사항 없습니다.
+- 언어별 규칙 준수: 일본어 UI/마케팅 타이틀 관습에 따라 불필요한 마침표를 생략하고 간결하게 표현되었습니다. ます형 준수 여부는 해당 문장이 명사형으로 끝나므로 해당 사항 없습니다.
+- 대소문자 표기: 해당 사항 없습니다.
+- 서식 및 표기: 표준 일본어 표기법을 준수하며, 가독성 있게 작성되었습니다.
+
+최종 평가: 양호 — 경미한 개선 여지 있으나 출시 가능 수준.
+
+[수정안 제안]:
+エアコンにおまかせ、賢く快適に
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//story_006_title", "source": "에어컨이 알아서 쾌적하게, 똑똑하게", "target": "毎日の冷房を賢くコントロール"}, {"type": "semantic", "score": 61.8, "story_id": "story_006", "section": "//section_006_3", "source": "알아서 맞춰주는 맞춤 냉방", "target": "カスタマイズされた冷房で涼しさも効率もUP"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "일본어 문법상 오류가 없으며, 마케팅 문구 및 타이틀에 적합한 명사형 종결 어미를 사용하여 매끄럽게 표현되었습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '똑똑하게'는 '賢く'로 잘 번역되었습니다. 다만, 원문의 핵심 요소인 '쾌적하게(快適に)'와 '알아서(자동으로)'라는 뉘앙스가 번역본에서는 '毎日の冷房(매일의 냉방)', 'コントロール(컨트롤)'로 의역되면서 다소 약해진 측면이 있습니다."}, {"category": "용어집 준수", "comment": "제공된 용어집 데이터가 없으므로 해당 사항 없습니다."}, {"category": "언어별 규칙 준수", "comment": "일본어 UI/마케팅 타이틀 관습에 따라 불필요한 마침표를 생략하고 간결하게 표현되었습니다. ます형 준수 여부는 해당 문장이 명사형으로 끝나므로 해당 사항 없습니다."}, {"category": "대소문자 표기", "comment": "해당 사항 없습니다."}, {"category": "서식 및 표기", "comment": "표준 일본어 표기법을 준수하며, 가독성 있게 작성되었습니다."}], "grade": "Good", "suggested_fix": "エアコンにおまかせ、賢く快適に"}
+==========================================================================================
+[시트] JA(일본) | [셀] C8
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+무더운 여름, 스마트싱스로 에어컨을 더 섬세하고 똑똑하게 관리해 보세요. 집에 도착하기 전엔 미리 시원하게, 잠들 땐 조용하고 쾌적하게, 언제나 똑똑하게 냉방을 도와줘요. 내 일상에 딱 맞는 에어컨과 매일 더 시원하고 편안한 여름을 보내보세요.
+
+[상세 - 번역문]
+真夏の暑い日も、SmartThingsがあればエアコンの操作がもっと便利に。帰宅前に部屋を涼しく、就寝時は静かで心地よく。ライフスタイルに合わせて、毎日を快適にサポートします。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //story_006_description
+- 번역: 真夏の暑い日も、SmartThingsがあればエアコンの操作がもっと便利に。帰宅前に部屋を涼しく、就寝時は静かで心地よく。ライフスタイルに合わせて、毎日を快適にサポートします。
+
+[사례 2] SEMANTIC (69.4%) | story_006 | //section_006_2_description
+- 번역: SmartThingsの「Welcome air care」で、帰宅前にエアコンをオン。涼しい空気が出迎えてくれます。「AIコンフォート」が最適な温度と湿度を自動で調整。人がいないときは自動で省エネ運転を経て電源オフ、電気代もしっかり節約できます。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 일본어 문법상 오류가 없으며, 마케팅 문구로서 문장의 리듬과 흐름이 매우 자연스럽고 유창합니다.
+- 정확성 및 현지화 품질: 원문의 핵심 의미(귀가 전 냉방, 저소음 쾌적 취침, 일상 맞춤형 관리)를 일본 현지 정서에 맞는 세련된 표현으로 의역하였습니다. 단순히 단어를 옮기는 대신 '편리함'과 '서포트'라는 키워드를 사용하여 현지화 품질이 높습니다.
+- 용어집 준수: 용어집의 'SmartThings' 표기를 정확히 따랐으며, 대괄호를 사용하지 말라는 예외 규칙(EXCEPTION) 또한 완벽하게 준수하였습니다.
+- 언어별 규칙 준수: 일본어 UI 지침인 ます형(サポートします)을 일관되게 적용하여 정중하면서도 친근한 톤앤매너를 유지했습니다.
+- 대소문자 표기: 서비스 명칭인 SmartThings의 대소문자 표기가 브랜드 가이드라인에 맞게 정확히 표기되었습니다.
+- 서식 및 표기: 일본어 구두점(。)의 사용이 적절하며, 불필요한 공백 없이 가독성 좋게 구성되었습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//story_006_description", "source": "무더운 여름, 스마트싱스로 에어컨을 더 섬세하고 똑똑하게 관리해 보세요. 집에 도착하기 전엔 미리 시원하게, 잠들 땐 조용하고 쾌적하게, 언제나 똑똑하게 냉방을 도와줘요. 내 일상에 딱 맞는 에어컨과 매일 더 시원하고 편안한 여름을 보내보세요.", "target": "真夏の暑い日も、SmartThingsがあればエアコンの操作がもっと便利に。帰宅前に部屋を涼しく、就寝時は静かで心地よく。ライフスタイルに合わせて、毎日を快適にサポートします。"}, {"type": "semantic", "score": 69.4, "story_id": "story_006", "section": "//section_006_2_description", "source": "스마트싱스의 [웰컴 에어 케어]가 집에 도착하기 전 에어컨을 켜주니 더위 대신 시원함이 반겨줘요. [AI 쾌적]으로 최적의 온습도가 설정되어 언제나 쾌적한 공기를 만날 수 있어요. 주변에 사람이 없는 것이 감지되면 에어컨이 절전 운전된 후 알아서 꺼지니 에너지도 똑똑하게 아낄 수 있어요.", "target": "SmartThingsの「Welcome air care」で、帰宅前にエアコンをオン。涼しい空気が出迎えてくれます。「AIコンフォート」が最適な温度と湿度を自動で調整。人がいないときは自動で省エネ運転を経て電源オフ、電気代もしっかり節約できます。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "일본어 문법상 오류가 없으며, 마케팅 문구로서 문장의 리듬과 흐름이 매우 자연스럽고 유창합니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 핵심 의미(귀가 전 냉방, 저소음 쾌적 취침, 일상 맞춤형 관리)를 일본 현지 정서에 맞는 세련된 표현으로 의역하였습니다. 단순히 단어를 옮기는 대신 '편리함'과 '서포트'라는 키워드를 사용하여 현지화 품질이 높습니다."}, {"category": "용어집 준수", "comment": "용어집의 'SmartThings' 표기를 정확히 따랐으며, 대괄호를 사용하지 말라는 예외 규칙(EXCEPTION) 또한 완벽하게 준수하였습니다."}, {"category": "언어별 규칙 준수", "comment": "일본어 UI 지침인 ます형(サポートします)을 일관되게 적용하여 정중하면서도 친근한 톤앤매너를 유지했습니다."}, {"category": "대소문자 표기", "comment": "서비스 명칭인 SmartThings의 대소문자 표기가 브랜드 가이드라인에 맞게 정확히 표기되었습니다."}, {"category": "서식 및 표기", "comment": "일본어 구두점(。)의 사용이 적절하며, 불필요한 공백 없이 가독성 좋게 구성되었습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] JA(일본) | [셀] C10
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+한밤중에도 시원하고 조용한 에어컨
+
+[상세 - 번역문]
+静かな冷房で快適な睡眠を
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_1
+- 번역: 静かな冷房で快適な睡眠を
+
+[사례 2] SEMANTIC (54.3%) | story_006 | //section_006_1_description
+- 번역: 我が家のエアコンが快適な睡眠環境作りをサポート。温度や風量、予約設定はもちろん、ディスプレイの明かりから操作音まで、細かい制御が可能です。Galaxy Watchをつけている場合は、Watchがあなたの睡眠状態を検知し、最適な温度と風量に調整します。そのおかげで、一晩中快適に眠れます。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 일본어 문법상 오류가 없으며, '快適な睡眠を'와 같이 체언으로 마무리하여 캐치프레이즈로서의 유창성이 매우 뛰어납니다.
+- 정확성 및 현지화 품질: 원문은 '에어컨'이라는 기기 자체를 수식하고 있으나, 번역문은 이를 통해 얻는 효용인 '쾌적한 수면'에 초점을 맞추어 의역되었습니다. 이는 일본 시장의 가전 UI 및 마케팅 문구에서 흔히 사용되는 자연스러운 현지화 방식입니다.
+- 용어집 준수: 제공된 용어집이 없으므로 해당 사항 없습니다.
+- 언어별 규칙 준수: 섹션 헤딩이나 기능 설명 문구로 보이는 컨텍스트에 맞게, 문장형보다는 간결한 문구 형태를 취하고 있어 일본어 UI 현지화 기준에 부합합니다.
+- 대소문자 표기: 해당 사항 없습니다.
+- 서식 및 표기: 불필요한 문장 부호 없이 깔끔하게 표기되었습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_1", "source": "한밤중에도 시원하고 조용한 에어컨", "target": "静かな冷房で快適な睡眠を"}, {"type": "semantic", "score": 54.3, "story_id": "story_006", "section": "//section_006_1_description", "source": "우리 집 에어컨은 내 편안한 잠자리를 위해 매일 세심하게 챙겨주고 있어요. 온도와 바람 세기, 예약 설정은 물론 디스플레이의 불빛부터 효과음까지도 제어할 수 있죠. 갤럭시 워치를 착용하고 있다면 워치가 인식한 나의 수면 단계에 맞춰 에어컨이 최적의 온도와 바람 세기로 조절해 줘요. 덕분에 밤새 편안하게 잠들 수 있어요.", "target": "我が家のエアコンが快適な睡眠環境作りをサポート。温度や風量、予約設定はもちろん、ディスプレイの明かりから操作音まで、細かい制御が可能です。Galaxy Watchをつけている場合は、Watchがあなたの睡眠状態を検知し、最適な温度と風量に調整します。そのおかげで、一晩中快適に眠れます。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "일본어 문법상 오류가 없으며, '快適な睡眠を'와 같이 체언으로 마무리하여 캐치프레이즈로서의 유창성이 매우 뛰어납니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문은 '에어컨'이라는 기기 자체를 수식하고 있으나, 번역문은 이를 통해 얻는 효용인 '쾌적한 수면'에 초점을 맞추어 의역되었습니다. 이는 일본 시장의 가전 UI 및 마케팅 문구에서 흔히 사용되는 자연스러운 현지화 방식입니다."}, {"category": "용어집 준수", "comment": "제공된 용어집이 없으므로 해당 사항 없습니다."}, {"category": "언어별 규칙 준수", "comment": "섹션 헤딩이나 기능 설명 문구로 보이는 컨텍스트에 맞게, 문장형보다는 간결한 문구 형태를 취하고 있어 일본어 UI 현지화 기준에 부합합니다."}, {"category": "대소문자 표기", "comment": "해당 사항 없습니다."}, {"category": "서식 및 표기", "comment": "불필요한 문장 부호 없이 깔끔하게 표기되었습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] JA(일본) | [셀] C11
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+우리 집 에어컨은 내 편안한 잠자리를 위해 매일 세심하게 챙겨주고 있어요. 온도와 바람 세기, 예약 설정은 물론 디스플레이의 불빛부터 효과음까지도 제어할 수 있죠. 갤럭시 워치를 착용하고 있다면 워치가 인식한 나의 수면 단계에 맞춰 에어컨이 최적의 온도와 바람 세기로 조절해 줘요. 덕분에 밤새 편안하게 잠들 수 있어요.
+
+[상세 - 번역문]
+我が家のエアコンが快適な睡眠環境作りをサポート。温度や風量、予約設定はもちろん、ディスプレイの明かりから操作音まで、細かい制御が可能です。Galaxy Watchをつけている場合は、Watchがあなたの睡眠状態を検知し、最適な温度と風量に調整します。そのおかげで、一晩中快適に眠れます。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_1_description
+- 번역: 我が家のエアコンが快適な睡眠環境作りをサポート。温度や風量、予約設定はもちろん、ディスプレイの明かりから操作音まで、細かい制御が可能です。Galaxy Watchをつけている場合は、Watchがあなたの睡眠状態を検知し、最適な温度と風量に調整します。そのおかげで、一晩中快適に眠れます。
+
+[사례 2] SEMANTIC (65.6%) | story_016 | //section_016_1_description
+- 번역: SmartThingsが最適な睡眠環境を自動で調整します。眠りに入ると照明が自然に消え、カーテンが閉まって心地よい雰囲気に。エアコンや空気清浄機も静かに稼働し、快適な眠りをサポートします。Galaxy WatchやGalaxy Ringを身につければ、入眠の瞬間を感知してよりぐっすり眠れる環境をつくります。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 일본어 문법상 오류가 없으며 문장이 매끄럽게 읽힙니다. 'サポート'로 문장을 끝내는 명사형 종결이나 ます형의 사용이 적절합니다.
+- 정확성 및 현지화 품질: 원문의 '세심하게 챙겨주고 있어요'를 'サポート'로, '효과음'을 UI 환경에 익숙한 '操作音'으로 번역하여 현지화 품질이 높습니다. '잠자리'를 '睡眠環境作り'로 의역한 점도 자연스럽습니다.
+- 용어집 준수: '갤럭시(Galaxy)'의 bracket 제외 규칙은 준수되었으나, 용어집에 명시된 '설정(Settings)'이 「Settings」로 반영되지 않고 '設定'으로 번역되었습니다. 용어집의 영문 표기 준수가 필요합니다.
+- 언어별 규칙 준수: 일본어 ます형(です・ます)을 일관되게 사용하여 SmartThings의 톤앤매너를 잘 유지하고 있습니다.
+- 대소문자 표기: Galaxy Watch 등 고유 명사의 대소문자 표기가 정확합니다.
+- 서식 및 표기: 용어집 규칙에 따라 용어 사용 시 「 」를 사용해야 하나, '설정' 부분에 해당 서식이 적용되지 않았습니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+我が家のエアコンが快適な睡眠環境作り를 지원합니다. 温度や風量、予約「Settings」はもちろん、ディスプレイの明かりから操作音まで、細かい制御が可能です。Galaxy Watchをつけている場合は、Watchがあなたの睡眠状態を検知し、最適な温度と風量に調整します。そのおかげで、一晩中快適に眠れます。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_1_description", "source": "우리 집 에어컨은 내 편안한 잠자리를 위해 매일 세심하게 챙겨주고 있어요. 온도와 바람 세기, 예약 설정은 물론 디스플레이의 불빛부터 효과음까지도 제어할 수 있죠. 갤럭시 워치를 착용하고 있다면 워치가 인식한 나의 수면 단계에 맞춰 에어컨이 최적의 온도와 바람 세기로 조절해 줘요. 덕분에 밤새 편안하게 잠들 수 있어요.", "target": "我が家のエアコンが快適な睡眠環境作りをサポート。温度や風量、予約設定はもちろん、ディスプレイの明かりから操作音まで、細かい制御が可能です。Galaxy Watchをつけている場合は、Watchがあなたの睡眠状態を検知し、最適な温度と風量に調整します。そのおかげで、一晩中快適に眠れます。"}, {"type": "semantic", "score": 65.6, "story_id": "story_016", "section": "//section_016_1_description", "source": "스마트싱스가 나만의 최적 수면 환경을 만들어줘요. 내가 잠이 들면, 침실의 조명은 자연스럽게 꺼지고 커튼은 닫히며 안락한 분위기가 완성돼요. 에어컨과 공기청정기도 모두 나의 수면에 맞춰 조용히 동작하니 쾌적한 숙면을 즐길 수 있어요. 갤럭시 워치나 갤럭시 링을 착용하면 내가 잠든 순간을 자동으로 인식해 이 모든 변화가 더욱 자연스럽게 이어져요.", "target": "SmartThingsが最適な睡眠環境を自動で調整します。眠りに入ると照明が自然に消え、カーテンが閉まって心地よい雰囲気に。エアコンや空気清浄機も静かに稼働し、快適な眠りをサポートします。Galaxy WatchやGalaxy Ringを身につければ、入眠の瞬間を感知してよりぐっすり眠れる環境をつくります。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "일본어 문법상 오류가 없으며 문장이 매끄럽게 읽힙니다. 'サポート'로 문장을 끝내는 명사형 종결이나 ます형의 사용이 적절합니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '세심하게 챙겨주고 있어요'를 'サポート'로, '효과음'을 UI 환경에 익숙한 '操作音'으로 번역하여 현지화 품질이 높습니다. '잠자리'를 '睡眠環境作り'로 의역한 점도 자연스럽습니다."}, {"category": "용어집 준수", "comment": "'갤럭시(Galaxy)'의 bracket 제외 규칙은 준수되었으나, 용어집에 명시된 '설정(Settings)'이 「Settings」로 반영되지 않고 '設定'으로 번역되었습니다. 용어집의 영문 표기 준수가 필요합니다."}, {"category": "언어별 규칙 준수", "comment": "일본어 ます형(です・ます)을 일관되게 사용하여 SmartThings의 톤앤매너를 잘 유지하고 있습니다."}, {"category": "대소문자 표기", "comment": "Galaxy Watch 등 고유 명사의 대소문자 표기가 정확합니다."}, {"category": "서식 및 표기", "comment": "용어집 규칙에 따라 용어 사용 시 「 」를 사용해야 하나, '설정' 부분에 해당 서식이 적용되지 않았습니다."}], "grade": "Needs Revision", "suggested_fix": "我が家のエアコンが快適な睡眠環境作り를 지원합니다. 温度や風量、予約「Settings」はもちろん、ディスプレイの明かりから操作音まで、細かい制御が可能です。Galaxy Watchをつけている場合は、Watchがあなたの睡眠状態を検知し、最適な温度と風量に調整します。そのおかげで、一晩中快適に眠れます。"}
+==========================================================================================
+[시트] JA(일본) | [셀] C12
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+수면 단계에 따른 에어컨 자동 제어는 2026년부터 출시되는 삼성 에어컨 및 갤럭시 워치 7 이상부터 적용됩니다.
+
+[상세 - 번역문]
+睡眠状態に応じたエアコンの自動制御機能は、2026年以降に発売されるSamsungのエアコンとGalaxy Watch 7以降で対応します。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_1_disclaimer
+- 번역: 睡眠状態に応じたエアコンの自動制御機能は、2026年以降に発売されるSamsungのエアコンとGalaxy Watch 7以降で対応します。
+
+[사례 2] SEMANTIC (56.1%) | story_006 | //section_006_1_description
+- 번역: 我が家のエアコンが快適な睡眠環境作りをサポート。温度や風量、予約設定はもちろん、ディスプレイの明かりから操作音まで、細かい制御が可能です。Galaxy Watchをつけている場合は、Watchがあなたの睡眠状態を検知し、最適な温度と風量に調整します。そのおかげで、一晩中快適に眠れます。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 일본어 문법상 오류가 없으며, '~に対応します'와 같이 기기 호환성 및 기능 적용을 설명할 때 사용하는 자연스러운 표현을 사용하였습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 충실히 전달하고 있습니다. '수면 단계'를 '睡眠状態(수면 상태)'로 번역하였는데, 이는 일반적인 상황에서 무리가 없으나 제품의 사양이나 구체적인 수면 분석 기능을 강조하는 경우 '睡眠段階' 또는 '睡眠ステージ'가 더 정확한 기술적 표현일 수 있습니다.
+- 용어집 준수: Glossary의 예외 규칙(Galaxy에 대괄호 「」를 사용하지 말 것)을 완벽하게 준수하여 'Galaxy Watch 7'로 표기하였습니다.
+- 언어별 규칙 준수: 일본어 UI 현지화 기준인 ます형(対応します)을 일관되게 사용하였으며, 문장 끝에 마침표(。)를 적절히 배치하였습니다.
+- 대소문자 표기: Samsung, Galaxy 등 브랜드 이름의 대소문자 표기가 정확합니다.
+- 서식 및 표기: 숫자(2026, 7)를 반각으로 표기하고 조사와 명사의 연결이 매끄럽게 처리되었습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[수정안 제안]:
+睡眠段階に応じたエアコンの自動制御機能は、2026年以降に発売されるSamsungのエアコンとGalaxy Watch 7以降で対応します。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_1_disclaimer", "source": "수면 단계에 따른 에어컨 자동 제어는 2026년부터 출시되는 삼성 에어컨 및 갤럭시 워치 7 이상부터 적용됩니다.", "target": "睡眠状態に応じたエアコンの自動制御機能は、2026年以降に発売されるSamsungのエアコンとGalaxy Watch 7以降で対応します。"}, {"type": "semantic", "score": 56.1, "story_id": "story_006", "section": "//section_006_1_description", "source": "우리 집 에어컨은 내 편안한 잠자리를 위해 매일 세심하게 챙겨주고 있어요. 온도와 바람 세기, 예약 설정은 물론 디스플레이의 불빛부터 효과음까지도 제어할 수 있죠. 갤럭시 워치를 착용하고 있다면 워치가 인식한 나의 수면 단계에 맞춰 에어컨이 최적의 온도와 바람 세기로 조절해 줘요. 덕분에 밤새 편안하게 잠들 수 있어요.", "target": "我が家のエアコンが快適な睡眠環境作りをサポート。温度や風量、予約設定はもちろん、ディスプレイの明かりから操作音まで、細かい制御が可能です。Galaxy Watchをつけている場合は、Watchがあなたの睡眠状態を検知し、最適な温度と風量に調整します。そのおかげで、一晩中快適に眠れます。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "일본어 문법상 오류가 없으며, '~に対応します'와 같이 기기 호환성 및 기능 적용을 설명할 때 사용하는 자연스러운 표현을 사용하였습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 충실히 전달하고 있습니다. '수면 단계'를 '睡眠状態(수면 상태)'로 번역하였는데, 이는 일반적인 상황에서 무리가 없으나 제품의 사양이나 구체적인 수면 분석 기능을 강조하는 경우 '睡眠段階' 또는 '睡眠ステージ'가 더 정확한 기술적 표현일 수 있습니다."}, {"category": "용어집 준수", "comment": "Glossary의 예외 규칙(Galaxy에 대괄호 「」를 사용하지 말 것)을 완벽하게 준수하여 'Galaxy Watch 7'로 표기하였습니다."}, {"category": "언어별 규칙 준수", "comment": "일본어 UI 현지화 기준인 ます형(対応します)을 일관되게 사용하였으며, 문장 끝에 마침표(。)를 적절히 배치하였습니다."}, {"category": "대소문자 표기", "comment": "Samsung, Galaxy 등 브랜드 이름의 대소문자 표기가 정확합니다."}, {"category": "서식 및 표기", "comment": "숫자(2026, 7)를 반각으로 표기하고 조사와 명사의 연결이 매끄럽게 처리되었습니다."}], "grade": "Excellent", "suggested_fix": "睡眠段階に応じたエアコンの自動制御機能は、2026年以降に発売されるSamsungのエアコンとGalaxy Watch 7以降で対応します。"}
+==========================================================================================
+[시트] JA(일본) | [셀] C15
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+내 위치에 따라 켜지고 꺼지는 에어컨
+
+[상세 - 번역문]
+ライフスタイルに寄り添う冷房
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_2
+- 번역: ライフスタイルに寄り添う冷房
+
+[사례 2] SEMANTIC (53.9%) | story_006 | //story_006_title
+- 번역: 毎日の冷房を賢くコントロール
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 일본어 문장 자체는 문법적으로 완벽하며 마케팅 문구로서 매우 자연스럽고 유창한 표현입니다.
+- 정확성 및 현지화 품질: 원문의 핵심 기능 정보인 '내 위치에 따라(위치 기반)'와 '켜지고 꺼지는(자동 온/오프)'이라는 구체적인 동작 설명이 생략되었습니다. 번역문인 '라이프스타일에 다가가는 냉방'은 의미가 너무 추상화되어 기능 중심의 UI 문구로서는 부적절한 의역(Over-translation)으로 판단됩니다.
+- 용어집 준수: 제공된 용어집이 없으므로 해당 사항 없습니다.
+- 언어별 규칙 준수: 일본어 특유의 자연스러운 표현을 사용했으나, SmartThings의 기능 설명이라는 맥락에서는 사용자가 기능을 직관적으로 이해할 수 있는 명확성이 더 우선되어야 합니다.
+- 대소문자 표기: 해당 사항 없습니다.
+- 서식 및 표기: 구두점 없이 깔끔하게 마감되었으며 일본어 타이포그래피 규칙을 잘 따르고 있습니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+位置情報に合わせてオン/オフするエアコン
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_2", "source": "내 위치에 따라 켜지고 꺼지는 에어컨", "target": "ライフスタイルに寄り添う冷房"}, {"type": "semantic", "score": 53.9, "story_id": "story_006", "section": "//story_006_title", "source": "에어컨이 알아서 쾌적하게, 똑똑하게", "target": "毎日の冷房を賢くコントロール"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "일본어 문장 자체는 문법적으로 완벽하며 마케팅 문구로서 매우 자연스럽고 유창한 표현입니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 핵심 기능 정보인 '내 위치에 따라(위치 기반)'와 '켜지고 꺼지는(자동 온/오프)'이라는 구체적인 동작 설명이 생략되었습니다. 번역문인 '라이프스타일에 다가가는 냉방'은 의미가 너무 추상화되어 기능 중심의 UI 문구로서는 부적절한 의역(Over-translation)으로 판단됩니다."}, {"category": "용어집 준수", "comment": "제공된 용어집이 없으므로 해당 사항 없습니다."}, {"category": "언어별 규칙 준수", "comment": "일본어 특유의 자연스러운 표현을 사용했으나, SmartThings의 기능 설명이라는 맥락에서는 사용자가 기능을 직관적으로 이해할 수 있는 명확성이 더 우선되어야 합니다."}, {"category": "대소문자 표기", "comment": "해당 사항 없습니다."}, {"category": "서식 및 표기", "comment": "구두점 없이 깔끔하게 마감되었으며 일본어 타이포그래피 규칙을 잘 따르고 있습니다."}], "grade": "Needs Revision", "suggested_fix": "位置情報に合わせてオン/オフするエアコン"}
+==========================================================================================
+[시트] JA(일본) | [셀] C16
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+스마트싱스의 [웰컴 에어 케어]가 집에 도착하기 전 에어컨을 켜주니 더위 대신 시원함이 반겨줘요. [AI 쾌적]으로 최적의 온습도가 설정되어 언제나 쾌적한 공기를 만날 수 있어요. 주변에 사람이 없는 것이 감지되면 에어컨이 절전 운전된 후 알아서 꺼지니 에너지도 똑똑하게 아낄 수 있어요.
+
+[상세 - 번역문]
+SmartThingsの「Welcome air care」で、帰宅前にエアコンをオン。涼しい空気が出迎えてくれます。「AIコンフォート」が最適な温度と湿度を自動で調整。人がいないときは自動で省エネ運転を経て電源オフ、電気代もしっかり節約できます。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_2_description
+- 번역: SmartThingsの「Welcome air care」で、帰宅前にエアコンをオン。涼しい空気が出迎えてくれます。「AIコンフォート」が最適な温度と湿度を自動で調整。人がいないときは自動で省エネ運転を経て電源オフ、電気代もしっかり節約できます。
+
+[사례 2] SEMANTIC (63.4%) | story_006 | //story_006_description
+- 번역: 真夏の暑い日も、SmartThingsがあればエアコンの操作がもっと便利に。帰宅前に部屋を涼しく、就寝時は静かで心地よく。ライフスタイルに合わせて、毎日を快適にサポートします。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 일본어 문장 자체가 매우 자연스럽고 유창하게 작성되었습니다. '出迎えてくれます'와 같은 표현은 원문의 '반겨줘요'를 현지 정서에 맞게 잘 살린 표현입니다.
+- 정확성 및 현지화 품질: 원문의 의미를 충실히 반영하면서도 일본 사용자가 읽기에 거부감 없는 어투로 현지화되었습니다. 다만, '에너지'를 '電気代(전기료)'로 번역한 것은 의미상 통하지만 용어집 정의와는 거리가 있습니다.
+- 용어집 준수: 주요 용어인 'SmartThings', 'Welcome air care', 'AIコンフォート'는 잘 적용되었습니다. 그러나 '에너지'의 경우 용어집에 'Energy'로 명시되어 있으나 '電気代'로 번역되어 용어집 미준수로 판단됩니다. 또한 '설정(Settings)' 용어의 반영이 누락되었습니다.
+- 언어별 규칙 준수: 일본어 ます형(ます-form) 일관성 규칙을 대체로 따르고 있으나, 'エアコンをオン', '自動で調整'와 같이 문장 중간에 명사형(체언형)으로 끝맺음하여 일관성이 완벽하지 않습니다.
+- 대소문자 표기: SmartThings, Energy 등 영문 용어의 대소문자 표기 규칙을 잘 준수하였습니다.
+- 서식 및 표기: SmartThings와 Energy에 대해 브래킷을 사용하지 말라는 예외 규칙을 잘 인지하고 적용할 준비가 되어 있으나, 'Energy' 자체가 본문에 누락되었습니다. 다른 용어들에 '「 」'를 사용한 서식은 적절합니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+SmartThingsの「Welcome air care」が、帰宅前にエアコンをオンにするので、暑さの代わりに涼しさが出迎えてくれます。「AIコンフォート」で最適な温度と湿度が設定され、いつでも快適な空気に包まれます。周囲に人がいないことを検知すると、エアコンが省エネ運転の後に自動でオフになるので、Energy도 賢く節約できます。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_2_description", "source": "스마트싱스의 [웰컴 에어 케어]가 집에 도착하기 전 에어컨을 켜주니 더위 대신 시원함이 반겨줘요. [AI 쾌적]으로 최적의 온습도가 설정되어 언제나 쾌적한 공기를 만날 수 있어요. 주변에 사람이 없는 것이 감지되면 에어컨이 절전 운전된 후 알아서 꺼지니 에너지도 똑똑하게 아낄 수 있어요.", "target": "SmartThingsの「Welcome air care」で、帰宅前にエアコンをオン。涼しい空気が出迎えてくれます。「AIコンフォート」が最適な温度と湿度を自動で調整。人がいないときは自動で省エネ運転を経て電源オフ、電気代もしっかり節約できます。"}, {"type": "semantic", "score": 63.4, "story_id": "story_006", "section": "//story_006_description", "source": "무더운 여름, 스마트싱스로 에어컨을 더 섬세하고 똑똑하게 관리해 보세요. 집에 도착하기 전엔 미리 시원하게, 잠들 땐 조용하고 쾌적하게, 언제나 똑똑하게 냉방을 도와줘요. 내 일상에 딱 맞는 에어컨과 매일 더 시원하고 편안한 여름을 보내보세요.", "target": "真夏の暑い日も、SmartThingsがあればエアコンの操作がもっと便利に。帰宅前に部屋を涼しく、就寝時は静かで心地よく。ライフスタイルに合わせて、毎日を快適にサポートします。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "일본어 문장 자체가 매우 자연스럽고 유창하게 작성되었습니다. '出迎えてくれます'와 같은 표현은 원문의 '반겨줘요'를 현지 정서에 맞게 잘 살린 표현입니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 충실히 반영하면서도 일본 사용자가 읽기에 거부감 없는 어투로 현지화되었습니다. 다만, '에너지'를 '電気代(전기료)'로 번역한 것은 의미상 통하지만 용어집 정의와는 거리가 있습니다."}, {"category": "용어집 준수", "comment": "주요 용어인 'SmartThings', 'Welcome air care', 'AIコンフォート'는 잘 적용되었습니다. 그러나 '에너지'의 경우 용어집에 'Energy'로 명시되어 있으나 '電気代'로 번역되어 용어집 미준수로 판단됩니다. 또한 '설정(Settings)' 용어의 반영이 누락되었습니다."}, {"category": "언어별 규칙 준수", "comment": "일본어 ます형(ます-form) 일관성 규칙을 대체로 따르고 있으나, 'エアコンをオン', '自動で調整'와 같이 문장 중간에 명사형(체언형)으로 끝맺음하여 일관성이 완벽하지 않습니다."}, {"category": "대소문자 표기", "comment": "SmartThings, Energy 등 영문 용어의 대소문자 표기 규칙을 잘 준수하였습니다."}, {"category": "서식 및 표기", "comment": "SmartThings와 Energy에 대해 브래킷을 사용하지 말라는 예외 규칙을 잘 인지하고 적용할 준비가 되어 있으나, 'Energy' 자체가 본문에 누락되었습니다. 다른 용어들에 '「 」'를 사용한 서식은 적절합니다."}], "grade": "Needs Revision", "suggested_fix": "SmartThingsの「Welcome air care」が、帰宅前にエアコンをオンにするので、暑さの代わりに涼しさが出迎えてくれます。「AIコンフォート」で最適な温度と湿度が設定され、いつでも快適な空気に包まれます。周囲に人がいないことを検知すると、エアコンが省エネ運転の後に自動でオフになるので、Energy도 賢く節約できます。"}
+==========================================================================================
+[시트] JA(일본) | [셀] C17
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+[웰컴 에어 케어]는 [기기 > 에어컨 > 기기 제어 > 웰컴 에어 케어]에서 설정할 수 있습니다. 
+[부재 절전]은 [(스탠드형 모델) 기기 > 에어컨 > 기기 제어 > 동작 감지 > 부재 절전], [(벽걸이형 모델) 기기 > 에어컨 > 기기 제어 > 동작 감지 > 사람이 없을 때]에서 설정할 수 있습니다.
+
+[상세 - 번역문]
+「Welcome air care」は、「デバイス > エアコン > デバイス操作 > Welcome air care」から設定できます。
+「外出中に省電力」は、「(スタンド型モデル) デバイス > エアコン > デバイス操作 > Motion detection(動作検知) > 外出中に省電力、(壁掛け型モデル) デバイス > エアコン > デバイス操作 > Motion detection(動作検知) > While away(不在時)」から設定できます。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_2_disclaimer
+- 번역: 「Welcome air care」は、「デバイス > エアコン > デバイス操作 > Welcome air care」から設定できます。
+「外出中に省電力」は、「(スタンド型モデル) デバイス > エアコン > デバイス操作 > Motion detection(動作検知) > 外出中に省電力、(壁掛け型モデル) デバイス > エアコン > デバイス操作 > Motion detection(動作検知) > While away(不在時)」から設定できます。
+
+[사례 2] SEMANTIC (59.0%) | story_006 | //section_006_2_description
+- 번역: SmartThingsの「Welcome air care」で、帰宅前にエアコンをオン。涼しい空気が出迎えてくれます。「AIコンフォート」が最適な温度と湿度を自動で調整。人がいないときは自動で省エネ運転を経て電源オフ、電気代もしっかり節約できます。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 일본어 ます형을 사용하여 정중하고 자연스럽게 문장을 구성하였으며, 전체적인 흐름이 유창합니다.
+- 정확성 및 현지화 품질: 원문의 의미를 정확하게 전달하고 있으나, 용어집에 없는 일본어 번역(動作検知, 不在時)을 괄호 안에 임의로 병기하여 간결성이 떨어집니다.
+- 용어집 준수: 용어집에서 'Motion detection'과 'While away'는 영문 그대로 표기하도록 되어 있으나, 번역문에서는 '(動作検知)', '(不在時)'와 같은 보조 설명을 추가하여 용어집의 '정확한 일치(Exact Match)' 규칙을 위반하였습니다.
+- 언어별 규칙 준수: 일본어 UI 스타일 가이드인 ます형을 일관되게 적용하였습니다.
+- 대소문자 표기: Welcome air care, Motion detection 등 영문 용어의 대소문자가 용어집과 일치하게 표기되었습니다.
+- 서식 및 표기: 용어에 「 」를 사용하고 탐색 경로 내의 용어에는 이를 생략하는 규칙을 잘 준수하였습니다. 다만, 두 가지 모델의 경로를 나열할 때 쉼표보다는 마침표로 문장을 나누거나 보다 명확한 구분 기호를 사용하는 것이 가독성에 좋습니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+「Welcome air care」은、「デバイス > エアコン > デバイス操作 > Welcome air care」から設定できます。
+「外出中に省電力」は、「(スタンド型モデル) デバイス > エアコン > デバイス操作 > Motion detection > 外出中に省電力」、 「(壁掛け型モデル) デバイス > エアコン > デバイス操作 > Motion detection > While away」から設定できます。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_2_disclaimer", "source": "[웰컴 에어 케어]는 [기기 > 에어컨 > 기기 제어 > 웰컴 에어 케어]에서 설정할 수 있습니다. \n[부재 절전]은 [(스탠드형 모델) 기기 > 에어컨 > 기기 제어 > 동작 감지 > 부재 절전], [(벽걸이형 모델) 기기 > 에어컨 > 기기 제어 > 동작 감지 > 사람이 없을 때]에서 설정할 수 있습니다.", "target": "「Welcome air care」は、「デバイス > エアコン > デバイス操作 > Welcome air care」から設定できます。\n「外出中に省電力」は、「(スタンド型モデル) デバイス > エアコン > デバイス操作 > Motion detection(動作検知) > 外出中に省電力、(壁掛け型モデル) デバイス > エアコン > デバイス操作 > Motion detection(動作検知) > While away(不在時)」から設定できます。"}, {"type": "semantic", "score": 59.0, "story_id": "story_006", "section": "//section_006_2_description", "source": "스마트싱스의 [웰컴 에어 케어]가 집에 도착하기 전 에어컨을 켜주니 더위 대신 시원함이 반겨줘요. [AI 쾌적]으로 최적의 온습도가 설정되어 언제나 쾌적한 공기를 만날 수 있어요. 주변에 사람이 없는 것이 감지되면 에어컨이 절전 운전된 후 알아서 꺼지니 에너지도 똑똑하게 아낄 수 있어요.", "target": "SmartThingsの「Welcome air care」で、帰宅前にエアコンをオン。涼しい空気が出迎えてくれます。「AIコンフォート」が最適な温度と湿度を自動で調整。人がいないときは自動で省エネ運転を経て電源オフ、電気代もしっかり節約できます。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "일본어 ます형을 사용하여 정중하고 자연스럽게 문장을 구성하였으며, 전체적인 흐름이 유창합니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 정확하게 전달하고 있으나, 용어집에 없는 일본어 번역(動作検知, 不在時)을 괄호 안에 임의로 병기하여 간결성이 떨어집니다."}, {"category": "용어집 준수", "comment": "용어집에서 'Motion detection'과 'While away'는 영문 그대로 표기하도록 되어 있으나, 번역문에서는 '(動作検知)', '(不在時)'와 같은 보조 설명을 추가하여 용어집의 '정확한 일치(Exact Match)' 규칙을 위반하였습니다."}, {"category": "언어별 규칙 준수", "comment": "일본어 UI 스타일 가이드인 ます형을 일관되게 적용하였습니다."}, {"category": "대소문자 표기", "comment": "Welcome air care, Motion detection 등 영문 용어의 대소문자가 용어집과 일치하게 표기되었습니다."}, {"category": "서식 및 표기", "comment": "용어에 「 」를 사용하고 탐색 경로 내의 용어에는 이를 생략하는 규칙을 잘 준수하였습니다. 다만, 두 가지 모델의 경로를 나열할 때 쉼표보다는 마침표로 문장을 나누거나 보다 명확한 구분 기호를 사용하는 것이 가독성에 좋습니다."}], "grade": "Needs Revision", "suggested_fix": "「Welcome air care」은、「デバイス > エアコン > デバイス操作 > Welcome air care」から設定できます。\n「外出中に省電力」は、「(スタンド型モデル) デバイス > エアコン > デバイス操作 > Motion detection > 外出中に省電力」、 「(壁掛け型モデル) デバイス > エアコン > デバイス操作 > Motion detection > While away」から設定できます。"}
+==========================================================================================
+[시트] JA(일본) | [셀] C20
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+알아서 맞춰주는 맞춤 냉방
+
+[상세 - 번역문]
+カスタマイズされた冷房で涼しさも効率もUP
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3
+- 번역: カスタマイズされた冷房で涼しさも効率もUP
+
+[사례 2] SEMANTIC (65.9%) | story_006 | //section_006_3_description
+- 번역: 節電しながらも、しっかり涼しく。 「カスタマイズされた冷房」機能が、最も効率的で快適な温度を提案したり、調整してくれます。シーリングファンのある空間なら、エアコンと連動させることも可能。冷気が隅々まで行き渡り、冷房効率が上がります。細かい設定は「カスタマイズされた冷房」に任せて、快適な涼しさをお楽しみください。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 일본어 마케팅 문구로서 매우 자연스럽고 매끄러운 표현입니다. '涼しさも効率もUP'과 같은 표현은 사용자에게 혜택을 강조하는 일본 앱 인터페이스 특유의 문체입니다.
+- 정확성 및 현지화 품질: 원문의 '알아서 맞춰주는'이라는 자동 조정의 의미를 직접적으로 번역하기보다, 그 결과로 얻는 이점(시원함과 효율)을 강조하여 의역했습니다. 현지화 관점에서는 훌륭하나, 원문의 '자동' 기능을 강조하고 싶다면 다소 거리가 있을 수 있습니다.
+- 용어집 준수: 용어집에 등록된 '맞춤 냉방'의 번역어인 'カスタマイズされた冷房'를 정확하게 사용하였습니다.
+- 언어별 규칙 준수: 일본어 UI 및 마케팅 문구의 일반적인 관례를 잘 따르고 있으며, 어색한 직역 없이 현지인에게 친숙한 형태로 구성되었습니다.
+- 대소문자 표기: 영문 대문자 'UP'의 사용은 일본 마케팅 문구에서 강조의 의미로 흔히 쓰이는 방식이며 적절합니다.
+- 서식 및 표기: 구두점 생략 및 간결한 구성 등 UI 헤더나 섹션 타이틀에 적합한 서식을 유지하고 있습니다.
+
+최종 평가: 양호 — 경미한 개선 여지 있으나 출시 가능 수준.
+
+[수정안 제안]:
+自動で調整、カスタマイズされた冷房
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3", "source": "알아서 맞춰주는 맞춤 냉방", "target": "カスタマイズされた冷房で涼しさも効率もUP"}, {"type": "semantic", "score": 65.9, "story_id": "story_006", "section": "//section_006_3_description", "source": "에너지는 절약하고 시원함은 더하는 방법! [맞춤 냉방]이 가장 알뜰하고 쾌적한 에어컨 온도를 알려주거나 직접 조절해 줘요. 같은 공간에 실링팬이 있다면, 에어컨이 켜질 때 알아서 함께 켤 수도 있어요. 실링팬이 시원한 공기를 구석구석 빠르게 순환시켜 냉방 효율이 높아지죠. 이제 복잡한 고민은 [맞춤 냉방]에 맡기고, 기분 좋은 시원함만 누려 보세요.", "target": "節電しながらも、しっかり涼しく。 「カスタマイズされた冷房」機能が、最も効率的で快適な温度を提案したり、調整してくれます。シーリングファンのある空間なら、エアコンと連動させることも可能。冷気が隅々まで行き渡り、冷房効率が上がります。細かい設定は「カスタマイズされた冷房」に任せて、快適な涼しさをお楽しみください。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "일본어 마케팅 문구로서 매우 자연스럽고 매끄러운 표현입니다. '涼しさも効率もUP'과 같은 표현은 사용자에게 혜택을 강조하는 일본 앱 인터페이스 특유의 문체입니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '알아서 맞춰주는'이라는 자동 조정의 의미를 직접적으로 번역하기보다, 그 결과로 얻는 이점(시원함과 효율)을 강조하여 의역했습니다. 현지화 관점에서는 훌륭하나, 원문의 '자동' 기능을 강조하고 싶다면 다소 거리가 있을 수 있습니다."}, {"category": "용어집 준수", "comment": "용어집에 등록된 '맞춤 냉방'의 번역어인 'カスタマイズされた冷房'를 정확하게 사용하였습니다."}, {"category": "언어별 규칙 준수", "comment": "일본어 UI 및 마케팅 문구의 일반적인 관례를 잘 따르고 있으며, 어색한 직역 없이 현지인에게 친숙한 형태로 구성되었습니다."}, {"category": "대소문자 표기", "comment": "영문 대문자 'UP'의 사용은 일본 마케팅 문구에서 강조의 의미로 흔히 쓰이는 방식이며 적절합니다."}, {"category": "서식 및 표기", "comment": "구두점 생략 및 간결한 구성 등 UI 헤더나 섹션 타이틀에 적합한 서식을 유지하고 있습니다."}], "grade": "Good", "suggested_fix": "自動で調整、カスタマイズされた冷房"}
+==========================================================================================
+[시트] JA(일본) | [셀] C21
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+에너지는 절약하고 시원함은 더하는 방법! [맞춤 냉방]이 가장 알뜰하고 쾌적한 에어컨 온도를 알려주거나 직접 조절해 줘요. 같은 공간에 실링팬이 있다면, 에어컨이 켜질 때 알아서 함께 켤 수도 있어요. 실링팬이 시원한 공기를 구석구석 빠르게 순환시켜 냉방 효율이 높아지죠. 이제 복잡한 고민은 [맞춤 냉방]에 맡기고, 기분 좋은 시원함만 누려 보세요.
+
+[상세 - 번역문]
+節電しながらも、しっかり涼しく。 「カスタマイズされた冷房」機能が、最も効率的で快適な温度を提案したり、調整してくれます。シーリングファンのある空間なら、エアコンと連動させることも可能。冷気が隅々まで行き渡り、冷房効率が上がります。細かい設定は「カスタマイズされた冷房」に任せて、快適な涼しさをお楽しみください。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_description
+- 번역: 節電しながらも、しっかり涼しく。 「カスタマイズされた冷房」機能が、最も効率的で快適な温度を提案したり、調整してくれます。シーリングファンのある空間なら、エアコンと連動させることも可能。冷気が隅々まで行き渡り、冷房効率が上がります。細かい設定は「カスタマイズされた冷房」に任せて、快適な涼しさをお楽しみください。
+
+[사례 2] SEMANTIC (68.0%) | story_006 | //section_006_3_disclaimer
+- 번역: 「カスタマイズされた冷房」の設定にはエアコンとの接続が必要です。「Energy ＞ 節約 ＞ カスタマイズされた冷房」から設定可能です。
+「扇風機の電源をONにして冷気を循環」機能の使用には、WWST認証を取得したシーリングファンとの接続が必要です。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 일본어 문법상 오류가 없으며, 'しっかり涼しく', '隅々まで行き渡り' 등 현지인들이 자주 사용하는 자연스러운 표현을 사용하였습니다. 또한 'ます형'을 일관되게 사용하여 UI 톤앤매너를 잘 유지했습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 충실히 전달하면서도, '알아서 함께 켤 수도 있어요'를 '連動させることも可能'로 번역하여 가독성을 높였습니다. 전체적으로 직역이 아닌 UI 상황에 맞는 매끄러운 현지화가 이루어졌습니다.
+- 용어집 준수: 글로벌 용어 '맞춤 냉방'을 지정된 'カスタマイズされた冷房'으로 정확히 번역하고 「 」 기호를 사용하여 준수했습니다. 다만, 용어집의 '에너지(Energy)'와 '절약(節約)' 대신 문맥상 자연스러운 '節電(절전)'을 사용했습니다. 서비스 이름으로서의 Energy라면 수정이 필요하나, 일반 명사라면 현재 번역이 더 자연스럽습니다.
+- 언어별 규칙 준수: 일본어 현지화 기준인 ます형(Desu/Masu)을 문장 전반에 걸쳐 일관되게 적용하였으며, 지나친 경어 없이 명료한 UI 스타일을 구현했습니다.
+- 대소문자 표기: 해당 사항 없음 (일본어 문장으로 구성됨).
+- 서식 및 표기: 용어집 강조를 위해 「 」를 적절히 사용하였으며, 문장 부호(。) 및 띄어쓰기가 일본어 표기 규칙에 부합합니다.
+
+최종 평가: 양호 — 경미한 개선 여지 있으나 출시 가능 수준.
+
+[수정안 제안]:
+Energy를 節約しながら、しっかり涼しく。「カスタマイズされた冷房」が、最も効率的で快適な温度を提案したり、直接調整してくれます。同じ空間にシーリングファンがあれば、エアコンがオンになったときに自動で一緒にオンにすることもできます。シーリングファンが冷気を隅々まで素早く循環させ、冷房効率を高めます。複雑な設定は「カスタマイズされた冷房」に任せて、心地よい涼しさをお楽しみください。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_description", "source": "에너지는 절약하고 시원함은 더하는 방법! [맞춤 냉방]이 가장 알뜰하고 쾌적한 에어컨 온도를 알려주거나 직접 조절해 줘요. 같은 공간에 실링팬이 있다면, 에어컨이 켜질 때 알아서 함께 켤 수도 있어요. 실링팬이 시원한 공기를 구석구석 빠르게 순환시켜 냉방 효율이 높아지죠. 이제 복잡한 고민은 [맞춤 냉방]에 맡기고, 기분 좋은 시원함만 누려 보세요.", "target": "節電しながらも、しっかり涼しく。 「カスタマイズされた冷房」機能が、最も効率的で快適な温度を提案したり、調整してくれます。シーリングファンのある空間なら、エアコンと連動させることも可能。冷気が隅々まで行き渡り、冷房効率が上がります。細かい設定は「カスタマイズされた冷房」に任せて、快適な涼しさをお楽しみください。"}, {"type": "semantic", "score": 68.0, "story_id": "story_006", "section": "//section_006_3_disclaimer", "source": "[맞춤 냉방] 설정은 에어컨 연결이 필요하며 [에너지 > 절약 > 맞춤 냉방]에서 설정할 수 있습니다. \n[팬을 켜서 냉기 순환 시키기]는 WWST 인증을 받은 실링팬 연결이 필요합니다.", "target": "「カスタマイズされた冷房」の設定にはエアコンとの接続が必要です。「Energy ＞ 節約 ＞ カスタマイズされた冷房」から設定可能です。\n「扇風機の電源をONにして冷気を循環」機能の使用には、WWST認証を取得したシーリングファンとの接続が必要です。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "일본어 문법상 오류가 없으며, 'しっかり涼しく', '隅々まで行き渡り' 등 현지인들이 자주 사용하는 자연스러운 표현을 사용하였습니다. 또한 'ます형'을 일관되게 사용하여 UI 톤앤매너를 잘 유지했습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 충실히 전달하면서도, '알아서 함께 켤 수도 있어요'를 '連動させることも可能'로 번역하여 가독성을 높였습니다. 전체적으로 직역이 아닌 UI 상황에 맞는 매끄러운 현지화가 이루어졌습니다."}, {"category": "용어집 준수", "comment": "글로벌 용어 '맞춤 냉방'을 지정된 'カスタマイズされた冷房'으로 정확히 번역하고 「 」 기호를 사용하여 준수했습니다. 다만, 용어집의 '에너지(Energy)'와 '절약(節約)' 대신 문맥상 자연스러운 '節電(절전)'을 사용했습니다. 서비스 이름으로서의 Energy라면 수정이 필요하나, 일반 명사라면 현재 번역이 더 자연스럽습니다."}, {"category": "언어별 규칙 준수", "comment": "일본어 현지화 기준인 ます형(Desu/Masu)을 문장 전반에 걸쳐 일관되게 적용하였으며, 지나친 경어 없이 명료한 UI 스타일을 구현했습니다."}, {"category": "대소문자 표기", "comment": "해당 사항 없음 (일본어 문장으로 구성됨)."}, {"category": "서식 및 표기", "comment": "용어집 강조를 위해 「 」를 적절히 사용하였으며, 문장 부호(。) 및 띄어쓰기가 일본어 표기 규칙에 부합합니다."}], "grade": "Good", "suggested_fix": "Energy를 節約しながら、しっかり涼しく。「カスタマイズされた冷房」が、最も効率的で快適な温度を提案したり、直接調整してくれます。同じ空間にシーリングファンがあれば、エアコンがオンになったときに自動で一緒にオンにすることもできます。シーリングファンが冷気を隅々まで素早く循環させ、冷房効率を高めます。複雑な設定は「カスタマイズされた冷房」に任せて、心地よい涼しさをお楽しみください。"}
+==========================================================================================
+[시트] JA(일본) | [셀] C22
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+[맞춤 냉방] 설정은 에어컨 연결이 필요하며 [에너지 > 절약 > 맞춤 냉방]에서 설정할 수 있습니다. 
+[팬을 켜서 냉기 순환 시키기]는 WWST 인증을 받은 실링팬 연결이 필요합니다.
+
+[상세 - 번역문]
+「カスタマイズされた冷房」の設定にはエアコンとの接続が必要です。「Energy ＞ 節約 ＞ カスタマイズされた冷房」から設定可能です。
+「扇風機の電源をONにして冷気を循環」機能の使用には、WWST認証を取得したシーリングファンとの接続が必要です。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+용어집 괄호 규정 점검:
+- [괄호 오류] 'カスタマイズされた冷房'에 괄호(「」)가 누락되었을 수 있습니다 (내비게이션 경로 제외)
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_disclaimer
+- 번역: 「カスタマイズされた冷房」の設定にはエアコンとの接続が必要です。「Energy ＞ 節約 ＞ カスタマイズされた冷房」から設定可能です。
+「扇風機の電源をONにして冷気を循環」機能の使用には、WWST認証を取得したシーリングファンとの接続が必要です。
+
+[사례 2] SEMANTIC (66.8%) | story_006 | //section_006_3_description
+- 번역: 節電しながらも、しっかり涼しく。 「カスタマイズされた冷房」機能が、最も効率的で快適な温度を提案したり、調整してくれます。シーリングファンのある空間なら、エアコンと連動させることも可能。冷気が隅々まで行き渡り、冷房効率が上がります。細かい設定は「カスタマイズされた冷房」に任せて、快適な涼しさをお楽しみください。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 일본어 문법 및 문장 구조가 매우 자연스럽습니다. 한국어의 '~이며' 연결형을 일본어 UI에서 선호되는 문장 분리 방식('～が必要です。～可能です。')으로 번역하여 가독성을 높였습니다. ます형(です)이 일관되게 사용되었으며, 실링팬과의 '접속(接続)' 등 용어 선택이 적절합니다.
+- 정확성 및 현지화 품질: 원문의 의미를 정확하게 전달하면서도 일본어 사용자가 이해하기 쉬운 표현을 사용했습니다. 특히 '팬을 켜서 냉기 순환 시키기'를 단순히 명사형으로 두지 않고 '～機能の使用には(기능의 사용에는)'와 같이 현지 UI 맥락에 맞게 보충 설명하여 유창성을 높였습니다.
+- 용어집 준수: 제공된 모든 용어('カスタマイズされた冷房', 'Energy', '節約', '扇風機の電源をONにして冷기를 순환')를 정확하게 사용했습니다. 'Energy'의 경우 대괄호를 생략하라는 예외 규칙을 준수하였으며, 다른 용어들은 '「'와 '」'로 올바르게 감쌌습니다.
+- 언어별 규칙 준수: 일본어 UI 현지화 기준인 ます형(です/ます)을 일관되게 적용했습니다. 또한 한국어의 대괄호([])를 일본어 표준 UI 기호인 낫표(「」)로 적절히 변경하여 적용했습니다.
+- 대소문자 표기: Glossary에 명시된 'Energy'의 대소문자 및 'WWST'와 같은 기술 용어의 대문자 표기가 정확하게 유지되었습니다.
+- 서식 및 표기: 탐색 경로인 「Energy ＞ 節約 ＞ カスタマイ즈된 냉방」의 표기 형식이 규칙에 부합합니다. 경로 내부의 개별 용어에는 낫표를 중복 사용하지 말라는 예외 규칙을 준수했습니다. 문장 끝의 마침표(。) 사용도 올바릅니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_disclaimer", "source": "[맞춤 냉방] 설정은 에어컨 연결이 필요하며 [에너지 > 절약 > 맞춤 냉방]에서 설정할 수 있습니다. \n[팬을 켜서 냉기 순환 시키기]는 WWST 인증을 받은 실링팬 연결이 필요합니다.", "target": "「カスタマイズされた冷房」の設定にはエアコンとの接続が必要です。「Energy ＞ 節約 ＞ カスタマイズされた冷房」から設定可能です。\n「扇風機の電源をONにして冷気を循環」機能の使用には、WWST認証を取得したシーリングファンとの接続が必要です。"}, {"type": "semantic", "score": 66.8, "story_id": "story_006", "section": "//section_006_3_description", "source": "에너지는 절약하고 시원함은 더하는 방법! [맞춤 냉방]이 가장 알뜰하고 쾌적한 에어컨 온도를 알려주거나 직접 조절해 줘요. 같은 공간에 실링팬이 있다면, 에어컨이 켜질 때 알아서 함께 켤 수도 있어요. 실링팬이 시원한 공기를 구석구석 빠르게 순환시켜 냉방 효율이 높아지죠. 이제 복잡한 고민은 [맞춤 냉방]에 맡기고, 기분 좋은 시원함만 누려 보세요.", "target": "節電しながらも、しっかり涼しく。 「カスタマイズされた冷房」機能が、最も効率的で快適な温度を提案したり、調整してくれます。シーリングファンのある空間なら、エアコンと連動させることも可能。冷気が隅々まで行き渡り、冷房効率が上がります。細かい設定は「カスタマイズされた冷房」に任せて、快適な涼しさをお楽しみください。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "일본어 문법 및 문장 구조가 매우 자연스럽습니다. 한국어의 '~이며' 연결형을 일본어 UI에서 선호되는 문장 분리 방식('～が必要です。～可能です。')으로 번역하여 가독성을 높였습니다. ます형(です)이 일관되게 사용되었으며, 실링팬과의 '접속(接続)' 등 용어 선택이 적절합니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 정확하게 전달하면서도 일본어 사용자가 이해하기 쉬운 표현을 사용했습니다. 특히 '팬을 켜서 냉기 순환 시키기'를 단순히 명사형으로 두지 않고 '～機能の使用には(기능의 사용에는)'와 같이 현지 UI 맥락에 맞게 보충 설명하여 유창성을 높였습니다."}, {"category": "용어집 준수", "comment": "제공된 모든 용어('カスタマイズされた冷房', 'Energy', '節約', '扇風機の電源をONにして冷기를 순환')를 정확하게 사용했습니다. 'Energy'의 경우 대괄호를 생략하라는 예외 규칙을 준수하였으며, 다른 용어들은 '「'와 '」'로 올바르게 감쌌습니다."}, {"category": "언어별 규칙 준수", "comment": "일본어 UI 현지화 기준인 ます형(です/ます)을 일관되게 적용했습니다. 또한 한국어의 대괄호([])를 일본어 표준 UI 기호인 낫표(「」)로 적절히 변경하여 적용했습니다."}, {"category": "대소문자 표기", "comment": "Glossary에 명시된 'Energy'의 대소문자 및 'WWST'와 같은 기술 용어의 대문자 표기가 정확하게 유지되었습니다."}, {"category": "서식 및 표기", "comment": "탐색 경로인 「Energy ＞ 節約 ＞ カスタマイ즈된 냉방」의 표기 형식이 규칙에 부합합니다. 경로 내부의 개별 용어에는 낫표를 중복 사용하지 말라는 예외 규칙을 준수했습니다. 문장 끝의 마침표(。) 사용도 올바릅니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] JA(일본) | [셀] C23
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+설정 바로가기
+
+[상세 - 번역문]
+Settingsに移動
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_button
+- 번역: Settingsに移動
+
+[사례 2] SEMANTIC (51.2%) | story_045 | //section_045_1_button
+- 번역: 自宅分析を設定
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 일본어 UI에서 버튼이나 링크에 흔히 사용되는 명사형/사전형 종결 방식을 사용하여 문법적으로 자연스럽습니다.
+- 정확성 및 현지화 품질: 원문의 '바로가기' 기능(해당 메뉴로 직접 이동)의 의미를 'に移動'으로 명확하게 전달하고 있습니다.
+- 용어집 준수: 용어집에 명시된 '설정'의 대응어 'Settings'를 정확하게 사용하였습니다.
+- 언어별 규칙 준수: 일본어 UI 스타일 가이드에 부합하는 간결한 표현을 사용하였으며, 문맥에 맞는 적절한 조사를 사용하였습니다.
+- 대소문자 표기: 용어집에 제공된 'Settings'의 대소문자 표기 규칙을 그대로 준수하였습니다.
+- 서식 및 표기: 버튼 카피 규칙에 따라 용어집 용어 주위에 대괄호나 따옴표를 사용하지 않았으며, 불필요한 마침표가 없어 규정에 부합합니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_button", "source": "설정 바로가기", "target": "Settingsに移動"}, {"type": "semantic", "score": 51.2, "story_id": "story_045", "section": "//section_045_1_button", "source": "홈 인사이트 설정하기", "target": "自宅分析を設定"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "일본어 UI에서 버튼이나 링크에 흔히 사용되는 명사형/사전형 종결 방식을 사용하여 문법적으로 자연스럽습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '바로가기' 기능(해당 메뉴로 직접 이동)의 의미를 'に移動'으로 명확하게 전달하고 있습니다."}, {"category": "용어집 준수", "comment": "용어집에 명시된 '설정'의 대응어 'Settings'를 정확하게 사용하였습니다."}, {"category": "언어별 규칙 준수", "comment": "일본어 UI 스타일 가이드에 부합하는 간결한 표현을 사용하였으며, 문맥에 맞는 적절한 조사를 사용하였습니다."}, {"category": "대소문자 표기", "comment": "용어집에 제공된 'Settings'의 대소문자 표기 규칙을 그대로 준수하였습니다."}, {"category": "서식 및 표기", "comment": "버튼 카피 규칙에 따라 용어집 용어 주위에 대괄호나 따옴표를 사용하지 않았으며, 불필요한 마침표가 없어 규정에 부합합니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] JA(일본) | [셀] C25
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+스마트싱스로 냉방 효율 UP
+
+[상세 - 번역문]
+涼しさを賢くキープ
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '스마트싱스' → 'SmartThings' 미적용
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3
+- 번역: 涼しさを賢くキープ
+
+[사례 2] SEMANTIC (68.0%) | story_006 | //story_006_description
+- 번역: 真夏の暑い日も、SmartThingsがあればエアコンの操作がもっと便利に。帰宅前に部屋を涼しく、就寝時は静かで心地よく。ライフスタイルに合わせて、毎日を快適にサポートします。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 일본어 문장 자체는 문법적으로 완벽하며, '현명하게 시원함을 유지한다'는 표현은 마케팅적으로 매우 자연스럽습니다.
+- 정확성 및 현지화 품질: 원문의 '냉방 효율 UP'이라는 핵심적인 가치가 '시원함을 유지'라는 결과적 가치로 의역되었습니다. 다만, 스마트싱스(SmartThings)라는 주체가 생략되어 있어 원문이 전달하고자 하는 브랜드 중심의 기능 설명 의도가 약해졌습니다.
+- 용어집 준수: 용어집에 '스마트싱스'가 'SmartThings'로 지정되어 있으나, 번역문에서는 해당 용어가 완전히 누락되었습니다. 이는 용어집 준수 위반에 해당합니다.
+- 언어별 규칙 준수: 마케팅 배너나 섹션 타이틀로 추정되는 맥락에서 ます형 대신 체언절이나 간결한 문구로 끝맺음한 것은 일본어 UI 관습에 부합합니다.
+- 대소문자 표기: SmartThings 용어 자체가 누락되어 판단 불가하나, 수정안에서는 대소문자 규칙(CamelCase)을 준수해야 합니다.
+- 서식 및 표기: 제공된 가이드라인에 따라 SmartThings 사용 시 대괄호나 따옴표를 임의로 추가하지 않아야 합니다.
+
+최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요.
+
+[수정안 제안]:
+SmartThingsで冷房効率アップ
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3", "source": "스마트싱스로 냉방 효율 UP", "target": "涼しさを賢くキープ"}, {"type": "semantic", "score": 68.0, "story_id": "story_006", "section": "//story_006_description", "source": "무더운 여름, 스마트싱스로 에어컨을 더 섬세하고 똑똑하게 관리해 보세요. 집에 도착하기 전엔 미리 시원하게, 잠들 땐 조용하고 쾌적하게, 언제나 똑똑하게 냉방을 도와줘요. 내 일상에 딱 맞는 에어컨과 매일 더 시원하고 편안한 여름을 보내보세요.", "target": "真夏の暑い日も、SmartThingsがあればエアコンの操作がもっと便利に。帰宅前に部屋を涼しく、就寝時は静かで心地よく。ライフスタイルに合わせて、毎日を快適にサポートします。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "일본어 문장 자체는 문법적으로 완벽하며, '현명하게 시원함을 유지한다'는 표현은 마케팅적으로 매우 자연스럽습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 '냉방 효율 UP'이라는 핵심적인 가치가 '시원함을 유지'라는 결과적 가치로 의역되었습니다. 다만, 스마트싱스(SmartThings)라는 주체가 생략되어 있어 원문이 전달하고자 하는 브랜드 중심의 기능 설명 의도가 약해졌습니다."}, {"category": "용어집 준수", "comment": "용어집에 '스마트싱스'가 'SmartThings'로 지정되어 있으나, 번역문에서는 해당 용어가 완전히 누락되었습니다. 이는 용어집 준수 위반에 해당합니다."}, {"category": "언어별 규칙 준수", "comment": "마케팅 배너나 섹션 타이틀로 추정되는 맥락에서 ます형 대신 체언절이나 간결한 문구로 끝맺음한 것은 일본어 UI 관습에 부합합니다."}, {"category": "대소문자 표기", "comment": "SmartThings 용어 자체가 누락되어 판단 불가하나, 수정안에서는 대소문자 규칙(CamelCase)을 준수해야 합니다."}, {"category": "서식 및 표기", "comment": "제공된 가이드라인에 따라 SmartThings 사용 시 대괄호나 따옴표를 임의로 추가하지 않아야 합니다."}], "grade": "Needs Revision", "suggested_fix": "SmartThingsで冷房効率アップ"}
+==========================================================================================
+[시트] JA(일본) | [셀] C26
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+올여름을 시원함으로 가득 채워 보세요. 깜빡하고 창문을 연 채로 에어컨을 켜면, 문 열림 센서가 이를 인식해 스마트싱스로 알려주니 걱정 없어요. 강렬한 햇빛 때문에 금방 시원해지지 않는다면 [자동 블라인드]를 사용해 보세요. 에어컨이 켜지면 블라인드가 내려와 시원함이 더 빠르게 채워질 거예요.
+
+[상세 - 번역문]
+この夏は家中を快適に。うっかり窓を開けたままエアコンをつけても、ドア・窓センサーが検知してSmartThingsが通知してくれるので安心です。強い日差しで涼しさが物足りないときは、「自動ブラインド」を使い、エアコンと連動して効率的に涼しくなります。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+별도 지적 사항 없음.
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_description
+- 번역: この夏は家中を快適に。うっかり窓を開けたままエアコンをつけても、ドア・窓センサーが検知してSmartThingsが通知してくれるので安心です。強い日差しで涼しさが物足りないときは、「自動ブラインド」を使い、エアコンと連動して効率的に涼しくなります。
+
+[사례 2] SEMANTIC (62.4%) | story_006 | //section_006_3_disclaimer
+- 번역: ドア・窓センサーで通知を受け取るには、自動化の設定が必要です。
+「自動ブラインド」設定はエアコン接続の必要があり、「ライフ > Energy > 節約 > 自動ブラインド」から行えます。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 일본어 문법상 오류가 없으며 매우 자연스럽습니다. '涼しさが物足りない'나 '連動して'와 같은 표현은 원문의 의도를 일본 현지 정서에 맞게 잘 살린 유창한 번역입니다.
+- 정확성 및 현지화 품질: 원문의 의미를 정확하게 전달하면서도, 일본 UI/마케팅 문구 특유의 간결하고 세련된 문체로 현지화되었습니다. 마지막 문장은 원문의 구구절절한 설명을 '連動'이라는 표현으로 함축하여 가독성을 높였습니다.
+- 용어집 준수: SmartThings 용어에 대해 괄호를 생략하라는 예외 규칙(EXCEPTION)을 완벽하게 준수하였으며, '자동 블라인드' 또한 제공된 용어와 일치하게 번역되었습니다.
+- 언어별 규칙 준수: 전체적으로 ます/です 형태를 일관되게 사용하였으며, 일본어 문장 부호(。) 규칙을 올바르게 적용하였습니다.
+- 대소문자 표기: 고유 명사인 'SmartThings'의 대소문자 표기가 정확합니다.
+- 서식 및 표기: 용어집 항목인 「自動ブラインド」에 일본어 권장 괄호인 '「'와 '」'를 올바르게 적용하였습니다.
+
+최종 평가: 우수 — 직역 없이 자연스러운 현지화.
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_description", "source": "올여름을 시원함으로 가득 채워 보세요. 깜빡하고 창문을 연 채로 에어컨을 켜면, 문 열림 센서가 이를 인식해 스마트싱스로 알려주니 걱정 없어요. 강렬한 햇빛 때문에 금방 시원해지지 않는다면 [자동 블라인드]를 사용해 보세요. 에어컨이 켜지면 블라인드가 내려와 시원함이 더 빠르게 채워질 거예요.", "target": "この夏は家中を快適に。うっかり窓を開けたままエアコンをつけても、ドア・窓センサーが検知してSmartThingsが通知してくれるので安心です。強い日差しで涼しさが物足りないときは、「自動ブラインド」を使い、エアコンと連動して効率的に涼しくなります。"}, {"type": "semantic", "score": 62.4, "story_id": "story_006", "section": "//section_006_3_disclaimer", "source": "문 열림 센서를 통해 알림을 받기 위해서는 자동화 설정이 필요합니다. \n[자동 블라인드] 설정은 에어컨 연결이 필요하며, [라이프 > 에너지 > 절약 > 자동 블라인드]에서 설정할 수 있습니다.", "target": "ドア・窓センサーで通知を受け取るには、自動化の設定が必要です。\n「自動ブラインド」設定はエアコン接続の必要があり、「ライフ > Energy > 節約 > 自動ブラインド」から行えます。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "일본어 문법상 오류가 없으며 매우 자연스럽습니다. '涼しさが物足りない'나 '連動して'와 같은 표현은 원문의 의도를 일본 현지 정서에 맞게 잘 살린 유창한 번역입니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 정확하게 전달하면서도, 일본 UI/마케팅 문구 특유의 간결하고 세련된 문체로 현지화되었습니다. 마지막 문장은 원문의 구구절절한 설명을 '連動'이라는 표현으로 함축하여 가독성을 높였습니다."}, {"category": "용어집 준수", "comment": "SmartThings 용어에 대해 괄호를 생략하라는 예외 규칙(EXCEPTION)을 완벽하게 준수하였으며, '자동 블라인드' 또한 제공된 용어와 일치하게 번역되었습니다."}, {"category": "언어별 규칙 준수", "comment": "전체적으로 ます/です 형태를 일관되게 사용하였으며, 일본어 문장 부호(。) 규칙을 올바르게 적용하였습니다."}, {"category": "대소문자 표기", "comment": "고유 명사인 'SmartThings'의 대소문자 표기가 정확합니다."}, {"category": "서식 및 표기", "comment": "용어집 항목인 「自動ブラインド」에 일본어 권장 괄호인 '「'와 '」'를 올바르게 적용하였습니다."}], "grade": "Excellent", "suggested_fix": ""}
+==========================================================================================
+[시트] JA(일본) | [셀] C27
+------------------------------------------------------------------------------------------
+
+[상세 - 원문]
+문 열림 센서를 통해 알림을 받기 위해서는 자동화 설정이 필요합니다. 
+[자동 블라인드] 설정은 에어컨 연결이 필요하며, [라이프 > 에너지 > 절약 > 자동 블라인드]에서 설정할 수 있습니다.
+
+[상세 - 번역문]
+ドア・窓センサーで通知を受け取るには、自動化の設定が必要です。
+「自動ブラインド」設定はエアコン接続の必要があり、「ライフ > Energy > 節約 > 自動ブラインド」から行えます。
+
+[상세 - 대소문자 점검]
+별도 지적 사항 없음.
+
+[상세 - 용어집 점검]
+용어집 사전 감지:
+- [미적용] '설정' → 'Settings' 미적용
+
+[상세 - RAG 일관성 참고]
+[사례 1] EXACT | story_006 | //section_006_3_disclaimer
+- 번역: ドア・窓センサーで通知を受け取るには、自動化の設定が必要です。
+「自動ブラインド」設定はエアコン接続の必要があり、「ライフ > Energy > 節約 > 自動ブラインド」から行えます。
+
+[사례 2] SEMANTIC (60.4%) | story_006 | //section_006_3_description
+- 번역: この夏は家中を快適に。うっかり窓を開けたままエアコンをつけても、ドア・窓センサーが検知してSmartThingsが通知してくれるので安心です。強い日差しで涼しさが物足りないときは、「自動ブラインド」を使い、エアコンと連動して効率的に涼しくなります。
+
+[상세 - 역번역]
+[역번역 비활성화됨]
+
+[상세 - AI 검수 결과]
+- 문법/유창성: 전반적인 문법은 정확하며 의미 전달이 명확합니다. 다만, 'エアコン接続の必要があり'는 다소 딱딱한 직역 표현으로, 'エアコンの接続が必要で' 또는 'エアコンを接続する必要があり'와 같이 연결하는 것이 훨씬 자연스럽습니다.
+- 정확성 및 현지화 품질: 원문의 의미를 잘 전달하고 있습니다. '문 열림 센서'를 해당 플랫폼의 일본 시장 명칭인 'ドア・窓センサー'로 적절히 현지화하였습니다.
+- 용어집 준수: 제공된 용어집을 모두 준수하였습니다. 특히 'ライフ'와 'Energy'에 대해 대괄호를 사용하지 말라는 예외 규칙과 탐색 경로 내 용어에는 괄호를 씌우지 않는다는 규칙이 잘 적용되었습니다.
+- 언어별 규칙 준수: 일본어 UI 표준인 ます형(です・ます)을 일관되게 사용하여 정중하면서도 전문적인 톤을 유지하고 있습니다.
+- 대소문자 표기: 용어집에 명시된 대로 'Energy'의 대소문자를 정확하게 표기하였습니다.
+- 서식 및 표기: 탐색 경로에 「 」를 사용하고, 일반 용어인 '自動ブラインド'에도 적절한 괄호를 사용하였습니다. 다만 문장 끝의 마침표 위치는 문장이 경로로 끝나지 않으므로 현재의 위치(문장 끝)가 적절합니다.
+
+최종 평가: 양호 — 경미한 개선 여지 있으나 출시 가능 수준.
+
+[수정안 제안]:
+ドア・窓センサーで通知を受け取るには、自動化の設定が必要です。
+「自動ブラインド」の設定에는 エアコンの接続が必要で、「ライフ > Energy > 節約 > 自動ブラインド」から設定できます。
+
+[상세 - RAG Payload]
+[{"type": "exact", "score": 100.0, "story_id": "story_006", "section": "//section_006_3_disclaimer", "source": "문 열림 센서를 통해 알림을 받기 위해서는 자동화 설정이 필요합니다. \n[자동 블라인드] 설정은 에어컨 연결이 필요하며, [라이프 > 에너지 > 절약 > 자동 블라인드]에서 설정할 수 있습니다.", "target": "ドア・窓センサーで通知を受け取るには、自動化の設定が必要です。\n「自動ブラインド」設定はエアコン接続の必要があり、「ライフ > Energy > 節約 > 自動ブラインド」から行えます。"}, {"type": "semantic", "score": 60.4, "story_id": "story_006", "section": "//section_006_3_description", "source": "올여름을 시원함으로 가득 채워 보세요. 깜빡하고 창문을 연 채로 에어컨을 켜면, 문 열림 센서가 이를 인식해 스마트싱스로 알려주니 걱정 없어요. 강렬한 햇빛 때문에 금방 시원해지지 않는다면 [자동 블라인드]를 사용해 보세요. 에어컨이 켜지면 블라인드가 내려와 시원함이 더 빠르게 채워질 거예요.", "target": "この夏は家中を快適に。うっかり窓を開けたままエアコンをつけても、ドア・窓センサーが検知してSmartThingsが通知してくれるので安心です。強い日差しで涼しさが物足りないときは、「自動ブラインド」を使い、エアコンと連動して効率的に涼しくなります。"}]
+
+[상세 - AI Payload]
+{"evaluation": [{"category": "문법/유창성", "comment": "전반적인 문법은 정확하며 의미 전달이 명확합니다. 다만, 'エアコン接続の必要があり'는 다소 딱딱한 직역 표현으로, 'エアコンの接続が必要で' 또는 'エアコンを接続する必要があり'와 같이 연결하는 것이 훨씬 자연스럽습니다."}, {"category": "정확성 및 현지화 품질", "comment": "원문의 의미를 잘 전달하고 있습니다. '문 열림 센서'를 해당 플랫폼의 일본 시장 명칭인 'ドア・窓センサー'로 적절히 현지화하였습니다."}, {"category": "용어집 준수", "comment": "제공된 용어집을 모두 준수하였습니다. 특히 'ライフ'와 'Energy'에 대해 대괄호를 사용하지 말라는 예외 규칙과 탐색 경로 내 용어에는 괄호를 씌우지 않는다는 규칙이 잘 적용되었습니다."}, {"category": "언어별 규칙 준수", "comment": "일본어 UI 표준인 ます형(です・ます)을 일관되게 사용하여 정중하면서도 전문적인 톤을 유지하고 있습니다."}, {"category": "대소문자 표기", "comment": "용어집에 명시된 대로 'Energy'의 대소문자를 정확하게 표기하였습니다."}, {"category": "서식 및 표기", "comment": "탐색 경로에 「 」를 사용하고, 일반 용어인 '自動ブラインド'에도 적절한 괄호를 사용하였습니다. 다만 문장 끝의 마침표 위치는 문장이 경로로 끝나지 않으므로 현재의 위치(문장 끝)가 적절합니다."}], "grade": "Good", "suggested_fix": "ドア・窓センサーで通知を受け取るには、自動化の設定が必要です。\n「自動ブラインド」の設定에는 エアコンの接続が必要で、「ライフ > Energy > 節約 > 自動ブラインド」から設定できます。"}
