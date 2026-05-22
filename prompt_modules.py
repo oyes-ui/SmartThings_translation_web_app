@@ -150,7 +150,7 @@ GLOSSARY_TERM_RULES = {
 TYPOGRAPHY_AND_PUNCTUATION_RULES = {
     "name": "Typography and Punctuation Rules",
     "rules": [
-        "Follow punctuation, spacing, and quotation mark conventions standard for the target language and locale.",
+        "For quotation marks, spacing, and punctuation specific to the target language, follow the rules stated in the language section above; where no specific rule is given, apply the standard convention for that language and locale.",
         "Do not mechanically copy English punctuation, quotation mark placement, spacing, or sentence-ending style into other languages.",
     ],
 }

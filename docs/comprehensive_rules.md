@@ -366,6 +366,12 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 
 ## 4. 용어집 관련 (Glossary Rules)
 
+**Purpose**  
+제품명, 기능명, 메뉴명, 브랜드 표현이 화면마다 다르게 번역되지 않도록 용어 기준을 고정합니다. SmartThings처럼 동일한 기능과 메뉴가 여러 화면에서 반복되는 서비스에서는 용어가 조금만 달라져도 사용자가 다른 기능으로 오해할 수 있기 때문에, glossary를 기준으로 명칭 일관성을 유지하는 것이 핵심 목적입니다.
+
+**Feature**  
+Glossary에 등록된 용어는 번역 참고 자료가 아니라 필수 준수 기준으로 적용됩니다. AI가 문장을 자연스럽게 다듬더라도 등록 용어의 대소문자, 띄어쓰기, 시장별 표기는 그대로 유지하며, 문맥에 따라 괄호 적용 여부만 다르게 제어합니다.
+
 > **📌 매핑 변수**: 
 > - 기본 용어집 규칙: `GLOSSARY_TERM_RULES`
 > - 브래킷 래핑 규칙: `GLOSSARY_BRACKET_WRAP_RULE`
@@ -376,7 +382,12 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 
 ### 4.1 기본 용어집 사용 규칙
 
-프롬프트 내 `[GLOSSARY RULES]` 헤더 아래 항상 삽입되는 용어 사용 원칙입니다.
+**Purpose**  
+AI가 "더 자연스러워 보인다"는 이유로 핵심 용어를 임의로 바꾸지 않게 합니다. 예를 들어 `SmartThings Find`처럼 제품 정책상 고정된 표현은 제목, 버튼, 설명문 어디에 나오더라도 등록된 표기를 우선합니다.
+
+**Feature**  
+지정 용어를 문자 단위로 보존하고, 시장별 variant와 개별 예외 규칙을 함께 적용합니다. 즉, 용어집에 등록된 단어는 의미만 맞추는 대상이 아니라 검수 시 실제 문자열이 일치해야 하는 관리 대상입니다.
+
 > **📌 매핑 변수**: `GLOSSARY_TERM_RULES`
 
 ```text
@@ -390,7 +401,12 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 
 ### 4.2 문맥(row_key) 기반 브래킷 분기
 
-`get_glossary_context_mode(row_key)` 함수가 `row_key`를 소문자 정규화 후 아래 순서로 모드를 판별합니다.
+**Purpose**  
+같은 용어라도 UI 위치에 따라 보이는 방식이 달라져야 합니다. 제목이나 버튼은 짧고 간결해야 하므로 괄호를 제거하고, 설명문이나 고지 문구에서는 핵심 용어를 더 명확히 식별할 수 있도록 괄호를 적용합니다.
+
+**Feature**  
+`row_key`를 기준으로 UI 문맥을 자동 판별하여 `title_button`, `description`, `disclaimer` 모드로 나눕니다. 이를 통해 버튼/헤딩은 깔끔하게 유지하고, 본문/고지 영역은 용어 강조와 검수 편의성을 확보합니다.
+
 > **📌 생성 로직**: `PromptBuilder.get_glossary_context_mode()` (`prompt_builder.py`)
 
 | 판별 순서 | 조건 | 결과 모드 |
@@ -403,6 +419,13 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 > **📌 숫자 종료 규칙**: `row_key`가 숫자로 끝나는 경우 (예: `field_1`, `label_42`) 자동으로 `title_button` 모드로 처리되어 브래킷 없이 출력됩니다.
 
 #### `title_button` 모드
+
+**Purpose**  
+제목, 섹션 헤딩, 버튼 문구는 사용자가 빠르게 훑고 바로 이해해야 하는 영역입니다. 용어를 괄호로 감싸면 UI가 무거워 보이거나 클릭 요소처럼 오해될 수 있어, 간결한 화면 표현을 우선합니다.
+
+**Feature**  
+Glossary 용어의 텍스트 자체는 그대로 유지하되 `[]`, `「」` 등 주변 기호는 제거합니다. 대소문자도 제목/버튼 스타일에 맞춰 바꾸지 않고 glossary 표기를 그대로 따릅니다.
+
 > **📌 매핑 변수**: `GLOSSARY_NO_BRACKET_INSTRUCTION`
 
 ```text
@@ -410,6 +433,13 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 ```
 
 #### `description` 모드 (기본값)
+
+**Purpose**  
+설명문은 기능 안내, 설정 설명, 사용 조건처럼 정보량이 많은 영역입니다. 이 안에서 핵심 제품·기능 용어가 묻히지 않도록 시각적으로 구분하는 것이 목적입니다.
+
+**Feature**  
+Glossary 용어를 대상 언어에 맞는 괄호로 감쌉니다. 일본어는 `「 」`, 그 외 언어는 `[ ]`를 기본으로 사용해 용어 적용 여부를 쉽게 확인할 수 있게 합니다.
+
 > **📌 매핑 변수**: `GLOSSARY_BRACKET_WRAP_RULE`
 
 브래킷 종류는 `get_brackets(target_lang)`으로 결정됩니다.
@@ -419,16 +449,33 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 | Japanese | `「 」` | `target_lang`에 `"Japanese"` 또는 `"일본"` 포함 |
 | 그 외 전체 | `[ ]` | 위 조건 해당 없음 |
 
-```text
-# 한국어·영어·서양권 등:
-- Wrap glossary terms in '[' and ']'.
+**프롬프트 출력 (한국어·영어·서양권 등):**
 
-# 일본어 (JA):
+```text
+- Use provided glossary terms exactly as given — including capitalization, spacing, and market variants. Glossary capitalization is authoritative and overrides title case, sentence case, and heading/button capitalization rules; do not adapt glossary terms for naturalness.
+- Apply term-specific rule or remark exceptions before generic formatting rules.
+- Wrap glossary terms in '[' and ']'.
+```
+
+**프롬프트 출력 (일본어 JA):**
+
+```text
+- Use provided glossary terms exactly as given — including capitalization, spacing, and market variants. Glossary capitalization is authoritative and overrides title case, sentence case, and heading/button capitalization rules; do not adapt glossary terms for naturalness.
+- Apply term-specific rule or remark exceptions before generic formatting rules.
 - Wrap glossary terms in '「' and '」'.
 ```
 
 #### `disclaimer` 모드
+
+**Purpose**  
+Disclaimer는 조건, 제한, 안내 사항을 정확히 전달해야 하는 영역입니다. 일반 용어는 명확히 드러내되, 사용자가 실제 앱에서 따라가야 하는 메뉴 경로는 화면 표기와 다르게 보이지 않도록 보호합니다.
+
+**Feature**  
+`row_key`를 소문자로 정규화했을 때 `"disclaimer"` 문자열이 포함되면 최우선으로 `disclaimer` 모드가 선택됩니다. 본문 안의 glossary 용어는 description 모드처럼 괄호로 감싸지만, `Settings > Device` 같은 nav path 내부 용어는 괄호를 적용하지 않습니다. 이를 통해 용어 강조와 메뉴 경로 정확성을 동시에 유지합니다.
+
 > **📌 매핑 변수**: `GLOSSARY_BRACKET_WRAP_RULE` + `GLOSSARY_DISCLAIMER_NAV_EXCEPTION`
+
+> **📌 판별 조건**: `row_key.lower()`에 `"disclaimer"`가 포함되는 경우. 예: `disclaimer`, `device_disclaimer`, `settings_disclaimer_01`
 
 브래킷은 `description` 모드와 동일하게 적용하되, nav path 예외 규칙이 추가됩니다.
 
@@ -440,7 +487,12 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 
 ### 4.3 용어별 브래킷 수동 제외 (Per-Term Exemption)
 
-용어집 항목의 `rule` 또는 `remark` 필드에 아래 마커가 포함된 경우, 해당 용어는 문맥 모드와 무관하게 브래킷이 적용되지 않습니다.
+**Purpose**  
+자동 규칙만으로 처리하기 어려운 예외 용어를 운영자가 직접 관리할 수 있게 합니다. 브랜드명, 앱명, 이미 고유명사처럼 굳어진 표현은 설명문 안에서도 괄호 없이 보여주는 편이 더 자연스러울 수 있습니다.
+
+**Feature**  
+엑셀 용어집의 `rule` 또는 `remark` 열에 제외 마커를 입력하면 해당 용어는 문맥과 무관하게 브래킷 적용 대상에서 빠집니다. 코드 수정 없이 용어집 데이터만으로 예외를 관리할 수 있습니다.
+
 > **📌 매핑 변수**: `GLOSSARY_EXEMPT_MARKERS`
 
 ```python
@@ -453,7 +505,11 @@ GLOSSARY_EXEMPT_MARKERS = ["no bracket", "대괄호 제외", "괄호 제외"]
 
 ### 4.4 용어집 없음 (No Glossary Available)
 
-`glossary_context`가 전달되지 않은 경우, 프롬프트 내 용어집 규칙은 아래로 대체됩니다.
+**Purpose**  
+용어집이 제공되지 않은 작업에서 AI가 임의로 glossary를 추측하거나 없는 기준을 만들어 적용하지 않게 합니다.
+
+**Feature**  
+`glossary_context`가 없으면 용어집 관련 지시를 아래 fallback 문구로 대체합니다. 이 경우에는 일반 현지화 규칙과 언어별 규칙만 적용하며, 용어집 기반 강제 표기는 수행하지 않습니다.
 
 ```text
 No glossary terms are provided for this source text.
@@ -463,34 +519,96 @@ No glossary terms are provided for this source text.
 
 ## 5. 타이포그래피 및 서식 규칙 (Typography & Formatting)
 
+**Purpose**  
+번역된 문장이 의미만 맞는 수준을 넘어, 실제 현지 UI처럼 자연스럽게 보이도록 표기 품질을 관리합니다. 따옴표, 마침표 위치, 공백, 전각/반각 기호, RTL 방향성이 어긋나면 사용자는 번역이 기계적이거나 낯설다고 느낄 수 있습니다.
+
+**Feature**  
+메뉴 경로(nav path), 고지 문구(disclaimer), 따옴표와 마침표 위치처럼 UI에서 반복적으로 노출되는 표기를 언어별 관행에 맞춰 제어합니다. 특히 사용자가 실제 화면에서 따라가야 하는 메뉴 경로는 각 언어권에 익숙한 기호로 감싸 구분성을 높입니다.
+
 > **📌 매핑 변수**: 
 > - 타이포그래피 기본 규칙: `TYPOGRAPHY_AND_PUNCTUATION_RULES`
 > - Nav path 예외 처리: `GLOSSARY_DISCLAIMER_NAV_EXCEPTION`
 > - Nav path 범용 규칙: `GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE`
 > - Nav path JA 전용 규칙: `GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA`
 
-- **Nav Path**: 메뉴 경로는 해당 언어에 맞는 따옴표로 감쌈.
-  (JA·TW: `「 」` / CN Simplified: 전각 `"..."` / DE: `„"` / FR·RU: `«»` / EN·기타: `""`)
-  > **📌 예외 처리 변수**: `GLOSSARY_DISCLAIMER_NAV_EXCEPTION`
-- **Punctuation Position (범용 — 일본어 제외 전체)**: 마침표는 항상 닫는 따옴표 밖에 배치. 따옴표 종류는 대상 언어에 적합한 것을 사용(예: 독일어 „", 프랑스어/러시아어 «», 영어 "").
+- **Typography 기본 규칙**: 모든 번역/검수 프롬프트에 `[Typography and Punctuation Rules]` 블록으로 삽입됨.
+  > **📌 매핑 변수**: `TYPOGRAPHY_AND_PUNCTUATION_RULES`
+  > **Purpose**: 영어 원문의 구두점, 따옴표, 띄어쓰기 방식을 그대로 복사하지 않고, 타겟 언어권에서 자연스러운 표기 관행을 따르게 합니다.
+  > **Feature**: 대상 언어와 locale에 맞는 punctuation, spacing, quotation mark convention을 적용하도록 기본 지시를 제공합니다. 이 규칙은 glossary 유무와 관계없이 `_build_formatting_section()` 마지막에 항상 추가됩니다.
+
+  ```text
+  [Typography and Punctuation Rules]
+  - For quotation marks, spacing, and punctuation specific to the target language, follow the rules stated in the language section above; where no specific rule is given, apply the standard convention for that language and locale.
+  - Do not mechanically copy English punctuation, quotation mark placement, spacing, or sentence-ending style into other languages.
+  ```
+
+  > **📌 참고**: 첫 번째 규칙은 §3 언어별 룰(예: French `«»`, German `„..."`, 중문 전각)을 Typography 섹션에서 명시적으로 위임한다. 언어 룰이 없는 경우 해당 언어 표준 관행이 폴백으로 적용된다.
+
+- **Nav Path 괄호 예외** (`GLOSSARY_DISCLAIMER_NAV_EXCEPTION`): disclaimer 모드에서 bracket wrap rule 뒤에 append되어 nav path 내부 용어에 브래킷을 적용하지 않도록 지시합니다.
+
+  ```text
+  Exception: do not wrap terms inside navigation paths (e.g., Settings > Device).
+  ```
+
+  > **📌 참고**: 단독 삽입이 아니라 `GLOSSARY_BRACKET_WRAP_RULE` 뒤에 이어 붙여 한 줄로 출력된다. (예: `Wrap glossary terms in '[' and ']'. Exception: do not wrap terms inside navigation paths (e.g., Settings > Device).`)
+
+- **Nav Path 따옴표 및 마침표 위치 (범용 — 일본어 제외)** (`GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE`): disclaimer 행에서 항상 삽입. 따옴표 종류는 대상 언어별 룰(§3)에 위임되며, 마침표는 닫는 따옴표 밖에 배치.
   - 출력 예시: `"Settings > General".` / `«Einstellungen > Allgemein».`
-  > **📌 매핑 변수**: `GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE`
-- **Punctuation Position (Japanese)**: 내비게이션 경로는 `「 」`로 감쌈. 마침표 위치는 일본어 문장 구조에 따라 자연스럽게 배치 (`「path」から設定できます。` 구조).
-  > **📌 매핑 변수**: `GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA`
+
+  ```text
+  Enclose navigation paths in quotation marks appropriate for the target language. Place the sentence-ending period outside the closing quotation mark.
+  ```
+
+- **Nav Path 따옴표 및 마침표 위치 (Japanese)** (`GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA`): 일본어 disclaimer 행 전용. `「 」`로 감싸고 마침표 위치는 일본어 문장 구조에 따름.
+  - 출력 예시: `「設定 > 一般」から設定できます。`
+
+  ```text
+  Enclose navigation paths in 「 and 」.
+  ```
+
+  > **📌 참고**: 일본어 판별 조건 — `target_lang`에 `"Japanese"` 또는 `"일본"` 포함 시 JA 룰 적용, 아니면 범용 룰 적용.
+
+**disclaimer 모드 최종 프롬프트 출력 (비일본어):**
+
+```text
+- Wrap glossary terms in '[' and ']'. Exception: do not wrap terms inside navigation paths (e.g., Settings > Device).
+- Enclose navigation paths in quotation marks appropriate for the target language. Place the sentence-ending period outside the closing quotation mark.
+```
+
+**disclaimer 모드 최종 프롬프트 출력 (Japanese):**
+
+```text
+- Wrap glossary terms in '「' and '」'. Exception: do not wrap terms inside navigation paths (e.g., Settings > Device).
+- Enclose navigation paths in 「 and 」.
+```
 
 ---
 
 ## 6. 번역 및 검수 최종 프롬프트 아키텍처 및 해설 (Prompt Architecture & Raw Templates)
 
-시스템은 `prompt_builder.py`의 `PromptBuilder` 클래스를 통해 앞서 정의된 상수를 조합하여 동적으로 프롬프트를 생성합니다. 프롬프트 코드 원문(Raw Text)을 복사할 때 어떠한 마크다운/HTML 태그도 딸려가지 않도록 원문은 순수 파이썬 코드 블록으로 유지하며, 각 섹션별 구체적인 역할과 동작 원리는 상단의 **💡 역할 해설**을 통해 안내합니다.
+**Purpose**  
+앞에서 정의한 번역, 현지화, 용어집, 서식 규칙이 실제 AI 프롬프트 안에서 어떤 순서로 사용되는지 보여줍니다. 1~5번이 "무엇을 지켜야 하는가"를 설명한다면, 6번은 그 기준을 AI에게 어떻게 전달하고 결과를 어떻게 받는지 설명합니다.
+
+**Feature**  
+프롬프트는 하나의 긴 지시문이 아니라 Persona, Common, Language, BX, RAG, Formatting, Output처럼 역할별 모듈로 조립됩니다. 이 구조 덕분에 대상 언어, 문맥, 용어집, RAG 유무에 따라 필요한 규칙만 선택적으로 삽입할 수 있습니다.
+
+시스템은 `prompt_builder.py`의 `PromptBuilder` 클래스를 통해 앞서 정의된 상수를 조합하여 동적으로 프롬프트를 생성합니다. 프롬프트 코드 원문(Raw Text)을 복사할 때 어떠한 마크다운/HTML 태그도 딸려가지 않도록 원문은 순수 파이썬 코드 블록으로 유지합니다.
 
 ### 6.1 번역 프롬프트 구조 및 원문 (Translation Prompt)
 > **📌 생성 메서드**: `PromptBuilder.build_translation_prompt()`
 
-번역 프롬프트는 대상 언어, BX 스타일 적용 여부, RAG 유사도 매칭 여부, 문맥(`row_key`)에 따라 7개의 모듈 섹션으로 조립됩니다.
+**Purpose**  
+AI가 번역해야 할 대상 언어, 번역 방향, 품질 기준, 출력 형식을 한 번에 이해하도록 구성합니다. 원문의 의미와 뉘앙스를 유지하면서도 현지 원어민이 자연스럽게 읽는 결과물을 만드는 것이 목표입니다.
+
+**Feature**  
+번역 프롬프트는 대상 언어, BX 스타일 적용 여부, RAG 유사도 매칭 여부, 문맥(`row_key`)에 따라 7개 모듈로 조립됩니다. 앞쪽 모듈은 역할과 톤을 설정하고, 뒤쪽 모듈은 용어집·서식·JSON 출력 형식을 고정합니다.
 
 #### [1] Persona Section (역할 및 기본 태스크 정의)
-> **💡 역할 해설**: LLM에게 번역가로서의 기본 정체성을 부여하고, 출발어(Source)와 도착어(Target)를 명시합니다. 일반 모드에서는 정확하고 자연스러운 현지화를 지시하며, BX 모드 활성화 시 브랜드 전문 라이터(`Samsung BX Writer & Translator`)로서 문장 다듬기(Polish)까지 함께 수행하도록 역할을 격상시킵니다.
+**Purpose**  
+대상 언어(Target Language)와 출발어(Source Language)를 설정하고, 번역가로서의 기본 정체성을 부여합니다. 원문의 의미와 뉘앙스를 온전히 전달하면서, 현지 원어민이 자연스럽게 읽을 수 있는 결과물을 생성하는 것을 목표로 합니다.
+
+**Feature**  
+Role(누구) + Languages(무엇에서 무엇으로) + Task(어떻게) 3요소로 구성되어 AI가 과제의 범위를 즉시 파악할 수 있습니다. BX 모드에서는 역할이 `Samsung BX Writer & Translator`로 확장되어 번역뿐 아니라 브랜드 톤에 맞춘 문장 polish까지 수행합니다.
 
 ```python
 # [1] Persona Section (역할 부여)
@@ -508,7 +626,11 @@ TASK: Translate and polish the source text naturally for a native speaker while 
 ```
 
 #### [2] Common Section (공통 현지화 표준)
-> **💡 역할 해설**: 모든 언어와 상황에 예외 없이 적용되는 5대 핵심 품질 원칙입니다. 직역 금지, SmartThings 브랜드 톤(명확함, 자신감, 유익함) 유지, 문화적 금기어 및 불안감 조성 표현 회피, 간결성 유지 등을 강제합니다.
+**Purpose**  
+언어와 시장이 달라져도 공통으로 지켜야 하는 현지화 품질 기준을 제공합니다. 단순히 단어를 바꾸는 번역이 아니라, 원문의 의도와 사용자 혜택이 현지 언어에서도 자연스럽게 전달되도록 합니다.
+
+**Feature**  
+의미 보존, 직역 지양, 친근한 기술 표현, 문화적으로 어색한 표현 회피, UI copy 간결성이라는 기본 원칙을 한 번에 주입합니다.
 
 ```python
 # [2] Common Section (공통 품질 기준)
@@ -521,7 +643,11 @@ TASK: Translate and polish the source text naturally for a native speaker while 
 ```
 
 #### [3] Language Section (언어별 상세 특화 규칙)
-> **💡 역할 해설**: 번역 대상 언어가 시스템에 정의된 25개 언어 규칙(`LANGUAGE_LOCALIZATION_RULES`)에 부합할 경우 자동으로 삽입되는 섹션입니다. 존댓말/반말, 어순, 따옴표 등 해당 언어권 사용자에게 가장 익숙한 UI 규칙을 주입합니다.
+**Purpose**  
+각 언어권 사용자가 실제로 익숙하게 받아들이는 말투와 표기 방식을 반영합니다. 같은 의미라도 언어마다 존댓말, 어순, 따옴표, 대소문자 관행이 다르기 때문에 언어별 기준을 별도로 제공합니다.
+
+**Feature**  
+대상 언어가 시스템에 정의된 언어 규칙과 매칭되면 해당 규칙이 자동 삽입됩니다. 예를 들어 일본어는 `ます`형, 독일어는 `Du-form`, 프랑스어는 `Vous-form` 같은 언어별 UI 관행을 반영합니다.
 
 ```python
 # [3] Language Section (언어별 특화 규칙 - 해당 언어 매칭 시 삽입)
@@ -532,7 +658,11 @@ TASK: Translate and polish the source text naturally for a native speaker while 
 ```
 
 #### [4] BX Style Section (삼성 BX 브랜드 보이스 주입)
-> **💡 역할 해설**: `target_lang`이 `English_US` 또는 `English`일 때 자동으로 삽입됩니다. Confident Explorer 페르소나와 3대 보이스 속성(OPEN/BOLD/AUTHENTIC)의 고유 행동 기법 및 Few-shot 예시를 제공합니다. COMMON과 중복되는 직역 금지·hedging 금지 등은 이 섹션에서 제거되어 COMMON에 일원화되었습니다.
+**Purpose**  
+영문 결과물이 단순히 정확한 번역을 넘어 삼성 브랜드 보이스처럼 들리도록 합니다. 기술 설명이 딱딱한 매뉴얼처럼 보이지 않고, 자신감 있고 친근한 가이드처럼 느껴지게 만드는 것이 목적입니다.
+
+**Feature**  
+`target_lang`이 `English_US` 또는 `English`일 때 자동 삽입됩니다. Confident Explorer 페르소나와 OPEN/BOLD/AUTHENTIC 보이스 속성, 부정 제약, Few-shot 예시를 함께 제공해 영문 카피의 톤을 조정합니다.
 
 ```python
 # [4] BX Style Section (target_lang이 English_US/English일 때 자동 삽입)
@@ -568,7 +698,11 @@ Output: Lights? On. Mood? Up.
 ```
 
 #### [5] RAG Context Section (번역 메모리 참조)
-> **💡 역할 해설**: RAG 데이터베이스 조회 결과, 원문과 유사한 기존 번역 메모리(TM) 데이터가 존재할 경우 삽입됩니다. 과거에 번역된 문장 스타일과 용어 일관성을 참고하도록 하여 기존 앱 UI와의 이질감을 방지합니다.
+**Purpose**  
+기존에 번역된 유사 문장을 참고해 화면 간 표현 차이를 줄입니다. 새로운 번역이 기존 앱 UI와 동떨어져 보이지 않도록 스타일과 용어 흐름을 맞추는 역할입니다.
+
+**Feature**  
+RAG 데이터베이스에서 유사 번역 메모리(TM)가 조회되면 `[Translation Memory Examples]` 섹션으로 삽입됩니다. AI는 이를 참고해 기존 표현 방식과 용어 일관성을 유지합니다.
 > **📌 삽입 조건**: `rag_context`가 truthy(non-None, non-empty)일 때만 삽입. `[Translation Memory Examples]` 헤더가 없으면 자동 추가 (`_normalize_rag_section()`).
 
 ```python
@@ -579,7 +713,11 @@ Use these examples as style and terminology reference to maintain consistency.
 ```
 
 #### [6] Formatting & Glossary Section (용어집 및 표기 규칙 제어)
-> **💡 역할 해설**: 번역 문맥(`row_key`)과 국가별 타이포그래피 표준을 결합하여 용어집(Glossary) 단어의 대괄호 래핑 규칙(`[]`, `「」`)과 내비게이션 경로 표기법을 동적으로 결정합니다. §4(용어집 관련)와 §5(타이포/서식)의 내용이 하나의 블록으로 조립됩니다.
+**Purpose**  
+번역 결과가 자연스럽더라도 용어집, 괄호, 메뉴 경로, 구두점 규칙이 흐트러지지 않도록 마지막 표기 기준을 적용합니다. 화면에 표시될 문자열의 일관성과 검수 가능성을 높이는 단계입니다.
+
+**Feature**  
+§4 용어집 규칙과 §5 타이포그래피 규칙이 하나의 블록으로 조립됩니다. `row_key`와 `target_lang`에 따라 glossary 용어의 괄호 적용 방식, nav path 예외, 언어별 구두점 규칙을 동적으로 결정합니다.
 
 ```python
 # [6] Formatting & Glossary Section (용어집 및 서식 제어 기본 구조)
@@ -639,7 +777,11 @@ Use these examples as style and terminology reference to maintain consistency.
 > - **중국어/일본어 (`CN`, `TW`, `JA`)**: 서양식 반각 기호와 띄어쓰기 대신 전각 기호(`，`, `。`, `、`) 사용.
 
 #### [7] Output Section (JSON 출력 규격 강제)
-> **💡 역할 해설**: 시스템이 파이썬 코드에서 번역 결과를 안정적으로 파싱할 수 있도록, 불필요한 설명(사족)을 제외하고 오직 `{"translation": "..."}` 형태의 JSON 객체로만 응답하도록 강력하게 제한합니다.
+**Purpose**  
+AI 응답에서 번역문만 안정적으로 추출할 수 있게 합니다. 사람이 읽는 설명형 답변이 아니라, 후처리 파이프라인이 바로 사용할 수 있는 결과물을 받는 것이 목적입니다.
+
+**Feature**  
+응답을 `{"translation": "..."}` 형태의 JSON 객체로 제한합니다. 불필요한 설명이나 사족이 섞이지 않아 시스템에서 번역 결과를 안정적으로 파싱할 수 있습니다.
 
 ```python
 # [7] Output Section (출력 규격 강제)
@@ -651,10 +793,18 @@ OUTPUT: Return ONLY a JSON object with a "translation" key.
 ### 6.2 AI 검수 프롬프트 구조 및 원문 (Audit Prompt)
 > **📌 생성 메서드**: `PromptBuilder.build_audit_prompt()`
 
-검수 프롬프트는 번역된 문장을 6대 기준에 따라 정밀 평가하고 JSON 형태의 성적표와 전체 문장 수정안을 반환하도록 구성됩니다.
+**Purpose**  
+번역 결과가 실제 출시 가능한 품질인지 판단합니다. 단순한 문법 검사에 그치지 않고, 의미 보존, 현지화 자연스러움, 용어집 준수, 서식 규칙까지 함께 확인합니다.
+
+**Feature**  
+검수 프롬프트는 번역 프롬프트와 같은 규칙 세트를 공유하되, 목적은 생성이 아니라 판정입니다. 6대 기준별 코멘트, 최종 등급, 전체 문장 수정안을 JSON으로 반환해 품질 리포트 자동화와 재번역 대상 선별에 활용할 수 있습니다.
 
 #### [1] Audit Intro (검수자 역할 정의)
-> **💡 역할 해설**: LLM을 단순 번역기가 아닌 'SmartThings UI 현지화 전문 검수자'로 설정하여, 원문 의미 보존과 현지인의 실제 사용성에 집중하도록 기준을 세웁니다.
+**Purpose**  
+AI를 단순 번역기가 아니라 SmartThings UI 현지화 전문 검수자로 설정합니다. 번역문이 현지 사용자가 실제로 읽고 이해하기에 자연스러운지를 가장 중요한 판단 기준으로 둡니다.
+
+**Feature**  
+원문 의미 보존과 현지화 자연스러움을 분리해서 평가하도록 지시합니다. 두 기준이 충돌할 경우에는 현지화 자연스러움을 우선 판단하도록 방향을 잡습니다.
 
 ```python
 # [1] Audit Intro (검수자 역할 정의)
@@ -663,7 +813,11 @@ OUTPUT: Return ONLY a JSON object with a "translation" key.
 ```
 
 #### [2] Language Section (타겟 언어 규칙 점검)
-> **💡 역할 해설**: 검수 대상 언어의 특화 규칙을 검수자에게도 동일하게 제공하여, 번역가가 해당 언어의 어조(예: 일본어 ます형, 독일어 Du-form 등)를 올바르게 준수했는지 크로스 체크하도록 합니다.
+**Purpose**  
+검수 단계에서도 번역 단계와 동일한 언어별 기준을 적용합니다. 이를 통해 번역문이 해당 언어권의 말투, 어순, 표기 관행을 제대로 따랐는지 확인합니다.
+
+**Feature**  
+대상 언어의 특화 규칙을 검수 프롬프트에도 삽입합니다. 예를 들어 일본어 `ます`형, 독일어 `Du-form`, 프랑스어 `Vous-form` 준수 여부를 크로스 체크할 수 있습니다.
 
 ```python
 # [2] Language Section (언어별 현지화 기준)
@@ -673,7 +827,11 @@ OUTPUT: Return ONLY a JSON object with a "translation" key.
 ```
 
 #### [3] Formatting Section (용어 및 서식 검증 기준)
-> **💡 역할 해설**: 용어집 대소문자 일치 여부, 문맥에 따른 괄호 표기법, 특수 구두점 위치 등 기술적인 서식 요구사항을 검수자가 정확히 숙지하도록 지시합니다.
+**Purpose**  
+번역문이 자연스럽더라도 용어집과 표기 규칙을 어기면 출시 품질로 보기 어렵습니다. 이 섹션은 검수자가 용어, 괄호, 메뉴 경로, 구두점 기준을 놓치지 않도록 합니다.
+
+**Feature**  
+번역 프롬프트에 사용된 `[GLOSSARY RULES]`와 `[Typography and Punctuation Rules]`를 검수 프롬프트에도 제공합니다. 생성 기준과 검수 기준을 맞춰 일관된 판단이 가능하게 합니다.
 
 ```python
 # [3] Formatting Section (용어 및 서식 규칙 검증 기준)
@@ -684,7 +842,11 @@ OUTPUT: Return ONLY a JSON object with a "translation" key.
 ```
 
 #### [4] Checklist Section (6대 정밀 검수 항목)
-> **💡 역할 해설**: 문법/유창성, 원문의미 충실도, 용어집 준수, 현지화, 대소문자 표기, 서식/기호 표기 등 6가지 다차원 평가 매트릭스를 제공하여 빠짐없이 정밀 분석하도록 이끕니다.
+**Purpose**  
+검수자가 특정 오류 유형만 보고 넘어가지 않도록 평가 기준을 6개 항목으로 분리합니다. 문법, 의미, 용어, 현지화, 대소문자, 서식을 각각 독립적으로 확인하는 것이 목적입니다.
+
+**Feature**  
+각 항목별로 코멘트를 작성하도록 유도해 오류 원인을 구조화합니다. 이후 품질 리포트에서 어떤 유형의 문제가 반복되는지 파악하기 쉽습니다.
 
 ```python
 # [4] Checklist Section (6대 검수 항목)
@@ -698,7 +860,11 @@ OUTPUT: Return ONLY a JSON object with a "translation" key.
 ```
 
 #### [5] Glossary Target (용어집 타겟 언어 명시)
-> **💡 역할 해설**: 다국어 용어집 시트에서 어떤 타겟 언어 열(Column)을 기준으로 검증해야 하는지 LLM에게 명확히 알려줍니다.
+**Purpose**  
+다국어 용어집에서 어떤 언어 열을 기준으로 검증해야 하는지 명확히 지정합니다. 타겟 언어가 혼동되면 올바른 용어를 잘못된 기준으로 판정할 수 있기 때문입니다.
+
+**Feature**  
+`target_lang_code`를 기준으로 glossary target을 명시하고, 값이 없을 경우 `target_lang`으로 대체합니다. 용어집이 제공된 경우에만 이 섹션이 삽입됩니다.
 > **📌 삽입 조건**: `glossary_context`가 truthy일 때만 삽입. `target_lang_code`가 None이면 `target_lang` 값으로 폴백.
 
 ```python
@@ -708,7 +874,11 @@ Target code: {target_lang_code}   # target_lang_code가 없으면 target_lang으
 ```
 
 #### [6] Output Format (응답 스키마 및 등급 기준)
-> **💡 역할 해설**: 6개 항목별 코멘트 배열과 최종 등급(`Excellent`, `Good`, `Needs Revision`), 그리고 가장 완벽한 전체 문장 수정안(`suggested_fix`)을 포함하는 구조화된 JSON 응답 규격을 강제합니다.
+**Purpose**  
+검수 결과를 사람이 읽는 의견이 아니라 시스템이 활용할 수 있는 품질 데이터로 만듭니다. 항목별 판단, 최종 등급, 수정안을 한 번에 확보하는 것이 목적입니다.
+
+**Feature**  
+6개 항목별 코멘트 배열, `Excellent` / `Good` / `Needs Revision` 등급, `suggested_fix`를 포함한 JSON 스키마를 강제합니다. 등급은 재번역 여부나 출시 가능성 판단에 바로 활용할 수 있습니다.
 
 ```python
 # [6] Output Format (응답 JSON 스키마 및 등급 기준)
@@ -737,7 +907,11 @@ grade 기준:
 ### 6.3 BX 특화 검수 프롬프트 구조 (BX Audit Prompt)
 > **📌 생성 메서드**: `PromptBuilder.build_bx_audit_prompt()`
 
-> **💡 역할 해설**: 일반적인 문법/오타 검수와 별개로, 생성된 문구가 삼성 브랜드 톤(OPEN/BOLD/AUTHENTIC)에 얼마나 부합하는지 정성적으로 깊이 있게 분석하는 단독 프롬프트입니다. 한국어 상세 해설과 함께 최종 합불(`[PASS]` / `[FAIL]`) 판정을 내리도록 지시합니다.
+**Purpose**  
+일반 번역 품질과 별개로, 결과물이 삼성 브랜드 보이스처럼 들리는지 확인합니다. 문법적으로 맞고 자연스럽더라도 BX 톤과 맞지 않으면 별도 개선 대상이 될 수 있습니다.
+
+**Feature**  
+OPEN/BOLD/AUTHENTIC 기준으로 표현을 분석하고, 한국어 상세 해설과 함께 `[PASS]` 또는 `[FAIL]` 판정을 반환합니다. 마케팅성 카피나 영문 BX 대상 문구에서 일반 검수와 분리해 사용하기 적합합니다.
 
 ```python
 You are a Samsung BX Audit Expert.

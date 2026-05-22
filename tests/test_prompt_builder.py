@@ -58,7 +58,7 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertIn("COMMON LOCALIZATION STANDARD", prompt)
         self.assertIn("Japanese ます-form Consistency", prompt)
         self.assertIn("Typography and Punctuation Rules", prompt)
-        self.assertIn("quotation mark conventions", prompt)
+        self.assertIn("language section above", prompt)
         self.assertIn("SAMSUNG BX STYLE", prompt)
         self.assertIn("Example 1", prompt)
         self.assertIn("GLOSSARY RULES", prompt)
