@@ -60,13 +60,13 @@ LANGUAGE_LOCALIZATION_RULES = {
         "Avoid unnecessary capitalization in UI copy.",
         "Use natural French phrasing and avoid English-influenced structures.",
     ],
-    "French_BE": [
+    "French_Belgium": [
         "Use Vous-form consistently; do not use Tu-form.",
         "Use «...» (guillemets) for quoted text and navigation paths.",
         "Use neutral French and avoid overly idiomatic expressions specific to mainland France.",
         "Ensure consistent tone for the Belgian market.",
     ],
-    "French_CA": [
+    "French_Canada": [
         "Use Vous-form consistently; do not use Tu-form.",
         "Use «...» (guillemets) for quoted text and navigation paths.",
         "Follow Canadian French standards; prioritize phrasing natural to North American French over mainland France idioms.",

@@ -298,8 +298,8 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
           <optgroup label="European">
             <option value="German">German</option>
             <option value="French">French (France)</option>
-            <option value="French_BE">French (Belgium)</option>
-            <option value="French_CA">French (Canada)</option>
+            <option value="French_Belgium">French (Belgium)</option>
+            <option value="French_Canada">French (Canada)</option>
             <option value="Italian">Italian</option>
             <option value="Spanish_ES">Spanish (Spain)</option>
             <option value="Spanish">Spanish (Latin Am.)</option>
@@ -397,9 +397,6 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 </div>
 
 <script>
-// ─── Pipeline node order (matches describe_applied_modules keys) ───────────
-const NODE_ORDER = ['common', 'language', 'bx', 'glossary', 'rag', 'formatting', 'typography'];
-
 // ─── Token estimation (rough: CJK ~1.5 chars/tok, else ~4 chars/tok) ──────
 function estimateTokens(text) {
   if (!text) return 0;
@@ -463,20 +460,15 @@ document.querySelectorAll('.tab').forEach(tab => {
     $('panel-' + tab.dataset.tab).classList.add('active');
     $('token-bar-translation').style.display = tab.dataset.tab === 'translation' ? 'flex' : 'none';
     $('token-bar-audit').style.display = tab.dataset.tab === 'audit' ? 'flex' : 'none';
+    
+    // 탭 전환 시 파이프라인 동적 렌더링
+    renderPipeline(tab.dataset.tab);
   });
 });
 
 // ─── Fetch ─────────────────────────────────────────────────────────────────
 async function fetchAll() {
   setStatus('busy', '로딩 중…');
-
-  const params = new URLSearchParams({
-    source_lang: sourceLang.value,
-    target_lang: targetLang.value,
-    row_key: rowKey.value,
-    bx_style_on: bxStyle.checked,
-    glossary_available: !!glossaryFile,
-  });
 
   const form = new FormData();
   form.append('source_text', sourceText.value);
@@ -488,16 +480,16 @@ async function fetchAll() {
   form.append('model_name', 'gemini-2.5-flash');
 
   try {
-    const [modRes, blockRes] = await Promise.all([
-      fetch('/api/prompt_modules?' + params),
-      fetch('/api/preview_prompt_blocks', { method: 'POST', body: form }),
-    ]);
-    if (!modRes.ok || !blockRes.ok) throw new Error(`서버 오류 ${modRes.status}/${blockRes.status}`);
-    const [modules, blocks] = await Promise.all([modRes.json(), blockRes.json()]);
+    const blockRes = await fetch('/api/preview_prompt_blocks', { method: 'POST', body: form });
+    if (!blockRes.ok) throw new Error(`서버 오류 ${blockRes.status}`);
+    const blocks = await blockRes.json();
 
     currentPromptBlocks = blocks;
     setStatus('ok', 'OK');
-    renderPipeline(modules);
+
+    const activeTab = document.querySelector('.tab.active').dataset.tab;
+    renderPipeline(activeTab);
+
     renderBlocks('translation', blocks.translation);
     renderBlocks('audit', blocks.audit);
   } catch (e) {
@@ -512,34 +504,76 @@ function setStatus(state, text) {
 }
 
 // ─── Pipeline renderer ─────────────────────────────────────────────────────
-function renderPipeline(modules) {
+function renderPipeline(type) {
   const el = $('pipeline');
   el.innerHTML = '';
+  if (!currentPromptBlocks || !currentPromptBlocks[type]) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:10px;padding:10px">데이터 없음</div>';
+    return;
+  }
 
-  // prepend static PERSONA node
-  const allNodes = [
-    { key: '_persona', name: 'PERSONA', active: true, always: true, description: 'Role assignment — BX Writer or professional localizer.' },
-    ...NODE_ORDER.map(k => ({ key: k, ...modules[k] })),
-    { key: '_output', name: 'OUTPUT FORMAT', active: true, always: true, description: 'Return ONLY a JSON object.' },
-  ];
+  const sections = currentPromptBlocks[type].sections || [];
 
-  allNodes.forEach((n, i) => {
-    const cls = n.always ? 'always' : (n.active ? 'active' : 'inactive');
-    const badge = n.always ? 'always' : (n.active ? 'on' : 'off');
+  sections.forEach((sec, i) => {
+    const isAlways   = sec.always;
+    const isActive   = !sec.always && sec.active;
+    const isInactive = !sec.always && !sec.active;
+
+    const cls = isAlways ? 'always' : (isActive ? 'active' : 'inactive');
+    const badge = isAlways ? 'always' : (isActive ? 'on' : 'off');
+
+    // 노드 설명 텍스트 동적 결정
+    let desc = "";
+    if (sec.id === 'persona') {
+      desc = "역할 및 목적 정의 (BX Writer 또는 전문 번역가)";
+    } else if (sec.id === 'intro') {
+      desc = "검수자 역할 정의 (자연스러운 현지화 기준)";
+    } else if (sec.id === 'common') {
+      desc = "공통 현지화 품질 기준 (의미 보존 및 브랜드 톤)";
+    } else if (sec.id === 'language') {
+      desc = sec.active ? "타겟 언어 특화 규칙 적용 중" : "적용할 언어 특화 규칙 없음";
+    } else if (sec.id === 'bx') {
+      desc = sec.active ? "삼성 BX 스타일 보이스 규칙 적용 중" : "BX 스타일 미적용";
+    } else if (sec.id === 'rag') {
+      desc = sec.active ? "RAG 번역 메모리 예시 주입됨" : "RAG 데이터 없음";
+    } else if (sec.id === 'formatting') {
+      desc = "포맷, 용어집 및 타이포그래피 구두점 서식 규칙";
+    } else if (sec.id === 'checklist') {
+      desc = "6대 검수 가이드라인 지침";
+    } else if (sec.id === 'glossary_target') {
+      desc = sec.active ? "용어집 타겟 가이드 지침 활성화" : "매칭된 용어집 없음";
+    } else if (sec.id === 'output' || sec.id === 'output_format') {
+      desc = "최종 출력 형식 (JSON 오브젝트 규격)";
+    }
+
     const node = document.createElement('div');
     node.className = 'node ' + cls;
     node.innerHTML = `
       <div class="node-head">
         <div class="node-dot"></div>
-        <div class="node-name">${esc((n.name || n.key).toUpperCase())}</div>
+        <div class="node-name">${esc(sec.label.toUpperCase())}</div>
         <div class="node-badge">${badge}</div>
       </div>
-      <div class="node-desc">${esc(n.description || '')}</div>`;
+      <div class="node-desc">${esc(desc)}</div>`;
+
+    // 노드 클릭 시 해당 우측 프롬프트 블록으로 smooth scroll 및 하이라이트
+    node.style.cursor = 'pointer';
+    node.addEventListener('click', () => {
+      const blockEl = document.getElementById(`block-${type}-${sec.id}`);
+      if (blockEl) {
+        blockEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // 잠깐 하이라이트 효과
+        blockEl.style.transition = 'outline 0.3s';
+        blockEl.style.outline = '2px solid var(--blue)';
+        setTimeout(() => { blockEl.style.outline = 'none'; }, 1000);
+      }
+    });
+
     el.appendChild(node);
 
-    if (i < allNodes.length - 1) {
+    if (i < sections.length - 1) {
       const line = document.createElement('div');
-      line.className = 'connector' + (n.active || n.always ? ' on' : '');
+      line.className = 'connector' + (isActive || isAlways ? ' on' : '');
       el.appendChild(line);
     }
   });
@@ -562,7 +596,7 @@ function renderBlocks(type, data) {
   data.sections.forEach(sec => {
     sysChars += (sec.content || '').length;
     sysTok += estimateTokens(sec.content || '');
-    panel.appendChild(makeBlock(sec));
+    panel.appendChild(makeBlock(type, sec));
   });
 
   // User message
@@ -583,7 +617,7 @@ function renderBlocks(type, data) {
     content: userContent,
     _user: true,
   };
-  panel.appendChild(makeBlock(userBlock));
+  panel.appendChild(makeBlock(type, userBlock));
 
   // Token summary bar
   const bar = $('token-bar-' + type);
@@ -641,7 +675,7 @@ async function copyPromptText(type, btn) {
   }
 }
 
-function makeBlock(sec) {
+function makeBlock(type, sec) {
   const isUser     = sec._user;
   const isAlways   = !isUser && sec.always;
   const isActive   = !isUser && !sec.always && sec.active;
@@ -651,6 +685,7 @@ function makeBlock(sec) {
   const badge = isUser ? 'user' : isAlways ? 'always' : isActive ? 'on' : 'off';
 
   const div = document.createElement('div');
+  div.id = `block-${type}-${sec.id}`;
   div.className = `block ${cls}`;
   // inactive blocks start collapsed
   if (isInactive) div.classList.add('collapsed');

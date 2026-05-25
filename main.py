@@ -474,7 +474,7 @@ _DEMO_LANG_CODE = {
     "English": "en_US", "English_US": "en_US", "English_UK": "en_GB", 
     "English_AU": "en_AU", "English_SG": "en_SG",
     "Korean": "ko_KR", "German": "de_DE", "Japanese": "ja_JP",
-    "French": "fr_FR", "French_BE": "fr_BE", "French_CA": "fr_CA",
+    "French": "fr_FR", "French_Belgium": "fr_BE", "French_Canada": "fr_CA",
     "Italian": "it_IT", "Spanish": "es_ES", "Spanish_ES": "es_ES",
     "Dutch": "nl_NL", "Swedish": "sv_SE", "Arabic": "ar_SA",
     "Brazilian Portuguese": "pt_BR", "European Portuguese": "pt_PT",
@@ -487,7 +487,7 @@ _DEMO_RAG_LANG = {
     "English": "US(미국)", "English_US": "US(미국)", "English_UK": "UK(영국)",
     "English_AU": "AU(호주)", "English_SG": "SG(싱가포르)",
     "Korean": "KR(한국)", "German": "DE(독일)", "Japanese": "JA(일본)",
-    "French": "FR(프랑스)", "French_BE": "BE(벨기에)", "French_CA": "CA(캐나다)",
+    "French": "FR(프랑스)", "French_Belgium": "BE(벨기에)", "French_Canada": "CA(캐나다)",
     "Italian": "IT(이탈리아)", "Spanish": "ES(스페인)", "Spanish_ES": "ES(스페인)",
     "Dutch": "NL(네덜란드)", "Swedish": "SE(스웨덴)", "Arabic": "AE(아랍에메리트)",
     "Brazilian Portuguese": "BR(브라질)", "European Portuguese": "PT(포르투갈)",
@@ -543,13 +543,17 @@ async def preview_prompt_blocks(
         except Exception:
             rag_context = None
 
+    glossary_avail = bool(glossary_file and glossary_file.filename)
+
     translation_sections = PROMPT_BUILDER.build_translation_prompt_sections(
         target_lang=target_lang, source_lang=source_lang, bx_style_on=bx_style_on,
         rag_context=rag_context, row_key=row_key, glossary_context=glossary_dict or None,
+        glossary_available=glossary_avail,
     )
     audit_sections = PROMPT_BUILDER.build_audit_prompt_sections(
         target_lang=target_lang, target_lang_code=target_lang_code,
         row_key=row_key, glossary_context=glossary_dict or None,
+        glossary_available=glossary_avail,
     )
 
     translation_user_msg = {

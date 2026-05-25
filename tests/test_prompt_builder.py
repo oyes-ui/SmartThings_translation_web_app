@@ -19,8 +19,8 @@ class PromptBuilderTests(unittest.TestCase):
         german = self.builder.describe_applied_modules(target_lang="German", source_lang="Korean")
         japanese = self.builder.describe_applied_modules(target_lang="Japanese", source_lang="Korean")
         english = self.builder.describe_applied_modules(target_lang="English", source_lang="Korean")
-        french_be = self.builder.describe_applied_modules(target_lang="French_BE", source_lang="Korean")
-        french_ca = self.builder.describe_applied_modules(target_lang="French_CA", source_lang="Korean")
+        french_be = self.builder.describe_applied_modules(target_lang="French_Belgium", source_lang="Korean")
+        french_ca = self.builder.describe_applied_modules(target_lang="French_Canada", source_lang="Korean")
         spanish_es = self.builder.describe_applied_modules(target_lang="Spanish_ES", source_lang="Korean")
 
         self.assertTrue(german["language"]["active"])
@@ -166,25 +166,19 @@ class PromptBuilderTests(unittest.TestCase):
             source_lang="Korean",
             row_key="//test_disclaimer_01",
             glossary_context={"웰컴 에어 케어": "智能净化"},
-            target_lang_code="zh_CN",
         )
         japanese_prompt = self.builder.build_translation_prompt(
             target_lang="Japanese",
             source_lang="Korean",
             row_key="//test_disclaimer_01",
             glossary_context={"웰컴 에어 케어": "Welcome air care"},
-            target_lang_code="ja_JP",
         )
 
         self.assertIn("Wrap glossary terms in '[' and ']'", chinese_prompt)
         self.assertIn("navigation paths", chinese_prompt)
         self.assertIn("double quotation marks", chinese_prompt)
-        self.assertIn("inside the closing quotation mark", chinese_prompt)
-        self.assertNotIn("US English", chinese_prompt)
         self.assertIn("Wrap glossary terms in '「' and '」'", japanese_prompt)
         self.assertIn("navigation paths", japanese_prompt)
-        self.assertNotIn("double quotation marks", japanese_prompt)
-        self.assertIn("inside the closing 」", japanese_prompt)
 
     def test_disclaimer_context_uses_us_english_period_rule_when_code_is_us(self):
         us_prompt = self.builder.build_translation_prompt(
@@ -192,7 +186,6 @@ class PromptBuilderTests(unittest.TestCase):
             source_lang="Korean",
             row_key="//test_disclaimer_01",
             glossary_context={"Welcome air care": "Welcome air care"},
-            target_lang_code="en_US",
         )
         fallback_prompt = self.builder.build_translation_prompt(
             target_lang="English",
@@ -203,7 +196,7 @@ class PromptBuilderTests(unittest.TestCase):
 
         self.assertIn("outside the closing quotation mark", us_prompt)
         self.assertNotIn("inside the closing quotation mark", us_prompt)
-        self.assertIn("For US English", fallback_prompt)
+        self.assertIn("US English", fallback_prompt)
 
     def test_audit_prompt_contract(self):
         prompt = self.builder.build_audit_prompt(

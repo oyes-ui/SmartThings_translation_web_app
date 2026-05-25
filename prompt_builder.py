@@ -6,6 +6,7 @@ The public methods preserve the existing JSON response contracts while making
 prompt modules visible and reusable.
 """
 
+import json
 import re
 
 from prompt_modules import (
@@ -36,8 +37,8 @@ _LANGUAGE_RULE_LABELS = {
     "German": "German Du-form Consistency",
     "Japanese": "Japanese ます-form Consistency",
     "French": "French Tone and Consistency",
-    "French_BE": "Belgian French Consistency",
-    "French_CA": "Canadian French Consistency",
+    "French_Belgium": "Belgian French Consistency",
+    "French_Canada": "Canadian French Consistency",
     "Italian": "Italian UI Phrasing Consistency",
     "Spanish": "Spanish Usted and Regional Consistency",
     "Spanish_ES": "Spain Spanish Consistency",
@@ -309,6 +310,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         rag_context: str | None = None,
         row_key: str = "",
         glossary_context=None,
+        glossary_available: bool = False,
     ) -> list[dict]:
         lang_content = self._build_language_section(target_lang)
         bx_content = self._build_bx_section(target_lang) if (bx_style_on or self._is_bx_lang(target_lang)) else ""
@@ -316,6 +318,8 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
             f"{self._normalize_rag_section(rag_context)}\n"
             "Use these examples as style and terminology reference to maintain consistency."
         ) if rag_context else ""
+
+        has_glossary = glossary_available or bool(glossary_context)
 
         return [
             {"id": "persona", "label": "PERSONA", "module_key": None, "active": True, "always": True,
@@ -333,7 +337,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
              "content": rag_content or "(유사 번역 예시 없음 — RAG DB 미연결 또는 유사 항목 없음)"},
             {"id": "formatting", "label": "FORMAT & TYPOGRAPHY RULES", "module_key": "formatting",
              "active": True, "always": True,
-             "content": self._build_formatting_section(target_lang, row_key, bool(glossary_context))},
+             "content": self._build_formatting_section(target_lang, row_key, has_glossary)},
             {"id": "output", "label": "OUTPUT FORMAT", "module_key": None, "active": True, "always": True,
              "content": 'OUTPUT: Return ONLY a JSON object with a "translation" key.'},
         ]
@@ -344,8 +348,20 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         target_lang_code: str | None = None,
         row_key: str = "",
         glossary_context=None,
+        glossary_available: bool = False,
     ) -> list[dict]:
         lang_content = self._build_language_section(target_lang, korean_heading=True)
+        has_glossary = glossary_available or bool(glossary_context)
+
+        if has_glossary:
+            if glossary_context:
+                terms_str = "\n".join(f"  - {k} -> {v}" for k, v in glossary_context.items())
+                glossary_content = f"[Glossary Target]\nTarget code: {target_lang_code or target_lang}\nMatched terms:\n{terms_str}"
+            else:
+                glossary_content = f"[Glossary Target]\nTarget code: {target_lang_code or target_lang}\n(No matching glossary terms found for this source text)"
+        else:
+            glossary_content = "(용어집 없음)"
+
         return [
             {"id": "intro", "label": "검수자 역할 정의", "module_key": None, "active": True, "always": True,
              "content": AUDIT_INTRO},
@@ -354,12 +370,12 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
              "content": lang_content or "(이 타겟 언어에 적용되는 언어별 규칙 없음)"},
             {"id": "formatting", "label": "FORMAT & TYPOGRAPHY RULES", "module_key": "formatting",
              "active": True, "always": True,
-             "content": self._build_formatting_section(target_lang, row_key, bool(glossary_context))},
+             "content": self._build_formatting_section(target_lang, row_key, has_glossary)},
             {"id": "checklist", "label": "검수 가이드라인", "module_key": None, "active": True, "always": True,
              "content": self._build_audit_checklist()},
             {"id": "glossary_target", "label": "Glossary Target", "module_key": "glossary",
-             "active": bool(glossary_context), "always": False,
-             "content": f"[Glossary Target]\nTarget code: {target_lang_code or target_lang}" if glossary_context else "(용어집 없음)"},
+             "active": has_glossary, "always": False,
+             "content": glossary_content},
             {"id": "output_format", "label": "출력 형식", "module_key": None, "active": True, "always": True,
              "content": self._build_audit_output_format()},
         ]
