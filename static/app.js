@@ -313,7 +313,11 @@ taskModeRadios.forEach(radio => {
 document.getElementById('sourceLangSelect')?.addEventListener('change', updatePromptModules);
 document.getElementById('sheetConfig')?.addEventListener('input', updatePromptModules);
 document.getElementById('cellRange')?.addEventListener('input', updatePromptModules);
-sheetList?.addEventListener('change', updatePromptModules);
+sourceGroupsContainer?.addEventListener('change', (e) => {
+    if (e.target.classList.contains('target-check') || e.target.type === 'radio') {
+        updatePromptModules();
+    }
+});
 
 // --- Execution ---
 startBtn.addEventListener('click', async () => {
@@ -503,7 +507,9 @@ function getPromptModuleTargetLang() {
         sheetConfig = {};
     }
 
-    const targetSheet = sheetList.querySelector('.target-check:checked')?.value;
+    const targetSheet = sourceGroupsContainer
+        ? sourceGroupsContainer.querySelector('.target-check:checked')?.value
+        : null;
     if (targetSheet && sheetConfig[targetSheet]?.lang) {
         return sheetConfig[targetSheet].lang;
     }
@@ -516,10 +522,12 @@ async function updatePromptModules() {
     const langTag = document.getElementById('promptModuleLangTag');
     if (!container) return;
 
-    let sheetConfig = {};
     try { sheetConfig = JSON.parse(document.getElementById('sheetConfig').value); } catch(e) {}
 
-    const selectedSheets = Array.from(sheetList.querySelectorAll('.target-check:checked')).map(cb => cb.value);
+    const targetChecks = sourceGroupsContainer 
+        ? sourceGroupsContainer.querySelectorAll('.target-check:checked') 
+        : [];
+    const selectedSheets = Array.from(targetChecks).map(cb => cb.value);
     const sourceLang = document.getElementById('sourceLangSelect')?.value || 'English';
     const glossaryAvailable = uploadedGlossaryId ? 'true' : 'false';
     const rowKey = '';
