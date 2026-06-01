@@ -85,7 +85,7 @@ EN_TO_20 = [
     ("CA(캐나다)",     "fr_CA", "French_CA",              "English"),
     ("DE(독일)",       "de_DE", "German",                 "English"),
     ("IT(이탈리아)",   "it_IT", "Italian",                "English"),
-    ("ES(스페인)",     "es_ES", "Spanish_ES",             "English"),
+    ("ES(스페인)",     "es_ES", "Spanish",                "English"),
     ("NL(네덜란드)",   "nl_NL", "Dutch",                  "English"),
     ("SE(스웨덴)",     "sv_SE", "Swedish",                "English"),
     ("AE(아랍에메리트)","ar_AE","Arabic",                 "English"),

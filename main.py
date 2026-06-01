@@ -475,7 +475,7 @@ _DEMO_LANG_CODE = {
     "English_AU": "en_AU", "English_SG": "en_SG",
     "Korean": "ko_KR", "German": "de_DE", "Japanese": "ja_JP",
     "French": "fr_FR", "French_Belgium": "fr_BE", "French_Canada": "fr_CA",
-    "Italian": "it_IT", "Spanish": "es_ES", "Spanish_ES": "es_ES",
+    "Italian": "it_IT", "Spanish": "es_ES",
     "Dutch": "nl_NL", "Swedish": "sv_SE", "Arabic": "ar_SA",
     "Brazilian Portuguese": "pt_BR", "European Portuguese": "pt_PT",
     "Russian": "ru_RU", "Turkish": "tr_TR",
@@ -488,7 +488,7 @@ _DEMO_RAG_LANG = {
     "English_AU": "AU(호주)", "English_SG": "SG(싱가포르)",
     "Korean": "KR(한국)", "German": "DE(독일)", "Japanese": "JA(일본)",
     "French": "FR(프랑스)", "French_Belgium": "BE(벨기에)", "French_Canada": "CA(캐나다)",
-    "Italian": "IT(이탈리아)", "Spanish": "ES(스페인)", "Spanish_ES": "ES(스페인)",
+    "Italian": "IT(이탈리아)", "Spanish": "ES(스페인)",
     "Dutch": "NL(네덜란드)", "Swedish": "SE(스웨덴)", "Arabic": "AE(아랍에메리트)",
     "Brazilian Portuguese": "BR(브라질)", "European Portuguese": "PT(포르투갈)",
     "Russian": "RU(러시아)", "Turkish": "TR(터키)",
@@ -683,7 +683,7 @@ async def rag_browse(
 
 
 @app.get("/api/rag_similar")
-async def rag_similar(query: str, target_lang: str = None, n: int = 5):
+async def rag_similar(query: str, target_lang: str = None, source_lang: str = "auto", n: int = 5):
     """유사도 검색 테스트 (뷰어용)"""
     if not _rag_builder_available:
         raise HTTPException(status_code=500, detail="rag_db_builder 모듈 미설정")
@@ -693,13 +693,21 @@ async def rag_similar(query: str, target_lang: str = None, n: int = 5):
         if not retriever.is_available():
             return {"results": [], "message": "RAG DB가 비어있습니다"}
         
-        # 쿼리 언어 자동 감지 (한글 포함 시 Korean 소스 DB 검색)
-        import re
-        source_lang = "English"
-        if re.search(r'[가-힣]', query):
-            source_lang = "Korean"
+        # 쿼리 언어 자동 감지 or 명시적 소스 언어 사용
+        if source_lang == "auto":
+            import re
+            detected_source = "English"
+            if re.search(r'[가-힣]', query):
+                detected_source = "Korean"
+        else:
+            detected_source = source_lang
             
-        results = retriever.retrieve(query, target_lang, source_lang=source_lang, n_results=n, exclude_same_source=False)
+        # Target 언어 매핑 (예: "Japanese" -> "JA(일본)")
+        mapped_target = target_lang
+        if target_lang and target_lang.lower() != "all":
+            mapped_target = _DEMO_RAG_LANG.get(target_lang, target_lang)
+            
+        results = retriever.retrieve(query, mapped_target, source_lang=detected_source, n_results=n, exclude_same_source=False)
         return {"results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

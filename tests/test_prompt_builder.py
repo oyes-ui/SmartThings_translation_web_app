@@ -21,7 +21,7 @@ class PromptBuilderTests(unittest.TestCase):
         english = self.builder.describe_applied_modules(target_lang="English", source_lang="Korean")
         french_be = self.builder.describe_applied_modules(target_lang="French_Belgium", source_lang="Korean")
         french_ca = self.builder.describe_applied_modules(target_lang="French_Canada", source_lang="Korean")
-        spanish_es = self.builder.describe_applied_modules(target_lang="Spanish_ES", source_lang="Korean")
+        spanish_es = self.builder.describe_applied_modules(target_lang="Spanish", source_lang="Korean")
 
         self.assertTrue(german["language"]["active"])
         self.assertIn("Du-form", german["language"]["name"])
@@ -31,7 +31,7 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertIn("US English", english["language"]["name"])
         self.assertIn("Belgian French", french_be["language"]["name"])
         self.assertIn("Canadian French", french_ca["language"]["name"])
-        self.assertIn("Spain Spanish", spanish_es["language"]["name"])
+        self.assertIn("Spain Spanish", spanish_es["language"]["description"])
 
     def test_english_market_variant_rules(self):
         us_prompt = self.builder.build_translation_prompt(target_lang="English", source_lang="Korean")

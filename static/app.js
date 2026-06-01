@@ -275,19 +275,19 @@ function updateModeVisibility() {
     if (mode === 'integrated') {
         aiModelItem.classList.remove('hidden');
         auditModelItem.classList.remove('hidden');
-        bxStyleItem.classList.remove('hidden');
+        bxStyleItem?.classList.remove('hidden');
     } else if (mode === 'translate_only') {
         aiModelItem.classList.remove('hidden');
         auditModelItem.classList.add('hidden');
-        bxStyleItem.classList.remove('hidden');
+        bxStyleItem?.classList.remove('hidden');
     } else if (mode === 'inspect_only') {
         aiModelItem.classList.add('hidden');
         auditModelItem.classList.remove('hidden');
-        bxStyleItem.classList.add('hidden');
+        bxStyleItem?.classList.add('hidden');
     } else if (mode === 'highlight_only') {
         aiModelItem.classList.add('hidden');
         auditModelItem.classList.add('hidden');
-        bxStyleItem.classList.add('hidden');
+        bxStyleItem?.classList.add('hidden');
     }
 
     // Update Button Text
@@ -379,7 +379,7 @@ startBtn.addEventListener('click', async () => {
             model_name: document.getElementById('modelSelect').value,
             translation_model: document.getElementById('modelSelect').value,
             audit_model: document.getElementById('auditModelSelect').value,
-            bx_style_enabled: document.getElementById('bxStyleToggle').checked,
+            bx_style_enabled: document.getElementById('bxStyleToggle')?.checked ?? false,
             source_lang: document.getElementById('sourceLangSelect').value,
             task_mode: taskMode,
             rag_identity_match: document.getElementById('identityMatchCheck')?.checked ?? true,

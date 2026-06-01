@@ -149,12 +149,55 @@
   <div class="sim-box">
     <div class="row">
       <div class="field">
-        <label>검색 원문 (영어 또는 한국어)</label>
-        <input type="text" id="simQuery" placeholder="예: This AI helps pay the bills">
+        <label>검색 원문</label>
+        <input type="text" id="simQuery" placeholder="검색할 원문을 입력하세요...">
+      </div>
+      <div class="field" style="max-width:180px">
+        <label>소스 언어</label>
+        <select id="simSourceLang">
+          <option value="auto" selected>자동 감지 (Auto)</option>
+          <option value="English">영어 (English)</option>
+          <option value="Korean">한국어 (Korean)</option>
+        </select>
       </div>
       <div class="field" style="max-width:220px">
         <label>타겟 언어</label>
-        <select id="simLang"><option value="all">전체 검색 (All)</option></select>
+        <select id="simLang">
+          <option value="all" selected>전체 검색 (All)</option>
+          <optgroup label="English Variants">
+            <option value="English_US">English (US)</option>
+            <option value="English_UK">English (UK)</option>
+            <option value="English_AU">English (Australia)</option>
+            <option value="English_SG">English (Singapore)</option>
+          </optgroup>
+          <optgroup label="European">
+            <option value="German">German</option>
+            <option value="French">French (France)</option>
+            <option value="French_Belgium">French (Belgium)</option>
+            <option value="French_Canada">French (Canada)</option>
+            <option value="Italian">Italian</option>
+            <option value="Spanish">Spanish (Spain)</option>
+            <option value="Dutch">Dutch</option>
+            <option value="Swedish">Swedish</option>
+            <option value="Polish">Polish</option>
+            <option value="Russian">Russian</option>
+            <option value="Turkish">Turkish</option>
+            <option value="European Portuguese">Portuguese (EU)</option>
+          </optgroup>
+          <optgroup label="Asian & Others">
+            <option value="Korean">Korean</option>
+            <option value="Japanese">Japanese</option>
+            <option value="Simplified Chinese">Chinese (Simplified)</option>
+            <option value="Traditional Chinese">Chinese (Traditional)</option>
+            <option value="Vietnamese">Vietnamese</option>
+            <option value="Thai">Thai</option>
+            <option value="Indonesian">Indonesian</option>
+            <option value="Arabic">Arabic (MSA)</option>
+          </optgroup>
+          <optgroup label="Americas">
+            <option value="Brazilian Portuguese">Portuguese (Brazil)</option>
+          </optgroup>
+        </select>
       </div>
       <div class="field" style="max-width:100px">
         <label>결과 수</label>
@@ -225,18 +268,6 @@ async function loadRecords(page = 1) {
       allLangs = data.langs;
       const lsel = document.getElementById('fLang');
       data.langs.forEach(l => { const o = document.createElement('option'); o.value=l; o.textContent=l; lsel.appendChild(o); });
-
-      // Also populate similar lang select
-      const ssel = document.getElementById('simLang');
-      // "All" is already there, append the rest
-      data.langs.forEach(l => { 
-          if(l) {
-            const o = document.createElement('option'); 
-            o.value=l; 
-            o.textContent=l; 
-            ssel.appendChild(o); 
-          }
-      });
     }
 
     // Now filtering is done server-side
@@ -318,6 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ─── Similar search ───────────────────────────────────────────────────────────
 async function runSimilar() {
   const query = document.getElementById('simQuery').value.trim();
+  const sourceLang = document.getElementById('simSourceLang').value;
   const lang  = document.getElementById('simLang').value;
   const n     = document.getElementById('simN').value;
   const el    = document.getElementById('simResults');
@@ -327,7 +359,7 @@ async function runSimilar() {
   el.innerHTML = '<div class="loading">검색 중...</div>';
 
   try {
-    const data = await fetch(`${API}/rag_similar?${new URLSearchParams({query, target_lang: lang, n})}`).then(r => r.json());
+    const data = await fetch(`${API}/rag_similar?${new URLSearchParams({query, source_lang: sourceLang, target_lang: lang, n})}`).then(r => r.json());
     if (!data.results || data.results.length === 0) {
       el.innerHTML = '<div class="empty">유사 결과 없음 (DB를 먼저 빌드하세요)</div>';
       return;

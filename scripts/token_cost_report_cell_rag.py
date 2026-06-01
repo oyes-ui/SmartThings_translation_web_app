@@ -51,7 +51,7 @@ EN_TO_20 = [
     ("CA(캐나다)", "fr_CA", "French_CA", "English"),
     ("DE(독일)", "de_DE", "German", "English"),
     ("IT(이탈리아)", "it_IT", "Italian", "English"),
-    ("ES(스페인)", "es_ES", "Spanish_ES", "English"),
+    ("ES(스페인)", "es_ES", "Spanish",    "English"),
     ("NL(네덜란드)", "nl_NL", "Dutch", "English"),
     ("SE(스웨덴)", "sv_SE", "Swedish", "English"),
     ("AE(아랍에메리트)", "ar_AE", "Arabic", "English"),
@@ -130,7 +130,6 @@ def build_translation_system(
     pb: PromptBuilder,
     target_lang: str,
     source_lang: str,
-    lang_code: str,
     row_key: str,
     glossary_dict: dict | None,
     rag_context: str,
@@ -142,7 +141,6 @@ def build_translation_system(
         glossary_context=glossary_dict,
         rag_context=rag_context,
         row_key=row_key,
-        target_lang_code=lang_code,
     )
 
 
@@ -197,6 +195,8 @@ async def compute_workflow(
     source_lang_code: str,
     targets: list[tuple[str, str, str, str]],
     workflow: str,
+    translation_model: str = TRANSLATION_MODEL,
+    audit_model: str = AUDIT_MODEL,
 ) -> list[dict]:
     pb = PromptBuilder()
     mh = ModelHandler()
@@ -230,7 +230,7 @@ async def compute_workflow(
                 )
             target_text = extract_target_text(xlsx_path, sheet_name, cell["row"])
 
-            tr_sys = build_translation_system(pb, target_lang, source_lang, lang_code, row_key, glossary, rag_context)
+            tr_sys = build_translation_system(pb, target_lang, source_lang, row_key, glossary, rag_context)
             tr_user = build_translation_user_text(source_text, target_lang, glossary, row_key)
             au_sys = build_audit_system(pb, target_lang, lang_code, row_key, glossary)
             au_user = build_audit_user_text(source_text, target_text, source_lang, target_lang, lang_code, glossary, row_key)
@@ -247,11 +247,11 @@ async def compute_workflow(
             row_refs.append(base)
             token_jobs.extend(
                 [
-                    (tr_sys, TRANSLATION_MODEL),
-                    (tr_user, TRANSLATION_MODEL),
-                    (target_text, TRANSLATION_MODEL),
-                    (au_sys, AUDIT_MODEL),
-                    (au_user, AUDIT_MODEL),
+                    (tr_sys, translation_model),
+                    (tr_user, translation_model),
+                    (target_text, translation_model),
+                    (au_sys, audit_model),
+                    (au_user, audit_model),
                 ]
             )
 
@@ -296,7 +296,7 @@ def apply_audit_outputs(rows: list[dict], args: argparse.Namespace) -> None:
             row["au_out_tok"] = per_call
 
 
-def summarize(rows: list[dict]) -> dict:
+def summarize(rows: list[dict], translation_model: str = TRANSLATION_MODEL, audit_model: str = AUDIT_MODEL) -> dict:
     summary = {}
     for story in sorted({r["story"] for r in rows}):
         story_rows = [r for r in rows if r["story"] == story]
@@ -304,8 +304,8 @@ def summarize(rows: list[dict]) -> dict:
         tr_out = sum(r["tr_out_tok"] for r in story_rows)
         au_in = sum(r["au_in_total"] for r in story_rows)
         au_out = sum(r["au_out_tok"] for r in story_rows)
-        tr_cost = cost(tr_in, TRANSLATION_MODEL, "input") + cost(tr_out, TRANSLATION_MODEL, "output")
-        au_cost = cost(au_in, AUDIT_MODEL, "input") + cost(au_out, AUDIT_MODEL, "output")
+        tr_cost = cost(tr_in, translation_model, "input") + cost(tr_out, translation_model, "output")
+        au_cost = cost(au_in, audit_model, "input") + cost(au_out, audit_model, "output")
         summary[story] = {
             "calls": len(story_rows),
             "rag_calls": sum(1 for r in story_rows if r["rag_on"]),
@@ -321,15 +321,18 @@ def summarize(rows: list[dict]) -> dict:
     return summary
 
 
-def print_summary(summary: dict) -> None:
+def print_summary(summary: dict, translation_model: str = TRANSLATION_MODEL, audit_model: str = AUDIT_MODEL) -> None:
     krw_rate = 1501
     print("\n=== Cell-level RAG ON Cost Summary ===")
-    print(f"Models: {TRANSLATION_MODEL} + {AUDIT_MODEL}")
+    if translation_model == audit_model:
+        print(f"Model: {translation_model} (번역+검수 단일 모델)")
+    else:
+        print(f"Translation: {translation_model}  |  Audit: {audit_model}")
     print("Rate: 1 USD = 1,501 KRW")
     print()
     header = (
         f"{'Story':<8} {'calls':>6} {'RAG':>7} {'tr_in':>10} {'tr_out':>9} "
-        f"{'au_in':>10} {'au_out':>10} {'Gemini($)':>11} {'GPT($)':>10} {'Total($)':>10} {'Total(KRW)':>11}"
+        f"{'au_in':>10} {'au_out':>10} {'tr_cost($)':>11} {'au_cost($)':>10} {'Total($)':>10} {'Total(KRW)':>11}"
     )
     print(header)
     print("-" * len(header))
@@ -343,13 +346,14 @@ def print_summary(summary: dict) -> None:
 
 
 async def main_async(args: argparse.Namespace) -> None:
+    tm, am = args.translation_model, args.audit_model
     all_rows = []
-    all_rows.extend(await compute_workflow("015", STORY_015, "KR(한국)", "ko_KR", KR_TO_4, "A(KR→4)"))
-    all_rows.extend(await compute_workflow("015", STORY_015, "US(미국)", "en_US", EN_TO_20, "B(EN→20)"))
-    all_rows.extend(await compute_workflow("006", STORY_006, "KR(한국)", "ko_KR", KR_TO_4, "A(KR→4)"))
-    all_rows.extend(await compute_workflow("006", STORY_006, "US(미국)", "en_US", EN_TO_20, "B(EN→20)"))
+    all_rows.extend(await compute_workflow("015", STORY_015, "KR(한국)", "ko_KR", KR_TO_4, "A(KR→4)", tm, am))
+    all_rows.extend(await compute_workflow("015", STORY_015, "US(미국)", "en_US", EN_TO_20, "B(EN→20)", tm, am))
+    all_rows.extend(await compute_workflow("006", STORY_006, "KR(한국)", "ko_KR", KR_TO_4, "A(KR→4)", tm, am))
+    all_rows.extend(await compute_workflow("006", STORY_006, "US(미국)", "en_US", EN_TO_20, "B(EN→20)", tm, am))
     apply_audit_outputs(all_rows, args)
-    print_summary(summarize(all_rows))
+    print_summary(summarize(all_rows, tm, am), tm, am)
 
 
 def main() -> None:
@@ -358,6 +362,14 @@ def main() -> None:
     parser.add_argument("--audit-txt-015-b")
     parser.add_argument("--audit-txt-006-a")
     parser.add_argument("--audit-txt-006-b")
+    parser.add_argument(
+        "--translation-model", default=TRANSLATION_MODEL,
+        choices=list(PRICING), dest="translation_model",
+    )
+    parser.add_argument(
+        "--audit-model", default=AUDIT_MODEL,
+        choices=list(PRICING), dest="audit_model",
+    )
     args = parser.parse_args()
     asyncio.run(main_async(args))
 

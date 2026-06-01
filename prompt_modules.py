@@ -75,10 +75,7 @@ LANGUAGE_LOCALIZATION_RULES = {
         "Use natural Italian UI sentence structures; avoid English-style noun-chaining.",
     ],
     "Spanish": [
-        "Use Usted consistently unless the locale or project explicitly requires Tú.",
-        "Keep Spanish regionally neutral unless a market-specific variant is requested.",
-    ],
-    "Spanish_ES": [
+        "Use tú (informal address) consistently; do not use Usted unless the source or project explicitly requires formal register.",
         "Use Spain Spanish (Castilian) and avoid Latin American-specific wording or usage.",
     ],
     "Dutch": [
