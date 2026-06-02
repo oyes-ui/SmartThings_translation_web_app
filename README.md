@@ -21,6 +21,7 @@ pinned: false
 - **AI 기반 정밀 검수**: Gemini 3.1/3.0 및 GPT-5.4 모델을 포함한 고성능 번역 검수 지원
 - **하이브리드 RAG (Retrieval-Augmented Generation)**: 100% 일치(Identity Match) 및 의미적 유사도 검색을 통한 번역 일관성 확보
 - **다국어 시트 자동 매핑**: 국가 코드(US, KR, DE 등)를 인식하여 시트별 언어 설정 자동화
+- **다중 소스 그룹 처리**: KR/US 등 여러 원문 시트를 각 타겟 시트 그룹에 매핑하여 검수, 번역+검수, 하이라이트 전용 작업을 한 번에 실행
 - **용어집(Glossary) 검증**: CSV 용어집 기반 정밀 매칭 및 괄호(Bracket) 자동 처리 규칙 적용
 - **V2 Localization Engine**: 브라질/유럽 포르투갈어 및 중국 간체/번체 시장별 완벽 분리 대응
 - **Context-Aware Formatting**: Row Key 기반으로 타이틀/버튼 vs 설명문 맥락을 자동 판정하여 용어집 괄호 처리 최적화
@@ -101,6 +102,18 @@ PYTHONPATH=src uvicorn translation_web_app.main:app --reload --reload-dir src --
 
 ---
 
+## 🧠 RAG DB 저장 위치
+
+RAG DB의 기본 저장 위치는 `runtime/rag_db/`입니다. 기존 개발 환경의 `rag_db/`에 이미 구축된 DB가 있다면 API 비용이 드는 재빌드 대신 `rag_store.db`와 `chroma/`를 `runtime/rag_db/`로 이관하면 됩니다.
+
+```bash
+PYTHONPATH=src python -m translation_web_app.rag_db_builder --status
+```
+
+`RAG_DB_DIR` 환경변수를 지정하면 임시 테스트나 별도 배포 환경에서 다른 DB 위치를 사용할 수 있습니다.
+
+---
+
 ## 🐳 Docker 실행
 
 이미지가 빌드된 후 7860 포트로 실행됩니다.
@@ -121,6 +134,14 @@ docker run -p 7860:7860 -e GOOGLE_API_KEY="your_key_here" translation-checker
 
 상세한 변경 내역은 [CHANGELOG.md](docs/CHANGELOG.md)에서 확인할 수 있습니다.
 
+### [v1.6.0] - 2026-06-02
+- **Added**: 다중 소스 그룹(`source_groups`) 기반 통합 번역+검수 파이프라인 지원
+- **Added**: 하이라이트 전용 파이프라인의 다중 소스 그룹 처리 지원
+- **Changed**: 검수/번역/하이라이트 파이프라인의 멀티소스 진입 조건을 `source_groups` 기준으로 통일
+- **Changed**: RAG DB 기본 경로를 `runtime/rag_db/`로 정리하고 기존 `rag_db/` 데이터는 이관 방식으로 유지
+- **Fixed**: 하이라이트 전용 다중 소스 경로에서 `asyncio` 로컬 import로 발생하던 `UnboundLocalError` 수정
+- **Verified**: 컴파일, 기존 프롬프트 유닛 테스트, 다중 소스 번역/하이라이트 스모크 테스트 통과
+
 ### [v1.5.0] - 2026-05-12
 - **Enhanced**: Localization Engine V2 업데이트 (포르투갈어/중국어 시장별 분리)
 - **Added**: Context-Aware Glossary 처리 로직 (Title/Button vs Description)
@@ -140,7 +161,7 @@ docker run -p 7860:7860 -e GOOGLE_API_KEY="your_key_here" translation-checker
 2. **Files & Execution (중앙 패널)**: 
     - **Upload Workbook**: 번역할 엑셀 파일(.xlsx)을 업로드합니다.
     - **Glossary (Optional)**: 용어집(.csv)을 업로드합니다.
-    - **Sheet Mapping**: 업로드 후 생성된 시트 리스트에서 원본 및 타겟 시트를 선택합니다.
+    - **Sheet Mapping**: 업로드 후 생성된 시트 리스트에서 원본 및 타겟 시트를 선택합니다. 필요한 경우 여러 원본 시트 그룹을 구성해 각 그룹별 타겟 시트를 따로 지정할 수 있습니다.
     - **RAG DB**: 필요한 경우 RAG DB를 빌드하거나 특정 스토리 데이터를 업데이트합니다.
 3. **Start Inspection**: 설정을 검증([Validate Config])한 후 검수를 시작합니다.
 4. **Live Progress & Download (우측 패널)**: 터미널에서 진행 상황을 확인하고, 완료 시 리포트를 다운로드하거나 HTML 뷰어로 확인합니다.

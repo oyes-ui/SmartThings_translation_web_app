@@ -66,6 +66,7 @@ OPENAI_API_KEY=your_openai_api_key_here
 - **Identity Match**: 100% 일치하는 과거 번역을 최우선 적용합니다.
 - **Semantic Match**: 의미적으로 유사한 사례 2건을 AI에게 참고 자료로 제공합니다.
 - **RAG DB Viewer**: 상단 메뉴를 통해 현재 DB에 저장된 모든 번역 쌍을 필터링하여 조회할 수 있습니다.
+- **DB 위치**: 기본 저장 위치는 `runtime/rag_db/`입니다. 기존 `rag_db/` 데이터가 있다면 재빌드하지 않고 `rag_store.db`와 `chroma/`를 새 위치로 이관해 사용할 수 있습니다.
 
 ### 4.2 BX Style Transcreation (삼성 브랜드 보이스)
 삼성의 브랜드 아이덴티티(**OPEN, BOLD, AUTHENTIC**)를 반영하여 단순 번역을 넘어선 트랜스크리에이션을 수행합니다. 전용 페르소나('자신감 있는 탐험가')가 활성화됩니다.

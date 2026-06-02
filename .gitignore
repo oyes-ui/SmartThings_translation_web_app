@@ -20,6 +20,7 @@ Mac_ui.app/
 uploads/
 runtime/
 *.xlsx
+!src/translation_web_app/assets/templates/*.xlsx
 *.csv
 
 # 4. RAG 오프라인 전용 데이터 (보안 — Git/HuggingFace 업로드 금지)

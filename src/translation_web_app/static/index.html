@@ -97,6 +97,89 @@
             text-align: right;
             padding-top: 6px;
         }
+
+        .source-mode-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .source-mode-btn {
+            flex: 1;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            color: #94a3b8;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .source-mode-btn.active {
+            border-color: rgba(99,102,241,0.55);
+            background: rgba(99,102,241,0.16);
+            color: #e0e7ff;
+        }
+        .text-template-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .template-grid input,
+        .template-grid select,
+        .template-field textarea,
+        .section-field textarea {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 7px;
+            color: #e2e8f0;
+            font-family: inherit;
+            font-size: 12px;
+            padding: 8px 9px;
+        }
+        .template-field label,
+        .section-field label,
+        .template-grid label {
+            display: block;
+            font-size: 10.5px;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+        .template-field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .template-field textarea { min-height: 58px; resize: vertical; }
+        .template-section {
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+        .template-section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .template-section-head strong {
+            font-size: 12px;
+            color: #cbd5e1;
+        }
+        .section-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .section-field textarea { min-height: 48px; resize: vertical; }
     </style>
 </head>
 
@@ -111,6 +194,7 @@
             </div>
             <div class="header-actions">
                 <a href="/rag_viewer.html" target="_blank" class="header-btn">🧠 RAG DB Viewer</a>
+                <a href="/glossary.html" target="_blank" class="header-btn">📖 Glossary</a>
                 <a href="/viewer/index.html" target="_blank" class="header-btn">👀 Report HTML Viewer</a>
                 <a href="/demo.html" target="_blank" class="header-btn">🔬 Prompt Builder</a>
             </div>
@@ -233,25 +317,6 @@
                         </select>
                     </div>
 
-                    <div class="config-item">
-                        <label>Source Language</label>
-                        <select id="sourceLangSelect" class="styled-select">
-                            <option value="English" selected>English</option>
-                            <option value="Korean">Korean</option>
-                            <option value="Japanese">Japanese</option>
-                            <option value="Chinese">Chinese</option>
-                            <option value="French">French</option>
-                            <option value="German">German</option>
-                            <option value="Spanish">Spanish</option>
-                            <option value="Italian">Italian</option>
-                            <option value="Russian">Russian</option>
-                            <option value="Turkish">Turkish</option>
-                            <option value="Vietnamese">Vietnamese</option>
-                            <option value="Thai">Thai</option>
-                            <option value="Indonesian">Indonesian</option>
-                            <option value="Arabic">Arabic</option>
-                        </select>
-                    </div>
 
                     <!-- API Keys (optional) -->
                     <div class="config-item" id="apiKeySection" style="margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05);">
@@ -278,8 +343,8 @@
                     </div>
 
                     <div class="version-info" style="padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 10.5px; color: #475569; display: flex; justify-content: space-between;">
-                        <span>v1.4.0-title-bracket-hotfix</span>
-                        <span>2026.05.14</span>
+                        <span>v1.6.0-multi-source</span>
+                        <span>2026.06.02</span>
                     </div>
 
                 </div>
@@ -294,6 +359,11 @@
                     <div class="center-grid">
 
                         <!-- Source Excel Upload -->
+                        <div class="source-mode-tabs">
+                            <button type="button" class="source-mode-btn active" data-source-mode="upload">Upload Workbook</button>
+                            <button type="button" class="source-mode-btn" data-source-mode="template">Built-in Template</button>
+                        </div>
+
                         <div class="main-dropzone-container">
                             <div class="dropzone premium-dropzone" id="sourceDropzone">
                                 <div class="glass-overlay"></div>
@@ -308,16 +378,42 @@
                             </div>
                         </div>
 
+                        <div id="textTemplateArea" class="text-template-card hidden">
+                            <label>Built-in Template Source</label>
+                            <p class="description">공식 빈 양식에 원문을 채운 뒤 기존 번역 파이프라인으로 실행합니다.</p>
+                            <div class="template-grid">
+                                <div>
+                                    <label>Source Sheet</label>
+                                    <select id="textSourceSheet"></select>
+                                </div>
+                                <div>
+                                    <label>Story No.</label>
+                                    <input id="textStoryNumber" type="text" placeholder="052">
+                                </div>
+                                <div>
+                                    <label>Update Date</label>
+                                    <input id="textUpdateDate" type="text" placeholder="2026.06.02">
+                                </div>
+                            </div>
+                            <div class="template-field-row">
+                                <div class="template-field">
+                                    <label>Story Title</label>
+                                    <textarea id="textStoryTitle"></textarea>
+                                </div>
+                                <div class="template-field">
+                                    <label>Story Description</label>
+                                    <textarea id="textStoryDescription"></textarea>
+                                </div>
+                            </div>
+                            <div id="templateSectionsContainer"></div>
+                        </div>
+
                         <!-- Sheet Selection (shown after upload) -->
                         <div id="sheetSelectionArea" class="hidden">
                             <div class="sheet-selection-header">
                                 <h3>Sheet Mapping (Select Source &amp; Targets)</h3>
                                 <div class="sheet-controls">
                                     <button type="button" id="addSourceGroupBtn" class="text-btn">+ Add Source Group</button>
-                                    <span class="sep">|</span>
-                                    <button type="button" id="selectAllSheets" class="text-btn">Select All Targets</button>
-                                    <span class="sep">|</span>
-                                    <button type="button" id="deselectAllSheets" class="text-btn">Deselect All Targets</button>
                                 </div>
                             </div>
                             <div id="sourceGroupsContainer"></div>

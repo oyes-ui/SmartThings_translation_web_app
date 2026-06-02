@@ -1,5 +1,26 @@
 # Changelog - SmartThings Translation Checker
 
+## [1.6.0] - 2026-06-02
+
+### Added
+- **Multi-source Integrated Pipeline**: `source_groups` 기반으로 여러 원문 시트와 타겟 시트 그룹을 한 번에 번역 및 검수할 수 있도록 지원.
+- **Multi-source Highlight Pipeline**: 하이라이트 전용 모드에서도 원문 시트 그룹별 용어집 하이라이트 및 리포트 생성을 지원.
+
+### Changed
+- **Pipeline Entry Consistency**: 검수, 통합 번역+검수, 하이라이트 전용 파이프라인의 멀티소스 진입 조건을 모두 `if source_groups:`로 통일.
+- **Task Payload Propagation**: 통합 번역 및 하이라이트 작업에서 FastAPI 태스크 파라미터의 `source_groups`를 `TranslationChecker`로 전달.
+
+### Fixed
+- **Highlight Multi-source Crash**: 하이라이트 전용 다중 소스 경로에서 함수 내부 `import asyncio`로 인해 발생하던 `UnboundLocalError`를 수정.
+
+### Verified
+- `venv/bin/python -m compileall -q src tests`
+- `PYTHONPATH=src venv/bin/python -m unittest tests/test_prompt_builder.py`
+- 다중 소스 통합 번역 스모크 테스트
+- 다중 소스 하이라이트 스모크 테스트
+
+---
+
 ## [1.4.0] - 2026-05-14
 
 ### Added

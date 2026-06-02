@@ -1376,14 +1376,193 @@ class TranslationChecker:
         source_sheet_name=None,
         skip_audit=False,
         source_lang="English",
-        rag_identity_match=True
+        rag_identity_match=True,
+        source_groups=None
     ):
         """
         Translates source text, audits it, and saves it to a NEW Excel file.
         Yields SSE events same as inspection.
         """
         yield {"type": "log", "message": "Starting Integrated Translation & Audit Pipeline..."}
-        
+
+        # --- Multi-Source Mode ---
+        if source_groups:
+            try:
+                wb = openpyxl.load_workbook(source_file_path, rich_text=True)
+            except Exception as e:
+                yield {"type": "error", "message": f"Excel Load Error: {str(e)}"}
+                return
+
+            all_fmt_results = []
+            grand_total = 0
+            completed_so_far = 0
+
+            for g_idx, group in enumerate(source_groups):
+                g_src_sheet = group.get("source_sheet")
+                g_tgt_sheets = group.get("target_sheets", [])
+                label = f"[그룹 {g_idx + 1}: {g_src_sheet}]"
+
+                if not g_src_sheet or g_src_sheet not in wb.sheetnames:
+                    yield {"type": "log", "message": f"{label} 소스 시트 없음, 건너뜀"}
+                    continue
+
+                g_src_info = sheet_lang_map.get(g_src_sheet, {})
+                g_src_lang = g_src_info.get("lang", source_lang)
+                g_src_code = g_src_info.get("code", g_src_lang)
+
+                if glossary_file_path:
+                    yield {"type": "log", "message": f"{label} 용어집 로드 중 (기준: {g_src_code})..."}
+                    msg = await self.load_glossary_from_file(glossary_file_path, g_src_code)
+                    yield {"type": "log", "message": msg}
+
+                source_ws = wb[g_src_sheet]
+                source_data = []
+                extracted_coords = set()
+                for current_range in [r.strip() for r in cell_range.split(',') if r.strip()]:
+                    try:
+                        rows = source_ws[current_range]
+                        if not isinstance(rows, (tuple, list)):
+                            rows = ((rows,),)
+                        for row in rows:
+                            for cell in row:
+                                if cell.coordinate in extracted_coords:
+                                    continue
+                                extracted_coords.add(cell.coordinate)
+                                val = str(cell.value).strip() if cell.value is not None else ""
+                                if val and val.lower() != "x":
+                                    row_key = self._get_row_key(source_ws, cell.row)
+                                    source_data.append({'text': str(cell.value).strip(), 'coord': cell.coordinate, 'row_key': row_key})
+                    except Exception as e:
+                        yield {"type": "log", "message": f"{label} 범위 오류 {current_range}: {e}"}
+
+                if not source_data:
+                    yield {"type": "log", "message": f"{label} 소스 텍스트 없음, 건너뜀"}
+                    continue
+
+                g_resolved_tgt = [s for s in g_tgt_sheets if s in wb.sheetnames and s != g_src_sheet and s in sheet_lang_map]
+                if not g_resolved_tgt:
+                    yield {"type": "log", "message": f"{label} 유효한 타겟 시트 없음, 건너뜀"}
+                    continue
+
+                g_total = len(source_data) * len(g_resolved_tgt)
+                grand_total += g_total
+                yield {"type": "log", "message": f"{label} 시트 {len(g_resolved_tgt)}개, {g_total}개 셀 번역 예정"}
+                yield {"type": "progress", "current": completed_so_far, "total": grand_total, "percent": int(completed_so_far / grand_total * 100) if grand_total else 0}
+
+                async def _cell_worker_multi(ws, index, item, tgt_lang, tgt_lang_code, captured_src_lang=g_src_lang):
+                    source_text = item['text']
+                    coord = item['coord']
+                    row_key = item.get("row_key", "")
+
+                    glossary_dict = self._get_glossary_context_as_dict(tgt_lang_code, source_text=source_text, skip_deactivated=True, row_key=row_key)
+                    if not glossary_dict:
+                        glossary_dict = None
+
+                    rag_context_str = None
+                    logs = []
+                    if getattr(self, "rag_retriever", None) and self.rag_retriever.is_available():
+                        try:
+                            results = self.rag_retriever.retrieve(source_text, ws.title, source_lang=captured_src_lang, n_results=2, exclude_same_source=False, identity_match_enabled=rag_identity_match)
+                            if results:
+                                rag_context_str = self.rag_retriever.format_for_prompt(source_text, ws.title, source_lang=captured_src_lang, n_results=2, identity_match_enabled=rag_identity_match)
+                                logs.append(f"[RAG] 유사 사례 {len(results)}건 적용됨 (시트: {ws.title}, 셀: {coord})")
+                        except Exception as e:
+                            logs.append(f"[RAG] 검색 오류: {e}")
+
+                    translation = await self._run_llm_translation(
+                        source_text, tgt_lang, model_name=translation_model, bx_style_on=bx_style_on,
+                        glossary_context=glossary_dict, rag_context=rag_context_str, row_key=row_key,
+                        source_lang=captured_src_lang, rag_identity_match=rag_identity_match, target_lang_code=tgt_lang_code,
+                    )
+
+                    original_target_terms = []
+                    for s_term in (self._get_relevant_glossary_terms(source_text) or []):
+                        meta = self.glossary.get(s_term)
+                        if meta:
+                            rule = meta.get("rule", "").lower().replace(" ", "")
+                            if "비활성화" in rule or "deactivate" in rule or "disable" in rule:
+                                continue
+                            target_val = self._get_target_val(meta["targets"], tgt_lang_code)
+                            if target_val:
+                                clean_val = re.sub(r'\(.*?\)', '', target_val).strip()
+                                for extract_str in (clean_val, target_val):
+                                    if not extract_str:
+                                        continue
+                                    original_target_terms.append(extract_str.strip())
+                                    split_terms = [x.strip() for x in re.split(r'[,/]', extract_str) if x.strip()]
+                                    if len(split_terms) > 1:
+                                        original_target_terms.extend(split_terms)
+
+                    target_cell = ws[coord]
+                    target_cell.value = self._apply_rich_text(translation, original_target_terms, base_font=target_cell.font)
+
+                    item_data = {"cell_ref": coord, "sheet_name": ws.title, "source": source_text, "target": translation, "row_key": row_key}
+                    if skip_audit:
+                        res = {**item_data, "case_section": "[Bypassed]", "glossary_section": "[Bypassed]", "rag_text": "[Bypassed]", "rag_json": "[]", "back_translation": "[Bypassed]", "ai_text": "[Bypassed: Translate Only Mode]", "ai_json": "{}", "logs": logs}
+                    else:
+                        res = await self.process_item(item_data, captured_src_lang, tgt_lang, sheet_lang_map, tgt_lang_code, rag_identity_match=rag_identity_match)
+                        res["logs"] = logs
+
+                    return index, res
+
+                g_tasks = []
+                local_idx = 0
+                for sheet_name in g_resolved_tgt:
+                    ws = wb[sheet_name]
+                    sheet_info = sheet_lang_map[sheet_name]
+                    for item in source_data:
+                        g_tasks.append(_cell_worker_multi(ws, local_idx, item, sheet_info['lang'], sheet_info['code']))
+                        local_idx += 1
+
+                g_ordered = [None] * g_total
+                g_done = 0
+
+                for future in asyncio.as_completed(g_tasks):
+                    try:
+                        local_idx_res, res = await future
+                        g_done += 1
+                        completed_so_far += 1
+                        for msg in res.get("logs", []):
+                            yield {"type": "log", "message": msg}
+                        fmt = (
+                            f"==========================================================================================\n"
+                            f"{label} [시트] {res['sheet_name']} | [셀] {res['cell_ref']}\n"
+                            f"------------------------------------------------------------------------------------------\n\n"
+                            f"[상세 - 원문]\n{res['source']}\n\n"
+                            f"[상세 - 번역문]\n{res['target']}\n\n"
+                            f"[상세 - 대소문자 점검]\n{res['case_section']}\n\n"
+                            f"[상세 - 용어집 점검]\n{res['glossary_section']}\n\n"
+                            f"[상세 - RAG 일관성 참고]\n{res.get('rag_text', '[별도 지적 사항 없음]')}\n\n"
+                            f"[상세 - 역번역]\n{res['back_translation']}\n\n"
+                            f"[상세 - AI 검수 결과]\n{res['ai_text']}\n\n"
+                            f"[상세 - RAG Payload]\n{res.get('rag_json', '[]')}\n\n"
+                            f"[상세 - AI Payload]\n{res['ai_json']}\n"
+                        )
+                        g_ordered[local_idx_res] = fmt
+                        yield {
+                            "type": "progress",
+                            "current": completed_so_far,
+                            "total": grand_total,
+                            "percent": int(completed_so_far / grand_total * 100) if grand_total else 0,
+                            "log": f"{label} [{res['sheet_name']}] {res['cell_ref']} 처리 완료"
+                        }
+                    except Exception as e:
+                        yield {"type": "log", "message": f"{label} 셀 처리 오류: {str(e)}"}
+
+                all_fmt_results.extend([r for r in g_ordered if r is not None])
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            out_excel_path = source_file_path.replace(".xlsx", f"_translated_{timestamp}.xlsx")
+            wb.save(out_excel_path)
+            header = (
+                f"--- 번역 통합 검수 보고서 (Model: {self.model_name}) ---\n"
+                f"생성일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                f"총 항목: {completed_so_far}개 ({len(source_groups)}개 소스 그룹)\n\n"
+            )
+            yield {"type": "complete", "output_data": header + "".join(all_fmt_results), "excel_path": out_excel_path}
+            return
+        # --- End Multi-Source Mode ---
+
         # 1. Load Excel
         try:
             wb = openpyxl.load_workbook(source_file_path, rich_text=True)
@@ -1663,14 +1842,191 @@ class TranslationChecker:
         glossary_file_path=None,
         selected_sheets=None,
         source_sheet_name=None,
-        source_lang="English"
+        source_lang="English",
+        source_groups=None
     ):
         """
         Highlights glossary terms in target sheets without translating.
         Relies on the target text already being present in the Excel file.
         """
         yield {"type": "log", "message": "Starting Highlight Only Pipeline..."}
-        
+
+        # --- Multi-Source Mode ---
+        if source_groups:
+            try:
+                wb = openpyxl.load_workbook(source_file_path, rich_text=True)
+            except Exception as e:
+                yield {"type": "error", "message": f"Excel Load Error: {str(e)}"}
+                return
+
+            grand_total = 0
+            completed_so_far = 0
+            all_highlight_stats = {}
+            all_detail_lines = []
+
+            for g_idx, group in enumerate(source_groups):
+                g_src_sheet = group.get("source_sheet")
+                g_tgt_sheets = group.get("target_sheets", [])
+                label = f"[그룹 {g_idx + 1}: {g_src_sheet}]"
+
+                if not g_src_sheet or g_src_sheet not in wb.sheetnames:
+                    yield {"type": "log", "message": f"{label} 소스 시트 없음, 건너뜀"}
+                    continue
+
+                g_src_info = sheet_lang_map.get(g_src_sheet, {})
+                g_src_lang = g_src_info.get("lang", source_lang)
+                g_src_code = g_src_info.get("code", g_src_lang)
+
+                if glossary_file_path:
+                    yield {"type": "log", "message": f"{label} 용어집 로드 중 (기준: {g_src_code})..."}
+                    msg = await self.load_glossary_from_file(glossary_file_path, g_src_code)
+                    yield {"type": "log", "message": msg}
+
+                if not self.glossary:
+                    yield {"type": "log", "message": f"{label} 용어집 없음, 건너뜀"}
+                    continue
+
+                source_ws = wb[g_src_sheet]
+                source_data = []
+                extracted_coords = set()
+                for current_range in [r.strip() for r in cell_range.split(',') if r.strip()]:
+                    try:
+                        rows = source_ws[current_range]
+                        if not isinstance(rows, (tuple, list)):
+                            rows = ((rows,),)
+                        for row in rows:
+                            for cell in row:
+                                if cell.coordinate in extracted_coords:
+                                    continue
+                                extracted_coords.add(cell.coordinate)
+                                val = str(cell.value).strip() if cell.value is not None else ""
+                                if val and val.lower() != "x":
+                                    row_key = self._get_row_key(source_ws, cell.row)
+                                    source_data.append({'text': val, 'coord': cell.coordinate, 'row_key': row_key})
+                    except Exception as e:
+                        yield {"type": "log", "message": f"{label} 범위 오류 {current_range}: {e}"}
+
+                if not source_data:
+                    yield {"type": "log", "message": f"{label} 소스 텍스트 없음, 건너뜀"}
+                    continue
+
+                g_resolved_tgt = [s for s in g_tgt_sheets if s in wb.sheetnames and s != g_src_sheet and s in sheet_lang_map]
+                if not g_resolved_tgt:
+                    yield {"type": "log", "message": f"{label} 유효한 타겟 시트 없음, 건너뜀"}
+                    continue
+
+                g_total = len(source_data) * len(g_resolved_tgt)
+                grand_total += g_total
+                yield {"type": "log", "message": f"{label} 시트 {len(g_resolved_tgt)}개, {g_total}개 셀 하이라이트 예정"}
+                yield {"type": "progress", "current": completed_so_far, "total": grand_total, "percent": int(completed_so_far / grand_total * 100) if grand_total else 0}
+
+                for sheet_name in g_resolved_tgt:
+                    all_highlight_stats[f"{label} {sheet_name}"] = {"cells_processed": 0, "total_highlights": 0}
+
+                async def _highlight_worker_multi(ws, index, item, tgt_lang, tgt_lang_code):
+                    source_text = item['text']
+                    coord = item['coord']
+                    row_key = item.get("row_key", "")
+                    target_cell = ws[coord]
+                    target_text = str(target_cell.value).strip() if target_cell.value is not None else ""
+                    logs = []
+                    highlight_count = 0
+
+                    if target_text and target_text.lower() != "x":
+                        for issue in self._check_glossary_brackets(source_text, target_text, tgt_lang_code, tgt_lang, row_key=row_key):
+                            logs.append(issue)
+                        for issue in self._precheck_glossary_mismatch(source_text, target_text, tgt_lang_code):
+                            logs.append(issue)
+                        for issue in self._check_glossary_casing(source_text, target_text, tgt_lang_code):
+                            logs.append(issue)
+
+                        original_target_terms = []
+                        for s_term in (self._get_relevant_glossary_terms(source_text) or []):
+                            meta = self.glossary.get(s_term)
+                            if meta:
+                                rule = meta.get("rule", "").lower().replace(" ", "")
+                                if "비활성화" in rule or "deactivate" in rule or "disable" in rule:
+                                    continue
+                                target_val = self._get_target_val(meta["targets"], tgt_lang_code)
+                                if target_val:
+                                    clean_val = re.sub(r'\(.*?\)', '', target_val).strip()
+                                    for extract_str in (clean_val, target_val):
+                                        if not extract_str:
+                                            continue
+                                        original_target_terms.append(extract_str.strip())
+                                        split_terms = [x.strip() for x in re.split(r'[,/]', extract_str) if x.strip()]
+                                        if len(split_terms) > 1:
+                                            original_target_terms.extend(split_terms)
+
+                        if original_target_terms:
+                            target_cell.value = self._apply_rich_text(target_text, original_target_terms, base_font=target_cell.font)
+                            sorted_kw = sorted([k.strip() for k in original_target_terms if k.strip()], key=len, reverse=True)
+                            if sorted_kw:
+                                pattern = '|'.join(re.escape(k) for k in sorted_kw)
+                                matches = list(re.finditer(pattern, target_text, flags=re.IGNORECASE))
+                                highlight_count = len(matches)
+                                if matches:
+                                    logs.append(f"[{ws.title}] 셀 {coord}: {highlight_count}개 키워드 하이라이트 적용")
+
+                    return index, {"sheet_name": ws.title, "cell_ref": coord, "highlight_count": highlight_count, "logs": logs}
+
+                g_tasks = []
+                local_idx = 0
+                for sheet_name in g_resolved_tgt:
+                    ws = wb[sheet_name]
+                    sheet_info = sheet_lang_map[sheet_name]
+                    for item in source_data:
+                        g_tasks.append(_highlight_worker_multi(ws, local_idx, item, sheet_info['lang'], sheet_info['code']))
+                        local_idx += 1
+
+                g_ordered = [None] * g_total
+
+                for future in asyncio.as_completed(g_tasks):
+                    try:
+                        local_idx_res, res = await future
+                        completed_so_far += 1
+                        g_ordered[local_idx_res] = res
+                        stat_key = f"{label} {res['sheet_name']}"
+                        if stat_key in all_highlight_stats:
+                            all_highlight_stats[stat_key]["cells_processed"] += 1
+                            all_highlight_stats[stat_key]["total_highlights"] += res["highlight_count"]
+                        for msg in res.get("logs", []):
+                            yield {"type": "log", "message": msg}
+                        yield {
+                            "type": "progress",
+                            "current": completed_so_far,
+                            "total": grand_total,
+                            "percent": int(completed_so_far / grand_total * 100) if grand_total else 0,
+                            "log": f"{label} [{res['sheet_name']}] {res['cell_ref']} 검토 완료"
+                        }
+                    except Exception as e:
+                        yield {"type": "log", "message": f"{label} 셀 처리 오류: {str(e)}"}
+
+                for res in g_ordered:
+                    if res and res.get("logs"):
+                        issue_logs = [log for log in res["logs"] if any(k in log for k in ["[오류", "[미적용", "[대소문자"])]
+                        if issue_logs:
+                            all_detail_lines.append(f"\n{label} [{res['sheet_name']} 시트 | {res['cell_ref']} 셀]")
+                            for log in issue_logs:
+                                all_detail_lines.append(f"  - {log}")
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            out_excel_path = source_file_path.replace(".xlsx", f"_highlighted_{timestamp}.xlsx")
+            wb.save(out_excel_path)
+
+            header = (
+                f"--- 하이라이트 전용 검수 보고서 ({len(source_groups)}개 소스 그룹) ---\n"
+                f"생성일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                f"총 대상 셀 수: {grand_total}개\n\n"
+            )
+            report_lines = [f"{k} | 처리 완료 셀: {v['cells_processed']} | 총 하이라이트: {v['total_highlights']}개" for k, v in all_highlight_stats.items()]
+            report_text = header + "\n".join(report_lines)
+            if all_detail_lines:
+                report_text += "\n\n[주요 용어집 준수여부 점검 알림]" + "\n".join(all_detail_lines)
+            yield {"type": "complete", "output_data": report_text, "excel_path": out_excel_path}
+            return
+        # --- End Multi-Source Mode ---
+
         try:
             wb = openpyxl.load_workbook(source_file_path, rich_text=True)
         except Exception as e:
@@ -1741,8 +2097,6 @@ class TranslationChecker:
 
         completed_count = 0
         highlight_stats = {} # Count of highlights per sheet
-
-        import asyncio
 
         async def highlight_cell_worker(ws, index, item, target_lang, target_lang_code):
             nonlocal completed_count

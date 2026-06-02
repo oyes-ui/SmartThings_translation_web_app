@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "smartthings-translation-web-app"
-version = "0.1.0"
+version = "1.6.0"
 description = "SmartThings translation inspection web app"
 requires-python = ">=3.10"
 
@@ -12,4 +12,4 @@ requires-python = ">=3.10"
 where = ["src"]
 
 [tool.setuptools.package-data]
-translation_web_app = ["static/*", "static/viewer/*"]
+translation_web_app = ["static/*", "static/viewer/*", "assets/templates/*.xlsx"]

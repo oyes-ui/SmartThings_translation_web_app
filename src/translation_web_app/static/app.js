@@ -4,6 +4,7 @@ const API_BASE = window.location.origin + "/api";
 let sourceFile = null;
 let uploadedFileIds = { source: null };
 let selectedSheets = [];
+let sourceMode = 'upload';
 
 // DOM Elements
 const sourceDropzone = document.getElementById('sourceDropzone');
@@ -18,6 +19,9 @@ const progressCount = document.getElementById('progressCount');
 const progressPercent = document.getElementById('progressPercent');
 const downloadArea = document.getElementById('downloadArea');
 const downloadLink = document.getElementById('downloadLink');
+const sourceModeBtns = document.querySelectorAll('.source-mode-btn');
+const textTemplateArea = document.getElementById('textTemplateArea');
+const templateSectionsContainer = document.getElementById('templateSectionsContainer');
 
 // --- Utils ---
 function log(msg, type = "info") {
@@ -96,6 +100,7 @@ function handleFile(file, type, zone) {
 
 setupDropzone(sourceDropzone, sourceInput, 'source');
 setupDropzone(glossaryDropzone, glossaryInput, 'glossary');
+initTextTemplateMode();
 
 async function uploadSingleFile(type, file, zone) {
     log(`Uploading ${type} file: ${file.name}...`, "system");
@@ -159,6 +164,10 @@ function renderSourceGroup(groupIndex, sheets, defaultSourceSheet = null) {
     header.className = 'source-group-header';
     header.innerHTML = `
         <span class="group-label">Source Group ${groupIndex + 1}</span>
+        <div class="group-actions">
+            <button type="button" class="select-all-btn text-btn">Select All</button>
+            <button type="button" class="deselect-all-btn text-btn">Deselect All</button>
+        </div>
         <button type="button" class="remove-group-btn text-btn${groupIndex === 0 ? ' hidden' : ''}">✕ Remove</button>
     `;
     header.querySelector('.remove-group-btn').addEventListener('click', () => {
@@ -171,6 +180,15 @@ function renderSourceGroup(groupIndex, sheets, defaultSourceSheet = null) {
             if (i === 0) rmBtn.classList.add('hidden'); else rmBtn.classList.remove('hidden');
             p.querySelectorAll('input[type=radio]').forEach(r => r.name = `sourceSheet-${i}`);
         });
+    });
+    header.querySelector('.select-all-btn').addEventListener('click', () => {
+        const srcVal = panel.querySelector('input[type=radio]:checked')?.value;
+        panel.querySelectorAll('.target-check').forEach(cb => {
+            if (cb.value !== srcVal) cb.checked = true;
+        });
+    });
+    header.querySelector('.deselect-all-btn').addEventListener('click', () => {
+        panel.querySelectorAll('.target-check').forEach(cb => cb.checked = false);
     });
 
     const listHeader = document.createElement('div');
@@ -231,15 +249,6 @@ function renderSheetList(sheets) {
 }
 
 // Select/Deselect All Buttons (applies to group 0 / first panel)
-document.getElementById('selectAllSheets')?.addEventListener('click', () => {
-    sourceGroupsContainer.querySelectorAll('.target-check').forEach(cb => cb.checked = true);
-    log("All target sheets selected.", "info");
-});
-
-document.getElementById('deselectAllSheets')?.addEventListener('click', () => {
-    sourceGroupsContainer.querySelectorAll('.target-check').forEach(cb => cb.checked = false);
-    log("All target sheets deselected.", "info");
-});
 
 // Add Source Group button
 document.getElementById('addSourceGroupBtn')?.addEventListener('click', () => {
@@ -253,11 +262,90 @@ document.getElementById('addSourceGroupBtn')?.addEventListener('click', () => {
 });
 
 function checkStartReadiness() {
+    if (sourceMode === 'template') {
+        startBtn.disabled = false;
+        return;
+    }
+
     if (uploadedFileIds.source) {
         startBtn.disabled = false;
         log("Ready to start translation.", "info");
     } else {
         startBtn.disabled = true;
+    }
+}
+
+function initTextTemplateMode() {
+    renderTemplateSections();
+    hydrateTemplateSourceSheetOptions();
+
+    sourceModeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            sourceMode = btn.dataset.sourceMode || 'upload';
+            sourceModeBtns.forEach(b => b.classList.toggle('active', b === btn));
+            document.querySelector('.main-dropzone-container')?.classList.toggle('hidden', sourceMode !== 'upload');
+            textTemplateArea?.classList.toggle('hidden', sourceMode !== 'template');
+            document.getElementById('sheetSelectionArea')?.classList.toggle('hidden', sourceMode !== 'upload' || !_cachedSheets.length);
+            if (sourceMode === 'template') {
+                renderTemplateSheetSelection();
+                log('Built-in template mode enabled.', 'info');
+            }
+            checkStartReadiness();
+            updatePromptModules();
+        });
+    });
+
+    document.getElementById('sheetConfig')?.addEventListener('input', () => {
+        hydrateTemplateSourceSheetOptions();
+        if (sourceMode === 'template') renderTemplateSheetSelection();
+    });
+    document.getElementById('textSourceSheet')?.addEventListener('change', () => {
+        if (sourceMode === 'template') {
+            renderTemplateSheetSelection();
+            updatePromptModules();
+        }
+    });
+}
+
+function hydrateTemplateSourceSheetOptions() {
+    const select = document.getElementById('textSourceSheet');
+    if (!select) return;
+    let cfg = {};
+    try { cfg = JSON.parse(document.getElementById('sheetConfig').value); } catch (e) {}
+    const sheets = Object.keys(cfg);
+    const current = select.value || 'KR(한국)';
+    select.innerHTML = sheets.map(sheet => `<option value="${escapeHTML(sheet)}">${escapeHTML(sheet)}</option>`).join('');
+    select.value = sheets.includes(current) ? current : (sheets.includes('KR(한국)') ? 'KR(한국)' : sheets[0] || '');
+}
+
+function renderTemplateSheetSelection() {
+    let cfg = {};
+    try { cfg = JSON.parse(document.getElementById('sheetConfig').value); } catch (e) {}
+    const sheets = Object.keys(cfg);
+    if (!sheets.length) return;
+    _cachedSheets = sheets;
+    const sourceSheet = document.getElementById('textSourceSheet')?.value || 'KR(한국)';
+    sourceGroupsContainer.innerHTML = '';
+    sourceGroupsContainer.appendChild(renderSourceGroup(0, sheets, sourceSheet));
+    document.getElementById('sheetSelectionArea').classList.remove('hidden');
+}
+
+function renderTemplateSections() {
+    if (!templateSectionsContainer) return;
+    templateSectionsContainer.innerHTML = '';
+    for (let i = 1; i <= 4; i++) {
+        const section = document.createElement('div');
+        section.className = 'template-section';
+        section.innerHTML = `
+            <div class="template-section-head"><strong>Section ${i}</strong></div>
+            <div class="section-grid">
+                <div class="section-field"><label>Title</label><textarea data-section="${i - 1}" data-field="title"></textarea></div>
+                <div class="section-field"><label>Description</label><textarea data-section="${i - 1}" data-field="description"></textarea></div>
+                <div class="section-field"><label>Disclaimer</label><textarea data-section="${i - 1}" data-field="disclaimer"></textarea></div>
+                <div class="section-field"><label>Button</label><textarea data-section="${i - 1}" data-field="button"></textarea></div>
+            </div>
+        `;
+        templateSectionsContainer.appendChild(section);
     }
 }
 
@@ -310,7 +398,6 @@ taskModeRadios.forEach(radio => {
 });
 
 // Keep read-only prompt module summary in sync with visible settings.
-document.getElementById('sourceLangSelect')?.addEventListener('change', updatePromptModules);
 document.getElementById('sheetConfig')?.addEventListener('input', updatePromptModules);
 document.getElementById('cellRange')?.addEventListener('input', updatePromptModules);
 sourceGroupsContainer?.addEventListener('change', (e) => {
@@ -364,10 +451,21 @@ startBtn.addEventListener('click', async () => {
     log("Starting inspection task...", "system");
 
     try {
+        if (sourceMode === 'template' && !['integrated', 'translate_only'].includes(taskMode)) {
+            throw new Error("Built-in Template mode supports Translate + Inspect or Only Translate.");
+        }
+
         const geminiKey = sessionStorage.getItem('gemini_api_key') || undefined;
         const openaiKey = sessionStorage.getItem('openai_api_key') || undefined;
 
-        const payload = {
+        const payload = sourceMode === 'template' ? buildTextWorkbookPayload({
+            sheetConfig,
+            sourceSheet,
+            targetSheets,
+            taskMode,
+            geminiKey,
+            openaiKey,
+        }) : {
             source_file_id: uploadedFileIds.source,
             source_file_name: uploadedFileIds.source_name,
             target_file_id: uploadedFileIds.target || uploadedFileIds.source,
@@ -380,7 +478,7 @@ startBtn.addEventListener('click', async () => {
             translation_model: document.getElementById('modelSelect').value,
             audit_model: document.getElementById('auditModelSelect').value,
             bx_style_enabled: document.getElementById('bxStyleToggle')?.checked ?? false,
-            source_lang: document.getElementById('sourceLangSelect').value,
+            source_lang: getSourceLang(),
             task_mode: taskMode,
             rag_identity_match: document.getElementById('identityMatchCheck')?.checked ?? true,
             ...(isMultiSource && { source_groups: sourceGroups }),
@@ -388,7 +486,11 @@ startBtn.addEventListener('click', async () => {
             ...(openaiKey && { openai_api_key: openaiKey }),
         };
 
-        const res = await fetch(`${API_BASE}/start`, {
+        const startUrl = sourceMode === 'template'
+            ? `${API_BASE}/text-workbooks/start`
+            : `${API_BASE}/start`;
+
+        const res = await fetch(startUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -404,6 +506,38 @@ startBtn.addEventListener('click', async () => {
         startBtn.textContent = "Start Inspection";
     }
 });
+
+function buildTextWorkbookPayload({ sheetConfig, sourceSheet, targetSheets, taskMode, geminiKey, openaiKey }) {
+    const sections = [0, 1, 2, 3].map(idx => {
+        const section = {};
+        document.querySelectorAll(`[data-section="${idx}"]`).forEach(field => {
+            section[field.dataset.field] = field.value.trim();
+        });
+        return section;
+    });
+
+    return {
+        source_sheet: sourceSheet,
+        sheets: targetSheets,
+        sheet_langs: sheetConfig,
+        story_number: document.getElementById('textStoryNumber')?.value.trim() || undefined,
+        update_date: document.getElementById('textUpdateDate')?.value.trim() || undefined,
+        story: {
+            title: document.getElementById('textStoryTitle')?.value.trim() || undefined,
+            description: document.getElementById('textStoryDescription')?.value.trim() || undefined,
+        },
+        sections,
+        translation_model: document.getElementById('modelSelect').value,
+        audit_model: document.getElementById('auditModelSelect').value,
+        max_concurrency: 5,
+        bx_style_enabled: document.getElementById('bxStyleToggle')?.checked ?? false,
+        task_mode: taskMode === 'translate_only' ? 'translate_only' : 'integrated',
+        rag_identity_match: document.getElementById('identityMatchCheck')?.checked ?? true,
+        glossary_file_id: uploadedGlossaryId,
+        ...(geminiKey && { gemini_api_key: geminiKey }),
+        ...(openaiKey && { openai_api_key: openaiKey }),
+    };
+}
 
 function connectSSE(taskId) {
     const evtSource = new EventSource(`${API_BASE}/stream/${taskId}`);
@@ -499,6 +633,15 @@ function connectSSE(taskId) {
 
 // ─── Applied Prompt Modules UI ────────────────────────────────────────────────
 
+function getSourceLang() {
+    let cfg = {};
+    try { cfg = JSON.parse(document.getElementById('sheetConfig').value); } catch (e) {}
+    const srcSheet = sourceMode === 'template'
+        ? document.getElementById('textSourceSheet')?.value
+        : sourceGroupsContainer?.querySelector('input[type=radio]:checked')?.value;
+    return (srcSheet && cfg[srcSheet]?.lang) ? cfg[srcSheet].lang : 'English';
+}
+
 function getPromptModuleTargetLang() {
     let sheetConfig = {};
     try {
@@ -514,7 +657,7 @@ function getPromptModuleTargetLang() {
         return sheetConfig[targetSheet].lang;
     }
 
-    return document.getElementById('sourceLangSelect')?.value || 'English';
+    return getSourceLang();
 }
 
 async function updatePromptModules() {
@@ -528,7 +671,7 @@ async function updatePromptModules() {
         ? sourceGroupsContainer.querySelectorAll('.target-check:checked') 
         : [];
     const selectedSheets = Array.from(targetChecks).map(cb => cb.value);
-    const sourceLang = document.getElementById('sourceLangSelect')?.value || 'English';
+    const sourceLang = getSourceLang();
     const glossaryAvailable = uploadedGlossaryId ? 'true' : 'false';
     const rowKey = '';
 

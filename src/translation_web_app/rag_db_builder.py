@@ -28,6 +28,7 @@ import chromadb
 from translation_web_app.paths import (
     CHROMA_DIR,
     EXCEL_DATA_DIR,
+    LEGACY_RAG_DB_DIR,
     RAG_DB_DIR,
     SQLITE_PATH,
     ensure_runtime_dirs,
@@ -540,6 +541,14 @@ def run_status(log_fn=print):
     log_fn(f"  - 총 번역 쌍: {total_pairs}건")
     log_fn(f"  - ChromaDB KR 컬렉션: {col_kr.count()}건")
     log_fn(f"  - ChromaDB US 컬렉션: {col_us.count()}건")
+    if total_pairs == 0:
+        legacy_count = _get_legacy_pair_count()
+        if legacy_count:
+            log_fn(
+                "  - ⚠ Legacy RAG DB detected: "
+                f"{LEGACY_RAG_DB_DIR} has {legacy_count} pairs. "
+                "Migrate it to runtime/rag_db or set RAG_DB_DIR explicitly."
+            )
     log_fn(f"  - 스토리별 현황:")
     for row in story_counts:
         log_fn(f"    {row['story_id']}: {row['cnt']}건")
@@ -550,6 +559,25 @@ def run_status(log_fn=print):
         "kr_vectors": col_kr.count(),
         "us_vectors": col_us.count(),
     }
+
+
+def _get_legacy_pair_count() -> int:
+    if RAG_DB_DIR == LEGACY_RAG_DB_DIR:
+        return 0
+
+    legacy_sqlite = LEGACY_RAG_DB_DIR / "rag_store.db"
+    if not legacy_sqlite.exists():
+        return 0
+
+    try:
+        legacy_conn = sqlite3.connect(str(legacy_sqlite))
+        try:
+            row = legacy_conn.execute("SELECT COUNT(*) FROM rag_pairs").fetchone()
+            return int(row[0]) if row else 0
+        finally:
+            legacy_conn.close()
+    except sqlite3.Error:
+        return 0
 
 
 # ─── 비동기 래퍼 (SSE용) ──────────────────────────────────────────────────────

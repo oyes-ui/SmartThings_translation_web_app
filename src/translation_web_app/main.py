@@ -19,6 +19,9 @@ from translation_web_app.checker_service import TranslationChecker
 from translation_web_app.prompt_builder import PromptBuilder
 from translation_web_app.model_handler import ModelHandler
 from translation_web_app.paths import STATIC_DIR, UPLOAD_DIR, ensure_runtime_dirs
+from translation_web_app.routers.glossaries import create_glossaries_router
+from translation_web_app.routers.text_workbooks import create_text_workbooks_router
+from translation_web_app.services.glossary_store import resolve_glossary_file
 import zipfile
 
 # RAG 모듈 임포트 (DB 없으면 graceful fallback)
@@ -47,6 +50,8 @@ app.add_middleware(
 TASK_STORE = {}
 PROMPT_BUILDER = PromptBuilder()
 _TOKEN_COUNTER = ModelHandler()  # env-key only; used for token counting in demo
+app.include_router(create_glossaries_router())
+app.include_router(create_text_workbooks_router(TASK_STORE))
 
 class StartRequest(BaseModel):
     source_file_id: str
@@ -88,9 +93,9 @@ async def background_inspection_task(task_id, params):
         source_path = os.path.join(UPLOAD_DIR, params.source_file_id)
         target_path = os.path.join(UPLOAD_DIR, params.target_file_id)
         
-        glossary_path = None
-        if params.glossary_file_id:
-            glossary_path = os.path.join(UPLOAD_DIR, params.glossary_file_id)
+        glossary = resolve_glossary_file(params.glossary_file_id)
+        glossary_path = glossary.path
+        await queue.put({"type": "log", "message": glossary.message})
 
         # Run generator
         gen = checker.run_inspection_async_generator(
@@ -150,9 +155,9 @@ async def integrated_translation_task(task_id, params):
         
         source_path = os.path.join(UPLOAD_DIR, params.source_file_id)
         
-        glossary_path = None
-        if params.glossary_file_id:
-            glossary_path = os.path.join(UPLOAD_DIR, params.glossary_file_id)
+        glossary = resolve_glossary_file(params.glossary_file_id)
+        glossary_path = glossary.path
+        await queue.put({"type": "log", "message": glossary.message})
 
         if params.task_mode == "highlight_only":
             await queue.put({"type": "log", "message": "Starting highlight only pipeline..."})
@@ -163,7 +168,8 @@ async def integrated_translation_task(task_id, params):
                 glossary_file_path=glossary_path,
                 selected_sheets=params.sheets,
                 source_sheet_name=params.source_sheet,
-                source_lang=params.source_lang
+                source_lang=params.source_lang,
+                source_groups=params.source_groups if params.source_groups else None
             )
         else:
             await queue.put({"type": "log", "message": "Starting integrated translation and audit pipeline..."})
@@ -179,7 +185,8 @@ async def integrated_translation_task(task_id, params):
                 source_sheet_name=params.source_sheet,
                 skip_audit=(params.task_mode == "translate_only"),
                 source_lang=params.source_lang,
-                rag_identity_match=params.rag_identity_match
+                rag_identity_match=params.rag_identity_match,
+                source_groups=params.source_groups if params.source_groups else None
             )
         
         async for event in gen:

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glossary Manager</title>
+    <style>
+        :root {
+            --bg: #0b1020;
+            --panel: #111827;
+            --line: #263244;
+            --text: #e5e7eb;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --danger: #f87171;
+            --success: #34d399;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+        header {
+            height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            border-bottom: 1px solid var(--line);
+            background: #0f172a;
+        }
+        h1 {
+            font-size: 17px;
+            margin: 0;
+            font-weight: 650;
+            letter-spacing: 0;
+        }
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        input, textarea, select, button {
+            font: inherit;
+        }
+        input[type="search"] {
+            width: 280px;
+            max-width: 34vw;
+            background: #0b1220;
+            border: 1px solid var(--line);
+            color: var(--text);
+            border-radius: 6px;
+            padding: 8px 10px;
+            font-size: 13px;
+        }
+        button, .file-label, a.button {
+            border: 1px solid var(--line);
+            background: #172033;
+            color: var(--text);
+            border-radius: 6px;
+            padding: 8px 10px;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        button:hover, .file-label:hover, a.button:hover { border-color: var(--accent); }
+        button.primary { background: #075985; border-color: #0ea5e9; }
+        button.danger { color: #fecaca; border-color: #7f1d1d; background: #32131a; }
+        button:disabled { opacity: .5; cursor: not-allowed; }
+        .status {
+            height: 34px;
+            display: flex;
+            align-items: center;
+            padding: 0 18px;
+            color: var(--muted);
+            font-size: 12px;
+            border-bottom: 1px solid var(--line);
+            background: #0b1220;
+        }
+        .status strong { color: var(--text); font-weight: 600; }
+        main {
+            height: calc(100vh - 92px);
+            overflow: auto;
+            background: #0b1020;
+        }
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 100%;
+            table-layout: fixed;
+        }
+        th, td {
+            border-right: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+            background: #101827;
+            vertical-align: top;
+        }
+        th {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            background: #172033;
+            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: 650;
+            padding: 8px;
+            text-align: left;
+        }
+        th small {
+            display: block;
+            color: var(--muted);
+            font-weight: 400;
+            margin-top: 2px;
+        }
+        .col-key, .cell-key { width: 210px; min-width: 210px; position: sticky; left: 0; z-index: 2; }
+        .col-rule, .cell-rule { width: 240px; min-width: 240px; position: sticky; left: 210px; z-index: 2; }
+        th.col-key, th.col-rule { z-index: 4; }
+        .col-actions, .cell-actions { width: 82px; min-width: 82px; }
+        .cell-key, .cell-rule { background: #0f172a; }
+        .cell-actions { background: #101827; padding: 6px; text-align: center; }
+        td input, td textarea {
+            width: 100%;
+            min-height: 38px;
+            display: block;
+            border: 0;
+            outline: 0;
+            resize: vertical;
+            background: transparent;
+            color: var(--text);
+            padding: 8px;
+            font-size: 12px;
+        }
+        td textarea { min-height: 48px; }
+        td input:focus, td textarea:focus {
+            background: #172033;
+            box-shadow: inset 0 0 0 1px var(--accent);
+        }
+        .locale-col { width: 180px; min-width: 180px; }
+        .chips {
+            display: flex;
+            gap: 5px;
+            padding: 0 8px 8px;
+            flex-wrap: wrap;
+        }
+        .chip {
+            font-size: 11px;
+            padding: 3px 6px;
+            border-radius: 999px;
+            color: #bae6fd;
+            border: 1px solid #164e63;
+            background: #082f49;
+            cursor: pointer;
+        }
+        #fileInput { display: none; }
+        .empty {
+            padding: 32px;
+            color: var(--muted);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Glossary Manager</h1>
+        <div class="toolbar">
+            <input type="search" id="searchInput" placeholder="Search key or rule">
+            <button id="addRowBtn">Add Row</button>
+            <button id="saveBtn" class="primary" disabled>Save Changes</button>
+            <label class="file-label" for="fileInput">Import CSV</label>
+            <input type="file" id="fileInput" accept=".csv">
+            <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;">
+                <input type="checkbox" id="replaceToggle"> Replace all
+            </label>
+            <a class="button" href="/api/glossary/export.csv">Export CSV</a>
+        </div>
+    </header>
+    <div class="status" id="statusBar">Loading glossary...</div>
+    <main id="gridWrap">
+        <div class="empty">Loading...</div>
+    </main>
+
+    <script>
+        const state = {
+            locales: [],
+            terms: [],
+            dirty: new Map(),
+            search: '',
+            limit: 500,
+            offset: 0,
+        };
+        const statusBar = document.getElementById('statusBar');
+        const gridWrap = document.getElementById('gridWrap');
+        const saveBtn = document.getElementById('saveBtn');
+        const searchInput = document.getElementById('searchInput');
+        const chips = ['대괄호 제외', '비활성화', '동일 의미 모두 적용'];
+
+        function setStatus(message) {
+            statusBar.innerHTML = message;
+        }
+
+        async function loadGlossary() {
+            setStatus('Loading glossary...');
+            const [localeRes, termRes, statusRes] = await Promise.all([
+                fetch('/api/glossary/locales'),
+                fetch(`/api/glossary/terms?limit=${state.limit}&search=${encodeURIComponent(state.search)}`),
+                fetch('/api/glossary/status'),
+            ]);
+            if (!localeRes.ok || !termRes.ok || !statusRes.ok) {
+                throw new Error('Failed to load glossary.');
+            }
+            state.locales = (await localeRes.json()).locales;
+            const termData = await termRes.json();
+            const status = await statusRes.json();
+            state.terms = termData.terms;
+            state.dirty.clear();
+            saveBtn.disabled = true;
+            renderGrid();
+            setStatus(`<strong>${status.term_count}</strong> terms · <strong>${status.locale_count}</strong> locales · ${status.db_path}`);
+        }
+
+        function renderGrid() {
+            if (!state.locales.length) {
+                gridWrap.innerHTML = '<div class="empty">No glossary columns found. Import a CSV first.</div>';
+                return;
+            }
+            const head = `
+                <thead>
+                    <tr>
+                        <th class="col-key">Key<small>source term</small></th>
+                        <th class="col-rule">Rule<small>free text</small></th>
+                        ${state.locales.map(l => `<th class="locale-col">${escapeHtml(l.header_display)}<small>${escapeHtml(l.header_code || l.header_alias || '')}</small></th>`).join('')}
+                        <th class="col-actions">Actions</th>
+                    </tr>
+                </thead>`;
+            const body = state.terms.map(renderRow).join('');
+            gridWrap.innerHTML = `<table>${head}<tbody>${body}</tbody></table>`;
+        }
+
+        function renderRow(term) {
+            const id = term.id;
+            return `
+                <tr data-id="${id}">
+                    <td class="cell-key"><textarea data-field="source_key">${escapeHtml(term.source_key || '')}</textarea></td>
+                    <td class="cell-rule">
+                        <textarea data-field="rule_text">${escapeHtml(term.rule_text || '')}</textarea>
+                        <div class="chips">${chips.map(chip => `<span class="chip" data-chip="${chip}">${chip}</span>`).join('')}</div>
+                    </td>
+                    ${state.locales.map(locale => `
+                        <td><textarea data-locale="${locale.id}">${escapeHtml((term.translations || {})[locale.id] || '')}</textarea></td>
+                    `).join('')}
+                    <td class="cell-actions"><button class="danger" data-delete="${id}">Delete</button></td>
+                </tr>`;
+        }
+
+        function markDirty(row) {
+            const id = row.dataset.id;
+            const translations = {};
+            row.querySelectorAll('[data-locale]').forEach(input => {
+                translations[input.dataset.locale] = input.value;
+            });
+            state.dirty.set(id, {
+                id,
+                source_key: row.querySelector('[data-field="source_key"]').value,
+                rule_text: row.querySelector('[data-field="rule_text"]').value,
+                translations,
+            });
+            saveBtn.disabled = false;
+        }
+
+        gridWrap.addEventListener('input', event => {
+            const row = event.target.closest('tr[data-id]');
+            if (row) markDirty(row);
+        });
+
+        gridWrap.addEventListener('click', async event => {
+            const chip = event.target.closest('[data-chip]');
+            if (chip) {
+                const row = chip.closest('tr[data-id]');
+                const rule = row.querySelector('[data-field="rule_text"]');
+                const value = chip.dataset.chip;
+                rule.value = rule.value.trim() ? `${rule.value.trim()}; ${value}` : value;
+                markDirty(row);
+                return;
+            }
+            const del = event.target.closest('[data-delete]');
+            if (del) {
+                const id = del.dataset.delete;
+                if (id.startsWith('new-')) {
+                    state.terms = state.terms.filter(term => String(term.id) !== id);
+                    state.dirty.delete(id);
+                    renderGrid();
+                    return;
+                }
+                const res = await fetch(`/api/glossary/terms/${id}`, { method: 'DELETE' });
+                if (!res.ok) {
+                    setStatus(`Delete failed: ${await res.text()}`);
+                    return;
+                }
+                await loadGlossary();
+            }
+        });
+
+        document.getElementById('addRowBtn').addEventListener('click', () => {
+            const id = `new-${Date.now()}`;
+            const translations = Object.fromEntries(state.locales.map(locale => [locale.id, '']));
+            state.terms.unshift({ id, source_key: '', rule_text: '', translations });
+            state.dirty.set(id, { id, source_key: '', rule_text: '', translations });
+            saveBtn.disabled = false;
+            renderGrid();
+        });
+
+        saveBtn.addEventListener('click', async () => {
+            saveBtn.disabled = true;
+            for (const item of state.dirty.values()) {
+                const isNew = String(item.id).startsWith('new-');
+                const url = isNew ? '/api/glossary/terms' : `/api/glossary/terms/${item.id}`;
+                const method = isNew ? 'POST' : 'PUT';
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item),
+                });
+                if (!res.ok) {
+                    setStatus(`Save failed: ${await res.text()}`);
+                    saveBtn.disabled = false;
+                    return;
+                }
+            }
+            await loadGlossary();
+        });
+
+        document.getElementById('fileInput').addEventListener('change', async event => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const form = new FormData();
+            form.append('file', file);
+            const mode = document.getElementById('replaceToggle').checked ? 'replace' : 'merge';
+            const res = await fetch(`/api/glossary/import?mode=${mode}`, { method: 'POST', body: form });
+            if (!res.ok) {
+                setStatus(`Import failed: ${await res.text()}`);
+                return;
+            }
+            const result = await res.json();
+            setStatus(`Imported CSV: ${result.created} created, ${result.updated} updated.`);
+            await loadGlossary();
+            event.target.value = '';
+        });
+
+        let searchTimer = null;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(async () => {
+                state.search = searchInput.value;
+                await loadGlossary();
+            }, 250);
+        });
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;',
+            }[ch]));
+        }
+
+        loadGlossary().catch(error => setStatus(error.message));
+    </script>
+</body>
+</html>
