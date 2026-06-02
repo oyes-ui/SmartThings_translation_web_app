@@ -80,6 +80,7 @@ class StartRequest(BaseModel):
 
 async def background_inspection_task(task_id, params):
     queue = TASK_STORE[task_id]["queue"]
+    glossary = None
     try:
         checker = TranslationChecker(
             model_name=params.model_name,
@@ -139,11 +140,12 @@ async def background_inspection_task(task_id, params):
         print(f"Background Task Error: {e}")
         await queue.put({"type": "error", "message": f"검수 시작 중 오류 발생: {str(e)}"})
     finally:
-        # cleanup files maybe? or keep them for now.
-        pass
+        if glossary:
+            glossary.cleanup()
 
 async def integrated_translation_task(task_id, params):
     queue = TASK_STORE[task_id]["queue"]
+    glossary = None
     try:
         checker = TranslationChecker(
             model_name=params.audit_model,
@@ -227,6 +229,9 @@ async def integrated_translation_task(task_id, params):
     except Exception as e:
         print(f"Integrated Task Error: {e}")
         await queue.put({"type": "error", "message": f"작업 중 오류 발생: {str(e)}"})
+    finally:
+        if glossary:
+            glossary.cleanup()
 
 @app.post("/api/upload")
 async def upload_files(

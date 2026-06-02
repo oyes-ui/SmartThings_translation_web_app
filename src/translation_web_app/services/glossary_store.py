@@ -21,6 +21,15 @@ class GlossaryResolution:
     path: str | None
     source: str
     message: str
+    temporary: bool = False
+
+    def cleanup(self) -> None:
+        if not self.temporary or not self.path:
+            return
+        try:
+            Path(self.path).unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 class GlossaryStore:
@@ -407,6 +416,7 @@ def resolve_glossary_file(uploaded_glossary_id: str | None) -> GlossaryResolutio
             path=str(uploaded_path),
             source="uploaded",
             message=f"Using uploaded glossary CSV: {uploaded_glossary_id}",
+            temporary=False,
         )
 
     store = GlossaryStore()
@@ -416,6 +426,7 @@ def resolve_glossary_file(uploaded_glossary_id: str | None) -> GlossaryResolutio
             path=str(exported),
             source="builtin",
             message="Using built-in glossary DB.",
+            temporary=True,
         )
 
-    return GlossaryResolution(path=None, source="none", message="No glossary selected.")
+    return GlossaryResolution(path=None, source="none", message="No glossary selected.", temporary=False)

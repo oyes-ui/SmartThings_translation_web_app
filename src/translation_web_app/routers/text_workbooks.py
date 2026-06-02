@@ -66,8 +66,8 @@ def create_text_workbooks_router(task_store: dict) -> APIRouter:
                 source_sheet=req.source_sheet,
                 story_number=req.story_number,
                 update_date=req.update_date,
-                story=req.story.dict(),
-                sections=[section.dict() for section in req.sections],
+                story=req.story.model_dump(),
+                sections=[section.model_dump() for section in req.sections],
             )
         except Exception as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -80,7 +80,15 @@ def create_text_workbooks_router(task_store: dict) -> APIRouter:
             "source_path": str(generated.path),
         }
 
-        background_tasks.add_task(_text_workbook_translation_task, task_store, task_id, req, generated.path, generated.story_id)
+        background_tasks.add_task(
+            _text_workbook_translation_task,
+            task_store,
+            task_id,
+            req,
+            generated.path,
+            generated.story_id,
+            generated.cell_range,
+        )
         return {
             "task_id": task_id,
             "source_file_id": generated.file_id,
@@ -97,8 +105,10 @@ async def _text_workbook_translation_task(
     params: TextWorkbookStartRequest,
     source_path: Path,
     story_id: str,
+    cell_range: str,
 ) -> None:
     queue = task_store[task_id]["queue"]
+    glossary = None
     try:
         checker = TranslationChecker(
             model_name=params.audit_model,
@@ -115,7 +125,7 @@ async def _text_workbook_translation_task(
         await queue.put({"type": "log", "message": glossary.message})
         gen = checker.run_integrated_pipeline_generator(
             source_file_path=str(source_path),
-            cell_range="C7:C28",
+            cell_range=cell_range,
             bx_style_on=params.bx_style_enabled,
             sheet_lang_map=params.sheet_langs,
             translation_model=params.translation_model,
@@ -161,3 +171,6 @@ async def _text_workbook_translation_task(
 
     except Exception as exc:
         await queue.put({"type": "error", "message": f"텍스트 워크북 작업 중 오류 발생: {str(exc)}"})
+    finally:
+        if glossary:
+            glossary.cleanup()

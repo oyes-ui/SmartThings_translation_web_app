@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 
 from translation_web_app.paths import UPLOAD_DIR
 from translation_web_app.services.glossary_store import GlossaryStore
+
+
+def _safe_unlink(path) -> None:
+    try:
+        path.unlink(missing_ok=True)
+    except OSError:
+        pass
 
 
 def create_glossaries_router(store_factory=GlossaryStore) -> APIRouter:
@@ -79,9 +85,10 @@ def create_glossaries_router(store_factory=GlossaryStore) -> APIRouter:
         return result
 
     @router.get("/export.csv")
-    async def export_csv():
+    async def export_csv(background_tasks: BackgroundTasks):
         output_path = UPLOAD_DIR / f"glossary_export_{uuid4()}.csv"
         exported = store_factory().export_csv(output_path)
+        background_tasks.add_task(_safe_unlink, exported)
         return FileResponse(
             exported,
             media_type="text/csv",

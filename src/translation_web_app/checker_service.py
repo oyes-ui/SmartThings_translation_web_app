@@ -71,12 +71,6 @@ class TranslationChecker:
         self._sem = asyncio.Semaphore(self.max_concurrency)
             
         self.no_backtranslation = no_backtranslation
-        
-        # Concurrency
-        if max_concurrency < 1:
-            max_concurrency = 1
-        self.max_concurrency = max_concurrency
-        self._sem = asyncio.Semaphore(self.max_concurrency)
 
         # Whitelist
         default_whitelist = {"ok", "on", "off", "ai", "5g", "go", "up", "usb", "nfc"}
