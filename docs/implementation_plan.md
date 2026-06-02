@@ -18,13 +18,13 @@ The **Samsung BX Guideline Engine**.
 #### [NEW] [model_handler.py](file:///Users/df_n67/Documents/2507_SAMSUNG/SmartThings_translation_web_app/model_handler.py)
 Dynamic API client management.
 
-#### [MODIFY] [checker_service.py](file:///Users/df_n67/Documents/2507_SAMSUNG/SmartThings_translation_web_app/checker_service.py)
+#### [MODIFY] [src/translation_web_app/checker_service.py](file:///Users/df_n67/Documents/2507_SAMSUNG/SmartThings_translation_web_app/src/translation_web_app/checker_service.py)
 - **Formatting Preservation**: Use `openpyxl`'s cell-by-cell update logic to replace only the `cell.value`, preserving original fonts, colors, and borders.
 - **Parallel Pipeline**: `[Translate/Transcreate -> Audit -> Write-Back]`.
 
 ### API & UI
 
-#### [MODIFY] [main.py](file:///Users/df_n67/Documents/2507_SAMSUNG/SmartThings_translation_web_app/main.py)
+#### [MODIFY] [src/translation_web_app/main.py](file:///Users/df_n67/Documents/2507_SAMSUNG/SmartThings_translation_web_app/src/translation_web_app/main.py)
 - Update `StartRequest` and orchestration logic.
 
 ---

@@ -95,7 +95,7 @@ GOOGLE_API_KEY=your_google_api_key_here
 
 **방법 B: 수동 실행**
 ```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+PYTHONPATH=src uvicorn translation_web_app.main:app --reload --reload-dir src --host 0.0.0.0 --port 8000
 ```
 브라우저에서 `http://localhost:8000`으로 접속합니다. (Prompt Inspector: `/demo.html`)
 
@@ -124,12 +124,12 @@ docker run -p 7860:7860 -e GOOGLE_API_KEY="your_key_here" translation-checker
 ### [v1.5.0] - 2026-05-12
 - **Enhanced**: Localization Engine V2 업데이트 (포르투갈어/중국어 시장별 분리)
 - **Added**: Context-Aware Glossary 처리 로직 (Title/Button vs Description)
-- **Added**: Prompt Inspector 디버그 페이지 추가 (`/static/demo.html`)
+- **Added**: Prompt Inspector 디버그 페이지 추가 (`/demo.html`)
 - **Added**: 언어별 타이포그래피 및 문장 부호 표준화 규칙 적용
 - **Refactored**: `PromptBuilder` 및 `prompt_modules` 구조적 리팩토링
 
 ### [v1.4.0] - 2026-04-15
-- **Fixed**: `checker_service.py` 구문 오류(SyntaxError) 수정 및 앱 실행 불가 이슈 해결
+- **Fixed**: `src/translation_web_app/checker_service.py` 구문 오류(SyntaxError) 수정 및 앱 실행 불가 이슈 해결
 - **Added**: 일반 채팅(ChatGPT, Gemini)용 프롬프트 마스터 문서 추가 (`docs/prompts_for_chat.md`)
 
 ---

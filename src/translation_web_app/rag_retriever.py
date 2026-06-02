@@ -6,8 +6,8 @@ SmartThings 번역 RAG 검색 모듈
 번역 요청 시 유사 과거 번역 사례를 ChromaDB에서 검색하여 프롬프트용 문자열로 반환합니다.
 
 사용법 (CLI 테스트):
-  python rag_retriever.py --test "AI goes to sleep" --lang "DE(독일)"
-  python rag_retriever.py --test "AI 절약 모드 설정" --lang "JA(일본)"
+  PYTHONPATH=src python -m translation_web_app.rag_retriever --test "AI goes to sleep" --lang "DE(독일)"
+  PYTHONPATH=src python -m translation_web_app.rag_retriever --test "AI 절약 모드 설정" --lang "JA(일본)"
 """
 
 import os
@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ─── rag_db_builder 상수 재사용 ──────────────────────────────────────────────
-from rag_db_builder import (
+from translation_web_app.rag_db_builder import (
     normalize_text,
     get_collection_name,
     GROUP_A_SHEETS,
@@ -270,7 +270,7 @@ if __name__ == "__main__":
     retriever = RagRetriever()
 
     if not retriever.is_available():
-        print("❌ RAG DB가 없습니다. 먼저 'python rag_db_builder.py --pilot' 을 실행하세요.")
+        print("❌ RAG DB가 없습니다. 먼저 'PYTHONPATH=src python -m translation_web_app.rag_db_builder --pilot' 을 실행하세요.")
         sys.exit(1)
 
     print(f"\n🔍 검색 쿼리: \"{args.test}\" → [{args.lang}]")

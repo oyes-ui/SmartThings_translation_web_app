@@ -4,10 +4,10 @@ rag_db_builder.py
 SmartThings 번역 RAG DB 구축 모듈
 
 사용법:
-  python rag_db_builder.py --pilot            # story_001 파일 1개만 빌드 후 보고
-  python rag_db_builder.py --build-all        # 전체 파일 빌드 (이미 처리된 파일 skip)
-  python rag_db_builder.py --update-story story_001   # 특정 스토리 증분 업데이트
-  python rag_db_builder.py --status           # DB 현황 조회
+  PYTHONPATH=src python -m translation_web_app.rag_db_builder --pilot
+  PYTHONPATH=src python -m translation_web_app.rag_db_builder --build-all
+  PYTHONPATH=src python -m translation_web_app.rag_db_builder --update-story story_001
+  PYTHONPATH=src python -m translation_web_app.rag_db_builder --status
 """
 
 import os
@@ -25,18 +25,19 @@ from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 import chromadb
+from translation_web_app.paths import (
+    CHROMA_DIR,
+    EXCEL_DATA_DIR,
+    RAG_DB_DIR,
+    SQLITE_PATH,
+    ensure_runtime_dirs,
+)
 
 load_dotenv()
 
 # ─── 경로 설정 ────────────────────────────────────────────────────────────────
-BASE_DIR = Path(__file__).parent
-EXCEL_DIR = BASE_DIR / "@translation_data" / "@excel"
-RAG_DB_DIR = BASE_DIR / "rag_db"
-CHROMA_DIR = RAG_DB_DIR / "chroma"
-SQLITE_PATH = RAG_DB_DIR / "rag_store.db"
-
-RAG_DB_DIR.mkdir(parents=True, exist_ok=True)
-CHROMA_DIR.mkdir(parents=True, exist_ok=True)
+EXCEL_DIR = EXCEL_DATA_DIR
+ensure_runtime_dirs()
 
 # ChromaDB 컬렉션명
 COLLECTION_KR = "smartthings_kr_source"  # Group A용 (KR 기준)
@@ -419,7 +420,7 @@ def run_pilot(log_fn=print) -> dict:
     """파일럿: 첫 번째 엑셀 파일 1개만 빌드"""
     files = get_excel_files()
     if not files:
-        log_fn("❌ @translation_data/@excel 폴더에 엑셀 파일이 없습니다.")
+        log_fn(f"❌ {EXCEL_DIR} 폴더에 엑셀 파일이 없습니다.")
         return {}
 
     target_file = files[0]
@@ -462,7 +463,7 @@ def run_build_all(log_fn=print, force: bool = False) -> int:
 
     files = get_excel_files()
     if not files:
-        log_fn("❌ @translation_data/@excel 폴더에 엑셀 파일이 없습니다.")
+        log_fn(f"❌ {EXCEL_DIR} 폴더에 엑셀 파일이 없습니다.")
         return 0
 
     gemini_client = get_gemini_client()
@@ -533,6 +534,8 @@ def run_status(log_fn=print):
     ).fetchall()
 
     log_fn("📊 RAG DB 현황:")
+    log_fn(f"  - Excel 데이터 경로: {EXCEL_DIR}")
+    log_fn(f"  - RAG DB 경로: {RAG_DB_DIR}")
     log_fn(f"  - 처리된 파일: {processed_files}개")
     log_fn(f"  - 총 번역 쌍: {total_pairs}건")
     log_fn(f"  - ChromaDB KR 컬렉션: {col_kr.count()}건")

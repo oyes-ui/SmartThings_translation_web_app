@@ -15,28 +15,23 @@ import json
 import openpyxl
 from datetime import datetime
 from contextlib import asynccontextmanager
-from checker_service import TranslationChecker
-from prompt_builder import PromptBuilder
-from model_handler import ModelHandler
+from translation_web_app.checker_service import TranslationChecker
+from translation_web_app.prompt_builder import PromptBuilder
+from translation_web_app.model_handler import ModelHandler
+from translation_web_app.paths import STATIC_DIR, UPLOAD_DIR, ensure_runtime_dirs
 import zipfile
 
 # RAG 모듈 임포트 (DB 없으면 graceful fallback)
 try:
-    import rag_db_builder as _rag_builder
+    from translation_web_app import rag_db_builder as _rag_builder
     _rag_builder_available = True
 except ImportError:
     _rag_builder_available = False
 
 # Directory for temp files
-UPLOAD_DIR = "uploads"
-if not os.path.exists(UPLOAD_DIR):
-    os.makedirs(UPLOAD_DIR)
+ensure_runtime_dirs()
 
 app = FastAPI()
-
-# 1. 현재 main.py 파일이 있는 실제 경로를 계산합니다.
-current_dir = os.path.dirname(os.path.abspath(__file__))
-static_dir = os.path.join(current_dir, "static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -396,7 +391,7 @@ async def prompt_modules(
 @app.get("/api/prompt_universe")
 async def prompt_universe():
     """Builds a Cytoscape-compatible graph of all prompt modules."""
-    from prompt_modules import (
+    from translation_web_app.prompt_modules import (
         COMMON_LOCALIZATION_STANDARD as CLS,
         LANGUAGE_LOCALIZATION_RULES as LLR,
         BX_STYLE_RULES as BX,
@@ -405,7 +400,7 @@ async def prompt_universe():
         GLOSSARY_DISCLAIMER_NAV_EXCEPTION as GDNE,
         GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE as GDNQ
     )
-    from prompt_builder import _LANGUAGE_RULE_LABELS as LRL
+    from translation_web_app.prompt_builder import _LANGUAGE_RULE_LABELS as LRL
     
     nodes, edges = [], []
     def n(i, l, t, c): nodes.append({"data": {"id": i, "label": l, "type": t, "content": c}})
@@ -534,7 +529,7 @@ async def preview_prompt_blocks(
     if _rag_builder_available and source_text:
         try:
             import re as _re
-            from rag_retriever import get_retriever
+            from translation_web_app.rag_retriever import get_retriever
             retriever = get_retriever()
             if retriever.is_available():
                 rag_lang = _DEMO_RAG_LANG.get(target_lang, target_lang)
@@ -688,7 +683,7 @@ async def rag_similar(query: str, target_lang: str = None, source_lang: str = "a
     if not _rag_builder_available:
         raise HTTPException(status_code=500, detail="rag_db_builder 모듈 미설정")
     try:
-        from rag_retriever import get_retriever
+        from translation_web_app.rag_retriever import get_retriever
         retriever = get_retriever()
         if not retriever.is_available():
             return {"results": [], "message": "RAG DB가 비어있습니다"}
@@ -771,12 +766,12 @@ async def update_rag_story(story_id: str, background_tasks: BackgroundTasks):
 
 
 # 1. 'static' 폴더를 웹에 연결
-app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 
 # 2. 접속 시 첫 화면(index.html) 보내주기
 @app.get("/")
 async def read_index():
-    return FileResponse('static/index.html')
+    return FileResponse(STATIC_DIR / "index.html")
 
 # 3. 브라우저 favicon.ico 404 에러 방지
 @app.get("/favicon.ico", include_in_schema=False)

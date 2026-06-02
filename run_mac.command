@@ -18,4 +18,4 @@ pip install -r requirements.txt
 open "http://127.0.0.1:8000"
 
 # 서버 실행
-python3 backend/main.py
+PYTHONPATH=src python3 -m translation_web_app.main

@@ -27,29 +27,27 @@ import sys
 
 import openpyxl
 
-# Add project root to path so we can import prompt_builder / model_handler
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from model_handler import ModelHandler
-from prompt_builder import PromptBuilder
-from checker_service import TranslationChecker
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SRC = os.path.join(ROOT, "src")
+if SRC not in sys.path:
+    sys.path.insert(0, SRC)
+
+from translation_web_app.model_handler import ModelHandler
+from translation_web_app.prompt_builder import PromptBuilder
+from translation_web_app.checker_service import TranslationChecker
+from translation_web_app.paths import EXCEL_DATA_DIR, UPLOAD_DIR
 
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
 
-EXCEL_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "@translation_data", "@excel",
-)
+EXCEL_DIR = str(EXCEL_DATA_DIR)
 
 STORY_015 = os.path.join(EXCEL_DIR, "(CX Center) SmartThings_2.0_Story_Contents_015_0227.xlsx")
 STORY_006 = os.path.join(EXCEL_DIR, "(CX Center) SmartThings_2.0_Story_Contents_006_0319.xlsx")
 
 # Most recent glossary (uploads/, May 19) — used in actual workflow
-GLOSSARY_CSV = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "uploads", "glossary_e2bc0367-f624-4d28-ab50-ce02e330b1e3.csv",
-)
+GLOSSARY_CSV = str(UPLOAD_DIR / "glossary_e2bc0367-f624-4d28-ab50-ce02e330b1e3.csv")
 
 TRANSLATION_MODEL = "gemini-3-flash-preview"
 AUDIT_MODEL       = "gpt-5.4-mini"

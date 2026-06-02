@@ -6,9 +6,9 @@ import unittest
 
 from fastapi.testclient import TestClient
 
-from checker_service import TranslationChecker
-from main import app
-from prompt_builder import PromptBuilder
+from translation_web_app.checker_service import TranslationChecker
+from translation_web_app.main import app
+from translation_web_app.prompt_builder import PromptBuilder
 
 
 class PromptBuilderTests(unittest.TestCase):

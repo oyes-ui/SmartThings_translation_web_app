@@ -6,7 +6,7 @@ The prompt definitions now live in prompt_modules.py and are assembled by
 PromptBuilder. This wrapper keeps older imports working.
 """
 
-from prompt_builder import PromptBuilder
+from translation_web_app.prompt_builder import PromptBuilder
 
 
 class BXGuidelineEngine:

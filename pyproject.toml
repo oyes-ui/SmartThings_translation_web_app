@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smartthings-translation-web-app"
+version = "0.1.0"
+description = "SmartThings translation inspection web app"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+translation_web_app = ["static/*", "static/viewer/*"]

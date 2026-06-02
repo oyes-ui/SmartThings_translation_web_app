@@ -31,7 +31,7 @@ Updated the web interface to support the new features:
 ### Module Architecture
 ```mermaid
 graph TD
-    UI[Web UI] --> Main[main.py]
+    UI[Web UI] --> Main[src/translation_web_app/main.py]
     Main --> ITS[IntegratedTranslationService]
     ITS --> MM[MappingManager]
     ITS --> BX[BXGuidelineEngine]

@@ -20,11 +20,12 @@ import openpyxl
 from openpyxl.cell.rich_text import CellRichText, TextBlock
 
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
 
-from checker_service import TranslationChecker
-from prompt_builder import PromptBuilder
+from translation_web_app.checker_service import TranslationChecker
+from translation_web_app.prompt_builder import PromptBuilder
 
 
 SOURCE_XLSX = ROOT / "tests" / "045_TEST.xlsx"

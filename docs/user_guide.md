@@ -29,7 +29,7 @@ OPENAI_API_KEY=your_openai_api_key_here
 ### 1.4 애플리케이션 실행 (Running the App)
 - **Mac/Linux**: `bash run_mac.command`
 - **Windows**: `go-webui.bat`
-- **수동 실행**: `uvicorn main:app --reload --host 0.0.0.0 --port 8000`
+- **수동 실행**: `PYTHONPATH=src uvicorn translation_web_app.main:app --reload --reload-dir src --host 0.0.0.0 --port 8000`
 
 실행 후 브라우저에서 `http://localhost:8000`에 접속하세요.
 
@@ -89,4 +89,3 @@ OPENAI_API_KEY=your_openai_api_key_here
 
 > [!INFO]
 > 모든 국가별 상세 규칙과 프롬프트 로직은 **[[가이드 02] 종합 규칙 모음](./comprehensive_rules.md)**에서 확인할 수 있습니다.
-

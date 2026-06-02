@@ -151,6 +151,9 @@
                     <div id="aiModelItem" class="config-item">
                         <label>AI Model</label>
                         <select id="modelSelect" class="styled-select">
+                            <optgroup label="Gemini 3.5 Series">
+                                <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                            </optgroup>
                             <optgroup label="Gemini 3.x Series">
                                 <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
                                 <option value="gemini-3.1-flash-lite-preview">Gemini 3.1 Flash Lite</option>
@@ -162,10 +165,15 @@
                                 <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                                 <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
                             </optgroup>
-                            <optgroup label="GPT-5.x Series">
+                            <optgroup label="GPT-5.5 Series">
+                                <option value="gpt-5.5-pro">GPT-5.5 Pro</option>
+                                <option value="gpt-5.5">GPT-5.5</option>
+                            </optgroup>
+                            <optgroup label="GPT-5.4 Series">
                                 <option value="gpt-5.4-pro">GPT-5.4 Pro</option>
                                 <option value="gpt-5.4">GPT-5.4</option>
                                 <option value="gpt-5.4-mini" selected>GPT-5.4 Mini</option>
+                                <option value="gpt-5.4-nano">GPT-5.4 Nano</option>
                             </optgroup>
                             <optgroup label="GPT-5.0 Series">
                                 <option value="gpt-5-pro">GPT-5 Pro</option>
@@ -189,13 +197,38 @@
                                 <option value="o3">OpenAI o3</option>
                                 <option value="o3-mini">OpenAI o3-mini</option>
                                 <option value="o1-pro">OpenAI o1-pro</option>
+                                <option value="gpt-5.5-pro">GPT-5.5 Pro</option>
+                                <option value="gpt-5.5">GPT-5.5</option>
                                 <option value="gpt-5.4-pro">GPT-5.4 Pro</option>
                             </optgroup>
-                            <optgroup label="Standard">
+                            <optgroup label="GPT-5.4 Series">
+                                <option value="gpt-5.4">GPT-5.4</option>
                                 <option value="gpt-5.4-mini" selected>GPT-5.4 Mini</option>
+                                <option value="gpt-5.4-nano">GPT-5.4 Nano</option>
+                            </optgroup>
+                            <optgroup label="GPT-5.0 Series">
+                                <option value="gpt-5-pro">GPT-5 Pro</option>
+                                <option value="gpt-5">GPT-5</option>
                                 <option value="gpt-5-mini">GPT-5 Mini</option>
+                            </optgroup>
+                            <optgroup label="Gemini 3.5 Series">
+                                <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                            </optgroup>
+                            <optgroup label="Gemini 3.x Series">
                                 <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
+                                <option value="gemini-3.1-flash-lite-preview">Gemini 3.1 Flash Lite</option>
+                                <option value="gemini-3-flash-preview">Gemini 3 Flash Preview</option>
+                                <option value="gemini-3-pro-preview">Gemini 3 Pro Preview</option>
+                            </optgroup>
+                            <optgroup label="Gemini 2.5 Series">
                                 <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                                <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
+                            </optgroup>
+                            <optgroup label="Legacy">
+                                <option value="gpt-4.1">GPT-4.1</option>
+                                <option value="gpt-4o">GPT-4o</option>
+                                <option value="gpt-4o-mini">GPT-4o Mini</option>
                             </optgroup>
                         </select>
                     </div>

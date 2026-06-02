@@ -9,7 +9,7 @@
 - **Japanese Navigation Path Rule**: 일본어 타겟 시 검토 시 내비게이션 경로에 `「 」`를 사용하도록 자동화 규칙 추가.
 
 ### Changed
-- **Prompt Module Refactoring**: `prompt_modules.py`의 구조를 평탄화하고 상수화하여 관리 효율성 증대.
+- **Prompt Module Refactoring**: `src/translation_web_app/prompt_modules.py`의 구조를 평탄화하고 상수화하여 관리 효율성 증대.
 - **Context-aware Bracket Logic**: `Title/Button` 행에 대해서는 용어집 브래킷(`[]`)을 자동으로 제외하도록 로직 고도화.
 - **BX Style Enhancements**: 페르소나 및 보이스 속성(OPEN/BOLD/AUTHENTIC)의 구체적인 가이드라인 및 Negative Constraints 강화.
 - **UI Layout Optimization**: 메인 페이지와 인스펙터의 레이아웃을 개선하여 가독성 및 사용성 향상.
@@ -27,7 +27,7 @@
 - **Persistent Version History**: Integrated a "Recent Updates" summary into the README while maintaining the full historical log in the docs.
 
 ### Fixed
-- **Critical Syntax Error**: Resolved a `SyntaxError` in `checker_service.py` (line 1665) caused by a bracket mismatch (`]`) within the keyword filtering logic that prevented the app from starting.
+- **Critical Syntax Error**: Resolved a `SyntaxError` in `src/translation_web_app/checker_service.py` (line 1665) caused by a bracket mismatch (`]`) within the keyword filtering logic that prevented the app from starting.
 
 ### Improved
 - **Prompt Engine Documentation**: Re-organized and clarified the modular prompt architecture documentation for better developer onboarding.
@@ -74,7 +74,7 @@
 ### Added
 - **TXT-to-HTML Viewer Integration**: Integrated a standalone HTML visualizer into `static/viewer/` to render translation reports with rich UI.
 - **AI & RAG UI Enhancements**: Implemented card-based layouts for AI evaluations and progress bars for RAG similarity visualization.
-- **Dual-Format Reporting**: Updated `checker_service.py` to output both human-readable text and hidden JSON payloads (`[상세 - AI Payload]`, `[상세 - RAG Payload]`) for the viewer to parse.
+- **Dual-Format Reporting**: Updated `src/translation_web_app/checker_service.py` to output both human-readable text and hidden JSON payloads (`[상세 - AI Payload]`, `[상세 - RAG Payload]`) for the viewer to parse.
 - **Version Tracking**: Added a version and last updated date label to the main UI and viewer sidebar.
 
 ### Changed

@@ -18,12 +18,15 @@ import re
 import pandas as pd
 import io
 import urllib.parse
-from model_handler import ModelHandler
-from prompt_builder import PromptBuilder
+from translation_web_app.model_handler import ModelHandler
+from translation_web_app.prompt_builder import PromptBuilder
+from translation_web_app.prompt_modules import AUDIT_GRADE_CRITERIA
+
+_GRADE_KR = {"Excellent": "우수", "Good": "양호", "Needs Revision": "수정 필요"}
 
 # RAG 연동 (DB가 없우면 graceful fallback)
 try:
-    from rag_retriever import get_retriever as _get_rag_retriever
+    from translation_web_app.rag_retriever import get_retriever as _get_rag_retriever
 except ImportError:
     _get_rag_retriever = None
 
@@ -887,12 +890,11 @@ class TranslationChecker:
             
             eval_text = "\n".join(lines) if lines else "검수 결과 없음."
             grade = response.get("grade", "")
-            if grade == "Excellent":
-                eval_text += "\n\n최종 평가: 우수 — 직역 없이 자연스러운 현지화."
-            elif grade == "Good":
-                eval_text += "\n\n최종 평가: 양호 — 경미한 개선 여지 있으나 출시 가능 수준."
-            elif grade == "Needs Revision":
-                eval_text += "\n\n최종 평가: 수정 필요 — 직역, 용어집 불일치, 문법 오류 등 확인 필요."
+            grade_label = _GRADE_KR.get(grade, grade)
+            grade_desc = AUDIT_GRADE_CRITERIA.get(grade, "")
+            if grade_label:
+                suffix = f" — {grade_desc}" if grade_desc else ""
+                eval_text += f"\n\n최종 평가: {grade_label}{suffix}"
             if response.get("suggested_fix"):
                 eval_text += f"\n\n[수정안 제안]:\n{response['suggested_fix']}"
 

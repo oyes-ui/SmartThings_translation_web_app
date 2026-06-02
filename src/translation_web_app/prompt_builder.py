@@ -9,7 +9,7 @@ prompt modules visible and reusable.
 import json
 import re
 
-from prompt_modules import (
+from translation_web_app.prompt_modules import (
     AUDIT_CHECKLIST_RULES,
     AUDIT_GRADE_CRITERIA,
     AUDIT_INTRO,

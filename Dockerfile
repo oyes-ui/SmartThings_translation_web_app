@@ -8,6 +8,7 @@ ENV HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH
 
 WORKDIR $HOME/app
+ENV PYTHONPATH=$HOME/app/src
 
 # 3. 라이브러리 설치를 위해 requirements.txt를 먼저 복사합니다.
 COPY --chown=user requirements.txt .
@@ -19,4 +20,4 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 COPY --chown=user . .
 
 # 6. Hugging Face Spaces는 기본적으로 7860 포트를 사용합니다.
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["uvicorn", "translation_web_app.main:app", "--host", "0.0.0.0", "--port", "7860"]
