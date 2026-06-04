@@ -1,0 +1,23 @@
+# Codex skill UI 메타데이터 (어댑터)
+#
+# ⚠ 이 파일은 Codex skill UI 표시용 메타데이터일 뿐이며, 실제 실행 모델과 무관하다.
+#    (이 프로젝트의 번역/임베딩은 Gemini, 검수는 OpenAI 등 별도 설정으로 동작한다.)
+# ⚠ 필드명은 사용 중인 Codex skill 버전 문서로 한 번 검증한 뒤 설치할 것.
+#    Codex skill 포맷이 바뀌면 이 파일만 수정하면 되고, 공통 SKILL.md/scripts는 그대로 둔다.
+#
+# 설치: 이 파일을 skills/smartthings-translation-agent/agents/openai.yaml 로 복사.
+
+name: SmartThings Translation Agent
+display_name: SmartThings 번역·검수 에이전트
+description: >-
+  SmartThings 다국어 번역·검수 보조. 번역 규칙 Q&A, 검수 등급 설명,
+  RAG 과거 사례 조회, 번역 워크북(Excel) 분석·수정을 대화형으로 처리한다.
+default_prompt: >-
+  SmartThings 번역·검수를 도와줘. 규칙 질문, 검수 결과 설명, RAG 사례 조회,
+  엑셀 워크북 분석을 할 수 있어. 엑셀 수정은 승인 후에만 진행해.
+tags:
+  - translation
+  - localization
+  - smartthings
+  - rag
+  - excel

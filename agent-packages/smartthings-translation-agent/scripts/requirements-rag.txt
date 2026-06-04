@@ -1,0 +1,14 @@
+# RAG 조회(rag_lookup.py)까지 사용할 때의 의존성
+#
+# ⚠ rag_lookup.py 는 src/translation_web_app(rag_retriever, rag_db_builder)에 의존하므로
+#    이 repo 안/근처에서 실행해야 한다. (portability.md 참조)
+# ⚠ 버전 핀 필수: chromadb, google-genai 는 메이저 API 변경이 잦다.
+#    아래는 이 패키지가 검증된 버전 기준. 상한을 풀면 시그니처 불일치로 깨질 수 있다.
+#
+# 설치: pip install -r requirements-rag.txt
+#  (requirements-excel.txt 의 openpyxl 도 포함되어 있음)
+
+openpyxl>=3.1,<4
+chromadb>=1.5,<2
+google-genai>=1.73,<2
+python-dotenv>=1.0,<2

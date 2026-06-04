@@ -1,0 +1,9 @@
+# Excel 기능만 사용할 때의 최소 의존성
+# (workbook_inspect.py, workbook_apply_edits.py)
+#
+# 이 스크립트들은 src/translation_web_app 없이도 동작한다(상수 fallback 내장).
+# RAG 스택(chromadb, google-genai ~92M)을 설치할 필요가 없다.
+#
+# 설치: pip install -r requirements-excel.txt
+
+openpyxl>=3.1,<4
