@@ -81,7 +81,46 @@ python scripts/workbook_inspect.py <path.xlsx> --json              # 파싱용 J
 
 > ⚠ 이 검토는 분석·제안 단계다. 원본 Excel은 절대 수정하지 않으며, 적용은 항상 사용자 승인 + `workbook_apply_edits.py`를 거친다.
 
+## Glossary rich text highlight (앱 highlight_only)
+
+앱 본체에는 Excel 셀 안의 **용어집 target term 글자 조각만** 파란색 rich text로 바꾸는 `highlight_only` 파이프라인이 있다. skill에서는 이 로직을 재구현하지 않고 `workbook_highlight_glossary.py` 래퍼로 호출한다.
+
+```bash
+python scripts/workbook_highlight_glossary.py <story.xlsx> --sheets "BR(브라질)"
+python scripts/workbook_highlight_glossary.py <story.xlsx> --cell-range C7:C28 --json
+python scripts/workbook_highlight_glossary.py <story.xlsx> --single-source --source-sheet "US(미국)" --sheets "BR(브라질),DE(독일)"
+```
+
+### 동작 방식
+
+- 기본 용어집: app repo의 `runtime/glossary/latest_glossary.csv`
+- 기본 범위: `C7:C28`
+- 기본 source grouping: `KR(한국)` → `US(미국)`, `JA(일본)`, `CN(중국)`, `TW(대만)` / `US(미국)` → 그 외 타겟 시트
+- 결과: 원본을 덮어쓰지 않고 `<원본>_highlighted_<타임스탬프>.xlsx` 생성
+- 하이라이트 색상: 앱 구현 기준 파란색 `0000FF`
+
+### 안전 규칙
+
+- 사용자가 실제 파일 생성을 요청하거나 승인했을 때만 실행한다.
+- source/target 시트 선택이 불명확하면 실행 전 확인한다.
+- 하이라이트는 기존 target 텍스트를 번역하거나 수정하지 않고 rich text만 적용한다.
+- 용어집 불일치·괄호·대소문자 로그는 보고서 텍스트에 남지만, 최종 판단은 필요 시 별도 검수로 확인한다.
+
+## 번역·검수 파이프라인 (LLM, 옵트인)
+
+워크북 전체를 실제로 번역(+검수)하거나 기존 번역을 일괄 검수하려면 앱 파이프라인을 호출한다.
+**LLM 크레딧을 소모**하므로 소량·단건은 셀프 모드(`prompt_preview.py`, 크레딧 0)를 먼저 고려한다.
+(→ `self-vs-pipeline.md`)
+
+```bash
+python scripts/workbook_translate.py <story.xlsx> --pipeline --sheets "DE(독일)"   # 번역(+검수)
+python scripts/workbook_translate.py <story.xlsx> --pipeline --translate-only ...  # 번역만
+python scripts/workbook_audit.py    <story.xlsx> --pipeline --sheets "DE(독일)"     # 검수 전용
+```
+
+`--pipeline` 없으면 스크립트가 거부하고 셀프 모드를 안내한다. 원본은 수정되지 않는다(앱이 새 파일 생성).
+
 ## 주의
 
-- 검수 결과 워크북(rich text 하이라이트 포함)은 `checker_service.py`가 생성한다. 이 skill의 `apply_edits`는 단순 `cell.value` 치환용이며, 검수 하이라이트를 재현하지 않는다.
+- 검수 결과 워크북(rich text 하이라이트 포함)은 `checker_service.py`가 생성한다. 이 skill의 `apply_edits`는 단순 `cell.value` 치환용이며, rich text 하이라이트는 `workbook_highlight_glossary.py`를 사용한다.
 - 시트명 변종(`FR(프랑스)` vs `FR (프랑스)`)이 보이면 데이터 정합성 문제로 보고한다 (`rag-workflow.md` 참조).

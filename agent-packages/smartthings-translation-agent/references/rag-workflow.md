@@ -79,6 +79,18 @@ RAG 데이터(`runtime/rag_db/rag_store.db`)만 있으면 **키 없이**:
   PYTHONPATH=src python -m translation_web_app.rag_db_builder --build-all
   ```
 
+## RAG DB 관리 CLI (`/st-ragdb`)
+
+앱 `rag_db_builder` 는 이미 CLI다. 별도 래퍼 없이 app repo 루트에서 직접 실행한다. **status 만 크레딧 0**,
+나머지 빌드/업데이트는 임베딩 크레딧을 소모하므로 실행 전 승인.
+
+```bash
+PYTHONPATH=src python -m translation_web_app.rag_db_builder --status            # 현황(크레딧 0)
+PYTHONPATH=src python -m translation_web_app.rag_db_builder --pilot             # 첫 파일 1개만(테스트)
+PYTHONPATH=src python -m translation_web_app.rag_db_builder --build-all [--force]
+PYTHONPATH=src python -m translation_web_app.rag_db_builder --update-story story_025
+```
+
 ## 언어 코드 ↔ 풀워드 매핑 (rag_lookup.py 내장)
 
 | 풀워드 | 코드 | 풀워드 | 코드 |
