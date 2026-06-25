@@ -1,6 +1,6 @@
 # Claude Code 설치 노트
 
-> 상태: **문서만** (이번 단계는 Codex 우선). Claude 활성화 시 아래대로 복사.
+> 상태: **활성** — 이 repo의 `.claude/commands/`에 `/st-*` 명령이 설치돼 있다. 스킬 본체를 `.claude/skills/`로 복사하려면 아래 절차를 따른다.
 
 ## 설치 위치
 
@@ -14,7 +14,7 @@ cp -r agent-packages/smartthings-translation-agent .claude/skills/
 ## 슬래시 명령어 (`/st-*`)
 
 패키지의 `commands/*.md` 를 Claude Code 명령 디렉터리로 복사하면 `/st-help`, `/st-prompt`,
-`/st-glossary` 등 13개 명령이 활성화된다.
+`/st-glossary` 등 14개 명령이 활성화된다.
 
 ```bash
 # project-local

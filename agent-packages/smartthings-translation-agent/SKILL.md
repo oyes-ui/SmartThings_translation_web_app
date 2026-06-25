@@ -65,6 +65,7 @@ python scripts/bootstrap.py --app-root <경로> --save
 | `/st-textbook` | 구조화 텍스트 → source 워크북 생성 | 0 |
 | `/st-translate` | 앱 번역(+검수) 파이프라인 실행 | LLM |
 | `/st-audit` | 앱 검수(inspection) 파이프라인 실행 | LLM |
+| `/st-notebooklm` | NotebookLM MCP로 긴 리포트/공유 노트 보조 분석 | 외부 MCP |
 
 ## 안전 규칙 (반드시 준수)
 
@@ -81,7 +82,7 @@ python scripts/bootstrap.py --app-root <경로> --save
 규칙 질문        → references/rules-sources.md 읽고 답변 (docs/comprehensive_rules.md + prompt_modules.py 우선)
 검수 등급 설명   → references/response-patterns.md 형식으로, 6개 카테고리별로 설명
 RAG 사례 필요    → scripts/rag_lookup.py 실행 → references/rag-workflow.md 따라 결과 해석
-NotebookLM 링크  → references/notebooklm-workflow.md 확인 → MCP/인증 확인 → 기본은 ask_question(notebook_url) 단발 분석, 등록은 승인 후
+NotebookLM 링크  → references/notebooklm-workflow.md 확인 → MCP/인증 확인 → 승인 후 add_notebook+select_notebook 등록 → ask_question, 일회성이면 remove_notebook 정리
 Excel 분석       → scripts/workbook_inspect.py (읽기 전용)
 섹션 맥락 검토   → scripts/workbook_inspect.py --sections → response-patterns.md(C-2) 템플릿으로 제안 → 승인 후 workbook_apply_edits.py
 Excel 수정       → 변경안 제시 → 사용자 승인 → scripts/workbook_apply_edits.py
