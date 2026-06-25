@@ -134,6 +134,12 @@ docker run -p 7860:7860 -e GOOGLE_API_KEY="your_key_here" translation-checker
 
 상세한 변경 내역은 [CHANGELOG.md](docs/CHANGELOG.md)에서 확인할 수 있습니다.
 
+### [v1.7.0] - 2026-06-25
+- **Added**: 번역 에이전트 셀프 모드 — `prompt_preview.py` 가 앱과 동일한 프롬프트를 조립해 LLM 크레딧 없이 직접 번역/검수
+- **Added**: 에이전트 래퍼 — 용어집 관리, 텍스트워크북 생성, 번역/검수 파이프라인(`--pipeline` 가드)
+- **Added**: 슬래시 명령어 13종(`/st-*`)과 프로젝트 안내(`/st-help`)
+- **Safety**: 용어집 쓰기 `--apply` 가드, 리포트 atomic write, 미완료 실행 `incomplete` 처리
+
 ### [v1.6.0] - 2026-06-02
 - **Added**: 다중 소스 그룹(`source_groups`) 기반 통합 번역+검수 파이프라인 지원
 - **Added**: 하이라이트 전용 파이프라인의 다중 소스 그룹 처리 지원
