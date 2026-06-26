@@ -74,6 +74,8 @@ python scripts/bootstrap.py --app-root <경로> --save
 3. **API 크레딧 사전 확인**: RAG DB 재구축, LLM 검수 재실행 등 크레딧이 드는 작업은 실행 전 사용자에게 확인한다. (`rag_lookup.py`의 offline 조회는 크레딧 0; semantic 조회만 임베딩 1회 수준)
 4. **시크릿 미노출**: API 키·`.env` 내용을 출력하거나 로그에 남기지 않는다.
 5. **NotebookLM 외부 자료 주의**: NotebookLM 링크 등록, source 추가, Google 인증은 사용자 승인 후 진행한다. NotebookLM 답변은 보조 분석 결과이며 app/RAG/Excel 기준 사실과 구분해서 사용한다.
+6. **LM 검수는 후보로 취급**: NotebookLM/LLM 검수 결과는 그대로 확정하지 않는다. `Needs Revision`뿐 아니라 `Good` 항목에도 같은 오류가 퍼질 수 있으므로, 실제 Excel 값과 deterministic 패턴 검색으로 재확인한다.
+7. **Excel rich text 주의**: `workbook_apply_edits.py`로 셀 값을 바꾸면 기존 rich text 하이라이트가 깨질 수 있다. 자동 수정본을 납품본으로 안내하기 전에는 최신 glossary로 `C7:C28` 전체를 재하이라이트하되, `KR(한국)`/`US(미국)` source sheet도 포함해야 한다.
 
 ## 도구 선택 흐름
 
@@ -85,8 +87,9 @@ RAG 사례 필요    → scripts/rag_lookup.py 실행 → references/rag-workflo
 NotebookLM 링크  → references/notebooklm-workflow.md 확인 → MCP/인증 확인 → 승인 후 add_notebook+select_notebook 등록 → ask_question, 일회성이면 remove_notebook 정리
 Excel 분석       → scripts/workbook_inspect.py (읽기 전용)
 섹션 맥락 검토   → scripts/workbook_inspect.py --sections → response-patterns.md(C-2) 템플릿으로 제안 → 승인 후 workbook_apply_edits.py
-Excel 수정       → 변경안 제시 → 사용자 승인 → scripts/workbook_apply_edits.py
-용어집 하이라이트 → 사용자 승인 → scripts/workbook_highlight_glossary.py (원본 불변, *_highlighted_*.xlsx 생성)
+검수 리포트 분석 → LM 판정 목록 추출 → 전체 워크북 패턴 검색(`[smartphone]`, dict 래핑, 비정상 공백, 용어집 오탐 등) → source group 형제 시트까지 재확인 → `수정 필요`/`false positive`/`추가 확인 필요`로 재분류
+Excel 수정       → 변경안 제시 → 사용자 승인 → scripts/workbook_apply_edits.py → 필요 시 최신 glossary로 전체 재하이라이트
+용어집 하이라이트 → 사용자 승인 → scripts/workbook_highlight_glossary.py --include-source-sheets (원본 불변, *_highlighted_*.xlsx 생성)
 ```
 
 ## 스크립트 사용법
@@ -111,6 +114,7 @@ python scripts/workbook_inspect.py path/to/story.xlsx --sheet "JA(일본)" --sec
 # 용어집 rich text 하이라이트 (원본 불변, 앱 highlight_only 파이프라인 호출)
 python scripts/workbook_highlight_glossary.py path/to/story.xlsx --sheets "BR(브라질)" --json
 python scripts/workbook_highlight_glossary.py path/to/story.xlsx --cell-range C7:C28
+python scripts/workbook_highlight_glossary.py path/to/story.xlsx --cell-range C7:C28 --include-source-sheets
 
 # 승인된 편집 적용 (원본 불변, 복사본 생성) — 승인 후에만!
 python scripts/workbook_apply_edits.py path/to/story.xlsx '[{"sheet":"JA(일본)","cell":"C10","new_value":"..."}]'

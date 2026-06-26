@@ -54,7 +54,8 @@ python scripts/workbook_inspect.py <path.xlsx> --json              # 파싱용 J
 ### 안전 보장 (스크립트 내장)
 
 - 원본 파일 **수정 안 함**. `<원본>_revised_<타임스탬프>.xlsx` 복사본 생성.
-- `cell.value`만 갱신 → 폰트/색/병합 등 **서식 보존**.
+- `cell.value`만 갱신 → 셀 레벨 폰트/색/병합 등은 보존한다.
+- 단, Excel rich text(셀 내부 일부 글자만 파란색인 glossary 하이라이트)는 보존을 보장하지 않는다. 셀 값을 편집한 뒤 자동 산출본을 납품본으로 쓸 경우, 아래 "Glossary rich text highlight" 절차로 전체 하이라이트를 재생성한다.
 - atomic write: `.tmp` 저장 후 `os.replace()`.
 - 변경 로그 `<...>_revised_<ts>.changes.json` 동시 생성 (old/new 값 포함).
 
@@ -88,6 +89,7 @@ python scripts/workbook_inspect.py <path.xlsx> --json              # 파싱용 J
 ```bash
 python scripts/workbook_highlight_glossary.py <story.xlsx> --sheets "BR(브라질)"
 python scripts/workbook_highlight_glossary.py <story.xlsx> --cell-range C7:C28 --json
+python scripts/workbook_highlight_glossary.py <story.xlsx> --cell-range C7:C28 --include-source-sheets --json
 python scripts/workbook_highlight_glossary.py <story.xlsx> --single-source --source-sheet "US(미국)" --sheets "BR(브라질),DE(독일)"
 ```
 
@@ -96,6 +98,9 @@ python scripts/workbook_highlight_glossary.py <story.xlsx> --single-source --sou
 - 기본 용어집: app repo의 `runtime/glossary/latest_glossary.csv`
 - 기본 범위: `C7:C28`
 - 기본 source grouping: `KR(한국)` → `US(미국)`, `JA(일본)`, `CN(중국)`, `TW(대만)` / `US(미국)` → 그 외 타겟 시트
+- `--include-source-sheets`: source sheet 자체도 하이라이트 대상에 포함한다. 전체 재하이라이트/납품본 복구 시 기본적으로 사용한다.
+  - `KR(한국)` source group: `KR(한국)`, `US(미국)`, `CN(중국)`, `TW(대만)`, `JA(일본)`
+  - `US(미국)` source group: `US(미국)`, 그 외 US-source 타겟
 - 결과: 원본을 덮어쓰지 않고 `<원본>_highlighted_<타임스탬프>.xlsx` 생성
 - 하이라이트 색상: 앱 구현 기준 파란색 `0000FF`
 
@@ -103,8 +108,24 @@ python scripts/workbook_highlight_glossary.py <story.xlsx> --single-source --sou
 
 - 사용자가 실제 파일 생성을 요청하거나 승인했을 때만 실행한다.
 - source/target 시트 선택이 불명확하면 실행 전 확인한다.
+- 셀 값을 편집한 뒤 하이라이트를 복구할 때는 최신 glossary 파일을 확인하고, 가능한 한 `--include-source-sheets --cell-range C7:C28` 로 전체 재하이라이트한다.
 - 하이라이트는 기존 target 텍스트를 번역하거나 수정하지 않고 rich text만 적용한다.
 - 용어집 불일치·괄호·대소문자 로그는 보고서 텍스트에 남지만, 최종 판단은 필요 시 별도 검수로 확인한다.
+- `Safe`처럼 일반 단어가 용어집 term으로 오탐된 경우 원본 glossary DB를 바로 수정하지 않는다. 필요한 경우 임시 glossary CSV에서 문제 term만 제외해 재번역/재하이라이트하고, 그 결과가 임시 기준임을 보고한다.
+- 최신 glossary가 아니면 `IKEA` 등 신규 용어가 하이라이트에서 빠질 수 있다. 이 경우 자동 하이라이트 파일을 최종본으로 안내하지 말고, 최신 glossary를 확보하거나 수동 반영용 텍스트를 제공한다.
+
+## 검수 리포트 후 deterministic 패턴 점검
+
+LLM/NotebookLM 검수 등급은 후보 신호다. `Needs Revision`만 추리면 같은 오류가 `Good` 항목에 남을 수 있으므로, 한 오류가 확인되면 전체 워크북에서 같은 패턴을 찾는다.
+
+필수 점검 예:
+- bracket 오삽입/누락: `[smartphone]`, `[Samsung]`, `[SmartThings]` 등 실제 glossary 예외 규칙과 대조
+- dict/JSON 래핑: `{'translation': ...}`, `{'translatio n': ...}` 같은 출력 파싱 실패
+- 비정상 공백/분절: 태국어 등에서 단어 중간에 들어간 공백
+- 용어집 오탐: 일반 형용사 `safe`가 제품명 `Safe`처럼 유지되는 사례
+- source group 확산: `UK/AU/SG`, `FR/BE/CA`처럼 같은 source를 공유하는 형제 시트
+
+브리핑에서는 각 항목을 `수정 필요`, `검수 false positive`, `추가 확인 필요`로 재분류한다.
 
 ## 번역·검수 파이프라인 (LLM, 옵트인)
 

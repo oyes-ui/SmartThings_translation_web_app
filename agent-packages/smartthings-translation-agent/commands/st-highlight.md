@@ -1,9 +1,9 @@
 ---
 description: 용어집 용어 rich text 하이라이트 (원본 불변, 크레딧 0)
-argument-hint: <xlsx 경로> [--sheets "BR(브라질)"]
+argument-hint: <xlsx 경로> [--sheets "BR(브라질)"] [--include-source-sheets]
 ---
 
-용어집 target term 글자 조각만 파란색 rich text 로 처리한다. 앱 highlight_only 파이프라인 호출, 원본 불변. **실행 전 source/target 시트를 확인**하라.
+용어집 target term 글자 조각만 파란색 rich text 로 처리한다. 앱 highlight_only 파이프라인 호출, 원본 불변. **실행 전 source/target 시트를 확인**하라. 셀 수정 후 전체 하이라이트 복구에는 `--include-source-sheets --cell-range C7:C28` 를 우선 사용한다.
 
 ```bash
 python agent-packages/smartthings-translation-agent/scripts/workbook_highlight_glossary.py $ARGUMENTS --json

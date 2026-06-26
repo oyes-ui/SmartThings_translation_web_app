@@ -20,6 +20,7 @@ _app_pipeline.py 를 재사용한다.
 사용 예:
   python scripts/workbook_highlight_glossary.py story.xlsx --sheets "BR(브라질)"
   python scripts/workbook_highlight_glossary.py story.xlsx --cell-range C7:C28 --json
+  python scripts/workbook_highlight_glossary.py story.xlsx --cell-range C7:C28 --include-source-sheets
   python scripts/workbook_highlight_glossary.py story.xlsx --single-source --source-sheet "US(미국)" --sheets "BR(브라질),DE(독일)"
 """
 
@@ -69,7 +70,11 @@ async def run_highlight(args) -> dict:
     else:
         source_sheet = None
         source_lang = "English"
-        source_groups = ap.default_source_groups(selected_sheets, workbook_sheets)
+        source_groups = ap.default_source_groups(
+            selected_sheets,
+            workbook_sheets,
+            include_source_sheets=args.include_source_sheets,
+        )
         if not source_groups:
             raise ValueError("유효한 source group이 없습니다. --single-source 또는 --sheets 값을 확인하세요.")
 
@@ -90,6 +95,7 @@ async def run_highlight(args) -> dict:
             source_sheet_name=source_sheet,
             source_lang=source_lang,
             source_groups=source_groups,
+            include_source_sheets=args.include_source_sheets,
         ):
             events.append(event)
             if not args.json:
@@ -115,6 +121,7 @@ async def run_highlight(args) -> dict:
         "selected_sheets": selected_sheets,
         "source_groups": source_groups,
         "single_source": args.single_source,
+        "include_source_sheets": args.include_source_sheets,
     })
     return summary
 
@@ -145,6 +152,11 @@ def main() -> None:
     parser.add_argument("--sheet-langs", help="sheet_langs JSON 파일 경로. 기본값: 앱 표준 매핑")
     parser.add_argument("--single-source", action="store_true", help="복수 source group 대신 --source-sheet 하나만 사용")
     parser.add_argument("--source-sheet", default="US(미국)", help="--single-source 사용 시 소스 시트")
+    parser.add_argument(
+        "--include-source-sheets",
+        action="store_true",
+        help="기본 그룹 모드에서 KR/US source sheet 자체도 하이라이트 대상에 포함",
+    )
     parser.add_argument("--max-concurrency", type=int, default=10)
     parser.add_argument("--app-root", help="app repo 경로 명시")
     parser.add_argument("--json", action="store_true", help="JSON 출력")

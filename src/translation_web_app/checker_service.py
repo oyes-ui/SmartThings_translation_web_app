@@ -1837,7 +1837,8 @@ class TranslationChecker:
         selected_sheets=None,
         source_sheet_name=None,
         source_lang="English",
-        source_groups=None
+        source_groups=None,
+        include_source_sheets=False
     ):
         """
         Highlights glossary terms in target sheets without translating.
@@ -1904,7 +1905,12 @@ class TranslationChecker:
                     yield {"type": "log", "message": f"{label} 소스 텍스트 없음, 건너뜀"}
                     continue
 
-                g_resolved_tgt = [s for s in g_tgt_sheets if s in wb.sheetnames and s != g_src_sheet and s in sheet_lang_map]
+                g_resolved_tgt = [
+                    s for s in g_tgt_sheets
+                    if s in wb.sheetnames
+                    and (include_source_sheets or s != g_src_sheet)
+                    and s in sheet_lang_map
+                ]
                 if not g_resolved_tgt:
                     yield {"type": "log", "message": f"{label} 유효한 타겟 시트 없음, 건너뜀"}
                     continue
@@ -2081,9 +2087,17 @@ class TranslationChecker:
 
         available_sheets = wb.sheetnames
         if selected_sheets:
-            target_sheets = [s for s in selected_sheets if s in available_sheets and s != source_sheet_name]
+            target_sheets = [
+                s for s in selected_sheets
+                if s in available_sheets
+                and (include_source_sheets or s != source_sheet_name)
+            ]
         else:
-            target_sheets = [s for s in available_sheets if s in sheet_lang_map and s != source_sheet_name]
+            target_sheets = [
+                s for s in available_sheets
+                if s in sheet_lang_map
+                and (include_source_sheets or s != source_sheet_name)
+            ]
 
         total_cells = len(source_data) * len(target_sheets)
         yield {"type": "log", "message": f"Plan: {len(target_sheets)} sheets, Total {total_cells} cells."}

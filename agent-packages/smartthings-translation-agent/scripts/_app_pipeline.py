@@ -110,7 +110,11 @@ def load_sheet_langs(path_arg: str | None) -> dict:
     return data
 
 
-def default_source_groups(selected_sheets: list[str] | None, workbook_sheets: list[str]) -> list[dict]:
+def default_source_groups(
+    selected_sheets: list[str] | None,
+    workbook_sheets: list[str],
+    include_source_sheets: bool = False,
+) -> list[dict]:
     """선택 시트를 KR/US 두 source group으로 자동 분배한다."""
     available = [s for s in workbook_sheets if s in DEFAULT_SHEET_LANGS]
     selected = set(selected_sheets) if selected_sheets else set(available)
@@ -120,6 +124,11 @@ def default_source_groups(selected_sheets: list[str] | None, workbook_sheets: li
         s for s in available
         if s in selected and s not in {GROUP_A_SOURCE, GROUP_B_SOURCE} and s not in GROUP_A_TARGETS
     ]
+    if include_source_sheets:
+        if GROUP_A_SOURCE in workbook_sheets and (group_a or not selected_sheets or GROUP_A_SOURCE in selected):
+            group_a = [GROUP_A_SOURCE, *[s for s in group_a if s != GROUP_A_SOURCE]]
+        if GROUP_B_SOURCE in workbook_sheets and (group_b or not selected_sheets or GROUP_B_SOURCE in selected):
+            group_b = [GROUP_B_SOURCE, *[s for s in group_b if s != GROUP_B_SOURCE]]
     groups = []
     if GROUP_A_SOURCE in workbook_sheets and group_a:
         groups.append({"source_sheet": GROUP_A_SOURCE, "target_sheets": group_a})
