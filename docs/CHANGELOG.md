@@ -1,5 +1,29 @@
 # Changelog - SmartThings Translation Checker
 
+## [1.7.0] - 2026-06-25
+
+### Added (Agent Skill — `agent-packages/smartthings-translation-agent`)
+- **Self mode (크레딧 0)**: `prompt_preview.py` 가 앱 `PromptBuilder` 를 래핑해 앱과 동일한 번역/검수 프롬프트를 조립 → 에이전트가 LLM API 호출 없이 직접 번역/검수.
+- **신규 래퍼 스크립트**: `glossary_manage.py`(GlossaryStore CRUD·CSV import/export), `text_workbook_create.py`(source 워크북 생성), `workbook_translate.py`·`workbook_audit.py`(앱 번역/검수 파이프라인, `--pipeline` 가드).
+- **슬래시 명령어 13종(`/st-*`)**: 패키지 `commands/` 와 `.claude/commands/` 양쪽 제공. `/st-help` 로 프로젝트 개요·검수 포인트·기능 안내.
+- **공용 헬퍼 `_app_pipeline.py`**: 부트스트랩·venv 재실행·시트 매핑·source group·이벤트 요약을 모아 highlight/translate/audit 가 공유.
+
+### Changed
+- `workbook_highlight_glossary.py` 를 `_app_pipeline.py` 기반으로 리팩터하고 JSON 모드 stdout 캡처·하이라이트 리포트 저장 보강.
+- `SKILL.md` 에 슬래시 명령표와 셀프/파이프라인 모드 안내 추가. `references/`(rag-workflow, excel-workflow, portability, install-notes) 갱신, `self-vs-pipeline.md` 신규.
+
+### Safety
+- 용어집 쓰기(`add`/`update`/`delete`/`import`)는 명시적 `--apply` 가드 없이는 거부(`delete`·`import --mode replace` 는 비가역).
+- 리포트 파일 쓰기를 `.tmp` → `os.replace()` atomic write 로 통일.
+- `event_summary()` 가 `complete` 이벤트 없이 끝난 실행을 `ok` 대신 `incomplete` 로 표시.
+
+### Verified
+- 전 스크립트 `py_compile` 통과
+- 크레딧 0 스모크 테스트: `prompt_preview`(번역/검수), `glossary_manage status/list`, `text_workbook_create`
+- 하이라이트 회귀 테스트(산출물·원본 불변), 파이프라인 `--pipeline` 거부, 용어집 `--apply` 가드(add→delete 왕복으로 baseline 복구)
+
+---
+
 ## [1.6.0] - 2026-06-02
 
 ### Added

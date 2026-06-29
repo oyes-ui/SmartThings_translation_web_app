@@ -3,6 +3,7 @@ venv/
 .env
 __pycache__/
 *.pyc
+smartthings-explore-6d1922d106bd.json
 
 # 2. 맥 전용 시스템 파일 및 앱 (Hugging Face 배포 금지 품목)
 .DS_Store
@@ -27,6 +28,8 @@ runtime/
 @translation_data/
 data/excel/
 rag_db/
+agent-packages/smartthings-translation-agent/input/
+*.pdf
 
 # 5. 개발 및 디버그용 임시 파일
 scratch/

@@ -50,8 +50,15 @@
 | `workbook_apply_edits.py` | `openpyxl` | ❌ | 가벼움 | ❌ |
 | `rag_lookup.py` **offline** | (표준 `sqlite3`만) | ❌ | 0 | ❌ (DB 파일만 있으면 됨) |
 | `rag_lookup.py` **semantic** | `chromadb` + `google-genai` + `python-dotenv` | ✅ Gemini | ~92M | ✅ 필수 |
+| `workbook_highlight_glossary.py` | `openpyxl` + `python-dotenv` | ❌ | 가벼움 | ✅ 필수 (앱 highlight 파이프라인) |
+| `prompt_preview.py` | (앱 src만) | ❌ | 0 | ✅ 필수 (PromptBuilder) |
+| `glossary_manage.py` | (앱 src만, 표준 `sqlite3`) | ❌ | 0 | ✅ 필수 (GlossaryStore) |
+| `text_workbook_create.py` | `openpyxl` | ❌ | 가벼움 | ✅ 필수 (템플릿·서비스) |
+| `workbook_translate.py` / `workbook_audit.py` | 앱 full 스택 | ✅ Gemini/GPT | RAG 스택급 | ✅ 필수 (유료 파이프라인) |
 
 `rag_lookup.py`는 offline mode일 때 chromadb/google-genai를 **로드하지 않고** 표준 라이브러리 `sqlite3`만 쓴다 → 키·무거운 의존성 없이 exact/keyword/메타데이터 조회 가능. semantic(유사도)만 키+RAG 스택이 필요하다.
+
+`prompt_preview.py`·`glossary_manage.py`·`text_workbook_create.py` 는 앱 `src/` 만 있으면 키 없이 동작한다(크레딧 0). 번역/검수 파이프라인 스크립트만 Gemini/GPT 키가 필요하다. 공용 헬퍼 `_app_pipeline.py` 는 highlight/translate/audit 가 공유한다(부트스트랩·venv 재실행·시트매핑·이벤트 요약).
 
 ```bash
 # Excel 기능만 → 최소 설치

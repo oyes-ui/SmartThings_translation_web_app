@@ -42,6 +42,7 @@ CONFIG_PATH = CONFIG_DIR / "config.json"
 APP_MARKER = Path("src") / "translation_web_app"
 RULES_REL = Path("docs") / "comprehensive_rules.md"
 REQUIREMENTS_REL = Path("requirements.txt")
+SERVICE_ACCOUNT_REL = Path("smartthings-explore-6d1922d106bd.json")
 
 
 # ─── config 저장/로드 ─────────────────────────────────────────────────────────
@@ -130,8 +131,14 @@ def _venv_python(app_root: Path) -> str | None:
 
 
 def _env_has_api_key(app_root: Path) -> bool:
-    """환경변수 또는 .env 파일에 Gemini 키가 있는지 (값은 노출하지 않음)."""
-    if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
+    """환경변수/.env/서비스 계정 JSON으로 Gemini 인증이 가능한지 (값은 노출하지 않음).
+
+    google-genai 등 무거운 의존성 없이(표준 라이브러리만) 판단해야 하므로
+    translation_web_app.gemini_auth는 import하지 않고 동일한 신호만 직접 검사한다.
+    """
+    if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+        return True
+    if (app_root / SERVICE_ACCOUNT_REL).is_file():
         return True
     env_file = app_root / ".env"
     if env_file.is_file():

@@ -243,7 +243,13 @@ def semantic_query(query, variants, source_lang, n) -> list[dict]:
 
 def _has_api_key() -> bool:
     import os
-    return bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
+    raw_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    try:
+        from translation_web_app.gemini_auth import has_gemini_auth
+        return has_gemini_auth(raw_key)
+    except Exception:
+        # src/ 미연결 등으로 app 패키지를 못 불러오면 기존 env-var 전용 판단으로 후퇴
+        return bool(raw_key)
 
 
 def _resolve_mode(requested: str, query, keyword, story, section) -> str:

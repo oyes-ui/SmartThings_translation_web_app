@@ -32,6 +32,7 @@ from translation_web_app.rag_db_builder import (
     SQLITE_PATH,
     get_sqlite_conn
 )
+from translation_web_app.gemini_auth import embedding_model_name
 import sqlite3
 import chromadb
 from google.genai import types
@@ -70,8 +71,9 @@ class RagRetriever:
 
     def _embed_query(self, text: str) -> list[float]:
         """쿼리 텍스트를 벡터로 변환"""
+        model_path = embedding_model_name(getattr(self._gemini, "_is_vertex_ai", False), EMBEDDING_MODEL)
         response = self._gemini.models.embed_content(
-            model=f"models/{EMBEDDING_MODEL}",
+            model=model_path,
             contents=[text],
             config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY")
         )
