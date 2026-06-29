@@ -335,7 +335,7 @@ class PromptBuilderTests(unittest.TestCase):
 
         captured = {}
 
-        async def fake_generate_content(prompt, model_name, system_instruction, response_json):
+        async def fake_generate_content(prompt, model_name, system_instruction, response_json, reasoning_effort=None):
             captured["prompt"] = prompt
             captured["model_name"] = model_name
             captured["system_instruction"] = system_instruction

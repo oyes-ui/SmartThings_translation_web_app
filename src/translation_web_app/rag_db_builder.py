@@ -21,7 +21,6 @@ from datetime import datetime
 from pathlib import Path
 
 import openpyxl
-from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 import chromadb
@@ -33,6 +32,7 @@ from translation_web_app.paths import (
     SQLITE_PATH,
     ensure_runtime_dirs,
 )
+from translation_web_app.gemini_auth import build_gemini_client, embedding_model_name
 
 load_dotenv()
 
@@ -100,21 +100,22 @@ def get_collection_name(source_lang: str) -> str:
 
 # ─── Gemini 임베딩 클라이언트 ──────────────────────────────────────────────────
 def get_gemini_client():
-    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        raise ValueError("❌ GEMINI_API_KEY 또는 GOOGLE_API_KEY 환경변수가 설정되지 않았습니다.")
-    return genai.Client(api_key=api_key)
+    raw_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    client, is_vertex = build_gemini_client(raw_key)
+    client._is_vertex_ai = is_vertex
+    return client
 
 
 def embed_texts(client, texts: list[str]) -> list[list[float]]:
     """텍스트 리스트를 Gemini 임베딩으로 변환 (50개씩 배치 처리)"""
     if not texts:
         return []
+    model_path = embedding_model_name(getattr(client, "_is_vertex_ai", False), EMBEDDING_MODEL)
     all_embeddings = []
     for i in range(0, len(texts), EMBED_BATCH_SIZE):
         batch = texts[i:i + EMBED_BATCH_SIZE]
         response = client.models.embed_content(
-            model=f"models/{EMBEDDING_MODEL}",
+            model=model_path,
             contents=batch,
             config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT")
         )

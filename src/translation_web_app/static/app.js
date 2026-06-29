@@ -397,6 +397,23 @@ taskModeRadios.forEach(radio => {
     });
 });
 
+// "model:variant" 합성 value를 실제 model id + thinking_budget/reasoning_effort로 분리
+function parseModelSelection(rawValue) {
+    const [model, variant] = rawValue.split(':');
+    const result = { model, thinking_budget: null, reasoning_effort: null };
+    if (variant === 'thinking_off') {
+        result.thinking_budget = 0;
+    } else if (variant === 'reasoning_high') {
+        result.reasoning_effort = 'high';
+    } else if (variant === 'reasoning_medium') {
+        result.reasoning_effort = 'medium';
+    } else if (variant === 'reasoning_low') {
+        result.reasoning_effort = 'low';
+    }
+    // 'thinking_on' 또는 variant 없음 → 오버라이드 안 함(모델 기본 동작 유지)
+    return result;
+}
+
 // Keep read-only prompt module summary in sync with visible settings.
 document.getElementById('sheetConfig')?.addEventListener('input', updatePromptModules);
 document.getElementById('cellRange')?.addEventListener('input', updatePromptModules);
@@ -458,6 +475,9 @@ startBtn.addEventListener('click', async () => {
         const geminiKey = sessionStorage.getItem('gemini_api_key') || undefined;
         const openaiKey = sessionStorage.getItem('openai_api_key') || undefined;
 
+        const translationSelection = parseModelSelection(document.getElementById('modelSelect').value);
+        const auditSelection = parseModelSelection(document.getElementById('auditModelSelect').value);
+
         const payload = sourceMode === 'template' ? buildTextWorkbookPayload({
             sheetConfig,
             sourceSheet,
@@ -474,9 +494,11 @@ startBtn.addEventListener('click', async () => {
             sheet_langs: sheetConfig,
             glossary_file_id: uploadedGlossaryId,
             cell_range: document.getElementById('cellRange').value || "C7:C28",
-            model_name: document.getElementById('modelSelect').value,
-            translation_model: document.getElementById('modelSelect').value,
-            audit_model: document.getElementById('auditModelSelect').value,
+            model_name: translationSelection.model,
+            translation_model: translationSelection.model,
+            audit_model: auditSelection.model,
+            ...(translationSelection.thinking_budget !== null && { translation_thinking_budget: translationSelection.thinking_budget }),
+            ...(auditSelection.reasoning_effort !== null && { audit_reasoning_effort: auditSelection.reasoning_effort }),
             bx_style_enabled: document.getElementById('bxStyleToggle')?.checked ?? false,
             source_lang: getSourceLang(),
             task_mode: taskMode,
@@ -516,6 +538,9 @@ function buildTextWorkbookPayload({ sheetConfig, sourceSheet, targetSheets, task
         return section;
     });
 
+    const translationSelection = parseModelSelection(document.getElementById('modelSelect').value);
+    const auditSelection = parseModelSelection(document.getElementById('auditModelSelect').value);
+
     return {
         source_sheet: sourceSheet,
         sheets: targetSheets,
@@ -527,8 +552,10 @@ function buildTextWorkbookPayload({ sheetConfig, sourceSheet, targetSheets, task
             description: document.getElementById('textStoryDescription')?.value.trim() || undefined,
         },
         sections,
-        translation_model: document.getElementById('modelSelect').value,
-        audit_model: document.getElementById('auditModelSelect').value,
+        translation_model: translationSelection.model,
+        audit_model: auditSelection.model,
+        ...(translationSelection.thinking_budget !== null && { translation_thinking_budget: translationSelection.thinking_budget }),
+        ...(auditSelection.reasoning_effort !== null && { audit_reasoning_effort: auditSelection.reasoning_effort }),
         max_concurrency: 5,
         bx_style_enabled: document.getElementById('bxStyleToggle')?.checked ?? false,
         task_mode: taskMode === 'translate_only' ? 'translate_only' : 'integrated',

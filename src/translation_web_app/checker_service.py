@@ -60,9 +60,11 @@ class TranslationChecker:
         no_backtranslation: bool = False,
         gemini_api_key: str = None,
         openai_api_key: str = None,
+        audit_reasoning_effort: str = None,
     ):
         # API Setup
         self.model_name = model_name
+        self.audit_reasoning_effort = audit_reasoning_effort
         
         # Concurrency
         if max_concurrency < 1:
@@ -741,7 +743,7 @@ class TranslationChecker:
         if simple_fixed_text == target_text:
             simple_fixed_text = None
         return report, simple_fixed_text
-    async def _run_llm_translation(self, text, target_lang, model_name="gemini-2.5-flash", bx_style_on=False, glossary_context=None, rag_context=None, row_key="", source_lang="English", rag_identity_match=True, target_lang_code=""):
+    async def _run_llm_translation(self, text, target_lang, model_name="gemini-2.5-flash", bx_style_on=False, glossary_context=None, rag_context=None, row_key="", source_lang="English", rag_identity_match=True, target_lang_code="", thinking_budget: int | None = None):
         """
         내부 전용 번역 메서드: JSON 프롬프트 생성 및 LLM 호출을 담당합니다.
         """
@@ -781,10 +783,11 @@ class TranslationChecker:
         try:
             prompt = json.dumps(input_data, ensure_ascii=False, indent=2)
             response_data = await self.model_handler.generate_content(
-                prompt, 
-                model_name=model_name, 
+                prompt,
+                model_name=model_name,
                 system_instruction=system_prompt,
-                response_json=True
+                response_json=True,
+                thinking_budget=thinking_budget,
             )
 
             if isinstance(response_data, dict):
@@ -857,10 +860,11 @@ class TranslationChecker:
         try:
             # ModelHandler가 JSON 모드를 지원하므로 딕셔너리로 바로 받을 수 있음
             response = await self.model_handler.generate_content(
-                prompt, 
-                model_name=self.model_name, 
+                prompt,
+                model_name=self.model_name,
                 system_instruction=system_instruction,
-                response_json=True
+                response_json=True,
+                reasoning_effort=self.audit_reasoning_effort,
             )
             
             if isinstance(response, dict) and response.get("error") == "parsing_failed":
@@ -916,7 +920,9 @@ class TranslationChecker:
             f"오직 번역된 텍스트만 제공해야 합니다. 다른 설명이나 텍스트는 포함하지 마세요.\n\n{target_text}"
         )
         try:
-            return await self.model_handler.generate_content(prompt, model_name=self.model_name)
+            return await self.model_handler.generate_content(
+                prompt, model_name=self.model_name, reasoning_effort=self.audit_reasoning_effort
+            )
         except Exception as e:
             return f"[역번역 오류]: {e}"
 
@@ -1240,6 +1246,7 @@ class TranslationChecker:
                 all_group_results.extend([r for r in g_ordered if r is not None])
 
             header = (
+                self.model_handler.get_usage_report() +
                 f"--- 번역 검수 보고서 (Model: {self.model_name}) ---\n"
                 f"생성일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
                 f"총 검수 항목: {grand_total}개 ({len(source_groups)}개 소스 그룹)\n"
@@ -1343,6 +1350,7 @@ class TranslationChecker:
         # Final Header/Footer assembly using ORDERED results
         final_text = []
         header = (
+            self.model_handler.get_usage_report() +
             f"--- 번역 검수 보고서 (Model: {self.model_name}) ---\n"
             f"생성일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
             f"총 검수 항목: {total_items}개\n"
@@ -1365,6 +1373,7 @@ class TranslationChecker:
         sheet_lang_map,
         translation_model="gemini-2.5-flash",
         audit_model="gpt-5.2",
+        translation_thinking_budget: int | None = None,
         glossary_file_path=None,
         selected_sheets=None,
         source_sheet_name=None,
@@ -1467,6 +1476,7 @@ class TranslationChecker:
                         source_text, tgt_lang, model_name=translation_model, bx_style_on=bx_style_on,
                         glossary_context=glossary_dict, rag_context=rag_context_str, row_key=row_key,
                         source_lang=captured_src_lang, rag_identity_match=rag_identity_match, target_lang_code=tgt_lang_code,
+                        thinking_budget=translation_thinking_budget,
                     )
 
                     original_target_terms = []
@@ -1549,6 +1559,7 @@ class TranslationChecker:
             out_excel_path = source_file_path.replace(".xlsx", f"_translated_{timestamp}.xlsx")
             wb.save(out_excel_path)
             header = (
+                self.model_handler.get_usage_report() +
                 f"--- 번역 통합 검수 보고서 (Model: {self.model_name}) ---\n"
                 f"생성일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
                 f"총 항목: {completed_so_far}개 ({len(source_groups)}개 소스 그룹)\n\n"
@@ -1692,6 +1703,7 @@ class TranslationChecker:
                 source_lang=source_lang,
                 rag_identity_match=rag_identity_match,
                 target_lang_code=target_lang_code,
+                thinking_budget=translation_thinking_budget,
             )
             
             # Extract plain glossary targets (removing EXCEPTION strings if any)
@@ -1814,6 +1826,7 @@ class TranslationChecker:
         wb.save(out_excel_path)
         
         header = (
+            self.model_handler.get_usage_report() +
             f"--- 번역 통합 검수 보고서 (Model: {self.model_name}) ---\n"
             f"생성일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
             f"총 항목: {completed_count}개\n\n"

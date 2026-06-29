@@ -1,6 +1,6 @@
 fastapi
 uvicorn
-google-genai
+google-genai>=1.20.0
 python-dotenv
 python-multipart
 openpyxl
