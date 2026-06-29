@@ -61,10 +61,12 @@ class TranslationChecker:
         gemini_api_key: str = None,
         openai_api_key: str = None,
         audit_reasoning_effort: str = None,
+        audit_thinking_budget: int = None,
     ):
         # API Setup
         self.model_name = model_name
         self.audit_reasoning_effort = audit_reasoning_effort
+        self.audit_thinking_budget = audit_thinking_budget
         
         # Concurrency
         if max_concurrency < 1:
@@ -865,6 +867,7 @@ class TranslationChecker:
                 system_instruction=system_instruction,
                 response_json=True,
                 reasoning_effort=self.audit_reasoning_effort,
+                thinking_budget=self.audit_thinking_budget,
             )
             
             if isinstance(response, dict) and response.get("error") == "parsing_failed":
@@ -921,7 +924,9 @@ class TranslationChecker:
         )
         try:
             return await self.model_handler.generate_content(
-                prompt, model_name=self.model_name, reasoning_effort=self.audit_reasoning_effort
+                prompt, model_name=self.model_name,
+                reasoning_effort=self.audit_reasoning_effort,
+                thinking_budget=self.audit_thinking_budget,
             )
         except Exception as e:
             return f"[역번역 오류]: {e}"

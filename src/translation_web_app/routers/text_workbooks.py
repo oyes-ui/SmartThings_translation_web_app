@@ -43,6 +43,7 @@ class TextWorkbookStartRequest(BaseModel):
     audit_model: str = "gpt-5.4-mini"
     translation_thinking_budget: int | None = None
     audit_reasoning_effort: str | None = None
+    audit_thinking_budget: int | None = None
     max_concurrency: int = 5
     bx_style_enabled: bool = False
     task_mode: str = "integrated"
@@ -119,6 +120,7 @@ async def _text_workbook_translation_task(
             gemini_api_key=params.gemini_api_key,
             openai_api_key=params.openai_api_key,
             audit_reasoning_effort=params.audit_reasoning_effort,
+            audit_thinking_budget=params.audit_thinking_budget,
         )
 
         glossary = resolve_glossary_file(params.glossary_file_id)

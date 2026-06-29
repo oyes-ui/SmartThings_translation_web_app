@@ -40,6 +40,7 @@ def build_gemini_client(raw_key: str | None) -> tuple[genai.Client, bool]:
             temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w", encoding="utf-8")
             temp_file.write(key)
             temp_file.close()
+            os.chmod(temp_file.name, 0o600)
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_file.name
             project_id = credentials_info.get("project_id", DEFAULT_PROJECT_ID)
             print(f"[Gemini] 서비스 계정 JSON 환경 변수 로드 완료 (Project: {project_id})")

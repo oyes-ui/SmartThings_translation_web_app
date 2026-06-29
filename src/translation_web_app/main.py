@@ -71,6 +71,7 @@ class StartRequest(BaseModel):
     audit_model: str = "gpt-5.4-mini"
     translation_thinking_budget: int | None = None
     audit_reasoning_effort: str | None = None
+    audit_thinking_budget: int | None = None
     bx_style_enabled: bool = False
     task_mode: str = "integrated"
     rag_identity_match: bool = True
@@ -156,6 +157,7 @@ async def integrated_translation_task(task_id, params):
             gemini_api_key=params.gemini_api_key,
             openai_api_key=params.openai_api_key,
             audit_reasoning_effort=params.audit_reasoning_effort,
+            audit_thinking_budget=params.audit_thinking_budget,
         )
 
         source_path = os.path.join(UPLOAD_DIR, params.source_file_id)
