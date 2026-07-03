@@ -34,6 +34,16 @@ python scripts/rag_lookup.py --query "Save energy" --target-lang JA --mode seman
   - **KR 소스 그룹**: KR(한국) → JA/CN/TW/US
   - **US 소스 그룹**: US(미국) → DE/FR/ES/IT 등
 
+## 한국어 리뷰용 조회
+
+`KR(한국)`은 대부분 target 번역이 아니라 **source_text**로 저장되어 있다. 따라서 한국어 본문 리뷰에서 `--target-lang KR`을 지정하면 `target_lang=KR`을 찾지 않고, 자동으로 KR source group의 한국어 source 문장 기준으로 조회한다. API 키와 ChromaDB가 있으면 source-side **semantic** 조회를 수행하고, 키가 없거나 `--keyword`/`--story`/`--section`을 쓰면 source-side offline 조회로 동작한다.
+
+```bash
+python scripts/rag_lookup.py --query "스마트홈" --target-lang KR --keyword --json
+```
+
+출력의 `lookup_side: "source"`는 한국어 원문 사례 조회임을 뜻한다. 이때 `target_text`/`paired_target`은 해당 한국어 원문에 연결된 번역 참고 자료이며, 한국어 문체 판단의 1차 근거는 `korean_text`/`source_text`다.
+
 ## 키 없이 어디까지 되나 (offline)
 
 RAG 데이터(`runtime/rag_db/rag_store.db`)만 있으면 **키 없이**:

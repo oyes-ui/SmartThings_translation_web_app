@@ -224,6 +224,69 @@ def offline_query(
     return examples[:n]
 
 
+def offline_korean_source_query(conn, query, n, keyword=False, story=None, section=None) -> list[dict]:
+    """한국어 리뷰용 source-side 조회.
+
+    RAG DB에서 KR(한국)은 보통 target_lang 이 아니라 source_text 이므로,
+    `--target-lang KR` 요청은 source_group=kr 의 한국어 source_text 기준으로 찾는다.
+    paired target_text/target_lang 은 참고 정보로 함께 둔다.
+    """
+    where = ["source_group = ?"]
+    params: list = ["kr"]
+    if story:
+        where.append("story_id = ?")
+        params.append(story)
+    if section:
+        where.append("section_code = ?")
+        params.append(section)
+
+    examples: list[dict] = []
+    seen: set[tuple[str, str, str]] = set()
+
+    def add_rows(rows, match_type: str, score: float) -> None:
+        for row in rows:
+            if len(examples) >= n:
+                break
+            src, tgt, tlang, sec, story_id = row
+            key = (src or "", sec or "", story_id or "")
+            if key in seen:
+                continue
+            seen.add(key)
+            ex = _row_to_example(row, match_type, score)
+            ex["lookup_side"] = "source"
+            ex["korean_text"] = src
+            ex["paired_target"] = tgt
+            examples.append(ex)
+
+    if query and not keyword:
+        w = where + ["source_text = ?"]
+        rows = conn.execute(
+            f"SELECT source_text,target_text,target_lang,section_code,story_id "
+            f"FROM rag_pairs WHERE {' AND '.join(w)} LIMIT ?",
+            (*params, query, n),
+        ).fetchall()
+        add_rows(rows, "source_exact", 1.0)
+
+    if query and (keyword or len(examples) < n):
+        w = where + ["source_text LIKE ?"]
+        rows = conn.execute(
+            f"SELECT source_text,target_text,target_lang,section_code,story_id "
+            f"FROM rag_pairs WHERE {' AND '.join(w)} LIMIT ?",
+            (*params, f"%{query}%", n * 5),
+        ).fetchall()
+        add_rows(rows, "source_keyword", 0.0)
+
+    if not query and (story or section):
+        rows = conn.execute(
+            f"SELECT source_text,target_text,target_lang,section_code,story_id "
+            f"FROM rag_pairs WHERE {' AND '.join(where)} LIMIT ?",
+            (*params, n * 5),
+        ).fetchall()
+        add_rows(rows, "source_lookup", 0.0)
+
+    return examples[:n]
+
+
 # ─── semantic mode (키 필요, RagRetriever lazy import) ───────────────────────
 def semantic_query(query, variants, source_lang, n) -> list[dict]:
     from translation_web_app.rag_retriever import get_retriever  # lazy: chromadb 여기서 로드
@@ -239,6 +302,26 @@ def semantic_query(query, variants, source_lang, n) -> list[dict]:
                 out.append(ex)
     out.sort(key=lambda e: e.get("similarity_score", 0), reverse=True)
     return out[:n]
+
+
+def semantic_korean_source_query(query, n) -> list[dict]:
+    """한국어 source_text 기준 semantic 조회.
+
+    ChromaDB에는 target 번역이 아니라 source_text 임베딩이 저장되어 있으므로,
+    target_lang=all + source_lang=Korean 으로 KR 컬렉션을 검색한다.
+    """
+    from translation_web_app.rag_retriever import get_retriever  # lazy: chromadb 여기서 로드
+    retriever = get_retriever()
+    if not retriever.is_available():
+        return []
+    out = []
+    for ex in retriever.retrieve(query, "all", source_lang="Korean", n_results=n):
+        enriched = dict(ex)
+        enriched["lookup_side"] = "source"
+        enriched["korean_text"] = ex.get("source")
+        enriched["paired_target"] = ex.get("target")
+        out.append(enriched)
+    return out
 
 
 def _has_api_key() -> bool:
@@ -267,9 +350,13 @@ def lookup(args) -> dict:
     code = resolve_lang_code(args.target_lang) if args.target_lang else None
     sgroup = _source_group(args.source_lang)
     mode = _resolve_mode(args.mode, args.query, args.keyword, args.story, args.section)
+    korean_source_lookup = code == "KR"
+    if korean_source_lookup:
+        sgroup = "kr"
 
     result = {
         "mode": mode,
+        "lookup_side": "source" if korean_source_lookup else "target",
         "query": args.query,
         "requested_target": args.target_lang,
         "resolved_code": code,
@@ -289,6 +376,15 @@ def lookup(args) -> dict:
                 "API 키가 없어 semantic 을 쓸 수 없습니다. --mode offline 을 사용하세요."
             )
             return result
+        if korean_source_lookup:
+            result["db_variants_matched"] = []
+            result["notes"].append(
+                "KR은 RAG DB에서 target_lang이 아니라 source_text 기준 semantic 조회를 수행했습니다."
+            )
+            result["examples"] = semantic_korean_source_query(args.query, args.n)
+            if not result["examples"]:
+                result["notes"].append("semantic 결과 없음 (RAG 비활성 또는 유사 사례 없음).")
+            return result
         conn = _connect_sqlite()
         try:
             variants = find_db_variants(conn, code, sgroup)
@@ -306,20 +402,31 @@ def lookup(args) -> dict:
     # offline mode
     conn = _connect_sqlite()
     try:
-        variants = find_db_variants(conn, code, sgroup) if code else []
-        result["db_variants_matched"] = variants
-        if code and not variants:
+        if korean_source_lookup:
+            variants = []
+            result["db_variants_matched"] = variants
             result["notes"].append(
-                f"코드 '{code}'에 해당하는 target_lang 이 DB(source_group={sgroup})에 없습니다."
+                "KR은 RAG DB에서 target_lang이 아니라 source_text 기준으로 조회했습니다."
             )
-        result["examples"] = offline_query(
-            conn, args.query, variants, sgroup, args.n,
-            keyword=args.keyword, story=args.story, section=args.section,
-        )
+            result["examples"] = offline_korean_source_query(
+                conn, args.query, args.n,
+                keyword=args.keyword, story=args.story, section=args.section,
+            )
+        else:
+            variants = find_db_variants(conn, code, sgroup) if code else []
+            result["db_variants_matched"] = variants
+            if code and not variants:
+                result["notes"].append(
+                    f"코드 '{code}'에 해당하는 target_lang 이 DB(source_group={sgroup})에 없습니다."
+                )
+            result["examples"] = offline_query(
+                conn, args.query, variants, sgroup, args.n,
+                keyword=args.keyword, story=args.story, section=args.section,
+            )
     finally:
         conn.close()
 
-    if len(variants) > 1:
+    if not korean_source_lookup and len(variants) > 1:
         result["notes"].append(
             f"⚠ DB 에 '{code}' 변종이 {len(variants)}개({variants}). 모두 조회했습니다."
         )
@@ -339,6 +446,8 @@ def _print_human(res: dict) -> None:
         print(f"   filters : story={f['story']} section={f['section']} keyword={f['keyword']}")
     if "db_variants_matched" in res:
         print(f"   variants: {res['db_variants_matched']}")
+    if res.get("lookup_side"):
+        print(f"   side    : {res['lookup_side']}")
     for note in res["notes"]:
         print(f"   note    : {note}")
     print("-" * 60)
@@ -351,8 +460,12 @@ def _print_human(res: dict) -> None:
         tag = mt + (f", sim={sim}" if mt == "semantic" else "")
         print(f"[{i}] ({tag}) lang={ex.get('target_lang')} "
               f"section={ex.get('section_code')} story={ex.get('story_id')}")
-        print(f"    source: {ex.get('source')}")
-        print(f"    target: {ex.get('target')}")
+        if ex.get("lookup_side") == "source":
+            print(f"    korean: {ex.get('korean_text')}")
+            print(f"    paired: ({ex.get('target_lang')}) {ex.get('paired_target')}")
+        else:
+            print(f"    source: {ex.get('source')}")
+            print(f"    target: {ex.get('target')}")
 
 
 def main():
