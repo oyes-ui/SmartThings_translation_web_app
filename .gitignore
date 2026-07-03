@@ -27,7 +27,6 @@ runtime/
 # 4. RAG 오프라인 전용 데이터 (보안 — Git/HuggingFace 업로드 금지)
 @translation_data/
 data/excel/
-rag_db/
 agent-packages/smartthings-translation-agent/input/
 *.pdf
 
