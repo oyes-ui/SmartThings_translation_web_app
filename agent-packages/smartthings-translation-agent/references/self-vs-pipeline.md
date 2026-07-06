@@ -31,6 +31,15 @@
 
 언제 셀프 모드인가: **소량·단건·대화형**, 키가 없을 때, 빠른 검토/설명이 필요할 때. → 기본값.
 
+### story 단위 self audit (크레딧 0)
+
+워크북 전체를 LLM 파이프라인에 돌리기 전에, 아래 순서로 크레딧 0 self audit을 먼저 수행한다(→ `commands/st-audit.md`):
+
+1. `workbook_inspect.py --sections`로 story의 모든 section을 그룹째 뽑는다.
+2. 기존 RAG 사례(`rag_lookup.py`, 키 없어도 offline 조회 가능)를 곁들여 검수 6대 항목을 **story 전체 단위**로 먼저 훑는다(지칭/부사 반복, 톤 일관성 포함 → `response-patterns.md` C-2).
+3. 여기서 좁혀진 **후보 셀만** `prompt_preview.py --audit`으로 개별 검수한다.
+4. 대량·자동화·재현 가능한 산출물이 꼭 필요할 때만 승인 후 `--pipeline`으로 넘어간다.
+
 ## 파이프라인 모드 — 앱의 유료 LLM (LLM 크레딧)
 
 대량 셀을 일괄 처리하거나, 앱과 동일한 자동 산출물(번역+검수 Excel/리포트)이 필요할 때만.
