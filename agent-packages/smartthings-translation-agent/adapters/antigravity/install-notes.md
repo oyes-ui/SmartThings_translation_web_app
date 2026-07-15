@@ -22,6 +22,32 @@ cp -r agent-packages/smartthings-translation-agent .agents/skills/
 - `adapters/`는 복사 불필요.
 - 패키지 문서는 "Codex가 실행한다" 같은 도구 종속 표현을 피하고 "에이전트"로 통일해, 어느 도구에서 읽어도 자연스럽게 동작하도록 작성됨.
 
+## Slash commands
+
+공통 command prompt 원본은 `commands/`에 있다. Antigravity에서 slash command를 지원하는 경우 해당 도구의 commands 폴더로 복사해서 사용한다.
+
+```text
+/st-help
+/st-setup <app repo path>
+/st-rules <question>
+/st-prompt <text> --target-lang JA
+/st-glossary <search/add/update request>
+/st-glossary-filter <workbook path> BR/RU/CN
+/st-rag <query> --target-lang JA
+/st-ragdb status
+/st-inspect <workbook path> --sheet "JA(일본)"
+/st-sections <workbook path> "JA(일본)"
+/st-highlight <workbook path>
+/st-edit <workbook path> <approved edits>
+/st-textbook <text/spec>
+/st-translate <workbook path> --pipeline
+/st-audit <workbook path> --pipeline
+/st-audit-explain <source> / <translation> / <language>
+/st-review-summary <review files>
+/st-notebooklm <notebook link or question>
+/st-obsidian-report <report topic> <obsidian report dir>
+```
+
 ## 동작 확인
 
 ```bash

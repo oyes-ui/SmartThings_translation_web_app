@@ -45,6 +45,17 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertIn("Singapore English with British-style spelling where appropriate", sg_prompt)
         self.assertIn("Singlish", sg_prompt)
 
+    def test_simplified_chinese_tone_rules_scoped_to_cn_only(self):
+        cn_prompt = self.builder.build_translation_prompt(target_lang="Simplified Chinese", source_lang="Korean")
+        tw_prompt = self.builder.build_translation_prompt(target_lang="Traditional Chinese", source_lang="Korean")
+
+        self.assertIn("您", cn_prompt)
+        self.assertIn("口语化", cn_prompt)
+        self.assertIn("书面语", cn_prompt)
+
+        self.assertNotIn("口语化", tw_prompt)
+        self.assertNotIn("书面语", tw_prompt)
+
     def test_translation_prompt_modules(self):
         prompt = self.builder.build_translation_prompt(
             target_lang="Japanese",

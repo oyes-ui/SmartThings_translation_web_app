@@ -14,7 +14,7 @@ cp -r agent-packages/smartthings-translation-agent .claude/skills/
 ## 슬래시 명령어 (`/st-*`)
 
 패키지의 `commands/*.md` 를 Claude Code 명령 디렉터리로 복사하면 `/st-help`, `/st-prompt`,
-`/st-glossary` 등 14개 명령이 활성화된다.
+`/st-glossary`, `/st-glossary-filter`, `/st-obsidian-report` 등 19개 명령이 활성화된다.
 
 ```bash
 # project-local

@@ -43,6 +43,8 @@ python scripts/bootstrap.py --app-root <경로> --save
 - **번역/검수 (셀프, 크레딧 0)**: "이 문구 독일어로 번역해줘", "이 번역 검수해줘" → `scripts/prompt_preview.py` 로 프롬프트 받아 직접 수행 + `references/self-vs-pipeline.md`
 - **번역/검수 (파이프라인, LLM)**: "워크북 전체 자동 번역/검수 돌려줘" → 승인 후 `scripts/workbook_translate.py`/`scripts/workbook_audit.py --pipeline`
 - **용어집 관리**: "용어집에 이 단어 있어?", "용어 추가/수정/CSV 가져오기" → `scripts/glossary_manage.py`
+- **용어집 필터/활성화 판단**: "US 확정문구 보면서 용어집 필터 후보 제안", "이 파일에서 어떤 용어 활성화해야 해?" → US 소스 문구 + 실제 glossary 매칭 확인 → `references/glossary-report-workflow.md`
+- **Obsidian 리포트 작성**: "옵시디언용 리포트 만들어줘", "검수 리포트 vault에 넣어줘" → markdown 초안 생성 + 언어별 섹션 분리 → `references/glossary-report-workflow.md`
 - **텍스트워크북 생성**: "이 텍스트로 source 워크북 만들어줘" → `scripts/text_workbook_create.py`
 - **RAG DB 관리**: "RAG DB 현황/재빌드" → `python -m translation_web_app.rag_db_builder` (→ `references/rag-workflow.md`)
 
@@ -55,8 +57,10 @@ python scripts/bootstrap.py --app-root <경로> --save
 |---|---|---|
 | `/st-help` | 프로젝트 개요·검수 포인트·명령 안내 | 0 |
 | `/st-setup` | app repo 연결 + 동작 레벨 점검(bootstrap) | 0 |
+| `/st-rules` | 번역·검수 규칙 Q&A(canonical source 기준) | 0 |
 | `/st-prompt` | 앱과 동일한 번역/검수 프롬프트 생성 → **셀프 번역/검수** | 0 |
 | `/st-glossary` | 용어집 조회/검색/CRUD/CSV import·export | 0 |
+| `/st-glossary-filter` | US 확정문구 + 실제 용어집 매칭으로 활성/예외 판단 | 0 |
 | `/st-rag` | 과거 번역 사례 RAG 조회 | 0(offline)~ |
 | `/st-ragdb` | RAG DB 현황/빌드/업데이트 | status 0 / 빌드 LLM |
 | `/st-inspect` | 워크북 읽기 전용 분석 | 0 |
@@ -66,8 +70,10 @@ python scripts/bootstrap.py --app-root <경로> --save
 | `/st-textbook` | 구조화 텍스트 → source 워크북 생성 | 0 |
 | `/st-translate` | 앱 번역(+검수) 파이프라인 실행 | LLM |
 | `/st-audit` | 앱 검수(inspection) 파이프라인 실행 | LLM |
+| `/st-audit-explain` | 기존 검수 등급/피드백 근거 설명 | 0 |
 | `/st-review-summary` | 감수본·AI 검수 txt·리포트 요약 수치 산출 | 0 |
 | `/st-notebooklm` | NotebookLM MCP로 긴 리포트/공유 노트 보조 분석 | 외부 MCP |
+| `/st-obsidian-report` | 검수/용어집 판단 내용을 Obsidian용 Markdown 리포트로 작성 | 0 |
 
 ## 안전 규칙 (반드시 준수)
 
@@ -94,6 +100,7 @@ Excel 분석       → scripts/workbook_inspect.py (읽기 전용)
 감수본 요약     → review_summary.py 로 감수본/F열 변경·AI 수정안 겹침·리포트 판단 카운트 산출 → response-patterns.md 템플릿으로 최종 summary 작성
 Excel 수정       → 변경안 제시 → 사용자 승인 → scripts/workbook_apply_edits.py → 필요 시 최신 glossary로 전체 재하이라이트
 용어집 하이라이트 → 사용자 승인 → scripts/workbook_highlight_glossary.py --include-source-sheets (원본 불변, *_highlighted_*.xlsx 생성)
+용어집 필터 판단 → US 소스 시트 + latest_glossary.csv 실제 매칭 → bracket occurrence/비활성 용어 예외 판단 → 필요 시 Obsidian 리포트
 ```
 
 ## 스크립트 사용법
@@ -151,6 +158,7 @@ highlight/translate/audit 가 공유한다.
 - `references/notebooklm-workflow.md` — NotebookLM MCP를 통한 긴 검수 리포트/공유 노트 보조 분석
 - `references/excel-workflow.md` — SmartThings 워크북 포맷과 편집 규약
 - `references/self-vs-pipeline.md` — 셀프 모드(크레딧 0) vs 앱 파이프라인(LLM) 의사결정
+- `references/glossary-report-workflow.md` — US 확정문구 기반 용어집 필터/활성화 판단, Obsidian 리포트 작성 규약
 - `references/response-patterns.md` — 한국어 응답 템플릿
 - `references/portability.md` — 다른 에이전트 도구(Codex/Claude/Antigravity)로 설치하는 법
 

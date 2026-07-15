@@ -20,18 +20,19 @@ def test_db_conn():
         target_lang TEXT,
         section_code TEXT,
         story_id TEXT,
-        source_group TEXT
+        source_group TEXT,
+        tone_flag TEXT
     )
     """)
     # Add target-side translations (US source_group)
     conn.execute(
-        "INSERT INTO rag_pairs VALUES (?, ?, ?, ?, ?, ?)",
-        ("Save energy", "Energie sparen", "DE(독일)", "//sec1", "story_001", "us")
+        "INSERT INTO rag_pairs VALUES (?, ?, ?, ?, ?, ?, ?)",
+        ("Save energy", "Energie sparen", "DE(독일)", "//sec1", "story_001", "us", None)
     )
     # Add source-side translations (KR source_group)
     conn.execute(
-        "INSERT INTO rag_pairs VALUES (?, ?, ?, ?, ?, ?)",
-        ("스마트홈 시작", "Start smart home", "US(미국)", "//sec2", "story_002", "kr")
+        "INSERT INTO rag_pairs VALUES (?, ?, ?, ?, ?, ?, ?)",
+        ("스마트홈 시작", "Start smart home", "US(미국)", "//sec2", "story_002", "kr", None)
     )
     conn.commit()
     yield conn
@@ -43,6 +44,25 @@ def test_resolve_lang_code():
     assert rag_lookup.resolve_lang_code("Japanese") == "JA"
     assert rag_lookup.resolve_lang_code("DE") == "DE"
     assert rag_lookup.resolve_lang_code("KR") == "KR"
+
+
+def test_offline_query_excludes_tone_flagged_by_default(test_db_conn):
+    test_db_conn.execute(
+        "INSERT INTO rag_pairs VALUES (?, ?, ?, ?, ?, ?, ?)",
+        ("别让例句", "别让任何事情打断你", "CN(중국)", "//sec3", "story_014", "kr", "colloquial_cn"),
+    )
+    test_db_conn.commit()
+
+    excluded = rag_lookup.offline_query(
+        test_db_conn, "别让例句", ["CN(중국)"], "kr", n=3
+    )
+    assert excluded == []
+
+    included = rag_lookup.offline_query(
+        test_db_conn, "别让例句", ["CN(중국)"], "kr", n=3, include_tone_flagged=True
+    )
+    assert len(included) == 1
+    assert included[0]["target"] == "别让任何事情打断你"
 
 
 def test_offline_query(test_db_conn):
@@ -90,6 +110,7 @@ def test_lookup_router_with_korean(monkeypatch, test_db_conn):
         section = None
         app_root = None
         json = True
+        include_tone_flagged = False
 
     args = Args()
     res = rag_lookup.lookup(args)

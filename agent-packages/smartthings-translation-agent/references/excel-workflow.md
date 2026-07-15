@@ -39,6 +39,11 @@ python scripts/workbook_inspect.py <path.xlsx> --json              # 파싱용 J
    ```bash
    python scripts/workbook_apply_edits.py <path.xlsx> <edits.json | inline-json>
    ```
+4. **하이라이트 재적용(필수)**: 수정본을 납품본으로 안내하기 전, 아래 명령으로 전체 재하이라이트한다 (자세한 내용은 "Glossary rich text highlight" 절 참조):
+   ```bash
+   python scripts/workbook_highlight_glossary.py <path.xlsx> --include-source-sheets --cell-range C7:C28
+   ```
+   최신 glossary 사용 여부와 `KR(한국)`/`US(미국)` source sheet 포함 여부를 반드시 사용자에게 보고한다.
 
 ### edits JSON 형식
 
@@ -79,6 +84,7 @@ python scripts/workbook_inspect.py <path.xlsx> --json              # 파싱용 J
 - title과 description의 **톤이 충돌**하지 않는가
 - BX 적용 대상이면 **Open/Bold/Authentic** 관점에서 title이 적절한가 (`rules-sources.md`의 `BX_STYLE_RULES` 참조)
 - RAG 사례가 있으면(`rag_lookup.py`) 기존 title/description pairing과 **충돌하지 않는가**
+- 지칭(this/it/your device 등)·부사("간단히"/"쉽게"/"just"/"simply" 등) 반복은 section 단위가 아니라 **story 전체 단위**로 검토한다 (→ `response-patterns.md` C-2 확장판)
 
 > ⚠ 이 검토는 분석·제안 단계다. 원본 Excel은 절대 수정하지 않으며, 적용은 항상 사용자 승인 + `workbook_apply_edits.py`를 거친다.
 
@@ -120,6 +126,7 @@ LLM/NotebookLM 검수 등급은 후보 신호다. `Needs Revision`만 추리면 
 
 필수 점검 예:
 - bracket 오삽입/누락: `[smartphone]`, `[Samsung]`, `[SmartThings]` 등 실제 glossary 예외 규칙과 대조
+- **bracket 뒤 복수형만 붙는 패턴** (예: `[Routine]s`): 우선 의심 대상. 용어집 원문 자체가 이미 복수형(예: `[Manual routines]`)이면 그대로 유지하고, 아니면 bracket은 유지한 채 문장 구조로 복수를 처리한다("자연스러운 영어"로 bracket을 풀어 쓰는 것보다 용어집 bracket 유지가 우선)
 - dict/JSON 래핑: `{'translation': ...}`, `{'translatio n': ...}` 같은 출력 파싱 실패
 - 비정상 공백/분절: 태국어 등에서 단어 중간에 들어간 공백
 - 용어집 오탐: 일반 형용사 `safe`가 제품명 `Safe`처럼 유지되는 사례

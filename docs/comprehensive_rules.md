@@ -289,13 +289,16 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 ---
 
 ### 🇨🇳 CN (중국) - Simplified Chinese (`Simplified Chinese`)
-> **💡 정책 요약**: 중국 본토 표준 용어 및 간체자 사용. 대만식 용어 지양. 전각 구두점 사용. 따옴표는 전각 `"..."` 사용 (`「」` 금지).
+> **💡 정책 요약**: 중국 본토 표준 용어 및 간체자 사용. 대만식 용어 지양. 전각 구두점 사용. 따옴표는 전각 `"..."` 사용 (`「」` 금지). 격식 있는 您 사용(구어체 你 지양), 어기조사(呀/啦/呢/哦 등)·구어체(口语化) 지양, 서면어(书面语) 톤 유지.
 
 ```text
 - Use natural Mainland Chinese wording and Simplified Chinese characters.
 - Avoid Taiwan-specific terminology.
 - Use fullwidth punctuation marks (，。！？) consistently; avoid half-width ASCII punctuation.
 - Use fullwidth double quotation marks ("...") for quoted text and navigation paths; do not use 「」 (Japanese-style brackets).
+- Use 您 rather than 你 in app/marketing copy to maintain a polished, respectful register.
+- Avoid overly casual spoken-style (口语化) wording, chatty particles (e.g., 呀, 啦, 呢, 哦), and colloquial sentence flow.
+- Use refined written Chinese (书面语) suited for app content, with natural connectives and polished service-copy phrasing where appropriate.
 ```
 
 ---

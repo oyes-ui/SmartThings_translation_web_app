@@ -168,11 +168,14 @@ def _row_to_example(row, match_type: str, score: float) -> dict:
 
 
 def offline_query(
-    conn, query, variants, source_group, n, keyword=False, story=None, section=None
+    conn, query, variants, source_group, n, keyword=False, story=None, section=None,
+    include_tone_flagged=False,
 ) -> list[dict]:
     """offline 조회: exact / keyword(LIKE) / story / section / lang 필터 조합."""
     where = ["source_group = ?"]
     params: list = [source_group]
+    if not include_tone_flagged:
+        where.append("tone_flag IS NULL")
 
     if variants:
         where.append("target_lang IN (%s)" % ",".join("?" * len(variants)))
@@ -224,7 +227,9 @@ def offline_query(
     return examples[:n]
 
 
-def offline_korean_source_query(conn, query, n, keyword=False, story=None, section=None) -> list[dict]:
+def offline_korean_source_query(
+    conn, query, n, keyword=False, story=None, section=None, include_tone_flagged=False
+) -> list[dict]:
     """한국어 리뷰용 source-side 조회.
 
     RAG DB에서 KR(한국)은 보통 target_lang 이 아니라 source_text 이므로,
@@ -233,6 +238,8 @@ def offline_korean_source_query(conn, query, n, keyword=False, story=None, secti
     """
     where = ["source_group = ?"]
     params: list = ["kr"]
+    if not include_tone_flagged:
+        where.append("tone_flag IS NULL")
     if story:
         where.append("story_id = ?")
         params.append(story)
@@ -307,20 +314,63 @@ def semantic_query(query, variants, source_lang, n) -> list[dict]:
 def semantic_korean_source_query(query, n) -> list[dict]:
     """한국어 source_text 기준 semantic 조회.
 
-    ChromaDB에는 target 번역이 아니라 source_text 임베딩이 저장되어 있으므로,
-    target_lang=all + source_lang=Korean 으로 KR 컬렉션을 검색한다.
+    한국어 리뷰는 "현재 KR 셀 ↔ 과거 KR 셀" 비교가 목적이다. 일반
+    retrieve(..., target_lang="all") 경로는 Chroma에서 source_text를 찾은 뒤
+    SQLite의 paired target_text를 붙이는 번역쌍 반환 로직이라, 긴 KR 셀 리뷰에서
+    좋은 source hit가 있어도 target 부착/상위 raw-hit 제한 때문에 누락될 수 있다.
+    여기서는 KR collection을 직접 조회하고 source_text 자체를 결과로 반환한다.
     """
+    from translation_web_app.rag_db_builder import COLLECTION_KR, normalize_text
     from translation_web_app.rag_retriever import get_retriever  # lazy: chromadb 여기서 로드
+
     retriever = get_retriever()
     if not retriever.is_available():
         return []
-    out = []
-    for ex in retriever.retrieve(query, "all", source_lang="Korean", n_results=n):
-        enriched = dict(ex)
-        enriched["lookup_side"] = "source"
-        enriched["korean_text"] = ex.get("source")
-        enriched["paired_target"] = ex.get("target")
-        out.append(enriched)
+
+    col = retriever._get_collection("Korean")
+    if col.name != COLLECTION_KR:
+        return []
+
+    query_embedding = retriever._embed_query(normalize_text(query))
+    raw_n = max(n * 5, 20)
+    results = col.query(
+        query_embeddings=[query_embedding],
+        n_results=raw_n,
+        include=["documents", "metadatas", "distances"],
+    )
+
+    out: list[dict] = []
+    seen: set[str] = set()
+    ids = results.get("ids", [[]])[0]
+    documents = results.get("documents", [[]])[0]
+    metadatas = results.get("metadatas", [[]])[0]
+    distances = results.get("distances", [[]])[0]
+
+    for i, _doc_id in enumerate(ids):
+        if len(out) >= n:
+            break
+        source = documents[i]
+        if not source or source in seen:
+            continue
+        seen.add(source)
+
+        distance = distances[i]
+        if distance > 0.8:
+            continue
+
+        meta = metadatas[i] or {}
+        out.append({
+            "source": source,
+            "target": "",
+            "target_lang": "KR(한국)",
+            "section_code": meta.get("section_code", ""),
+            "story_id": meta.get("story_id", ""),
+            "match_type": "source_semantic",
+            "similarity_score": round(1 - distance, 3),
+            "lookup_side": "source",
+            "korean_text": source,
+            "paired_target": "",
+        })
     return out
 
 
@@ -411,6 +461,7 @@ def lookup(args) -> dict:
             result["examples"] = offline_korean_source_query(
                 conn, args.query, args.n,
                 keyword=args.keyword, story=args.story, section=args.section,
+                include_tone_flagged=args.include_tone_flagged,
             )
         else:
             variants = find_db_variants(conn, code, sgroup) if code else []
@@ -422,6 +473,7 @@ def lookup(args) -> dict:
             result["examples"] = offline_query(
                 conn, args.query, variants, sgroup, args.n,
                 keyword=args.keyword, story=args.story, section=args.section,
+                include_tone_flagged=args.include_tone_flagged,
             )
     finally:
         conn.close()
@@ -477,6 +529,8 @@ def main():
     p.add_argument("--mode", choices=["auto", "offline", "semantic"], default="auto",
                    help="auto(기본): 키 있고 query면 semantic, 아니면 offline")
     p.add_argument("--keyword", action="store_true", help="offline: 부분일치(LIKE) 검색")
+    p.add_argument("--include-tone-flagged", action="store_true",
+                   help="tone_flag 가 찍힌(예: 구어체로 확정된 CN 과거 사례) row도 결과에 포함(오디트/관리용, 기본은 제외)")
     p.add_argument("--story", help="offline: story_id 필터 (예: story_001)")
     p.add_argument("--section", help="offline: section_code 필터 (예: //section_001_1)")
     p.add_argument("--app-root", help="app repo 경로 명시 (미지정 시 자동 탐색)")

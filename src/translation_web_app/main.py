@@ -449,7 +449,11 @@ async def prompt_universe():
     n("b_bx", "Samsung BX Style", "branch", "Voice attributes.")
     e("x_t", "b_bx"); e("x_d", "b_bx"); e("x_s", "b_bx")
     for k, d in BX["voice_attributes"].items():
-        n(f"bx_{k.lower()}", f"Voice: {k}", "style", f"{d['definition']}\n\n" + "\n".join(d['actionable_rules']))
+        desc = ""
+        if "definition" in d and d["definition"]:
+            desc += f"{d['definition']}\n\n"
+        desc += "\n".join(d["actionable_rules"])
+        n(f"bx_{k.lower()}", f"Voice: {k}", "style", desc)
         e("b_bx", f"bx_{k.lower()}")
 
     return {"elements": {"nodes": nodes, "edges": edges}}
@@ -607,6 +611,20 @@ async def preview_prompt_blocks(
             "user_message": audit_user_msg,
             "token_counts": {"system": au_sys_tok, "user": au_user_tok, "total": au_sys_tok + au_user_tok, "method": au_method},
         },
+    }
+
+
+@app.get("/api/api_status")
+async def api_status():
+    """서버 기본(.env/서비스 계정) API 키 활성 상태 조회. 세션 키 입력 여부는 프론트에서 병합."""
+    gemini_active = bool(_TOKEN_COUNTER.gemini_client)
+    openai_active = bool(_TOKEN_COUNTER.openai_client)
+    return {
+        "gemini": {
+            "active": gemini_active,
+            "mode": "vertex_ai" if getattr(_TOKEN_COUNTER, "is_vertex_ai", False) else ("api_key" if gemini_active else None),
+        },
+        "openai": {"active": openai_active},
     }
 
 

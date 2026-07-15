@@ -29,6 +29,7 @@ from translation_web_app.paths import (
     EXCEL_DATA_DIR,
     LEGACY_RAG_DB_DIR,
     RAG_DB_DIR,
+    RAG_TONE_FLAGS_PATH,
     SQLITE_PATH,
     ensure_runtime_dirs,
 )
@@ -146,7 +147,8 @@ def get_sqlite_conn():
             target_sheet TEXT,
             target_text TEXT,
             original_file TEXT,
-            created_at TEXT
+            created_at TEXT,
+            tone_flag TEXT            -- nullable; e.g. 'colloquial_cn'. Derived cache, see reapply_tone_flags().
         )
     """)
     conn.execute("""
@@ -158,6 +160,10 @@ def get_sqlite_conn():
             processed_at TEXT
         )
     """)
+    # 기존 DB(마이그레이션 이전)에는 tone_flag 컬럼이 없을 수 있으므로 방어적으로 추가.
+    existing_cols = {row[1] for row in conn.execute("PRAGMA table_info(rag_pairs)")}
+    if "tone_flag" not in existing_cols:
+        conn.execute("ALTER TABLE rag_pairs ADD COLUMN tone_flag TEXT")
     conn.commit()
     return conn
 
@@ -321,6 +327,28 @@ def build_file(
 
         conn.execute("DELETE FROM rag_pairs WHERE original_file = ?", (filename,))
 
+        # 같은 story_id인데 파일명이 바뀐 경우(날짜 접미사 갱신 등), 구버전 파일의
+        # 잔여 row/벡터가 orphan으로 남는 것을 방지 — 지금 처리 중인 filename 외의
+        # 모든 구버전을 정리한다.
+        for col in (col_kr, col_us):
+            try:
+                same_story = col.get(where={"story_id": story_id})
+            except Exception:
+                continue
+            stale_story_ids = [
+                item_id for item_id, meta in zip(same_story.get("ids", []), same_story.get("metadatas", []))
+                if (meta or {}).get("original_file") != filename
+            ]
+            if stale_story_ids:
+                col.delete(ids=stale_story_ids)
+
+        cur = conn.execute(
+            "DELETE FROM rag_pairs WHERE story_id = ? AND original_file != ?",
+            (story_id, filename),
+        )
+        if cur.rowcount:
+            log_fn(f"  🧹 [{story_id}] 구버전 파일({filename} 이전) 잔여 row {cur.rowcount}건 정리")
+
     def prepare_collection_payload(recs):
         if not recs:
             return None
@@ -404,6 +432,80 @@ def delete_story(story_id: str, col_kr, col_us, conn: sqlite3.Connection, log_fn
     log_fn(f"  SQLite에서 {cur.rowcount}건 삭제")
 
 
+# ─── 구버전 파일 잔여 row 정리 (1회성 정합화 — 재발 방지 로직 도입 이전 orphan 처리용) ──
+def reconcile_stale_files(conn: sqlite3.Connection, col_kr, col_us, log_fn=print) -> int:
+    """현재 EXCEL_DIR 파일 목록을 기준으로, story_id는 같지만 원본 파일명이 바뀌어
+    남아있는 구버전 row/벡터를 정리한다. build_file()의 재발 방지 로직 도입 이전에
+    쌓인 orphan을 청소하는 1회성 정합화 용도(이후에는 build_file()이 자동으로 막아준다).
+    """
+    current_filename_by_story: dict[str, str] = {}
+    for filepath in get_excel_files():
+        parsed = parse_excel_file(filepath)
+        if parsed:
+            current_filename_by_story[parsed["story_id"]] = parsed["filename"]
+
+    total_deleted = 0
+    for story_id, current_filename in current_filename_by_story.items():
+        for col in (col_kr, col_us):
+            try:
+                same_story = col.get(where={"story_id": story_id})
+            except Exception:
+                continue
+            stale_ids = [
+                item_id for item_id, meta in zip(same_story.get("ids", []), same_story.get("metadatas", []))
+                if (meta or {}).get("original_file") != current_filename
+            ]
+            if stale_ids:
+                col.delete(ids=stale_ids)
+
+        cur = conn.execute(
+            "DELETE FROM rag_pairs WHERE story_id = ? AND original_file != ?",
+            (story_id, current_filename),
+        )
+        if cur.rowcount:
+            log_fn(f"  🧹 [{story_id}] 구버전 파일 잔여 row {cur.rowcount}건 정리 (현재: {current_filename})")
+            total_deleted += cur.rowcount
+
+    conn.commit()
+    log_fn(f"✅ 정합화 완료: 총 {total_deleted}건 정리")
+    return total_deleted
+
+
+# ─── 톤 플래그 재적용 (id denylist JSON이 캐노니컬 소스) ──────────────────────────
+def reapply_tone_flags(conn: sqlite3.Connection, denylist_path: Path = RAG_TONE_FLAGS_PATH, log_fn=print) -> int:
+    """JSON denylist를 읽어 tone_flag 컬럼에 재적용한다.
+
+    build_file()의 INSERT OR REPLACE는 명시된 컬럼만 채우므로, row가 재처리되면
+    tone_flag가 NULL로 초기화된다. denylist_path(JSON, {"ids": [...], "reason": "..."})가
+    캐노니컬 소스이므로, 모든 빌드 경로(run_pilot/run_build_all/run_update_story) 끝에서
+    이 함수를 호출해 플래그를 다시 채운다.
+    """
+    path = Path(denylist_path)
+    if not path.is_file():
+        return 0
+
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as e:
+        log_fn(f"  ⚠ tone_flag denylist 읽기 실패({path}): {e}")
+        return 0
+
+    ids = payload.get("ids", [])
+    reason = payload.get("reason", "colloquial_cn")
+    if not ids:
+        return 0
+
+    placeholders = ",".join("?" * len(ids))
+    cur = conn.execute(
+        f"UPDATE rag_pairs SET tone_flag = ? WHERE id IN ({placeholders})",
+        [reason, *ids],
+    )
+    conn.commit()
+    if cur.rowcount:
+        log_fn(f"  🏷 tone_flag 재적용: {cur.rowcount}/{len(ids)}건 (denylist: {path.name})")
+    return cur.rowcount
+
+
 # ─── 파일 목록 조회 ───────────────────────────────────────────────────────────
 def get_excel_files() -> list[Path]:
     pattern = str(EXCEL_DIR / "*.xlsx")
@@ -433,6 +535,7 @@ def run_pilot(log_fn=print) -> dict:
     conn = get_sqlite_conn()
 
     count = build_file(target_file, gemini_client, col_kr, col_us, conn, log_fn)
+    reapply_tone_flags(conn, log_fn=log_fn)
 
     # 결과 요약
     story_id = parse_excel_file(target_file)["story_id"]
@@ -488,6 +591,7 @@ def run_build_all(log_fn=print, force: bool = False) -> int:
         cnt = build_file(filepath, gemini_client, col_kr, col_us, conn, log_fn)
         total += cnt
 
+    reapply_tone_flags(conn, log_fn=log_fn)
     log_fn(f"\n✅ 전체 빌드 완료: {total}건 저장, {skipped}개 파일 skip")
     return total
 
@@ -520,6 +624,7 @@ def run_update_story(story_id: str, log_fn=print) -> int:
         cnt = build_file(f, gemini_client, col_kr, col_us, conn, log_fn)
         total += cnt
 
+    reapply_tone_flags(conn, log_fn=log_fn)
     log_fn(f"✅ [{story_id}] 증분 업데이트 완료: {total}건 재저장")
     return total
 
@@ -602,6 +707,10 @@ if __name__ == "__main__":
     parser.add_argument("--force", action="store_true", help="이미 처리된 파일도 강제 재빌드")
     group.add_argument("--update-story", metavar="STORY_ID", help="특정 스토리 증분 업데이트")
     group.add_argument("--status", action="store_true", help="DB 현황 조회")
+    group.add_argument("--reconcile-stale-files", action="store_true",
+                        help="파일명이 바뀌어 남은 구버전 row/벡터를 현재 파일 목록 기준으로 정리(임베딩 재호출 없음)")
+    group.add_argument("--reapply-tone-flags", action="store_true",
+                        help="RAG_DB_DIR/cn_tone_flags.json denylist를 tone_flag 컬럼에 재적용")
     args = parser.parse_args()
 
     if args.pilot:
@@ -612,3 +721,10 @@ if __name__ == "__main__":
         run_update_story(args.update_story)
     elif args.status:
         run_status()
+    elif args.reconcile_stale_files:
+        _, col_kr, col_us = get_chroma_collections()
+        conn = get_sqlite_conn()
+        reconcile_stale_files(conn, col_kr, col_us)
+    elif args.reapply_tone_flags:
+        conn = get_sqlite_conn()
+        reapply_tone_flags(conn)
