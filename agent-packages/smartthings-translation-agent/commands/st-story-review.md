@@ -5,6 +5,18 @@ argument-hint: <xlsx 경로> --sheet "BR(브라질)" [--ai-review <검수 결과
 
 AI 최종평가를 후보 목록으로 받아, 대상 언어의 실제 현재 셀을 기준으로 story 단위 검수를 수행한다. 원본 Excel은 수정하지 않는다.
 
+## 시작 안내
+
+명령을 실행하면, 검수 전에 아래 절차와 현재 입력에서 확인된 정보를 먼저 짧게 안내한다.
+
+1. **준비**: 대상 시트, story_id, AI 검수 결과 유무를 확인한다.
+2. **기준 확정**: source group과 source 시트, glossary bracket occurrence를 확인한다.
+3. **AI 재평가**: `Needs Revision`과 `Good` 코멘트를 모두 현재 셀 기준으로 확인한다.
+4. **일관성 판단**: 표현 통일이 필요한 항목만 RAG로 확인하고, story의 호칭·주어·조사/격·어미·접속 표현을 점검한다.
+5. **마무리**: `수정 필요 / 유지 / false positive / 추가 확인`으로 정리한 뒤, 필요하면 `/st-obsidian-report`에 반영한다.
+
+입력이 부족하면 먼저 필요한 경로 또는 시트를 한 번에 요청한다. AI 검수 결과가 없으면 1~2단계와 story 맥락 검수만 진행한다고 안내한다.
+
 ## Workflow
 
 1. `workbook_inspect.py`로 대상 시트와 섹션을 읽어 현재값, story_id, title/description 구조를 확인한다.
