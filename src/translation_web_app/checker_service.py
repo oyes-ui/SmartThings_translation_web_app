@@ -759,9 +759,12 @@ class TranslationChecker:
         }
 
         # RAG 예시 주입: 유사 번역 사례 최대 2건을 시스템 프롬프트에 첨부
+        # format_for_prompt 내부의 Gemini 임베딩 호출이 동기(sync)라, 이벤트루프에서
+        # 직접 부르면 그 응답이 올 때까지 서버 전체가 멈춘다 — 스레드로 오프로드.
         if self.rag_retriever and not rag_context:
             try:
-                rag_context = self.rag_retriever.format_for_prompt(
+                rag_context = await asyncio.to_thread(
+                    self.rag_retriever.format_for_prompt,
                     text,
                     target_lang,
                     source_lang=source_lang,
@@ -1056,11 +1059,12 @@ class TranslationChecker:
             rag_text = "[건너뜀: 짧은/무의미]"
         elif getattr(self, "rag_retriever", None) and self.rag_retriever.is_available():
             try:
-                results = self.rag_retriever.retrieve(
-                    source, 
-                    sheet_name, 
-                    source_lang=source_lang, 
-                    n_results=2, 
+                results = await asyncio.to_thread(
+                    self.rag_retriever.retrieve,
+                    source,
+                    sheet_name,
+                    source_lang=source_lang,
+                    n_results=2,
                     exclude_same_source=False,
                     identity_match_enabled=rag_identity_match
                 )
@@ -1470,9 +1474,15 @@ class TranslationChecker:
                     logs = []
                     if getattr(self, "rag_retriever", None) and self.rag_retriever.is_available():
                         try:
-                            results = self.rag_retriever.retrieve(source_text, ws.title, source_lang=captured_src_lang, n_results=2, exclude_same_source=False, identity_match_enabled=rag_identity_match)
+                            results = await asyncio.to_thread(
+                                self.rag_retriever.retrieve, source_text, ws.title, source_lang=captured_src_lang,
+                                n_results=2, exclude_same_source=False, identity_match_enabled=rag_identity_match
+                            )
                             if results:
-                                rag_context_str = self.rag_retriever.format_for_prompt(source_text, ws.title, source_lang=captured_src_lang, n_results=2, identity_match_enabled=rag_identity_match)
+                                rag_context_str = await asyncio.to_thread(
+                                    self.rag_retriever.format_for_prompt, source_text, ws.title,
+                                    source_lang=captured_src_lang, n_results=2, identity_match_enabled=rag_identity_match
+                                )
                                 logs.append(f"[RAG] 유사 사례 {len(results)}건 적용됨 (시트: {ws.title}, 셀: {coord})")
                         except Exception as e:
                             logs.append(f"[RAG] 검색 오류: {e}")
@@ -1677,19 +1687,21 @@ class TranslationChecker:
             logs = []
             if getattr(self, "rag_retriever", None) and self.rag_retriever.is_available():
                 try:
-                    results = self.rag_retriever.retrieve(
-                        source_text, 
-                        ws.title, 
-                        source_lang=source_lang, 
-                        n_results=2, 
+                    results = await asyncio.to_thread(
+                        self.rag_retriever.retrieve,
+                        source_text,
+                        ws.title,
+                        source_lang=source_lang,
+                        n_results=2,
                         exclude_same_source=False,
                         identity_match_enabled=rag_identity_match
                     )
                     if results:
-                        rag_context_str = self.rag_retriever.format_for_prompt(
-                            source_text, 
-                            ws.title, 
-                            source_lang=source_lang, 
+                        rag_context_str = await asyncio.to_thread(
+                            self.rag_retriever.format_for_prompt,
+                            source_text,
+                            ws.title,
+                            source_lang=source_lang,
                             n_results=2,
                             identity_match_enabled=rag_identity_match
                         )

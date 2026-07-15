@@ -102,6 +102,7 @@ class RagRetriever:
         if not self._available:
             return []
 
+        conn = None
         try:
             col = self._get_collection(source_lang)
             source_group = "kr" if col.name == COLLECTION_KR else "us"
@@ -209,12 +210,14 @@ class RagRetriever:
                             "similarity_score": round(1 - distance, 3)
                         })
             
-            conn.close()
             return examples
 
         except Exception as e:
             print(f"[RAG] 검색 오류: {e}")
             return []
+        finally:
+            if conn is not None:
+                conn.close()
 
     def format_for_prompt(
         self,
