@@ -449,7 +449,11 @@ async def prompt_universe():
     n("b_bx", "Samsung BX Style", "branch", "Voice attributes.")
     e("x_t", "b_bx"); e("x_d", "b_bx"); e("x_s", "b_bx")
     for k, d in BX["voice_attributes"].items():
-        n(f"bx_{k.lower()}", f"Voice: {k}", "style", f"{d['definition']}\n\n" + "\n".join(d['actionable_rules']))
+        desc = ""
+        if "definition" in d and d["definition"]:
+            desc += f"{d['definition']}\n\n"
+        desc += "\n".join(d["actionable_rules"])
+        n(f"bx_{k.lower()}", f"Voice: {k}", "style", desc)
         e("b_bx", f"bx_{k.lower()}")
 
     return {"elements": {"nodes": nodes, "edges": edges}}

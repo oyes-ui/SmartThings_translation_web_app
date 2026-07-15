@@ -45,6 +45,7 @@ else:
 
 CHROMA_DIR = RAG_DB_DIR / "chroma"
 SQLITE_PATH = RAG_DB_DIR / "rag_store.db"
+RAG_TONE_FLAGS_PATH = RAG_DB_DIR / "cn_tone_flags.json"
 
 
 def ensure_runtime_dirs() -> None:

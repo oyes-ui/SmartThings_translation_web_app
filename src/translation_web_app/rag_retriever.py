@@ -119,9 +119,9 @@ class RagRetriever:
                 # let's try direct exact match using source_text. Wait, the user query might be slightly differently formatted.
                 # Actually, doing exact source match in SQLite is best.
                 cursor.execute("""
-                    SELECT source_text, target_text, section_code, story_id 
-                    FROM rag_pairs 
-                    WHERE source_group = ? AND source_text = ? AND target_lang = ?
+                    SELECT source_text, target_text, section_code, story_id
+                    FROM rag_pairs
+                    WHERE source_group = ? AND source_text = ? AND target_lang = ? AND tone_flag IS NULL
                     LIMIT ?
                 """, (source_group, source_text, target_lang, n_results))
                 
@@ -177,7 +177,7 @@ class RagRetriever:
                             cursor.execute("""
                                 SELECT target_text, section_code, story_id, target_lang
                                 FROM rag_pairs
-                                WHERE source_group = ? AND source_text = ? AND target_lang = ?
+                                WHERE source_group = ? AND source_text = ? AND target_lang = ? AND tone_flag IS NULL
                                 LIMIT 1
                             """, (source_group, source, target_lang))
                             row = cursor.fetchone()
@@ -189,7 +189,7 @@ class RagRetriever:
                             cursor.execute("""
                                 SELECT target_text, section_code, story_id, target_lang
                                 FROM rag_pairs
-                                WHERE source_group = ? AND source_text = ?
+                                WHERE source_group = ? AND source_text = ? AND tone_flag IS NULL
                                 ORDER BY target_lang
                                 LIMIT 1
                             """, (source_group, source))
