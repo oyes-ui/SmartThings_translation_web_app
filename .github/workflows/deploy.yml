@@ -20,11 +20,15 @@ jobs:
           git init
           git config user.email "oyes-ui@users.noreply.github.com"
           git config user.name "oyes-ui"
-          
-          # 3. 현재 파일을 'main' 브랜치 이름으로 추가
+
+          # 3. 대용량 바이너리(RAG DB 등)는 LFS로 추적 — HF Space push는 파일당 10MB 제한
+          git lfs install
+          git lfs track "*.sqlite3" "*.db" "*.bin" "*.pickle"
+
+          # 4. 현재 파일을 'main' 브랜치 이름으로 추가
           git checkout -b main
           git add .
           git commit -m "Final clean deploy for Antigravity"
-          
-          # 4. Hugging Face로 강제 푸시 (주소 오타 수정됨)
+
+          # 5. Hugging Face로 강제 푸시 (주소 오타 수정됨)
           git push --force https://x-token:$HF_TOKEN@huggingface.co/spaces/oyes-ui/SmartThings_Translation_Web_App main
