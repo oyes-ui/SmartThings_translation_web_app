@@ -73,6 +73,17 @@ RAG 사례는 **정답이 아니라 과거 톤·용어 사용 경향의 근거**
 
 답변할 때는 판단 근거를 `RAG 기준` / `BX 기준` / `용어집 기준` 중 어디서 왔는지 표기한다 (→ `response-patterns.md` A·C-2 템플릿의 "근거" 필드).
 
+## 표현 통일 조회 규약
+
+표현을 story 안에서 통일할지 결정할 때는 단어만 검색하지 않는다. 아래 문맥을 함께 고정해 조회·해석한다.
+
+1. **source group**: KR source(`KR → JA/CN/TW/US`) 또는 US source(`US → BR/RU/DE…`)를 먼저 확정하고 `--source-lang`을 맞춘다.
+2. **대상 언어**: `--target-lang`으로 실제 검수 시트를 제한한다.
+3. **콘텐츠 유형**: title, description, disclaimer/navigation을 구분한다. description 표현은 description 사례를 우선한다.
+4. **판정 강도**: exact > keyword/동일 패턴 > semantic 순으로 가까운 사례임을 표시한다. 사례가 없으면 통일을 강제하지 않고 "RAG 근거 없음: 규칙/BX 기준의 권장"으로 보고한다.
+
+disclaimer/navigation의 법적·UI 문체는 description의 일반 문장 선택 근거로 사용하지 않는다. 단, 동일한 UI 레이블 또는 용어집 표기를 확인하는 보조 근거로는 사용할 수 있다.
+
 ## ⚠ DB 데이터 품질 주의 (중요)
 
 실제 `rag_pairs.target_lang`에는 **변종·오염 데이터**가 섞여 있다:
