@@ -614,6 +614,20 @@ async def preview_prompt_blocks(
     }
 
 
+@app.get("/api/api_status")
+async def api_status():
+    """서버 기본(.env/서비스 계정) API 키 활성 상태 조회. 세션 키 입력 여부는 프론트에서 병합."""
+    gemini_active = bool(_TOKEN_COUNTER.gemini_client)
+    openai_active = bool(_TOKEN_COUNTER.openai_client)
+    return {
+        "gemini": {
+            "active": gemini_active,
+            "mode": "vertex_ai" if getattr(_TOKEN_COUNTER, "is_vertex_ai", False) else ("api_key" if gemini_active else None),
+        },
+        "openai": {"active": openai_active},
+    }
+
+
 # ─── RAG 엔드포인트 ──────────────────────────────────────────────────────────
 
 @app.get("/api/rag_status")

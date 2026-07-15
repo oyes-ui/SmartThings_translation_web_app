@@ -887,6 +887,43 @@ document.getElementById('updateRagBtn')?.addEventListener('click', async () => {
 fetchRagStatus();
 updatePromptModules();
 
+// ─── API Active-Status Dots ───────────────────────────────────────────────────
+
+let _serverApiStatus = { gemini: false, openai: false };
+
+function updateApiStatusDots() {
+    const geminiDot = document.getElementById('geminiStatusDot');
+    const openaiDot = document.getElementById('openaiStatusDot');
+    if (!geminiDot || !openaiDot) return;
+
+    const hasSessionGemini = !!sessionStorage.getItem('gemini_api_key');
+    const hasSessionOpenai = !!sessionStorage.getItem('openai_api_key');
+
+    const geminiActive = _serverApiStatus.gemini || hasSessionGemini;
+    const openaiActive = _serverApiStatus.openai || hasSessionOpenai;
+
+    geminiDot.className = 'api-status-dot ' + (geminiActive ? 'active' : 'inactive');
+    geminiDot.title = geminiActive
+        ? (hasSessionGemini && !_serverApiStatus.gemini ? 'Gemini: 세션 키 사용 중' : 'Gemini: 활성')
+        : 'Gemini: 비활성 (.env 또는 세션 키 필요)';
+
+    openaiDot.className = 'api-status-dot ' + (openaiActive ? 'active' : 'inactive');
+    openaiDot.title = openaiActive
+        ? (hasSessionOpenai && !_serverApiStatus.openai ? 'OpenAI: 세션 키 사용 중' : 'OpenAI: 활성')
+        : 'OpenAI: 비활성 (.env 또는 세션 키 필요)';
+}
+
+(async function initApiStatus() {
+    try {
+        const res = await fetch(`${API_BASE}/api_status`);
+        const data = await res.json();
+        _serverApiStatus = { gemini: !!data.gemini?.active, openai: !!data.openai?.active };
+    } catch (e) {
+        // 조회 실패 시 비활성으로 간주하되, 세션 키가 있으면 여전히 반영됨
+    }
+    updateApiStatusDots();
+})();
+
 // ─── API Key Panel ────────────────────────────────────────────────────────────
 
 (function initApiKeyPanel() {
@@ -925,6 +962,7 @@ updatePromptModules();
         else sessionStorage.removeItem('gemini_api_key');
         if (o) sessionStorage.setItem('openai_api_key', o);
         else sessionStorage.removeItem('openai_api_key');
+        updateApiStatusDots();
         log('API Keys saved for this session.', 'success');
     });
 
@@ -933,6 +971,7 @@ updatePromptModules();
         sessionStorage.removeItem('openai_api_key');
         if (geminiInput) geminiInput.value = '';
         if (openaiInput) openaiInput.value = '';
+        updateApiStatusDots();
         log('API Keys cleared.', 'info');
     });
 })();
