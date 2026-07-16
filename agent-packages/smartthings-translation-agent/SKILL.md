@@ -33,18 +33,19 @@ python scripts/bootstrap.py --app-root <경로> --save
 
 - **셋업/시작**: "SmartThings 번역 에이전트 시작해줘", "셋업해줘", "bootstrap" → `scripts/bootstrap.py` + `references/setup-workflow.md`
 - **규칙 Q&A**: "이 언어는 존댓말 써야 해?", "용어집 대괄호 규칙이 뭐야?" → `references/rules-sources.md`
-- **검수 피드백 토론**: "왜 Needs Revision이야?", "이 등급 근거 설명해줘" → `references/response-patterns.md`
+- **통합 story 검수**: "AI 검수결과 다시 봐줘", "이 스토리 전체 맥락에서 재평가해줘" → `/st-story-review`: 실제 셀·source group·용어집·RAG·문장 요소를 순서대로 재검토
+- **검수 피드백 토론**: "왜 Needs Revision이야?", "이 등급 근거 설명해줘" → `/st-audit-explain` + `references/response-patterns.md`
 - **RAG 사례 조회**: "과거에 이 표현 어떻게 번역했어?", "기존 사례 기준 이 독일어 괜찮아?" → `scripts/rag_lookup.py` + `references/rag-workflow.md`
 - **NotebookLM 보조 분석**: "NotebookLM 링크 참고해서 분석해줘", "검수 txt를 NotebookLM에 넣어둔 노트 기준으로 요약해줘", "노트북LM 자료까지 반영해서 반복 오류 패턴 찾아줘" → `references/notebooklm-workflow.md` + MCP `notebooklm` 도구(설치된 경우)
 - **원어민/번역사 감수본 대조·요약**: "감수본 반영여부 확인", "AI 검수 대비 최종 summary", "번역사 수정 제안 몇 건이야?" → `scripts/review_summary.py` + `references/response-patterns.md`
 - **Excel 분석/수정**: "이 워크북 JA 시트 문제 셀 알려줘", "이 셀 이렇게 고쳐줘" → `scripts/workbook_inspect.py`, `scripts/workbook_apply_edits.py` + `references/excel-workflow.md`
 - **Excel 용어집 하이라이트**: "용어집 용어만 글자색 하이라이트해줘", "highlight_only 실행" → `scripts/workbook_highlight_glossary.py` + `references/excel-workflow.md`
-- **섹션 맥락 검토 (section coherence)**: "타이틀이 디스크립션 맥락을 잘 반영했는지 봐줘", "section title coherence 검토", "섹션별 title/description 매칭 확인" → `scripts/workbook_inspect.py --sections` + `references/excel-workflow.md`(Section-level coherence review)
+- **섹션·story 맥락 검토**: "타이틀이 디스크립션 맥락을 잘 반영했는지 봐줘", "조사나 어미가 story 안에서 일관적인지 봐줘" → `/st-sections` + `scripts/workbook_inspect.py --sections`
 - **번역/검수 (셀프, 크레딧 0)**: "이 문구 독일어로 번역해줘", "이 번역 검수해줘" → `scripts/prompt_preview.py` 로 프롬프트 받아 직접 수행 + `references/self-vs-pipeline.md`
 - **번역/검수 (파이프라인, LLM)**: "워크북 전체 자동 번역/검수 돌려줘" → 승인 후 `scripts/workbook_translate.py`/`scripts/workbook_audit.py --pipeline`
 - **용어집 관리**: "용어집에 이 단어 있어?", "용어 추가/수정/CSV 가져오기" → `scripts/glossary_manage.py`
-- **용어집 필터/활성화 판단**: "US 확정문구 보면서 용어집 필터 후보 제안", "이 파일에서 어떤 용어 활성화해야 해?" → US 소스 문구 + 실제 glossary 매칭 확인 → `references/glossary-report-workflow.md`
-- **Obsidian 리포트 작성**: "옵시디언용 리포트 만들어줘", "검수 리포트 vault에 넣어줘" → markdown 초안 생성 + 언어별 섹션 분리 → `references/glossary-report-workflow.md`
+- **용어집 필터/활성화 판단**: "이 파일에서 어떤 용어 활성화해야 해?" → target의 source group 문구 + 실제 glossary 매칭 확인 → `references/glossary-report-workflow.md`
+- **Obsidian 리포트 작성**: "옵시디언용 리포트 만들어줘", "BR 검수 결과를 기존 리포트에 반영해줘" → markdown 초안 작성 또는 언어별 증분 갱신 → `references/glossary-report-workflow.md`
 - **텍스트워크북 생성**: "이 텍스트로 source 워크북 만들어줘" → `scripts/text_workbook_create.py`
 - **RAG DB 관리**: "RAG DB 현황/재빌드" → `python -m translation_web_app.rag_db_builder` (→ `references/rag-workflow.md`)
 
@@ -60,11 +61,12 @@ python scripts/bootstrap.py --app-root <경로> --save
 | `/st-rules` | 번역·검수 규칙 Q&A(canonical source 기준) | 0 |
 | `/st-prompt` | 앱과 동일한 번역/검수 프롬프트 생성 → **셀프 번역/검수** | 0 |
 | `/st-glossary` | 용어집 조회/검색/CRUD/CSV import·export | 0 |
-| `/st-glossary-filter` | US 확정문구 + 실제 용어집 매칭으로 활성/예외 판단 | 0 |
+| `/st-glossary-filter` | source group 확정문구 + 실제 용어집 매칭으로 활성/예외 판단 | 0 |
 | `/st-rag` | 과거 번역 사례 RAG 조회 | 0(offline)~ |
 | `/st-ragdb` | RAG DB 현황/빌드/업데이트 | status 0 / 빌드 LLM |
 | `/st-inspect` | 워크북 읽기 전용 분석 | 0 |
-| `/st-sections` | 섹션 title↔description 맥락 검토 | 0 |
+| `/st-story-review` | AI 결과를 실제 셀·용어집·RAG·story 맥락으로 통합 재평가 | 0 |
+| `/st-sections` | 섹션 title↔description 및 story 문장 요소 일관성 검토 | 0 |
 | `/st-highlight` | 용어집 rich text 하이라이트(원본 불변) | 0 |
 | `/st-edit` | 승인된 셀 편집 적용(복사본) | 0 |
 | `/st-textbook` | 구조화 텍스트 → source 워크북 생성 | 0 |
@@ -91,16 +93,17 @@ python scripts/bootstrap.py --app-root <경로> --save
 ```
 시작/셋업        → skill 폴더에서 scripts/bootstrap.py --app-root <경로> --json → app_root·level 확인 → 필요 시 --save
 규칙 질문        → references/rules-sources.md 읽고 답변 (docs/comprehensive_rules.md + prompt_modules.py 우선)
-검수 등급 설명   → references/response-patterns.md 형식으로, 6개 카테고리별로 설명
+검수 등급 설명   → /st-audit-explain → AI 판정과 최종 판단을 분리해 6개 카테고리별로 설명
 RAG 사례 필요    → scripts/rag_lookup.py 실행 → references/rag-workflow.md 따라 결과 해석
 NotebookLM 링크  → references/notebooklm-workflow.md 확인 → MCP/인증 확인 → 승인 후 add_notebook+select_notebook 등록 → ask_question, 일회성이면 remove_notebook 정리
 Excel 분석       → scripts/workbook_inspect.py (읽기 전용)
-섹션 맥락 검토   → scripts/workbook_inspect.py --sections → response-patterns.md(C-2) 템플릿으로 제안 → 승인 후 workbook_apply_edits.py
-검수 리포트 분석 → LM 판정 목록 추출 → 전체 워크북 패턴 검색(`[smartphone]`, dict 래핑, 비정상 공백, 용어집 오탐 등) → source group 형제 시트까지 재확인 → `수정 필요`/`false positive`/`추가 확인 필요`로 재분류
+통합 story 검수  → /st-glossary-filter → /st-story-review → 필요한 표현만 /st-rag → /st-sections → /st-obsidian-report
+섹션 맥락 검토   → scripts/workbook_inspect.py --sections → 호칭·주어·조사/격·어미·접속 표현까지 C-2 템플릿으로 제안 → 승인 후 workbook_apply_edits.py
+검수 리포트 분석 → LM 판정 목록 추출(Good 코멘트 포함) → 실제 현재 셀·source group·용어집·RAG 재확인 → `수정 필요`/`유지`/`false positive`/`추가 확인`으로 재분류
 감수본 요약     → review_summary.py 로 감수본/F열 변경·AI 수정안 겹침·리포트 판단 카운트 산출 → response-patterns.md 템플릿으로 최종 summary 작성
 Excel 수정       → 변경안 제시 → 사용자 승인 → scripts/workbook_apply_edits.py → 필요 시 최신 glossary로 전체 재하이라이트
 용어집 하이라이트 → 사용자 승인 → scripts/workbook_highlight_glossary.py --include-source-sheets (원본 불변, *_highlighted_*.xlsx 생성)
-용어집 필터 판단 → US 소스 시트 + latest_glossary.csv 실제 매칭 → bracket occurrence/비활성 용어 예외 판단 → 필요 시 Obsidian 리포트
+용어집 필터 판단 → target source group 소스 시트 + latest_glossary.csv 실제 매칭 → bracket occurrence/비활성 용어 예외 판단 → 필요 시 Obsidian 리포트
 ```
 
 ## 스크립트 사용법
@@ -158,7 +161,7 @@ highlight/translate/audit 가 공유한다.
 - `references/notebooklm-workflow.md` — NotebookLM MCP를 통한 긴 검수 리포트/공유 노트 보조 분석
 - `references/excel-workflow.md` — SmartThings 워크북 포맷과 편집 규약
 - `references/self-vs-pipeline.md` — 셀프 모드(크레딧 0) vs 앱 파이프라인(LLM) 의사결정
-- `references/glossary-report-workflow.md` — US 확정문구 기반 용어집 필터/활성화 판단, Obsidian 리포트 작성 규약
+- `references/glossary-report-workflow.md` — source group 확정문구 기반 용어집 필터/활성화 판단, Obsidian 리포트 작성 규약
 - `references/response-patterns.md` — 한국어 응답 템플릿
 - `references/portability.md` — 다른 에이전트 도구(Codex/Claude/Antigravity)로 설치하는 법
 
