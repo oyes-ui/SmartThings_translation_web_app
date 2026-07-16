@@ -38,6 +38,7 @@ build.pid
 test_output.txt
 .vscode/
 .agent/
+*.bak_*
 
 # 6. 에이전트 지침 문서 (로컬 유지, 업로드 금지)
 AGENTS.md
