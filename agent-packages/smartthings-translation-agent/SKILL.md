@@ -133,6 +133,11 @@ python scripts/workbook_highlight_glossary.py path/to/story.xlsx --cell-range C7
 # 승인된 편집 적용 (원본 불변, 복사본 생성) — 승인 후에만!
 python scripts/workbook_apply_edits.py path/to/story.xlsx '[{"sheet":"JA(일본)","cell":"C10","new_value":"..."}]'
 
+# 승인된 story 수정안을 납품용 최종본으로 생성 — delivery scope 전체 하이라이트·검증 포함
+python scripts/workbook_story_apply.py path/to/story.xlsx edits.json \
+  --delivery-sheets "BR(브라질),RU(러시아),CN(중국)" \
+  --glossary /path/to/Glossary_049_260715.csv --app-root /path/to/app --json
+
 # 셀프 번역/검수 프롬프트 (크레딧 0) — 받아서 에이전트가 직접 수행
 python scripts/prompt_preview.py --text "Turn on the light" --target-lang "DE(독일)" --row-key description
 python scripts/prompt_preview.py --audit --text "..." --translated "..." --target-lang "DE(독일)"

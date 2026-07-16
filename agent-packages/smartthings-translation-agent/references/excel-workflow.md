@@ -31,15 +31,16 @@ python scripts/workbook_inspect.py <path.xlsx> --json              # 파싱용 J
 
 **이 스크립트는 절대 파일을 수정하지 않는다.** `data_only=True`로 읽기만 한다.
 
-## 2단계: 편집안 제시 → 승인 → 적용
+## 2단계: 편집안 제시 → 승인 → 납품본 적용
 
 1. **편집 후보 제시**: 어떤 시트/셀을 왜 고칠지, before/after를 사용자에게 보여준다. (아직 수정 안 함)
 2. **명시적 승인 대기**: 사용자가 "그렇게 해줘"라고 승인할 때까지 적용하지 않는다.
-3. **적용**:
+3. **저수준 적용** (임시 확인용):
    ```bash
    python scripts/workbook_apply_edits.py <path.xlsx> <edits.json | inline-json>
    ```
-4. **하이라이트 재적용(필수)**: 수정본을 납품본으로 안내하기 전, 아래 명령으로 전체 재하이라이트한다 (자세한 내용은 "Glossary rich text highlight" 절 참조):
+4. **납품용 적용(권장/필수)**: 승인된 story 수정안은 `/st-story-apply`로 적용한다. delivery scope를 명시하면 복사본 생성, scope 전체 재하이라이트, 값 변경 검증, `.delivery.json` manifest 생성을 한 번에 처리한다.
+5. **수동 하이라이트 재적용**: 예외적으로 저수준 적용을 사용한 경우에는 수정본을 납품본으로 안내하기 전, 아래 명령으로 이번 납품 언어 전체를 재하이라이트한다 (자세한 내용은 "Glossary rich text highlight" 절 참조):
    ```bash
    python scripts/workbook_highlight_glossary.py <path.xlsx> --include-source-sheets --cell-range C7:C28
    ```
@@ -63,6 +64,7 @@ python scripts/workbook_inspect.py <path.xlsx> --json              # 파싱용 J
 - 단, Excel rich text(셀 내부 일부 글자만 파란색인 glossary 하이라이트)는 보존을 보장하지 않는다. 셀 값을 편집한 뒤 자동 산출본을 납품본으로 쓸 경우, 아래 "Glossary rich text highlight" 절차로 전체 하이라이트를 재생성한다.
 - atomic write: `.tmp` 저장 후 `os.replace()`.
 - 변경 로그 `<...>_revised_<ts>.changes.json` 동시 생성 (old/new 값 포함).
+- **납품본 판정:** `*_revised_*.xlsx`만으로는 납품할 수 없다. `story-apply`의 `final` 경로 또는 전체 delivery scope 재하이라이트와 값 검증을 마친 파일만 최종본으로 안내한다.
 
 ## Section-level coherence review (섹션 맥락 검토)
 

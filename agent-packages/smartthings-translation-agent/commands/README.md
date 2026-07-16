@@ -16,6 +16,7 @@
 - `/st-story-review` → `st-story-review.md`
 - `/st-sections` → `st-sections.md`
 - `/st-highlight` → `st-highlight.md`
+- `/st-story-apply` → `st-story-apply.md`
 - `/st-textbook` → `st-textbook.md`
 - `/st-rag` → `st-rag.md`
 - `/st-ragdb` → `st-ragdb.md`
