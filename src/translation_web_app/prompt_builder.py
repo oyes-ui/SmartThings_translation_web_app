@@ -23,6 +23,7 @@ from translation_web_app.prompt_modules import (
     GLOSSARY_NO_BRACKET_INSTRUCTION,
     GLOSSARY_TERM_RULES,
     LANGUAGE_LOCALIZATION_RULES,
+    resolve_language_identifier,
     TYPOGRAPHY_AND_PUNCTUATION_RULES,
 )
 
@@ -61,7 +62,7 @@ class PromptBuilder:
     def get_language_rule(self, target_lang: str):
         if not target_lang:
             return None
-        normalized = target_lang.lower()
+        normalized = resolve_language_identifier(target_lang).lower()
         for lang_key, rule in LANGUAGE_LOCALIZATION_RULES.items():
             if lang_key.lower() == normalized:
                 return lang_key, rule
