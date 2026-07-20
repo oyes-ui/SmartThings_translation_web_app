@@ -8,6 +8,10 @@ from fastapi.testclient import TestClient
 
 from translation_web_app.checker_service import TranslationChecker
 from translation_web_app.main import app
+from translation_web_app.prompt_modules import (
+    SHEET_CODE_LANGUAGE_ALIASES,
+    resolve_language_identifier,
+)
 from translation_web_app.prompt_builder import PromptBuilder
 
 
@@ -51,10 +55,31 @@ class PromptBuilderTests(unittest.TestCase):
 
         self.assertIn("您", cn_prompt)
         self.assertIn("口语化", cn_prompt)
-        self.assertIn("书面语", cn_prompt)
+        self.assertIn("structural translationese", cn_prompt)
+        self.assertIn("preserve source-confirmed qualifiers", cn_prompt)
 
         self.assertNotIn("口语化", tw_prompt)
-        self.assertNotIn("书面语", tw_prompt)
+        self.assertNotIn("structural translationese", tw_prompt)
+
+    def test_standard_workbook_sheet_codes_resolve_to_canonical_languages(self):
+        for sheet_code, language in SHEET_CODE_LANGUAGE_ALIASES.items():
+            with self.subTest(sheet_code=sheet_code):
+                self.assertEqual(resolve_language_identifier(f"{sheet_code}(market)"), language)
+
+    def test_sheet_name_applies_the_same_cn_rules_as_canonical_language(self):
+        for target_lang in ("CN(중국)", "Simplified Chinese"):
+            with self.subTest(target_lang=target_lang):
+                translation_prompt = self.builder.build_translation_prompt(
+                    target_lang=target_lang,
+                    source_lang="Korean",
+                )
+                audit_prompt = self.builder.build_audit_prompt(
+                    source_lang="Korean",
+                    target_lang=target_lang,
+                )
+                for prompt in (translation_prompt, audit_prompt):
+                    self.assertIn("structural translationese", prompt)
+                    self.assertIn("preserve source-confirmed qualifiers", prompt)
 
     def test_translation_prompt_modules(self):
         prompt = self.builder.build_translation_prompt(

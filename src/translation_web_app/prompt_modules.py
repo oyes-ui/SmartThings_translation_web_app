@@ -114,7 +114,8 @@ LANGUAGE_LOCALIZATION_RULES = {
         "Use fullwidth double quotation marks (“...”) for quoted text and navigation paths; do not use 「」 (Japanese-style brackets).",
         "Use 您 rather than 你 in app/marketing copy to maintain a polished, respectful register.",
         "Avoid overly casual spoken-style (口语化) wording, chatty particles (e.g., 呀, 啦, 呢, 哦), and colloquial sentence flow.",
-        "Use refined written Chinese (书面语) suited for app content, with natural connectives and polished service-copy phrasing where appropriate.",
+        "Use a polished Mainland Chinese register suited to premium tech and marketing copy. Recompose rather than translate word-for-word; avoid bureaucratic wording and structural translationese (e.g., …的情况下 or unnecessary 并), using clear, idiomatic benefit-led wording where appropriate (e.g., 无需…即可), without forcing a fixed sentence pattern, character count, or vocabulary choice.",
+        "Use precise technical wording for device actions and preserve source-confirmed qualifiers, including remote operation. State a specific UI location only when explicitly supported by the source or context; never invent one.",
     ],
     "Traditional Chinese": [
         "Use natural Taiwan Traditional Chinese wording and characters.",
@@ -139,6 +140,44 @@ LANGUAGE_LOCALIZATION_RULES = {
         "Avoid overly formal structures or English-style literal phrasing.",
     ],
 }
+
+# Workbook sheet names are user-facing identifiers, while prompt modules use
+# canonical language names. Keep this conversion next to the language rules so
+# every caller of PromptBuilder gets the same behavior.
+SHEET_CODE_LANGUAGE_ALIASES = {
+    "KR": "Korean",
+    "US": "English",
+    "UK": "English_UK",
+    "AU": "English_AU",
+    "SG": "English_SG",
+    "FR": "French",
+    "BE": "French_Belgium",
+    "CA": "French_Canada",
+    "DE": "German",
+    "IT": "Italian",
+    "ES": "Spanish",
+    "NL": "Dutch",
+    "SE": "Swedish",
+    "AE": "Arabic",
+    "PT": "European Portuguese",
+    "BR": "Brazilian Portuguese",
+    "RU": "Russian",
+    "TR": "Turkish",
+    "CN": "Simplified Chinese",
+    "TW": "Traditional Chinese",
+    "JA": "Japanese",
+    "PL": "Polish",
+    "VN": "Vietnamese",
+    "TH": "Thai",
+    "ID": "Indonesian",
+}
+
+
+def resolve_language_identifier(target_lang: str) -> str:
+    """Return the canonical language name for a standard workbook sheet name."""
+    normalized = target_lang.strip()
+    sheet_code = normalized.partition("(")[0].strip().upper()
+    return SHEET_CODE_LANGUAGE_ALIASES.get(sheet_code, normalized)
 
 GLOSSARY_TERM_RULES = {
     "name": "Glossary Term Rules",
@@ -200,7 +239,7 @@ AUDIT_CHECKLIST_RULES = [
     (
         "현지화",
         "해당 언어권 현지인이 실제로 사용하는 자연스러운 표현인지 종합 평가. "
-        "① [언어별 현지화 기준] 규칙 준수 (예: 독일어 Du-form, 일본어 ます형, 프랑스어 Tu/Vous, 중국어 您/구어체(口语化) 지양 등), "
+        "① [언어별 현지화 기준] 규칙 준수 (예: 독일어 Du-form, 일본어 ます형, 프랑스어 Tu/Vous, 중국어 您/구어체(口语化) 지양·직역투 대신 브랜드 카피체 사용 등), "
         "② 직역·구조적 번역이 아닌 시장 맥락에 맞는 표현 선택, "
         "③ 문화적 뉘앙스와 브랜드 보이스(Confident Explorer)의 현지 적용.",
     ),
