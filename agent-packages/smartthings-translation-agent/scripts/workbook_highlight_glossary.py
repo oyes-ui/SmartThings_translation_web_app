@@ -34,8 +34,39 @@ import json
 import sys
 from pathlib import Path
 
+import openpyxl
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _app_pipeline as ap
+
+
+def _cell_text(value) -> str:
+    return "" if value is None else str(value)
+
+
+def _verify_text_preservation(source: Path, highlighted: Path) -> dict:
+    """Fail closed if a highlight-only pass changes any cell's character stream."""
+    before = openpyxl.load_workbook(source, data_only=False)
+    after = openpyxl.load_workbook(highlighted, data_only=False, rich_text=True)
+    differences: list[str] = []
+    for sheet_name in before.sheetnames:
+        if sheet_name not in after.sheetnames:
+            differences.append(f"missing sheet: {sheet_name}")
+            continue
+        ws_before, ws_after = before[sheet_name], after[sheet_name]
+        max_row = max(ws_before.max_row, ws_after.max_row)
+        max_col = max(ws_before.max_column, ws_after.max_column)
+        for row in ws_before.iter_rows(min_row=1, max_row=max_row, min_col=1, max_col=max_col):
+            for cell in row:
+                if _cell_text(cell.value) != _cell_text(ws_after[cell.coordinate].value):
+                    differences.append(f"{sheet_name}!{cell.coordinate}")
+                    if len(differences) >= 20:
+                        raise RuntimeError(
+                            "하이라이트가 문안을 변경했습니다: " + ", ".join(differences)
+                        )
+    if differences:
+        raise RuntimeError("하이라이트가 문안을 변경했습니다: " + ", ".join(differences))
+    return {"text_preserved": True, "changed_cells": 0}
 
 
 async def run_highlight(args) -> dict:
@@ -114,6 +145,10 @@ async def run_highlight(args) -> dict:
                 events.insert(0, {"type": "log", "message": line.strip()})
 
     summary = ap.event_summary(events)
+    if summary["status"] == "ok" and summary.get("excel_path"):
+        summary["text_validation"] = _verify_text_preservation(
+            workbook, Path(summary["excel_path"])
+        )
     summary.update({
         "source": str(workbook),
         "glossary": str(glossary),

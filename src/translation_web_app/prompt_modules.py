@@ -195,7 +195,11 @@ TYPOGRAPHY_AND_PUNCTUATION_RULES = {
 }
 
 GLOSSARY_BRACKET_WRAP_RULE = "Wrap glossary terms in '{open}' and '{close}'."
-GLOSSARY_DISCLAIMER_NAV_EXCEPTION = "Exception: do not wrap terms inside navigation paths (e.g., Settings > Device)."
+GLOSSARY_DISCLAIMER_NAV_EXCEPTION = (
+    "Exception: do not wrap terms that appear inside a navigation path (e.g., Settings > Device). "
+    "This exception is per-occurrence: if the same glossary term also appears outside the navigation "
+    "path, still wrap that outside occurrence — only the occurrence inside the path stays unwrapped."
+)
 GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE = (
     "Enclose navigation paths in quotation marks appropriate for the target language. "
     "Place the sentence-ending period outside the closing quotation mark."
@@ -203,10 +207,16 @@ GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE = (
 
 GLOSSARY_EXEMPT_MARKERS = ["no bracket", "대괄호 제외", "괄호 제외"]
 
+# Term-level deactivation markers: the term is not glossary-enforced at all, so no bracket
+# policy (neither wrap nor exempt) applies. Matched against a space-stripped, lowercased rule.
+GLOSSARY_DEACTIVATION_MARKERS = ["비활성화", "deactivate", "disable"]
+
 GLOSSARY_NO_BRACKET_INSTRUCTION = (
-    "For title, section heading, and button copy, do not wrap glossary terms in any brackets. "
-    "Use the glossary term text exactly as provided, without [], 「」, or any other surrounding bracket marks, "
-    "even if the source text contains brackets. Do not change glossary capitalization to satisfy heading or button case style."
+    "For titles, section headings, and buttons, render standalone glossary terms as plain text. "
+    "Do not add quotation marks, guillemets, brackets, or any other wrapper around them "
+    "([], 「」, «», \"\", “”, etc.), even if the source text contains such marks. "
+    "Use quotation marks only for an explicitly quoted UI navigation path or source text that requires quotation. "
+    "Do not change glossary capitalization to satisfy heading or button case style."
 )
 GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_EAST_ASIAN = (
     "Enclose navigation paths in quotation marks appropriate for the target language."

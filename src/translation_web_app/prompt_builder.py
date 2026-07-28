@@ -16,6 +16,7 @@ from translation_web_app.prompt_modules import (
     BX_STYLE_RULES,
     COMMON_LOCALIZATION_STANDARD,
     GLOSSARY_BRACKET_WRAP_RULE,
+    GLOSSARY_DEACTIVATION_MARKERS,
     GLOSSARY_DISCLAIMER_NAV_EXCEPTION,
     GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE,
     GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_EAST_ASIAN,
@@ -79,6 +80,16 @@ class PromptBuilder:
     def get_exempt_markers(self) -> list[str]:
         return GLOSSARY_EXEMPT_MARKERS
 
+    def is_glossary_deactivated(self, rule_text: str = "") -> bool:
+        """Term-level deactivation: the term is not glossary-enforced at all."""
+        clean_rule = (rule_text or "").lower().replace(" ", "")
+        return any(marker in clean_rule for marker in GLOSSARY_DEACTIVATION_MARKERS)
+
+    def has_exempt_marker(self, rule_text: str = "") -> bool:
+        """Term-level bracket exemption (e.g. '대괄호 제외')."""
+        clean_rule = (rule_text or "").lower()
+        return any(marker in clean_rule for marker in self.get_exempt_markers())
+
     def get_glossary_context_mode(self, row_key: str) -> str:
         key = (row_key or "").strip().lower()
         if "disclaimer" in key:
@@ -92,17 +103,44 @@ class PromptBuilder:
     def should_skip_brackets(self, row_key: str) -> bool:
         return self.get_glossary_context_mode(row_key) == "title_button"
 
-    def should_wrap_glossary(self, row_key: str, rule_text: str = "") -> bool:
-        """Single source of truth for whether a term should be wrapped in brackets."""
+    def resolve_glossary_bracket_policy(
+        self,
+        row_key: str = "",
+        rule_text: str = "",
+        inside_nav_path: bool = False,
+    ) -> str:
+        """Single source of truth for a glossary term's bracket policy.
+
+        Returns one of ``"skip"`` | ``"no_bracket"`` | ``"wrap"``. Both the prompt
+        assembly and the deterministic checker/normalizer consume this so their
+        precedence can never diverge.
+
+        Priority (high → low):
+          1. deactivated term (rule marks it off)          → ``skip``
+          2. structural title/heading/button context       → ``no_bracket``
+          3. occurrence sits inside a navigation path       → ``no_bracket``
+          4. term-specific bracket exemption (대괄호 제외)  → ``no_bracket``
+          5. default                                        → ``wrap``
+
+        ``inside_nav_path`` is an OCCURRENCE-level fact: the same term may resolve
+        to ``no_bracket`` inside a path and ``wrap`` outside it within one cell.
+        """
+        if self.is_glossary_deactivated(rule_text):
+            return "skip"
         if self.should_skip_brackets(row_key):
-            return False
-        
-        if rule_text:
-            clean_rule = rule_text.lower()
-            if any(marker in clean_rule for marker in self.get_exempt_markers()):
-                return False
-                
-        return True
+            return "no_bracket"
+        if inside_nav_path:
+            return "no_bracket"
+        if self.has_exempt_marker(rule_text):
+            return "no_bracket"
+        return "wrap"
+
+    def should_wrap_glossary(self, row_key: str, rule_text: str = "") -> bool:
+        """Thin wrapper over :meth:`resolve_glossary_bracket_policy` (cell-level,
+        i.e. not inside a navigation path). Kept for backward compatibility."""
+        return self.resolve_glossary_bracket_policy(
+            row_key=row_key, rule_text=rule_text, inside_nav_path=False
+        ) == "wrap"
 
     def build_input_formatting(self, target_lang: str, row_key: str = "") -> dict:
         if self.get_glossary_context_mode(row_key) == "title_button":
@@ -419,7 +457,9 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         if glossary_available:
             lines.extend([
                 f"- {GLOSSARY_TERM_RULES['rules'][0]}",
-                "- Apply term-specific rule or remark exceptions before generic formatting rules.",
+                "- Bracket precedence (highest first): a term marked no-bracket / 대괄호 제외 is never "
+                "bracketed; inside a navigation path no term is bracketed; otherwise apply the generic "
+                "bracket rule below. Term-specific exceptions always override the generic rule.",
             ])
         else:
             lines.append("No glossary terms are provided for this source text.")

@@ -24,6 +24,40 @@ from translation_web_app.prompt_modules import AUDIT_GRADE_CRITERIA
 
 _GRADE_KR = {"Excellent": "우수", "Good": "양호", "Needs Revision": "수정 필요"}
 
+# Quote-pair styles that can delimit a navigation path across target locales.
+# Real DB targets mix these inconsistently even within one language (e.g. RU rows use
+# both "..." and «...»), so nav-path detection must scan all of them, not just ASCII.
+# (open, close); symmetric ASCII uses a dedicated char-class pattern to preserve behavior.
+_NAV_QUOTE_PAIRS = [
+    ('"', '"'),        # ASCII straight
+    ('«', '»'),        # guillemets (Russian, French, ...)
+    ('„', '“'),        # German low-high
+    ('“', '”'),        # curly / CJK fullwidth
+    ('「', '」'),       # Japanese corner brackets
+    ('『', '』'),       # Japanese white corner brackets
+]
+
+# Bracket pairs that must never wrap a glossary term in ANY context.
+_GLOSSARY_BRACKET_WRAP_PAIRS = (("[", "]"), ("「", "」"))
+
+# Quotation-mark pairs that must not wrap a STANDALONE glossary term in title/heading/button
+# copy only. Elsewhere these legitimately quote navigation paths or source text, so they are
+# never treated as glossary wrappers outside the title/button context.
+_TITLE_QUOTE_WRAP_PAIRS = (
+    ('«', '»'),        # guillemets (Russian, French, ...)
+    ('"', '"'),        # ASCII straight
+    ('“', '”'),        # curly / CJK fullwidth double
+    ('„', '“'),        # German low-high
+    ('‘', '’'),        # curly single
+)
+
+# A glossary/brand *proper noun* token whose internal spacing must survive in every
+# space-using language (e.g. "SmartThings", "Galaxy", "Bixby"). Used by the brand-
+# concatenation lint that flags a dropped space such as
+# "SmartThings Family Care" -> "SmartThingsFamily Care".
+_BRAND_TOKEN_RE = re.compile(r'^[A-Z][A-Za-z0-9]*$')
+_MIN_BRAND_TOKEN_LEN = 3
+
 # RAG 연동 (DB가 없우면 graceful fallback)
 try:
     from translation_web_app.rag_retriever import get_retriever as _get_rag_retriever
@@ -299,7 +333,14 @@ class TranslationChecker:
         """
         if not self.glossary:
             self.glossary_re = None
+            self._glossary_word_set = set()
             return
+
+        # Every ASCII token that appears in a glossary key or target value, lowercased.
+        # Used by the brand-concatenation lint to recognise legitimate single-token
+        # camelCase brands (SmartThings, YouTube) so that a shorter brand token ("Smart")
+        # matching their prefix is not mistaken for a dropped space.
+        self._glossary_word_set = self._build_glossary_word_set()
 
         # 단어 길이가 긴 순서대로 정렬 (긴 단어가 우선 매칭되도록)
         sorted_terms = sorted(self.glossary.keys(), key=len, reverse=True)
@@ -598,16 +639,22 @@ class TranslationChecker:
 
     def _get_navigation_path_spans(self, target_text: str, target_lang: str = "") -> list:
         """
-        First-pass deterministic disclaimer exception:
-        double-quoted ranges (or Japanese corner-bracket ranges) containing '>'
-        are treated as navigation paths.
+        Deterministic disclaimer exception: quoted ranges containing '>' are treated
+        as navigation paths (breadcrumbs). Scans every known quote-pair style
+        (:data:`_NAV_QUOTE_PAIRS`) regardless of ``target_lang`` — real targets mix
+        ASCII "...", guillemets «...», fullwidth “...”, and Japanese 「...」 per row.
+
+        ``target_lang`` is retained for signature compatibility but no longer gates
+        which quote styles are considered.
         """
+        text = target_text or ""
         spans = []
-        for match in re.finditer(r'"[^"]*"', target_text or ""):
-            if ">" in match.group(0):
-                spans.append(match.span())
-        if target_lang and ("Japanese" in target_lang or "일본" in target_lang):
-            for match in re.finditer(r'「[^」]*」', target_text or ""):
+        for open_q, close_q in _NAV_QUOTE_PAIRS:
+            if open_q == close_q:
+                pattern = re.escape(open_q) + r'[^' + re.escape(close_q) + r']*' + re.escape(close_q)
+            else:
+                pattern = re.escape(open_q) + r'.*?' + re.escape(close_q)
+            for match in re.finditer(pattern, text):
                 if ">" in match.group(0):
                     spans.append(match.span())
         return spans
@@ -616,90 +663,320 @@ class TranslationChecker:
         return any(span_start <= start and end <= span_end for span_start, span_end in spans)
 
     def _check_glossary_brackets(self, source_text: str, target_text: str, target_lang_code: str, target_lang: str, row_key: str = ""):
+        """Deterministic bracket audit — asserts only the high-confidence direction:
+        a glossary term that is WRONGLY wrapped in brackets where policy forbids it
+        (term-level 대괄호 제외, or inside a navigation path). See
+        :meth:`PromptBuilder.resolve_glossary_bracket_policy`.
+
+        It deliberately does NOT flag *missing* brackets: on real multilingual data
+        that direction is unreliable (glossary terms that double as common nouns, e.g.
+        Doorbell→Campainha in prose, and unquoted breadcrumbs), producing exactly the
+        false positives seen in review. Term application is covered by
+        :meth:`_precheck_glossary_mismatch`; missing-bracket nuance is left to the LLM audit.
+        """
         if not self.glossary or not target_lang_code or not source_text or not target_text:
             return []
-            
+
         relevant_terms = self._get_relevant_glossary_terms(source_text)
         if not relevant_terms:
             return []
 
+        pb = self.prompt_builder
+        brackets = pb.get_brackets(target_lang)
+        context_mode = pb.get_glossary_context_mode(row_key)
+        # Nav-path exception only applies to disclaimer rows (project rule). Quoted paths
+        # drive the no_bracket POLICY, so keep them high precision (quoted spans only).
+        nav_spans = self._get_navigation_path_spans(target_text, target_lang) if context_mode == "disclaimer" else []
+
+        # A term counts as "wrongly wrapped" only when tightly wrapped in the universal
+        # glossary bracket '[]' (never ambiguous with quotation). In the structural
+        # title/button context — where quotation marks cannot legitimately surround a
+        # standalone glossary term — also flag the language bracket and quotation-mark
+        # wrappers (e.g. «Мой день»). Quotes are never checked outside title/button, where
+        # they legitimately quote navigation paths or source text.
+        wrong_wrap_pairs = [("[", "]")]
+        if pb.should_skip_brackets(row_key):
+            if (brackets[0], brackets[1]) != ("[", "]"):
+                wrong_wrap_pairs.append((brackets[0], brackets[1]))
+            wrong_wrap_pairs.extend(_TITLE_QUOTE_WRAP_PAIRS)
+
+        def _wrapping_pair(idx: int, idx_end: int):
+            for lb, rb in wrong_wrap_pairs:
+                if idx > 0 and target_text[idx - 1] == lb and idx_end < len(target_text) and target_text[idx_end] == rb:
+                    return lb, rb
+            return None
+
         issues = []
-        brackets = self.prompt_builder.get_brackets(target_lang)
-        b_left, b_right = brackets[0], brackets[1]
-        context_mode = self.prompt_builder.get_glossary_context_mode(row_key)
-        navigation_path_spans = self._get_navigation_path_spans(target_text, target_lang) if context_mode == "disclaimer" else []
+        seen = set()  # dedupe by target value so mixed occurrences report at most once
 
         for s_term in relevant_terms:
             meta = self.glossary[s_term]
-            
             rule = meta.get("rule", "").lower()
-            clean_rule = rule.replace(" ", "")
-            if "비활성화" in clean_rule or "deactivate" in clean_rule or "disable" in clean_rule:
+            if pb.is_glossary_deactivated(rule):
                 continue
-                
-            t_meta = meta["targets"]
-            target_val = self._get_target_val(t_meta, target_lang_code)
+
+            target_val = self._get_target_val(meta["targets"], target_lang_code)
             if not target_val:
                 continue
-                
             clean_val = re.sub(r'\(.*?\)', '', target_val).strip()
-            if not clean_val:
+            if not clean_val or clean_val in seen:
                 continue
 
-            should_exclude_bracket = not self.prompt_builder.should_wrap_glossary(row_key, rule)
-            
-            # Check all occurrences in target_text
-            pattern = re.escape(clean_val)
-            matches = list(re.finditer(pattern, target_text, re.IGNORECASE))
-            
-            if not matches:
-                continue
-                
-            for m in matches:
-                idx = m.start()
-                idx_end = m.end()
-                if navigation_path_spans and self._is_inside_span(idx, idx_end, navigation_path_spans):
-                    continue
+            # Resolve policy PER OCCURRENCE: the same term can be "no_bracket" inside a
+            # navigation path and "wrap" outside it within one cell.
+            for m in re.finditer(re.escape(clean_val), target_text, re.IGNORECASE):
+                idx, idx_end = m.start(), m.end()
+                inside_nav = bool(nav_spans) and self._is_inside_span(idx, idx_end, nav_spans)
+                policy = pb.resolve_glossary_bracket_policy(
+                    row_key=row_key, rule_text=rule, inside_nav_path=inside_nav
+                )
+                if policy == "no_bracket":
+                    pair = _wrapping_pair(idx, idx_end)
+                    if pair:
+                        wl, wr = pair
+                        seen.add(clean_val)
+                        if inside_nav:
+                            issues.append(f"[괄호 오류] '{clean_val}'는 내비게이션 경로 내부 용어이므로 감싸면 안 되나 '{wl}{wr}'로 감싸짐")
+                        else:
+                            issues.append(f"[괄호 오류] '{clean_val}'는 규칙상 감싸면 안 되나 '{wl}{wr}'로 감싸짐")
+                        break
 
-                has_left = (idx > 0 and target_text[idx-1] == b_left)
-                has_right = (idx_end < len(target_text) and target_text[idx_end] == b_right)
-                has_brackets = has_left and has_right
-                
-                if should_exclude_bracket and has_brackets:
-                    issues.append(f"[괄호 오류] '{clean_val}'는 규칙상 괄호 제외 대상이나 괄호({brackets})가 사용됨")
-                    break # Report once per term per cell
-                elif not should_exclude_bracket and not has_brackets:
-                    issues.append(f"[괄호 오류] '{clean_val}'에 괄호({brackets})가 누락되었을 수 있습니다 (내비게이션 경로 제외)")
-                    break # Report once per term per cell
-                    
         return issues
 
-    def _strip_title_button_glossary_brackets(self, target_text: str, glossary_context, row_key: str = "") -> str:
-        """
-        Deterministic guardrail after LLM generation.
+    def _split_context_terms(self, glossary_context):
+        """Return (all_target_terms, exempt_target_terms) from a glossary context.
 
-        Prompt instructions are necessary but not sufficient: short title/button
-        strings are exactly where models tend to copy source-side glossary
-        brackets. For title/button context, remove bracket pairs only when they
-        wrap a glossary target value.
+        Exempt terms are those the context annotated with an ``(EXCEPTION: ...)``
+        marker (i.e. 대괄호 제외). Both lists are cleaned of that annotation and
+        sorted longest-first so nested terms unwrap correctly.
         """
-        if not target_text or not self.prompt_builder.should_skip_brackets(row_key):
+        if isinstance(glossary_context, dict):
+            raw_values = list(glossary_context.values())
+        elif isinstance(glossary_context, (list, tuple, set)):
+            raw_values = list(glossary_context)
+        elif glossary_context:
+            raw_values = [glossary_context]
+        else:
+            raw_values = []
+
+        all_terms, exempt_terms = [], []
+        for value in raw_values:
+            if not value:
+                continue
+            raw = str(value)
+            is_exempt = "EXCEPTION" in raw.upper()
+            clean = re.sub(r'\(EXCEPTION:.*?\)', '', raw).strip()
+            if not clean:
+                continue
+            all_terms.append(clean)
+            if is_exempt:
+                exempt_terms.append(clean)
+
+        by_len = lambda seq: sorted(set(seq), key=len, reverse=True)
+        return by_len(all_terms), by_len(exempt_terms)
+
+    def _unwrap_glossary_brackets(self, text: str, terms, spans=None, pairs=_GLOSSARY_BRACKET_WRAP_PAIRS) -> str:
+        """Remove wrapper pairs (``[term]`` / ``「term」`` by default) around glossary
+        target terms.
+
+        ``pairs`` selects which wrapper characters count: bracket pairs everywhere, plus
+        quotation-mark pairs only in title/button context (see caller). If ``spans`` is
+        given, only occurrences fully inside one of those spans are unwrapped
+        (span-scoped); otherwise every occurrence is unwrapped. Matches are collected
+        against the unchanged input and rebuilt in a single pass, so the stripping is not
+        order/index dependent.
+        """
+        if not text or not terms:
+            return text
+
+        matches = []
+        for term in terms:
+            for left, right in pairs:
+                pattern = re.escape(left) + r"\s*" + re.escape(term) + r"\s*" + re.escape(right)
+                for m in re.finditer(pattern, text, flags=re.IGNORECASE):
+                    if spans is None or self._is_inside_span(m.start(), m.end(), spans):
+                        matches.append((m.start(), m.end(), term))
+        if not matches:
+            return text
+
+        matches.sort(key=lambda x: x[0])
+        parts, last = [], 0
+        for start, end, replacement in matches:
+            if start < last:  # overlapping match (nested term) — skip
+                continue
+            parts.append(text[last:start])
+            parts.append(replacement)
+            last = end
+        parts.append(text[last:])
+        return "".join(parts)
+
+    def _strip_glossary_brackets_by_policy(self, target_text: str, glossary_context, row_key: str = "") -> str:
+        """
+        Deterministic guardrail after LLM generation, policy-driven and span-aware.
+
+        Prompt instructions are necessary but not sufficient. This removes glossary
+        wrappers ONLY where :meth:`PromptBuilder.resolve_glossary_bracket_policy`
+        says the term must not be wrapped — and never adds any:
+
+        - title/button context      → unwrap every glossary term (whole cell), including
+          quotation marks/guillemets (models wrap standalone feature names as «term»)
+        - term-level 대괄호 제외      → unwrap brackets around that term (whole cell)
+        - disclaimer navigation path → unwrap brackets ONLY inside the path span, so a
+          generic term correctly bracketed outside the path — and the path's own quotation
+          marks — are preserved (mixed cell)
+        """
+        if not target_text or not glossary_context:
             return target_text
 
-        cleaned = target_text
-        bracket_pairs = [("[", "]"), ("「", "」")]
-        targets = self._extract_glossary_target_terms(glossary_context)
+        pb = self.prompt_builder
+        context_mode = pb.get_glossary_context_mode(row_key)
+        title_button = pb.should_skip_brackets(row_key)
 
-        for term in targets:
-            for left, right in bracket_pairs:
-                cleaned = re.sub(
-                    re.escape(left) + r"\s*" + re.escape(term) + r"\s*" + re.escape(right),
-                    term,
-                    cleaned,
-                    flags=re.IGNORECASE,
+        all_terms, exempt_terms = self._split_context_terms(glossary_context)
+
+        cleaned = target_text
+        if title_button:
+            # Whole-cell unwrap of brackets AND quotation marks around standalone terms.
+            if all_terms:
+                cleaned = self._unwrap_glossary_brackets(
+                    cleaned, all_terms, spans=None,
+                    pairs=_GLOSSARY_BRACKET_WRAP_PAIRS + _TITLE_QUOTE_WRAP_PAIRS,
                 )
+        else:
+            # 대괄호 제외 terms: unwrap brackets (never quotes) anywhere in the cell.
+            if exempt_terms:
+                cleaned = self._unwrap_glossary_brackets(cleaned, exempt_terms, spans=None)
+            # Disclaimer nav path: unwrap brackets ONLY inside path spans; keep path quotes.
+            if context_mode == "disclaimer":
+                nav_spans = self._get_navigation_path_spans(cleaned)
+                if nav_spans:
+                    cleaned = self._unwrap_glossary_brackets(cleaned, all_terms, spans=nav_spans)
 
         return cleaned
+
+    # Backward-compatible alias: the old name only handled title/button context,
+    # which is now a subset of the policy-driven guardrail above.
+    def _strip_title_button_glossary_brackets(self, target_text: str, glossary_context, row_key: str = "") -> str:
+        return self._strip_glossary_brackets_by_policy(target_text, glossary_context, row_key)
+
+    def _build_glossary_word_set(self) -> set:
+        """Lowercased ASCII tokens across every glossary key and target value."""
+        words: set[str] = set()
+        for s_term, meta in (self.glossary or {}).items():
+            values = list((meta.get("targets") or {}).values())
+            values.append(s_term)
+            for value in values:
+                clean = re.sub(r'\(.*?\)', '', value or '').strip()
+                for piece in re.split(r'[,/]', clean):
+                    for token in piece.split():
+                        if token.isascii():
+                            words.add(token.lower())
+        return words
+
+    def _brand_like_target_terms(self, source_text: str) -> list[str]:
+        """ASCII proper-noun tokens from the glossary terms relevant to ``source_text``.
+
+        Brands keep their Latin spelling in every locale (SmartThings, Galaxy, Bixby),
+        so they are the tokens whose internal spacing a translation must never drop.
+        Multi-word brands are split into their tokens ("Galaxy Device" -> Galaxy,
+        Device); only capitalized ASCII tokens survive, which excludes common-noun
+        glossary targets (Doorbell->campainha) and non-Latin transliterations.
+        """
+        pb = self.prompt_builder
+        tokens: set[str] = set()
+        for s_term in (self._get_relevant_glossary_terms(source_text) or []):
+            meta = self.glossary.get(s_term)
+            if not meta:
+                continue
+            if pb.is_glossary_deactivated(meta.get("rule", "")):
+                continue
+            candidates = list(meta.get("targets", {}).values())
+            candidates.append(s_term)
+            for cand in candidates:
+                clean = re.sub(r'\(.*?\)', '', cand or '').strip()
+                for piece in re.split(r'[,/]', clean):
+                    for token in piece.split():
+                        if (
+                            len(token) >= _MIN_BRAND_TOKEN_LEN
+                            and token.isascii()
+                            and _BRAND_TOKEN_RE.match(token)
+                        ):
+                            tokens.add(token)
+        return sorted(tokens, key=len, reverse=True)
+
+    def _check_brand_concatenation(self, source_text: str, target_text: str, target_lang_code: str, target_lang: str = "") -> list:
+        """Flag a brand/glossary proper noun glued to an adjacent word with no space
+        — the dropped-space signature ``SmartThingsFamily Care`` / ``GalaxyDevice``.
+
+        High precision by construction, so no per-language allow-list is needed:
+          * only ASCII proper-noun brand tokens are considered (common nouns excluded);
+          * the brand must sit at a clean word boundary (never matched mid-word);
+          * the glued neighbour must be an ASCII letter of the *anomalous* case — an
+            UPPERCASE letter after the brand, or a lowercase word before it. Lowercase
+            agglutinative suffixes (Turkish ``SmartThings'te``), Cyrillic case endings,
+            and CJK characters are never ASCII+that-case, so they cannot trigger.
+        """
+        if not self.glossary or not source_text or not target_text:
+            return []
+        brand_tokens = self._brand_like_target_terms(source_text)
+        if not brand_tokens:
+            return []
+
+        n = len(target_text)
+
+        def _alnum(ch: str) -> bool:
+            return ch.isalnum()
+
+        def _fragment(i: int, j: int) -> str:
+            left = i
+            while left > 0 and _alnum(target_text[left - 1]):
+                left -= 1
+            right = j
+            while right < n and _alnum(target_text[right]):
+                right += 1
+            return target_text[left:right]
+
+        issues, seen = [], set()
+        for token in brand_tokens:
+            tl = len(token)
+            start = 0
+            while True:
+                i = target_text.find(token, start)
+                if i < 0:
+                    break
+                start = i + 1
+                j = i + tl
+                left_clean = (i == 0) or (not _alnum(target_text[i - 1]))
+                right_clean = (j >= n) or (not _alnum(target_text[j]))
+
+                after_glue = (
+                    left_clean and j < n
+                    and target_text[j].isascii() and target_text[j].isupper() and target_text[j].isalpha()
+                )
+                before_glue = (
+                    right_clean and i > 0
+                    and target_text[i - 1].isascii() and target_text[i - 1].islower()
+                )
+                if not (after_glue or before_glue):
+                    continue
+
+                frag = _fragment(i, j)
+                # A merged run that is itself a known single-token brand (e.g. "SmartThings",
+                # matched via its "Smart" prefix) is legitimate camelCase, not a lost space.
+                if frag.lower() in getattr(self, "_glossary_word_set", set()):
+                    continue
+                if frag in seen:
+                    continue
+                seen.add(frag)
+                if after_glue:
+                    issues.append(
+                        f"[공백 결합] 브랜드 '{token}' 뒤에 공백 없이 다음 단어가 붙었습니다: '{frag}' — 띄어쓰기 누락 의심"
+                    )
+                else:
+                    issues.append(
+                        f"[공백 결합] 브랜드 '{token}' 앞 단어가 공백 없이 붙었습니다: '{frag}' — 띄어쓰기 누락 의심"
+                    )
+        return issues
 
     def _analyze_sentence_case(self, target_text: str, target_lang: str, glossary_terms=None):
         if not target_text or not _is_case_sensitive_language(target_lang):
@@ -799,7 +1076,7 @@ class TranslationChecker:
                 translation = response_data.get("translation", str(response_data))
             else:
                 translation = str(response_data)
-            translation = self._strip_title_button_glossary_brackets(translation, glossary_context, row_key)
+            translation = self._strip_glossary_brackets_by_policy(translation, glossary_context, row_key)
             return self._restore_glossary_target_casing(translation, glossary_context)
         except Exception as e:
             return f"[번역 오류] {str(e)}"
@@ -987,17 +1264,57 @@ class TranslationChecker:
         for m in matches:
             start, end = m.span()
             if start > last_end:
-                parts.append((text[last_end:start], get_font(False)))
-            parts.append((text[start:end], get_font(True)))
+                parts.append([text[last_end:start], get_font(False)])
+            parts.append([text[start:end], get_font(True)])
             last_end = end
-            
+
         if last_end < len(text):
-            parts.append((text[last_end:], get_font(False)))
+            parts.append([text[last_end:], get_font(False)])
+
+        # openpyxl's whitespace() helper only marks a run xml:space="preserve" when it
+        # has BOTH whitespace and non-whitespace text (`stripped and text != stripped`).
+        # A run that is ONLY whitespace therefore ships WITHOUT preserve, and Excel then
+        # trims it on open — gluing two consecutive highlighted glossary terms together
+        # ("Galaxy Device" -> "GalaxyDevice"). Fold every whitespace-only segment into a
+        # neighbouring run so no standalone space run is ever emitted.
+        folded: list = []
+        for seg_text, seg_font in parts:
+            if seg_text == "":
+                continue
+            if folded and seg_text.strip() == "":
+                folded[-1][0] += seg_text          # attach to preceding run
+            else:
+                folded.append([seg_text, seg_font])
+        if len(folded) >= 2 and folded[0][0].strip() == "":
+            folded[1][0] = folded[0][0] + folded[1][0]   # leading space -> following run
+            folded.pop(0)
 
         rt = CellRichText()
-        for segment_text, segment_font in parts:
+        for segment_text, segment_font in folded:
             rt.append(TextBlock(text=segment_text, font=segment_font))
         return rt
+
+    @staticmethod
+    def _cell_text_for_highlighting(value) -> str:
+        """Return a cell's complete character stream for rich-text reconstruction."""
+        return "" if value is None else str(value)
+
+    @staticmethod
+    def _verify_saved_cell_text(workbook_path: str, expected: dict[tuple[str, str], str]) -> None:
+        """Reject a generated workbook when saving changed any produced character."""
+        check_wb = openpyxl.load_workbook(workbook_path, data_only=False, rich_text=True)
+        mismatches = []
+        for (sheet_name, coord), expected_text in expected.items():
+            actual_text = str(check_wb[sheet_name][coord].value)
+            if actual_text != expected_text:
+                mismatches.append(
+                    f"{sheet_name}!{coord}: expected={expected_text!r}, actual={actual_text!r}"
+                )
+                if len(mismatches) >= 10:
+                    break
+        check_wb.close()
+        if mismatches:
+            raise RuntimeError("Excel 저장 후 텍스트 무결성 검증 실패: " + " | ".join(mismatches))
 
     # ----------------- Process Single Item -----------------
     async def process_item(self, item, source_lang, default_target_lang, sheet_lang_map, default_target_lang_code, rag_identity_match=True):
@@ -1038,7 +1355,8 @@ class TranslationChecker:
         case_report, simple_case_fix = self._analyze_sentence_case(target, tgt_lang, glossary_targets_for_case)
         glossary_case_issues = self._check_glossary_casing(source, target, tgt_code)
         glossary_bracket_issues = self._check_glossary_brackets(source, target, tgt_code, tgt_lang, row_key=row_key)
-        
+        brand_concat_issues = self._check_brand_concatenation(source, target, tgt_code, tgt_lang)
+
         # Construct Partial Report Sections
         case_section = "대소문자 하드룰(문장형) 점검:\n" + case_report if case_report else "별도 지적 사항 없음."
         if simple_case_fix:
@@ -1048,6 +1366,7 @@ class TranslationChecker:
         if pre_mismatch: glossary_parts.append("용어집 사전 감지:\n- " + "\n- ".join(pre_mismatch))
         if glossary_case_issues: glossary_parts.append("용어집 대소문자 표기 점검:\n" + "\n".join(f"- {msg}" for msg in glossary_case_issues))
         if glossary_bracket_issues: glossary_parts.append("용어집 괄호 규정 점검:\n" + "\n".join(f"- {msg}" for msg in glossary_bracket_issues))
+        if brand_concat_issues: glossary_parts.append("브랜드 띄어쓰기 점검:\n" + "\n".join(f"- {msg}" for msg in brand_concat_issues))
         glossary_section = "\n\n".join(glossary_parts) if glossary_parts else "별도 지적 사항 없음."
 
         # RAG consistency check (Post-translation/audit, does not use LLM)
@@ -1406,6 +1725,7 @@ class TranslationChecker:
                 return
 
             all_fmt_results = []
+            expected_texts: dict[tuple[str, str], str] = {}
             grand_total = 0
             completed_so_far = 0
 
@@ -1558,6 +1878,7 @@ class TranslationChecker:
                             f"[상세 - AI Payload]\n{res['ai_json']}\n"
                         )
                         g_ordered[local_idx_res] = fmt
+                        expected_texts[(res['sheet_name'], res['cell_ref'])] = res['target']
                         yield {
                             "type": "progress",
                             "current": completed_so_far,
@@ -1573,6 +1894,7 @@ class TranslationChecker:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             out_excel_path = source_file_path.replace(".xlsx", f"_translated_{timestamp}.xlsx")
             wb.save(out_excel_path)
+            self._verify_saved_cell_text(out_excel_path, expected_texts)
             header = (
                 self.model_handler.get_usage_report() +
                 f"--- 번역 통합 검수 보고서 (Model: {self.model_name}) ---\n"
@@ -1799,6 +2121,7 @@ class TranslationChecker:
                 idx += 1
 
         ordered_results = [None] * len(tasks)
+        expected_texts: dict[tuple[str, str], str] = {}
         
         # Yield per-cell progress
         for future in asyncio.as_completed(tasks):
@@ -1825,6 +2148,7 @@ class TranslationChecker:
                     f"[상세 - AI Payload]\n{res['ai_json']}\n"
                 )
                 ordered_results[index] = fmt_result
+                expected_texts[(res['sheet_name'], res['cell_ref'])] = res['target']
                 
                 percent = int((completed_count / total_cells) * 100)
                 yield {
@@ -1841,6 +2165,7 @@ class TranslationChecker:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         out_excel_path = source_file_path.replace(".xlsx", f"_translated_{timestamp}.xlsx")
         wb.save(out_excel_path)
+        self._verify_saved_cell_text(out_excel_path, expected_texts)
         
         header = (
             self.model_handler.get_usage_report() +
@@ -1958,7 +2283,9 @@ class TranslationChecker:
                     coord = item['coord']
                     row_key = item.get("row_key", "")
                     target_cell = ws[coord]
-                    target_text = str(target_cell.value).strip() if target_cell.value is not None else ""
+                    # Rich-text highlighting must not normalize the cell value.  In particular,
+                    # ``strip()`` here silently deleted leading/trailing spaces on save.
+                    target_text = self._cell_text_for_highlighting(target_cell.value)
                     logs = []
                     highlight_count = 0
 
@@ -1968,6 +2295,8 @@ class TranslationChecker:
                         for issue in self._precheck_glossary_mismatch(source_text, target_text, tgt_lang_code):
                             logs.append(issue)
                         for issue in self._check_glossary_casing(source_text, target_text, tgt_lang_code):
+                            logs.append(issue)
+                        for issue in self._check_brand_concatenation(source_text, target_text, tgt_lang_code, tgt_lang):
                             logs.append(issue)
 
                         original_target_terms = []
@@ -2034,7 +2363,7 @@ class TranslationChecker:
 
                 for res in g_ordered:
                     if res and res.get("logs"):
-                        issue_logs = [log for log in res["logs"] if any(k in log for k in ["[오류", "[미적용", "[대소문자"])]
+                        issue_logs = [log for log in res["logs"] if any(k in log for k in ["[오류", "[미적용", "[대소문자", "[공백"])]
                         if issue_logs:
                             all_detail_lines.append(f"\n{label} [{res['sheet_name']} 시트 | {res['cell_ref']} 셀]")
                             for log in issue_logs:
@@ -2143,7 +2472,8 @@ class TranslationChecker:
             row_key = item.get("row_key", "")
             
             target_cell = ws[coord]
-            target_text = str(target_cell.value).strip() if target_cell.value is not None else ""
+            # Preserve every character while converting the cell to rich text.
+            target_text = self._cell_text_for_highlighting(target_cell.value)
             logs = []
             highlight_count = 0
             bracket_issues = []
@@ -2170,6 +2500,11 @@ class TranslationChecker:
                 casing_issues = self._check_glossary_casing(source_text, target_text, target_lang_code)
                 if casing_issues:
                     logs.extend(casing_issues)
+
+                # 4. Brand spacing check (dropped-space concatenation, e.g. SmartThingsFamily)
+                brand_concat_issues = self._check_brand_concatenation(source_text, target_text, target_lang_code, target_lang)
+                if brand_concat_issues:
+                    logs.extend(brand_concat_issues)
 
                 original_target_terms = []
                 relevant_terms = self._get_relevant_glossary_terms(source_text)
@@ -2276,7 +2611,7 @@ class TranslationChecker:
         for res in ordered_results:
             if res and res.get("logs"):
                 # logs에 [괄호 오류], [미적용], [대소문자] 등이 있으면 상세 기록에 추가
-                issue_logs = [log for log in res["logs"] if any(k in log for k in ["[오류", "[미적용", "[대소문자"])]
+                issue_logs = [log for log in res["logs"] if any(k in log for k in ["[오류", "[미적용", "[대소문자", "[공백"])]
                 if issue_logs:
                     detail_lines.append(f"\n[{res['sheet_name']} 시트 | {res['cell_ref']} 셀]")
                     for log in issue_logs:

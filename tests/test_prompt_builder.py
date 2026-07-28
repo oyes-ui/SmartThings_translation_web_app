@@ -258,24 +258,27 @@ class PromptBuilderTests(unittest.TestCase):
         }
         checker._compile_glossary_re()
 
-        self.assertEqual(
+        # Title/button context is structurally no-bracket: a wrongly wrapped term is flagged.
+        self.assertTrue(
             checker._check_glossary_brackets(
                 "SmartThings를 실행하세요",
-                "SmartThingsを起動",
+                "[SmartThings]を起動",
                 "일본",
                 "Japanese",
                 row_key="hero_title",
-            ),
-            [],
+            )
         )
-        self.assertTrue(
+        # An unwrapped term is fine everywhere. Missing brackets are intentionally NOT
+        # flagged deterministically — that direction produced common-noun false positives.
+        self.assertEqual(
             checker._check_glossary_brackets(
                 "SmartThings를 실행하세요",
                 "SmartThingsを起動できます",
                 "일본",
                 "Japanese",
                 row_key="description_01",
-            )
+            ),
+            [],
         )
 
     def test_checker_disclaimer_allows_unwrapped_terms_inside_quoted_navigation_paths(self):
@@ -288,6 +291,7 @@ class PromptBuilderTests(unittest.TestCase):
         }
         checker._compile_glossary_re()
 
+        # Correct: bracketed outside the path, bare inside the path -> no issue.
         self.assertEqual(
             checker._check_glossary_brackets(
                 "Welcome air care can be set in Welcome air care.",
@@ -298,10 +302,11 @@ class PromptBuilderTests(unittest.TestCase):
             ),
             [],
         )
+        # C17: a glossary term wrongly bracketed INSIDE the navigation path is flagged.
         self.assertTrue(
             checker._check_glossary_brackets(
                 "Welcome air care can be set in Welcome air care.",
-                '智能净化可在"Settings > 设备 > 空调 > 设备控制 > 智能净化"中设置。',
+                '智能净化可在"Settings > 设备 > 空调 > 设备控制 > [智能净化]"中设置。',
                 "zh_CN",
                 "Simplified Chinese",
                 row_key="//test_disclaimer_01",
