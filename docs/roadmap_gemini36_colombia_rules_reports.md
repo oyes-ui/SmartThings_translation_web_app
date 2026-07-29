@@ -69,12 +69,25 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
 
 - 변경 빈도가 높은 언어별 규칙과 BX 규칙을 런타임에서 읽는 Markdown 파일로 외부화한다.
 - 파일은 YAML front matter와 사람이 읽는 Markdown 본문을 사용한다.
+- **파일 위치(앱·에이전트 공용 계약)**: `src/translation_web_app/rules/languages/{canonical_key}.md`
+  (언어별), `src/translation_web_app/rules/bx_style.md`(BX)에 둔다. 앱 패키지 경계
+  안에 둬야 앱만 단독 배포(Hugging Face 등)할 때도 함께 배포된다. 에이전트는 새
+  접근 경로를 만들지 않고 기존 `--app-root` 관례로 같은 경로를 읽는다(예:
+  `workbook_review_apply.py --app-root`와 동일 패턴). 이 위치는 앱과 에이전트 양쪽에
+  영향을 주므로 변경 시 이 로드맵과 `rules-sources.md`를 함께 갱신한다.
 - front matter에는 schema version, canonical key, 표시명, 규칙 순서 및 `rules` 배열을 둔다.
 - 규칙 항목은 장기적으로 `rule_id`, `severity`, `scope`, `locale`, `status`, `examples`를
   지원한다. `scope`는 최소한 `app_prompt`, `agent_audit`, `excel_apply`를 구분한다.
 - 따라서 앱 프롬프트에 아직 적용하지 않는 한국어 표기, 곡선형 따옴표, disclaimer `*`
   표기 같은 회색지대 규칙도 에이전트 검수용 정책으로 명시·검색할 수 있다.
 - 로더는 필수 필드, 문자열 배열, 중복 키, 지원하지 않는 schema version을 검증하고 유효하지 않은 규칙 파일은 명확히 실패 처리한다.
+- **로딩 시점**: 프로세스 시작 시 1회 로드해 메모리에 캐시한다. 검증 실패 시 앱
+  기동을 중단한다(요청 처리 중 깨진 규칙이 조용히 쓰이지 않도록). 요청마다
+  재읽기는 하지 않는다 — 상시 구동되는 FastAPI 서버에서 매 프롬프트 생성마다
+  파일 I/O·YAML 파싱을 반복할 이유가 없고, `scripts/prompt_preview.py` 같은 CLI
+  도구는 매번 새 프로세스로 실행되므로 어차피 최신 파일을 읽는다. 규칙 수정 후
+  반영에는 앱 재시작이 필요하며, 기존 수작업 이중 문서 동기화보다 가벼운 비용이라
+  v1에서는 hot-reload를 요구하지 않는다.
 - 언어 alias 해석, fuzzy substring 매칭, glossary exempt/deactivation marker, bracket 정책처럼 구조와 판정이 필요한 로직은 Python 코드에 유지한다.
 - 규칙의 런타임 단일 기준은 새 Markdown 규칙 파일이며, 기존 종합 규칙 문서와 agent 규칙 출처 문서도 이를 가리키도록 갱신한다.
 - 적용 우선순위는 **명시 규칙·glossary > 승인된 시장별 기준 > RAG 사례**로 한다.
