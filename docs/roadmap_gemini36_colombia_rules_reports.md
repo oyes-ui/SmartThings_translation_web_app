@@ -90,6 +90,12 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
   v1에서는 hot-reload를 요구하지 않는다.
 - 언어 alias 해석, fuzzy substring 매칭, glossary exempt/deactivation marker, bracket 정책처럼 구조와 판정이 필요한 로직은 Python 코드에 유지한다.
 - 규칙의 런타임 단일 기준은 새 Markdown 규칙 파일이며, 기존 종합 규칙 문서와 agent 규칙 출처 문서도 이를 가리키도록 갱신한다.
+- **기존 Python 상수는 삭제하지 않고 레거시로 유지한다**: 마이그레이션된 언어의
+  `LANGUAGE_LOCALIZATION_RULES`/`BX_STYLE_RULES` 등 기존 항목을 `prompt_modules.py`에서
+  지우지 않는다. 다만 런타임에서는 참조하지 않는다 — 활성 소스는 항상 새 md 파일
+  하나여야 두 시스템이 동시에 값을 제공해 다시 드리프트가 생기는 걸 막는다. 레거시
+  상수는 md 로더가 프로덕션에서 안정성이 확인된 뒤 별도 정리 커밋으로 제거한다(§5
+  여섯 명령 통합의 "즉시 삭제 안 함" 원칙과 동일).
 - 적용 우선순위는 **명시 규칙·glossary > 승인된 시장별 기준 > RAG 사례**로 한다.
   번역 사례 RAG와 규칙 검색은 별도 데이터 흐름으로 유지한다.
 
@@ -141,6 +147,40 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
   보존 검증을 강제한다. 단순 `/st-edit`와 승인 기반 `/st-apply`는 모두 이 원본 불변·승인·
   diff 검증 원칙을 공유한다.
 
+### 6. ChatGPT for Excel 전용 레이어
+
+- 기존 `smartthings-translation-agent`의 공통 규칙·RAG 우선순위·승인 정책은 유지하고,
+  ChatGPT for Excel에서 실행할 전용 레이어를 별도 패키지로 둔다. 제안 구조는 다음과 같다.
+
+  ```text
+  smartthings-translation-agent/
+  ├─ SKILL.md                     # 공통 워크플로·규칙·안전 원칙
+  ├─ references/                  # locale·RAG·manifest 공통 기준
+  ├─ excel-chatgpt/
+  │  ├─ SKILL.md                  # 열린 workbook 대상 진입 규칙
+  │  ├─ edit-workflow.md          # preview → 승인 → 적용 → 검증
+  │  ├─ officejs-capabilities.md  # 지원 API·requirement set·fallback
+  │  └─ manifest-schema.md        # edit/review/apply 공통 계약 참조
+  └─ scripts/                     # Codex/CLI·backend 전용 구현
+  ```
+
+- Excel 전용 레이어는 로컬 Python 실행, 로컬 파일 경로, `openpyxl`을 전제로 하지 않는다.
+  현재 열린 workbook·활성 sheet·선택 range를 읽고, 변경안을 보여준 뒤 승인된 범위만
+  Office.js/ChatGPT for Excel의 live workbook 기능으로 수정한다.
+- RAG, glossary, 규칙 검색은 SmartThings app의 API/MCP가 제공한다. Excel 전용 skill은
+  그 결과를 해석하고 편집 workflow에 연결하지만 DB 또는 secret을 직접 다루지 않는다.
+- edit manifest와 review/apply manifest의 의미는 `report_format_spec.md`를 공통 기준으로
+  유지한다. live Excel 편집 후에도 `before` 재확인, 허용 범위 diff, 수식 오류 확인,
+  사용자에게 보여 줄 변경 요약을 수행한다.
+- Office.js 기능은 requirement set을 런타임에서 확인한다. 요구 API가 없거나 workbook의
+  rich text 보존 여부를 확신할 수 없으면 쓰기를 중단하고 기존 CLI/복사본 경로로
+  fallback한다. 이벤트는 세션 재시작 뒤 재등록해야 하므로 영구 감사 로그의 유일한 근거로
+  사용하지 않는다.
+- 첫 PoC는 `CO(콜롬비아)` 시트의 C열 2~3개 셀로 제한한다. glossary rich text,
+  병합/보호 시트, 수식 재계산, before/after diff를 Codex/CLI 파일 경로와 live Excel
+  경로에서 각각 검증한다. PoC를 통과하기 전에는 live Excel 결과를 자동 납품본으로
+  취급하지 않는다.
+
 ## 구현 순서와 의존성
 
 1. 언어/BX 규칙 파일과 검증 로더(§3)를 먼저 완성한다. 기존 로케일(Spain, German 등)의
@@ -156,6 +196,8 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
    계약을 확정한다. 이후 `/st-review`와 `/st-apply`가 같은 계약으로 제안·승인·적용한다.
 6. 여섯 사용자 명령으로 진입점을 통합하고 `/st-edit`의 dry-run, before 검증,
    재하이라이트, workbook diff 검증을 구현한다.
+7. ChatGPT for Excel 전용 레이어(§6) PoC를 수행한다. 공통 규칙/manifest를 재사용하고,
+   Office.js capability fallback과 rich text 보존 검증을 통과한 범위만 live edit로 확대한다.
 
 콜롬비아가 이번 업데이트의 최우선 목표라는 원칙은 유지하되, 그 실현 경로는 "§3을
 우회해 빠르게"가 아니라 "§3 위에 한 번에 제대로 짓기"로 정한다. §3가 지연되면
@@ -210,4 +252,6 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
 - 각 수정 제안은 시트/셀·근거 규칙·적용 전후 값을 식별할 수 있고, 승인되지 않은 제안은 Excel에 반영되지 않는다.
 - `/st-edit`는 승인 전 preview와 `before` 검증을 수행하고, 원본이 아닌 새 파일에만
   적용한다. `draft`와 재하이라이트·검증을 마친 `delivery` 산출물을 구분한다.
+- ChatGPT for Excel 레이어는 공통 규칙과 manifest 계약을 재사용하며, 지원하지 않는
+  Office.js 기능 또는 rich text 보존 불확실성이 있으면 수정하지 않고 CLI 경로로 fallback한다.
 - `/viewer`에서 Markdown 파일 업로드와 API URL 자동 로드가 가능하며, 비신뢰 HTML은 정화된다.
