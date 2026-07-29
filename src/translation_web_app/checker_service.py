@@ -21,6 +21,7 @@ import urllib.parse
 from translation_web_app.model_handler import ModelHandler
 from translation_web_app.prompt_builder import PromptBuilder
 from translation_web_app.prompt_modules import AUDIT_GRADE_CRITERIA
+from translation_web_app.report_builder import build_front_matter, render_finding, render_report
 
 _GRADE_KR = {"Excellent": "우수", "Good": "양호", "Needs Revision": "수정 필요"}
 
@@ -414,6 +415,48 @@ class TranslationChecker:
 
         resolved = "".join(parts).strip()
         return resolved if resolved.startswith("//") else raw
+
+    # ----------------- Report Rendering -----------------
+    def _render_report(
+        self,
+        *,
+        title,
+        source_file_id,
+        findings,
+        summary_lines,
+        workflow="app_review",
+        translation_model=None,
+    ):
+        """Single entry point so every pipeline emits the same Markdown shape."""
+        report_id = f"review-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        return render_report(
+            title=title,
+            front_matter=build_front_matter(
+                report_id=report_id,
+                source_file_id=os.path.basename(str(source_file_id or "")) or "unknown",
+                workflow=workflow,
+                translation_model=translation_model,
+                audit_model=self.model_name,
+            ),
+            findings=findings,
+            summary_lines=summary_lines,
+            usage_report=self.model_handler.get_usage_report(),
+        )
+
+    def _render_highlight_report(self, *, source_file_id, out_excel_path, summary_lines, detail_lines):
+        """Highlight-only runs have no per-cell audit, so they carry no findings."""
+        body = []
+        if detail_lines:
+            body += ["### 주요 용어집 준수여부 점검 알림", "", "```text",
+                     "\n".join(detail_lines).strip(), "```", ""]
+        report = self._render_report(
+            title="하이라이트 전용 검수 보고서",
+            source_file_id=source_file_id,
+            findings=body,
+            summary_lines=[*summary_lines, f"하이라이트본: {os.path.basename(out_excel_path)}"],
+            workflow="highlight_only",
+        )
+        return report
 
     # ----------------- Excel Loader -----------------
     def load_excel_files(self, source_path, target_path, selected_sheets=None):
@@ -1489,20 +1532,7 @@ class TranslationChecker:
         {"type": "complete", "total": m, "output_data": all_text}
         """
         def _fmt_result(res):
-            return (
-                f"==========================================================================================\n"
-                f"[시트] {res['sheet_name']} | [셀] {res['cell_ref']}\n"
-                f"------------------------------------------------------------------------------------------\n\n"
-                f"[상세 - 원문]\n{res['source']}\n\n"
-                f"[상세 - 번역문]\n{res['target']}\n\n"
-                f"[상세 - 대소문자 점검]\n{res['case_section']}\n\n"
-                f"[상세 - 용어집 점검]\n{res['glossary_section']}\n\n"
-                f"[상세 - RAG 일관성 참고]\n{res.get('rag_text', '[별도 지적 사항 없음]')}\n\n"
-                f"[상세 - 역번역]\n{res['back_translation']}\n\n"
-                f"[상세 - AI 검수 결과]\n{res['ai_text']}\n\n"
-                f"[상세 - RAG Payload]\n{res.get('rag_json', '[]')}\n\n"
-                f"[상세 - AI Payload]\n{res['ai_json']}\n"
-            )
+            return render_finding(res)
 
         # --- Multi-Source Mode ---
         if source_groups:
@@ -1573,14 +1603,16 @@ class TranslationChecker:
 
                 all_group_results.extend([r for r in g_ordered if r is not None])
 
-            header = (
-                self.model_handler.get_usage_report() +
-                f"--- 번역 검수 보고서 (Model: {self.model_name}) ---\n"
-                f"생성일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-                f"총 검수 항목: {grand_total}개 ({len(source_groups)}개 소스 그룹)\n"
-                f"용어집 항목: {len(self.glossary)}\n\n"
+            output_data = self._render_report(
+                title="번역 검수 보고서",
+                source_file_id=source_file_path,
+                findings=all_group_results,
+                summary_lines=[
+                    f"총 검수 항목: {grand_total}개 ({len(source_groups)}개 소스 그룹)",
+                    f"용어집 항목: {len(self.glossary)}",
+                ],
             )
-            yield {"type": "complete", "total": grand_total, "output_data": header + "".join(all_group_results)}
+            yield {"type": "complete", "total": grand_total, "output_data": output_data}
             return
         # --- End Multi-Source Mode ---
 
@@ -1633,7 +1665,12 @@ class TranslationChecker:
         yield {"type": "progress", "current": 0, "total": total_items, "percent": 0}
 
         if total_items == 0:
-            yield {"type": "complete", "total": 0, "output_data": "검수할 데이터가 없습니다."}
+            yield {"type": "complete", "total": 0, "output_data": self._render_report(
+                title="번역 검수 보고서",
+                source_file_id=source_file_path,
+                findings=[],
+                summary_lines=["검수할 데이터가 없습니다."],
+            )}
             return
 
         # Wrapper to track index
@@ -1675,21 +1712,16 @@ class TranslationChecker:
                 yield {"type": "log", "message": f"항목 처리 중 오류 발생: {str(e)}"}
                 continue
 
-        # Final Header/Footer assembly using ORDERED results
-        final_text = []
-        header = (
-            self.model_handler.get_usage_report() +
-            f"--- 번역 검수 보고서 (Model: {self.model_name}) ---\n"
-            f"생성일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-            f"총 검수 항목: {total_items}개\n"
-            f"용어집 항목: {len(self.glossary)}\n\n"
+        # Final assembly using ORDERED results (None = the item failed)
+        full_output = self._render_report(
+            title="번역 검수 보고서",
+            source_file_id=source_file_path,
+            findings=[r for r in ordered_results if r is not None],
+            summary_lines=[
+                f"총 검수 항목: {total_items}개",
+                f"용어집 항목: {len(self.glossary)}",
+            ],
         )
-        final_text.append(header)
-        # Filter out None results if any failed
-        valid_results = [r for r in ordered_results if r is not None]
-        final_text.extend(valid_results)
-        
-        full_output = "".join(final_text)
         yield {"type": "complete", "total": total_items, "output_data": full_output}
 
     # ----------------- Integrated Translation & Audit Generator -----------------
@@ -1863,20 +1895,7 @@ class TranslationChecker:
                         completed_so_far += 1
                         for msg in res.get("logs", []):
                             yield {"type": "log", "message": msg}
-                        fmt = (
-                            f"==========================================================================================\n"
-                            f"{label} [시트] {res['sheet_name']} | [셀] {res['cell_ref']}\n"
-                            f"------------------------------------------------------------------------------------------\n\n"
-                            f"[상세 - 원문]\n{res['source']}\n\n"
-                            f"[상세 - 번역문]\n{res['target']}\n\n"
-                            f"[상세 - 대소문자 점검]\n{res['case_section']}\n\n"
-                            f"[상세 - 용어집 점검]\n{res['glossary_section']}\n\n"
-                            f"[상세 - RAG 일관성 참고]\n{res.get('rag_text', '[별도 지적 사항 없음]')}\n\n"
-                            f"[상세 - 역번역]\n{res['back_translation']}\n\n"
-                            f"[상세 - AI 검수 결과]\n{res['ai_text']}\n\n"
-                            f"[상세 - RAG Payload]\n{res.get('rag_json', '[]')}\n\n"
-                            f"[상세 - AI Payload]\n{res['ai_json']}\n"
-                        )
+                        fmt = render_finding(res, label=label)
                         g_ordered[local_idx_res] = fmt
                         expected_texts[(res['sheet_name'], res['cell_ref'])] = res['target']
                         yield {
@@ -1895,13 +1914,18 @@ class TranslationChecker:
             out_excel_path = source_file_path.replace(".xlsx", f"_translated_{timestamp}.xlsx")
             wb.save(out_excel_path)
             self._verify_saved_cell_text(out_excel_path, expected_texts)
-            header = (
-                self.model_handler.get_usage_report() +
-                f"--- 번역 통합 검수 보고서 (Model: {self.model_name}) ---\n"
-                f"생성일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-                f"총 항목: {completed_so_far}개 ({len(source_groups)}개 소스 그룹)\n\n"
+            output_data = self._render_report(
+                title="번역 통합 검수 보고서",
+                source_file_id=source_file_path,
+                findings=all_fmt_results,
+                summary_lines=[
+                    f"총 항목: {completed_so_far}개 ({len(source_groups)}개 소스 그룹)",
+                    f"번역본: {os.path.basename(out_excel_path)}",
+                ],
+                workflow="combined_review",
+                translation_model=translation_model,
             )
-            yield {"type": "complete", "output_data": header + "".join(all_fmt_results), "excel_path": out_excel_path}
+            yield {"type": "complete", "output_data": output_data, "excel_path": out_excel_path}
             return
         # --- End Multi-Source Mode ---
 
@@ -2133,21 +2157,7 @@ class TranslationChecker:
                 for msg in res.get("logs", []):
                     yield {"type": "log", "message": msg}
 
-                fmt_result = (
-                    f"==========================================================================================\n"
-                    f"[시트] {res['sheet_name']} | [셀] {res['cell_ref']}\n"
-                    f"------------------------------------------------------------------------------------------\n\n"
-                    f"[상세 - 원문]\n{res['source']}\n\n"
-                    f"[상세 - 번역문]\n{res['target']}\n\n"
-                    f"[상세 - 대소문자 점검]\n{res['case_section']}\n\n"
-                    f"[상세 - 용어집 점검]\n{res['glossary_section']}\n\n"
-                    f"[상세 - RAG 일관성 참고]\n{res.get('rag_text', '[별도 지적 사항 없음]')}\n\n"
-                    f"[상세 - 역번역]\n{res['back_translation']}\n\n"
-                    f"[상세 - AI 검수 결과]\n{res['ai_text']}\n\n"
-                    f"[상세 - RAG Payload]\n{res.get('rag_json', '[]')}\n\n"
-                    f"[상세 - AI Payload]\n{res['ai_json']}\n"
-                )
-                ordered_results[index] = fmt_result
+                ordered_results[index] = render_finding(res)
                 expected_texts[(res['sheet_name'], res['cell_ref'])] = res['target']
                 
                 percent = int((completed_count / total_cells) * 100)
@@ -2167,14 +2177,17 @@ class TranslationChecker:
         wb.save(out_excel_path)
         self._verify_saved_cell_text(out_excel_path, expected_texts)
         
-        header = (
-            self.model_handler.get_usage_report() +
-            f"--- 번역 통합 검수 보고서 (Model: {self.model_name}) ---\n"
-            f"생성일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-            f"총 항목: {completed_count}개\n\n"
+        report_text = self._render_report(
+            title="번역 통합 검수 보고서",
+            source_file_id=source_file_path,
+            findings=[r for r in ordered_results if r is not None],
+            summary_lines=[
+                f"총 항목: {completed_count}개",
+                f"번역본: {os.path.basename(out_excel_path)}",
+            ],
+            workflow="combined_review",
+            translation_model=translation_model,
         )
-        valid_results = [r for r in ordered_results if r is not None]
-        report_text = header + "".join(valid_results)
         
         yield {
             "type": "complete", 
@@ -2373,15 +2386,18 @@ class TranslationChecker:
             out_excel_path = source_file_path.replace(".xlsx", f"_highlighted_{timestamp}.xlsx")
             wb.save(out_excel_path)
 
-            header = (
-                f"--- 하이라이트 전용 검수 보고서 ({len(source_groups)}개 소스 그룹) ---\n"
-                f"생성일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-                f"총 대상 셀 수: {grand_total}개\n\n"
+            report_text = self._render_highlight_report(
+                source_file_id=source_file_path,
+                out_excel_path=out_excel_path,
+                summary_lines=[
+                    f"총 대상 셀 수: {grand_total}개 ({len(source_groups)}개 소스 그룹)",
+                    *[
+                        f"{k} | 처리 완료 셀: {v['cells_processed']} | 총 하이라이트: {v['total_highlights']}개"
+                        for k, v in all_highlight_stats.items()
+                    ],
+                ],
+                detail_lines=all_detail_lines,
             )
-            report_lines = [f"{k} | 처리 완료 셀: {v['cells_processed']} | 총 하이라이트: {v['total_highlights']}개" for k, v in all_highlight_stats.items()]
-            report_text = header + "\n".join(report_lines)
-            if all_detail_lines:
-                report_text += "\n\n[주요 용어집 준수여부 점검 알림]" + "\n".join(all_detail_lines)
             yield {"type": "complete", "output_data": report_text, "excel_path": out_excel_path}
             return
         # --- End Multi-Source Mode ---
@@ -2595,18 +2611,7 @@ class TranslationChecker:
         out_excel_path = source_file_path.replace(".xlsx", f"_highlighted_{timestamp}.xlsx")
         wb.save(out_excel_path)
         
-        # Build Report Text
-        header = (
-            f"--- 하이라이트 전용 검수 보고서 ---\n"
-            f"생성일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-            f"총 대상 셀 수: {total_cells}개\n\n"
-        )
-        
         # Highlight Only 모드에서도 괄호 오류 등을 기록하기 위해 ordered_results 활용
-        report_lines = []
-        for s_name, stats in highlight_stats.items():
-            report_lines.append(f"시트: {s_name} | 처리 완료 셀: {stats['cells_processed']} | 총 적용된 하이라이트: {stats['total_highlights']} 개")
-        
         detail_lines = []
         for res in ordered_results:
             if res and res.get("logs"):
@@ -2616,11 +2621,20 @@ class TranslationChecker:
                     detail_lines.append(f"\n[{res['sheet_name']} 시트 | {res['cell_ref']} 셀]")
                     for log in issue_logs:
                         detail_lines.append(f"  - {log}")
-        
-        report_text = header + "\n".join(report_lines)
-        if detail_lines:
-            report_text += "\n\n[주요 용어집 준수여부 점검 알림]" + "\n".join(detail_lines)
-        
+
+        report_text = self._render_highlight_report(
+            source_file_id=source_file_path,
+            out_excel_path=out_excel_path,
+            summary_lines=[
+                f"총 대상 셀 수: {total_cells}개",
+                *[
+                    f"시트: {s_name} | 처리 완료 셀: {stats['cells_processed']} | 총 적용된 하이라이트: {stats['total_highlights']} 개"
+                    for s_name, stats in highlight_stats.items()
+                ],
+            ],
+            detail_lines=detail_lines,
+        )
+
         yield {
             "type": "complete", 
             "output_data": report_text, 

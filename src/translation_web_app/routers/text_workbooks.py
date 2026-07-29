@@ -79,7 +79,7 @@ def create_text_workbooks_router(task_store: dict) -> APIRouter:
         task_store[task_id] = {
             "queue": asyncio.Queue(),
             "result_path": None,
-            "txt_path": None,
+            "report_path": None,
             "source_path": str(generated.path),
         }
 
@@ -150,7 +150,7 @@ async def _text_workbook_translation_task(
                 continue
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            output_filename = f"{story_id}_text_workbook_review_{timestamp}.txt"
+            output_filename = f"{story_id}_text_workbook_review_{timestamp}.md"
             output_path = UPLOAD_DIR / output_filename
             output_path.write_text(event["output_data"], encoding="utf-8")
 
@@ -166,7 +166,7 @@ async def _text_workbook_translation_task(
                     zipf.write(source_path, source_path.name)
 
             task_store[task_id]["result_path"] = str(zip_path)
-            task_store[task_id]["txt_path"] = str(output_path)
+            task_store[task_id]["report_path"] = str(output_path)
             await queue.put({
                 "type": "complete",
                 "download_url": f"/api/download/{task_id}",

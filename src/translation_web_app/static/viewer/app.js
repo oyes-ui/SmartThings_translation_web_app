@@ -1,40 +1,43 @@
+// Markdown review-report viewer.
+//
+// The report format is defined by docs/report_format_spec.md. This file is a
+// presentation layer only: it renders the Markdown and reads the YAML finding
+// blocks for summary/filter UI. It is deliberately not the only thing that can
+// parse a report -- nothing here is required to consume one.
+
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Elements ---
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
     const uploadSection = document.getElementById('upload-section');
     const dashboardSection = document.getElementById('dashboard');
     const dashboardContent = document.getElementById('dashboard-content');
+    const filterBar = document.getElementById('filter-bar');
     const reportContent = document.getElementById('report-content');
-    const itemsList = document.getElementById('items-list');
+    const markdownBody = document.getElementById('markdown-body');
+    const statusBanner = document.getElementById('status-banner');
     const exportBtn = document.getElementById('export-btn');
     const themeToggle = document.getElementById('theme-toggle');
     const sidebar = document.getElementById('sidebar');
     const navMenu = document.getElementById('nav-menu');
     const body = document.body;
 
-    // --- State ---
-    let parsedData = {
-        meta: {},
-        items: [],
-        sections: [], // Stores unique sheet names like "UK(영국)"
-        stats: {
-            total: 0,
-            pass: 0,
-            warn: 0,
-            fail: 0,
-            casingIssues: 0,
-            glossaryIssues: 0
-        }
+    const STATUS_LABELS = {
+        pass: '통과',
+        warning: '주의',
+        needs_revision: '수정 필요',
+        blocked: '판정 없음',
     };
 
-    // --- Theming ---
+    let findings = [];
+    let frontMatter = {};
+    let activeFilter = 'all';
+
+    // --- Theming (unchanged behavior) ---
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         body.setAttribute('data-theme', 'dark');
         themeToggle.innerHTML = '<i class="ri-sun-line"></i>';
     }
-
     themeToggle.addEventListener('click', () => {
         if (body.getAttribute('data-theme') === 'dark') {
             body.removeAttribute('data-theme');
@@ -47,695 +50,298 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Drag and Drop ---
+    // --- Input: drag & drop, file picker, ?file= auto-load ---
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropZone.classList.add('dragover');
     });
-
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('dragover');
-    });
-
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('dragover');
         if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
     });
-
+    dropZone.addEventListener('click', (e) => {
+        if (e.target.tagName !== 'BUTTON') fileInput.click();
+    });
     fileInput.addEventListener('change', (e) => {
         if (e.target.files.length) handleFile(e.target.files[0]);
     });
 
+    function showBanner(message, kind) {
+        statusBanner.textContent = message;
+        statusBanner.className = `status-banner ${kind || ''}`;
+        statusBanner.style.display = 'block';
+    }
+    function hideBanner() {
+        statusBanner.style.display = 'none';
+    }
+
     function handleFile(file) {
-        if (!file.name.endsWith('.txt')) {
-            alert('TXT 파일만 업로드 가능합니다.');
+        if (!/\.(md|markdown)$/i.test(file.name)) {
+            showBanner('Markdown(.md) 리포트만 지원합니다. TXT 리포트는 더 이상 사용하지 않습니다.', 'error');
             return;
         }
         const reader = new FileReader();
-        reader.onload = (e) => {
-            parseTxtContent(e.target.result);
-            renderDashboard();
-            renderItems();
-            renderSidebar();
-            initScrollObserver();
-
-            uploadSection.style.display = 'none';
-            dashboardSection.style.display = 'block';
-            reportContent.style.display = 'block';
-            sidebar.style.display = 'block';
-            exportBtn.style.display = 'flex';
-        };
-        reader.readAsText(file);
+        reader.onload = (e) => renderReport(e.target.result);
+        reader.onerror = () => showBanner('파일을 읽지 못했습니다.', 'error');
+        reader.readAsText(file, 'utf-8');
     }
 
-    // --- Parser Engine ---
-    function parseTxtContent(text) {
-        parsedData.items = [];
-        parsedData.sections = [];
-        parsedData.stats = { total: 0, pass: 0, warn: 0, fail: 0, casingIssues: 0, glossaryIssues: 0 };
-
-        const delimiter = "==========================================================================================";
-        let parts = text.split(delimiter).map(p => p.trim()).filter(p => p.length > 0);
-        if (parts.length === 0) return;
-
-        for (let i = 1; i < parts.length; i++) {
-            let itemText = parts[i];
-            if (itemText.split('\n').length < 3) continue;
-
-            const getBlock = (pattern) => {
-                const regex = new RegExp(`\\[${pattern}\\]([\\s\\S]*?)(?=\\n\\[상세 -|$)`);
-                const match = itemText.match(regex);
-                return match ? match[1].trim() : "";
-            };
-
-            const fullHeader = (itemText.match(/^(.*?)\n-+/) || ["", ""])[1].trim();
-            // Extact sheet name like '[시트] UK(영국) | [셀] C15' -> 'UK(영국)'
-            let sheetName = "";
-            const sheetMatch = fullHeader.match(/\[시트\]\s*([^|]+)/);
-            if (sheetMatch) {
-                sheetName = sheetMatch[1].trim();
-                if (!parsedData.sections.includes(sheetName)) {
-                    parsedData.sections.push(sheetName);
-                }
-            }
-
-            let item = {
-                header: fullHeader,
-                sheetName: sheetName,
-                sourceText: getBlock('상세 - 원문'),
-                targetText: getBlock('상세 - 번역문'),
-                casingCheck: getBlock('상세 - 대소문자 점검'),
-                casingSuggestion: getBlock('단순 규칙 기반 문장형 변환안') || (itemText.match(/\[단순 규칙 기반 문장형 변환안\]:?\n([\s\S]*?)(?=\n\[|$)/) || ["", ""])[1].trim(),
-                glossaryCheck: getBlock('상세 - 용어집 점검'),
-                ragCheck: getBlock('상세 - RAG Payload') || getBlock('상세 - RAG 일관성 참고'),
-                backTranslation: getBlock('상세 - 역번역'),
-                geminiQa: getBlock('상세 - AI Payload') || getBlock('상세 - AI 검수 결과') || getBlock('상세 - Gemini Payload') || getBlock('상세 - Gemini 검수 결과'),
-                status: 'pass',
-                tags: []
-            };
-
-            // Analyze Status and Tags
-            if (item.casingCheck && !item.casingCheck.includes('추가 대문자 수: 0개') && item.casingCheck.includes('문장형 아님')) {
-                item.tags.push('대소문자'); 
-                parsedData.stats.casingIssues++;
-            }
-            if (item.glossaryCheck && !item.glossaryCheck.includes('별도 지적 사항 없음')) {
-                item.tags.push('용어집'); 
-                parsedData.stats.glossaryIssues++;
-            }
-
-            if (item.geminiQa && (item.geminiQa.includes('[AI QA 오류]') || item.geminiQa.includes('[Gemini QA 오류]'))) {
-                item.status = 'fail'; 
-                item.tags.push('AI 오류');
-            } else if (item.geminiQa) {
-                try {
-                    const aiData = JSON.parse(item.geminiQa);
-                    const isExcellent = aiData.is_excellent === true || aiData.grade === 'Excellent';
-                    const needsRevision = aiData.grade === 'Needs Revision' || aiData.is_excellent === false;
-                    const hasFix = (aiData.suggested_fix && aiData.suggested_fix.trim() !== '') || aiData.grade === 'Good';
-                    
-                    if (needsRevision) {
-                        item.status = 'fail';
-                    } else if (hasFix || !isExcellent) {
-                        item.status = 'warn';
-                        if (!item.tags.includes('AI 제안')) item.tags.push('AI 추천');
-                    }
-                } catch (e) {
-                    // Fallback to string matching for non-JSON or malformed data
-                    if (item.geminiQa.includes('Needs Revision') || item.geminiQa.includes('수정 필요') || item.geminiQa.includes('오류')) {
-                        item.status = 'fail';
-                    } else if (item.geminiQa.includes('수정 제안') || item.geminiQa.includes('Good') || item.geminiQa.includes('양호')) {
-                        item.status = 'warn';
-                        if (!item.tags.includes('AI 제안')) item.tags.push('AI 추천');
-                    }
-                }
-            }
-
-            if (item.status === 'pass') parsedData.stats.pass++;
-            if (item.status === 'warn') parsedData.stats.warn++;
-            if (item.status === 'fail') parsedData.stats.fail++;
-
-            parsedData.stats.total++;
-            parsedData.items.push(item);
-        }
-    }
-
-    // --- Render Dashboard ---
-    function renderDashboard() {
-        const score = Math.round((parsedData.stats.pass / (parsedData.stats.total || 1)) * 100);
-        let scoreColor = 'stat-success';
-        if (score < 80) scoreColor = 'stat-warning';
-        if (score < 60) scoreColor = 'stat-danger';
-
-        dashboardContent.innerHTML = `
-            <div class="stat-card ${scoreColor}">
-                <div class="stat-icon"><i class="ri-percent-line"></i></div>
-                <div class="stat-info">
-                    <div class="stat-label">Overall Health Score</div>
-                    <div class="stat-value">${score}점</div>
-                    <div class="stat-subtext">총 ${parsedData.stats.total}개 항목 중 ${parsedData.stats.pass}개 통과</div>
-                </div>
-            </div>
-            <div class="stat-card stat-primary">
-                <div class="stat-icon"><i class="ri-checkbox-circle-line"></i></div>
-                <div class="stat-info">
-                    <div class="stat-label">검토 완료 (Pass)</div>
-                    <div class="stat-value">${parsedData.stats.pass}건</div>
-                    <div class="stat-subtext">수정 불필요</div>
-                </div>
-            </div>
-            <div class="stat-card stat-warning">
-                <div class="stat-icon"><i class="ri-error-warning-line"></i></div>
-                <div class="stat-info">
-                    <div class="stat-label">수정 권장 (Warning)</div>
-                    <div class="stat-value">${parsedData.stats.warn}건</div>
-                    <div class="stat-subtext">AI가 개선을 제안한 항목</div>
-                </div>
-            </div>
-            <div class="stat-card stat-danger">
-                <div class="stat-icon"><i class="ri-close-circle-line"></i></div>
-                <div class="stat-info">
-                    <div class="stat-label">수정 필수 (Fail)</div>
-                    <div class="stat-value">${parsedData.stats.fail}건</div>
-                    <div class="stat-subtext">AI가 수정을 필수로 판정한 항목</div>
-                </div>
-            </div>
-            <div class="stat-card stat-info" style="background: var(--bg-secondary); border: 1px solid var(--border-color);">
-                <div class="stat-icon" style="color: var(--text-secondary);"><i class="ri-microscope-line"></i></div>
-                <div class="stat-info">
-                    <div class="stat-label" style="color: var(--text-secondary);">참고: 기계검수 (Heuristic)</div>
-                    <div class="stat-value" style="color: var(--text-primary); font-size: 1.4rem;">${parsedData.stats.casingIssues + parsedData.stats.glossaryIssues}건</div>
-                    <div class="stat-subtext">용어집 ${parsedData.stats.glossaryIssues}건, 대소문자 ${parsedData.stats.casingIssues}건</div>
-                </div>
-            </div>
-        `;
-    }
-
-    // --- Render Sidebar ---
-    function renderSidebar() {
-        navMenu.innerHTML = `
-            <a href="#dashboard" class="nav-link" data-target="dashboard">
-                <i class="ri-dashboard-line" style="margin-right: 8px;"></i> 요약 (Dashboard)
-            </a>
-        `;
-        parsedData.sections.forEach((section) => {
-            const safeId = section.replace(/[\W_]+/g, "-").toLowerCase();
-            navMenu.insertAdjacentHTML('beforeend', `
-                <a href="#section-${safeId}" class="nav-link" data-target="section-${safeId}">
-                    <i class="ri-global-line" style="margin-right: 8px;"></i> ${escapeHTML(section)}
-                </a>
-            `);
-        });
-    }
-
-    // --- Simple Diff Logic ---
-    function generateDiffHtml(original, suggested) {
-        if (!suggested || original === suggested) return escapeHTML(original);
-        const origWords = original.split(/\s+/);
-        const suggWords = suggested.split(/\s+/);
-        let html = '';
-        suggWords.forEach((word) => {
-            const exactMatch = origWords.find(w => w === word);
-            const lowerMatch = origWords.find(w => w.toLowerCase() === word.toLowerCase());
-            if (exactMatch) {
-                html += escapeHTML(word) + ' ';
-            } else if (lowerMatch) {
-                html += `<span class="diff-highlight-warn" title="${escapeHTML(lowerMatch)} -> ${escapeHTML(word)}">${escapeHTML(word)}</span> `;
-            } else {
-                html += `<span class="diff-highlight-add">${escapeHTML(word)}</span> `;
-            }
-        });
-        return html;
-    }
-
-    // --- Render Items ---
-    function renderItems() {
-        itemsList.innerHTML = '';
-
-        let currentSection = "";
-
-        parsedData.items.forEach((item, index) => {
-            // Anchor ID generation
-            let wrapperId = "";
-            if (item.sheetName && item.sheetName !== currentSection) {
-                currentSection = item.sheetName;
-                const safeId = currentSection.replace(/[\W_]+/g, "-").toLowerCase();
-                wrapperId = `id="section-${safeId}"`;
-            }
-
-            let statusTagHtml = '';
-            if (item.status === 'pass') statusTagHtml = `<span class="status-tag tag-pass"><i class="ri-check-line"></i> Pass</span>`;
-            if (item.status === 'warn') statusTagHtml = `<span class="status-tag tag-warn"><i class="ri-alert-line"></i> Warning</span>`;
-            if (item.status === 'fail') statusTagHtml = `<span class="status-tag tag-fail"><i class="ri-close-line"></i> Fail</span>`;
-
-            let tagsHtml = item.tags.map(t => `<span class="cat-tag">${t}</span>`).join('');
-
-            let htmlString = `
-                <div class="card-wrapper scroll-target" ${wrapperId}>
-                <div class="review-card status-${item.status}">
-                    <div class="card-header">
-                        <div class="card-title-group">
-                            <span class="card-badge"><i class="ri-map-pin-line"></i> ${escapeHTML(item.header || `항목 ${index + 1}`)}</span>
-                            ${statusTagHtml}
-                            <button class="copy-icon-btn copy-full-btn" data-item-index="${index}" onclick="window.copyViewerText(this)" title="이 셀의 전체 검수 결과 복사하기" style="margin-left: 8px;"><i class="ri-clipboard-line"></i></button>
-                        </div>
-                        <div class="category-tags">${tagsHtml}</div>
-                    </div>
-                    <div class="card-body">
-                        <div class="diff-viewer">
-                            <div class="diff-panel">
-                                <span class="diff-header">
-                                    <span class="diff-header-title"><i class="ri-text"></i> 원문 (Source)</span>
-                                    <button class="copy-icon-btn" onclick="window.copyViewerText(this)" title="복사하기"><i class="ri-clipboard-line"></i></button>
-                                </span>
-                                <div class="diff-content" data-raw-text="${escapeHTML(item.sourceText)}">${escapeHTML(item.sourceText)}</div>
-                            </div>
-                            <div class="diff-panel">
-                                <span class="diff-header">
-                                    <span class="diff-header-title"><i class="ri-translate"></i> 번역문 (Target)</span>
-                                    <button class="copy-icon-btn" onclick="window.copyViewerText(this)" title="복사하기"><i class="ri-clipboard-line"></i></button>
-                                </span>
-                                <div class="diff-content" data-raw-text="${escapeHTML(item.targetText)}">${escapeHTML(item.targetText)}</div>
-                            </div>
-                        </div>
-                        ${(item.casingSuggestion && item.status !== 'pass' && item.casingSuggestion.trim() !== '') ? `
-                        <div class="diff-viewer diff-suggestion" style="margin-top: 10px; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 10px;">
-                            <div class="diff-panel" style="width: 100%;">
-                                <span class="diff-header" style="color:var(--warning-color);">
-                                    <span class="diff-header-title"><i class="ri-edit-line"></i> 교정 제안 (Diff Viewer)</span>
-                                    <button class="copy-icon-btn" onclick="window.copyViewerText(this)" title="복사하기"><i class="ri-clipboard-line"></i></button>
-                                </span>
-                                <div class="diff-content" data-raw-text="${escapeHTML(item.casingSuggestion)}">${generateDiffHtml(item.targetText, item.casingSuggestion)}</div>
-                            </div>
-                        </div>` : ''}
-                        
-                        <div class="analysis-section">
-            `;
-
-            // 역번역 카드
-            const backTransText = (item.backTranslation && !item.backTranslation.includes('False') && item.backTranslation.trim() !== '') 
-                ? escapeHTML(item.backTranslation) 
-                : '<span style="color:#94a3b8;">생략됨 (지원하지 않거나 수행되지 않음)</span>';
-            htmlString += `
-                <div class="action-card info">
-                    <span class="action-title">
-                        <span class="action-title-text"><i class="ri-arrow-left-right-line"></i> 역번역 결과 (Back Translation)</span>
-                        <button class="copy-icon-btn" onclick="window.copyViewerText(this)" title="복사하기"><i class="ri-clipboard-line"></i></button>
-                    </span>
-                    <div class="action-content" data-raw-text="${escapeHTML(item.backTranslation || '')}" style="color: ${backTransText.includes('생략됨') ? '#94a3b8' : '#2b6cb0'};">${backTransText}</div>
-                </div>
-            `;
-
-            // RAG 카드
-            let ragText = '';
-            const ragRaw = item.ragCheck || '';
-            if (ragRaw.trim() !== '' && ragRaw !== '[]' && !ragRaw.includes('별도 지적 사항 없음')) {
-                try {
-                    const ragData = JSON.parse(ragRaw);
-                    if (ragData && Array.isArray(ragData) && ragData.length > 0) {
-                        if (ragData[0].error) {
-                            ragText = `<div style="color:var(--danger-color);"><i class="ri-error-warning-line"></i> RAG 조회 오류: ${escapeHTML(ragData[0].error)}</div>`;
-                        } else {
-                            let ragHtml = '';
-                            ragData.forEach(r => {
-                                let color = r.score > 90 ? '#10b981' : (r.score > 70 ? '#f59e0b' : '#ef4444');
-                                ragHtml += `
-                                    <div style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05); border-radius: 6px; padding: 12px; margin-bottom: 10px;">
-                                        <div style="display:flex; justify-content:space-between; margin-bottom: 8px; font-size: 0.85rem; color:#64748b; font-weight:500;">
-                                            <span><i class="ri-article-line"></i> ${escapeHTML(r.story_id)} / ${escapeHTML(r.section)}</span>
-                                            <span style="color:${color};"><i class="ri-percent-line"></i> ${r.score.toFixed(1)}% Match</span>
-                                        </div>
-                                        <div style="width: 100%; background: #e2e8f0; height: 6px; border-radius: 3px; margin-bottom: 10px; overflow:hidden;">
-                                            <div style="width: ${r.score}%; height: 100%; background: ${color}; border-radius: 3px; transition: width 1s ease-in-out;"></div>
-                                        </div>
-                                        <div style="font-size: 0.95rem; color: #334155; font-weight:500;"><i class="ri-text"></i> ${escapeHTML(r.source)}</div>
-                                        <div style="font-size: 0.95rem; color: #1e293b; font-weight:500; margin-top:4px;"><i class="ri-translate"></i> ${escapeHTML(r.target)}</div>
-                                    </div>
-                                `;
-                            });
-                            ragText = ragHtml;
-                        }
-                    } else {
-                        ragText = '<span style="color:#94a3b8;">특이사항 없음 (사례 발견되지 않음)</span>';
-                    }
-                } catch (e) {
-                     ragText = (ragRaw && ragRaw !== '[]' && !ragRaw.includes('별도 지적 사항 없음')) ? `<div style="margin-bottom:8px;">${parseMarkdown(escapeHTML(ragRaw))}</div>` : '<span style="color:#94a3b8;">특이사항 없음 (사례 발견되지 않음)</span>';
-                }
-            } else {
-                ragText = '<span style="color:#94a3b8;">특이사항 없음 (사례 발견되지 않음)</span>';
-            }
-            htmlString += `
-                <div class="action-card info">
-                    <span class="action-title">
-                        <span class="action-title-text"><i class="ri-database-2-line"></i> RAG 일관성 참고 내역</span>
-                        <button class="copy-icon-btn" onclick="window.copyViewerText(this)" title="복사하기"><i class="ri-clipboard-line"></i></button>
-                    </span>
-                    <div class="action-content">${ragText}</div>
-                </div>
-            `;
-
-            // 대소문자 카드
-            const hasCasingIssue = item.tags.includes('대소문자');
-            const casingClass = hasCasingIssue ? 'warn' : 'success';
-            const casingTitle = hasCasingIssue ? '<i class="ri-font-size"></i> 대소문자 표기 오류 (Warning)' : '<i class="ri-font-size"></i> 대소문자 점검 (Pass)';
-            const casingContent = (item.casingCheck && item.casingCheck.trim() !== '') ? escapeHTML(item.casingCheck) : '특이사항 없음';
-            htmlString += `
-                <div class="action-card ${casingClass}">
-                    <span class="action-title">
-                        <span class="action-title-text">${casingTitle}</span>
-                        <button class="copy-icon-btn" onclick="window.copyViewerText(this)" title="복사하기"><i class="ri-clipboard-line"></i></button>
-                    </span>
-                    <div class="action-content" data-raw-text="${escapeHTML(item.casingCheck || '')}">${casingContent}</div>
-                    ${(hasCasingIssue && item.casingSuggestion) ? `<div class="suggestion-box" data-raw-text="${escapeHTML(item.casingSuggestion)}"><strong>제안:</strong> ${escapeHTML(item.casingSuggestion)}</div>` : ''}
-                </div>
-            `;
-
-            // 용어집 카드
-            const hasGlossaryIssue = item.tags.includes('용어집');
-            const glossaryClass = hasGlossaryIssue ? 'error' : 'success';
-            const glossaryTitle = hasGlossaryIssue ? '<i class="ri-book-read-line"></i> 용어집 불일치 (Fail)' : '<i class="ri-book-read-line"></i> 용어집 점검 (Pass)';
-            const glossaryContent = (item.glossaryCheck && item.glossaryCheck.trim() !== '') ? escapeHTML(item.glossaryCheck) : '특이사항 없음';
-            htmlString += `
-                <div class="action-card ${glossaryClass}">
-                    <span class="action-title">
-                        <span class="action-title-text">${glossaryTitle}</span>
-                        <button class="copy-icon-btn" onclick="window.copyViewerText(this)" title="복사하기"><i class="ri-clipboard-line"></i></button>
-                    </span>
-                    <div class="action-content" data-raw-text="${escapeHTML(item.glossaryCheck || '')}">${glossaryContent}</div>
-                </div>
-            `;
-
-            // AI 평가 카드
-            let geminiClass = item.tags.includes('AI 오류') ? 'error' : (item.tags.includes('AI 추천') ? 'warn' : 'info');
-            if(item.status === 'pass' && !item.tags.includes('AI 추천')) geminiClass = 'success';
-            
-            let aiContent = '';
-            if (item.geminiQa && item.geminiQa.trim() !== '') {
-                try {
-                    const aiData = JSON.parse(item.geminiQa);
-                    
-                    if (aiData.evaluation && Array.isArray(aiData.evaluation)) {
-                        aiData.evaluation.forEach(ev => {
-                            if (!ev.comment || ev.comment === '' || ev.category === '') return;
-                            aiContent += `
-                                <div style="background: rgba(255,255,255,0.6); border-left: 3px solid #8b5cf6; padding: 12px 14px; margin-bottom: 8px; border-radius: 0 6px 6px 0; font-size: 0.95rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02); line-height: 1.5;">
-                                    <strong>${escapeHTML(ev.category)}:</strong> ${parseMarkdown(escapeHTML(ev.comment))}
-                                </div>
-                            `;
-                        });
-                    }
-                    if (aiData.grade === "Excellent" || aiData.is_excellent === true) {
-                        aiContent += `<div style="margin-top: 10px; color: var(--success-color); font-weight: bold;"><i class="ri-check-double-line"></i> 종합 평가: 우수 <span>(직역 없이 자연스러운 현지화)</span></div>`;
-                    } else if (aiData.grade === "Good") {
-                        aiContent += `<div style="margin-top: 10px; color: #d97706; font-weight: bold;"><i class="ri-check-line"></i> 종합 평가: 양호 <span>(경미한 개선 여지)</span></div>`;
-                    } else if (aiData.grade === "Needs Revision" || aiData.is_excellent === false) {
-                        aiContent += `<div style="margin-top: 10px; color: #dc2626; font-weight: bold;"><i class="ri-error-warning-line"></i> 종합 평가: 수정 필요</div>`;
-                    }
-                    if (aiData.suggested_fix && aiData.suggested_fix.trim() !== '') {
-                        let suggClass = "warn";
-                        aiContent += `<div style="margin-top: 10px; padding: 10px 14px; background: rgba(245, 158, 11, 0.08); border-radius: 6px; color: #92400e; font-size:0.95rem; font-weight: 500;">
-                                        <strong><i class="ri-edit-2-line"></i> 자연스러운 문장 다듬기 제안:</strong><br/>
-                                        <div style="margin-top: 6px; color: #78350f;">${escapeHTML(aiData.suggested_fix)}</div>
-                                      </div>`;
-                    }
-                } catch(e) {
-                    let rawQa = item.geminiQa.trim();
-                    rawQa = rawQa.replace(/\s+-\s/g, '\n- '); 
-                    let lines = rawQa.split('\n');
-                    let fallbackHtml = '';
-                    lines.forEach(line => {
-                        line = line.trim();
-                        if (!line) return;
-                        if (line.startsWith('- ') || line.startsWith('* ')) {
-                            let text = line.substring(2);
-                            text = parseMarkdown(escapeHTML(text));
-                            fallbackHtml += `<div style="background: rgba(255,255,255,0.6); border-left: 3px solid #8b5cf6; padding: 12px 14px; margin-bottom: 8px; border-radius: 0 6px 6px 0; font-size: 0.95rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02); line-height: 1.5;">${text}</div>`;
-                        } else {
-                            fallbackHtml += `<div style="margin-bottom: 10px; font-size: 0.95rem; padding: 0 4px; color:#475569; font-weight: 500;">${parseMarkdown(escapeHTML(line))}</div>`;
-                        }
-                    });
-                    aiContent = fallbackHtml;
-                }
-            } else {
-                aiContent = '<span style="color:#94a3b8;">AI 리뷰 결과 없음</span>';
-            }
-            
-            htmlString += `
-                <div class="action-card ${geminiClass}" style="background: linear-gradient(to right, rgba(139, 92, 246, 0.05), rgba(139, 92, 246, 0.01));">
-                    <span class="action-title" style="color: #6d28d9;">
-                        <span class="action-title-text"><i class="ri-robot-2-line"></i> AI 상세 검수 코멘트</span>
-                        <button class="copy-icon-btn" onclick="window.copyViewerText(this)" title="복사하기"><i class="ri-clipboard-line"></i></button>
-                    </span>
-                    <div class="action-content" style="padding-top: 10px;">${aiContent}</div>
-                </div>
-            `;
-
-            htmlString += `</div></div></div></div>`;
-            itemsList.insertAdjacentHTML('beforeend', htmlString);
-        });
-    }
-
-    // --- Search Params Auto Load ---
-    const urlParams = new URLSearchParams(window.location.search);
-    const fileUrl = urlParams.get('file');
-    if (fileUrl) {
-        fetch(fileUrl)
-            .then(response => {
-                if(!response.ok) throw new Error("HTTP error " + response.status);
-                return response.text();
-            })
-            .then(text => {
-                parseTxtContent(text);
-                renderDashboard();
-                renderItems();
-                renderSidebar();
-                initScrollObserver();
-                uploadSection.style.display = 'none';
-                dashboardSection.style.display = 'block';
-                reportContent.style.display = 'block';
-                sidebar.style.display = 'block';
-                exportBtn.style.display = 'flex';
-            })
-            .catch(err => {
-                alert("리포트를 로드하는데 실패했습니다: " + err.message);
-            });
-    }
-
-    // --- Scroll Observer ---
-    function initScrollObserver() {
-        const observerOptions = {
-            root: null,
-            rootMargin: '-20% 0px -60% 0px',
-            threshold: 0
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const id = entry.target.getAttribute('id');
-                    updateActiveNavLink(id);
-                }
-            });
-        }, observerOptions);
-
-        // Observe Dashboard
-        observer.observe(document.getElementById('dashboard'));
-
-        // Observe all section headers
-        document.querySelectorAll('.scroll-target[id^="section-"]').forEach((section) => {
-            observer.observe(section);
-        });
-    }
-
-    function updateActiveNavLink(id) {
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.classList.remove('active');
-            if (link.getAttribute('data-target') === id) {
-                link.classList.add('active');
-            }
-        });
-    }
-
-    // --- Format Helpers ---
-    function escapeHTML(str) {
-        if (!str) return "";
-        return str.replace(/[&<>'"]/g, t => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[t] || t));
-    }
-    function parseMarkdown(str) {
-        if (!str) return "";
-        let res = str;
-        // Basic bold
-        res = res.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        return res;
-    }
-
-    function parseAiReviewPayload(rawPayload) {
-        const fallback = {
-            grade: "Unknown",
-            suggestedFix: "",
-            rawComment: rawPayload || ""
-        };
-        if (!rawPayload || !rawPayload.trim()) return fallback;
-
+    async function loadFromUrl(url) {
+        showBanner('리포트를 불러오는 중...', '');
         try {
-            const aiData = JSON.parse(rawPayload);
-            const comments = [];
-            if (aiData.evaluation && Array.isArray(aiData.evaluation)) {
-                aiData.evaluation.forEach(ev => {
-                    if (!ev || !ev.comment) return;
-                    const category = ev.category ? `${ev.category}: ` : "";
-                    comments.push(`- ${category}${ev.comment}`);
-                });
-            }
-
-            return {
-                grade: aiData.grade || (aiData.is_excellent === true ? "Excellent" : (aiData.is_excellent === false ? "Needs Revision" : "Unknown")),
-                suggestedFix: aiData.suggested_fix || "",
-                rawComment: comments.length ? comments.join('\n') : rawPayload
-            };
-        } catch (e) {
-            return fallback;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+            renderReport(await res.text());
+        } catch (err) {
+            showBanner(`리포트를 불러오지 못했습니다: ${err.message}`, 'error');
         }
     }
 
-    function formatReviewItemForAI(item) {
-        if (!item) return "";
-        const aiReview = parseAiReviewPayload(item.geminiQa || "");
-        const tags = item.tags && item.tags.length ? item.tags.join(', ') : "None";
-        const sheet = item.sheetName || "Unknown";
-        const cellMatch = (item.header || "").match(/\[셀\]\s*([^|\n]+)/);
-        const cell = cellMatch ? cellMatch[1].trim() : "Unknown";
-        const none = "(none)";
+    // --- Parsing: front matter + per-finding YAML blocks ---
 
-        return `# SmartThings Translation Review Item
-
-## Reference
-- Sheet: ${sheet}
-- Cell: ${cell}
-- Status: ${item.status || "unknown"}
-- Tags: ${tags}
-
-## Source
-${item.sourceText || none}
-
-## Current Translation
-${item.targetText || none}
-
-## Checks
-### Casing
-${item.casingCheck || none}
-
-### Glossary
-${item.glossaryCheck || none}
-
-### RAG
-${item.ragCheck || none}
-
-## AI Review
-- Grade: ${aiReview.grade}
-- Suggested Fix: ${aiReview.suggestedFix || none}
-
-Raw Comment:
-${aiReview.rawComment || none}
-
-## Request
-SmartThings localization rules 기준으로 이 검수 지적이 타당한지 판단해주세요.
-반드시 Sheet/Cell 근거를 유지하고,
-1. 실제 수정 필요 여부
-2. 과잉 지적 가능성
-3. 권장 수정안
-4. 클라이언트에게 설명할 짧은 코멘트
-로 답해주세요.`;
+    function splitFrontMatter(text) {
+        const normalized = text.replace(/^﻿/, '').replace(/\r\n?/g, '\n');
+        const match = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/.exec(normalized);
+        if (!match) return { meta: {}, body: normalized };
+        let meta = {};
+        try {
+            meta = jsyaml.load(match[1]) || {};
+        } catch (err) {
+            console.warn('front matter parse failed', err);
+        }
+        return { meta, body: match[2] };
     }
 
-    // --- Export PDF (Restored html2pdf/Canvas snapshot method) ---
-    exportBtn.addEventListener('click', () => {
-        const contentArea = document.querySelector('.content-area');
-        const header = document.querySelector('.app-header');
-        const sidebar = document.getElementById('sidebar');
+    function collectFindings(bodyText) {
+        // Each finding is a `### heading` followed by a ```yaml block.
+        const found = [];
+        const re = /^###\s+(.+?)\s*(?:\{#([^}]+)\})?\s*$\n+```yaml\n([\s\S]*?)\n```/gm;
+        let m;
+        while ((m = re.exec(bodyText)) !== null) {
+            let meta = {};
+            try {
+                meta = jsyaml.load(m[3]) || {};
+            } catch (err) {
+                console.warn('finding yaml parse failed', err);
+            }
+            found.push({
+                heading: m[1].trim(),
+                anchor: m[2] || slugify(meta.finding_id || m[1]),
+                status: meta.status || 'blocked',
+                applyStatus: meta.apply_status || '',
+                findingId: meta.finding_id || m[1].trim(),
+                sheet: meta.sheet || '',
+            });
+        }
+        return found;
+    }
 
-        const isDark = body.getAttribute('data-theme') === 'dark';
-        if (isDark) body.removeAttribute('data-theme');
+    function slugify(value) {
+        return String(value).toLowerCase().replace(/[^0-9a-z]+/g, '-').replace(/^-|-$/g, '');
+    }
 
-        const origSidebarDisplay = sidebar.style.display;
-        const origHeaderDisplay = header.style.display;
-        const origWidth = contentArea.style.width;
-        const origMargin = contentArea.style.margin;
+    // --- Rendering ---
 
-        // 화면 요소 감추기 및 모바일 뷰(.pdf-mode) 강제 적용
-        sidebar.style.display = 'none';
-        header.style.display = 'none';
-        
-        contentArea.classList.add('pdf-mode'); 
-        contentArea.style.width = '100%'; 
-        contentArea.style.maxWidth = '900px';
-        contentArea.style.margin = '0 auto';
-        
-        const opt = {
-            margin: 0, // 상하 여백 제거
-            filename: 'Translation_Review_Report.pdf',
-            image: { type: 'jpeg', quality: 1.0 },
-            html2canvas: { scale: 2, useCORS: true }, 
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
+    function renderReport(text) {
+        const { meta, body: bodyText } = splitFrontMatter(text);
+        frontMatter = meta;
+        findings = collectFindings(bodyText);
 
-        html2pdf().set(opt).from(contentArea).save().then(() => {
-            if (isDark) body.setAttribute('data-theme', 'dark');
-            sidebar.style.display = origSidebarDisplay;
-            header.style.display = origHeaderDisplay;
-            contentArea.classList.remove('pdf-mode');
-            contentArea.style.width = origWidth;
-            contentArea.style.maxWidth = '';
-            contentArea.style.margin = origMargin;
+        const md = window.markdownit({ html: true, linkify: true, breaks: false });
+        // DOMPurify is the security boundary: report bodies can contain raw HTML
+        // written by an agent or a human, and html:true above lets it through.
+        const clean = DOMPurify.sanitize(md.render(bodyText), { USE_PROFILES: { html: true } });
+        markdownBody.innerHTML = clean;
+
+        decorateFindings();
+        buildDashboard();
+        buildNav();
+        applyFilter('all');
+
+        uploadSection.style.display = 'none';
+        hideBanner();
+        dashboardSection.style.display = 'block';
+        reportContent.style.display = 'block';
+        sidebar.style.display = 'block';
+        exportBtn.style.display = 'inline-flex';
+        window.scrollTo({ top: 0 });
+    }
+
+    function decorateFindings() {
+        // Anchor each finding section and tag it so filters can hide it.
+        const headings = markdownBody.querySelectorAll('h3');
+        headings.forEach((h3) => {
+            const text = h3.textContent.trim();
+            const finding = findings.find((f) => text.startsWith(f.heading)) ||
+                findings.find((f) => f.heading.startsWith(text));
+            if (!finding) return;
+            const section = document.createElement('section');
+            section.className = 'finding';
+            section.id = finding.anchor;
+            section.dataset.status = finding.status;
+            h3.parentNode.insertBefore(section, h3);
+
+            // Move the heading and everything up to the next h2/h3 into the section.
+            let node = h3;
+            const collected = [];
+            while (node && !(node !== h3 && /^H[23]$/.test(node.tagName))) {
+                collected.push(node);
+                node = node.nextSibling;
+            }
+            collected.forEach((n) => section.appendChild(n));
+
+            const chip = document.createElement('span');
+            chip.className = `status-chip status-${finding.status}`;
+            chip.textContent = STATUS_LABELS[finding.status] || finding.status;
+            h3.appendChild(chip);
+
+            collapseStructuredBlocks(section);
+            pairTranslationBlocks(section);
         });
+    }
+
+    function collapseStructuredBlocks(section) {
+        // YAML/JSON stay in the file; the viewer just folds them away.
+        section.querySelectorAll('pre > code').forEach((code) => {
+            const cls = code.className || '';
+            if (!/language-(yaml|json)/.test(cls)) return;
+            const pre = code.parentElement;
+            const details = document.createElement('details');
+            const summary = document.createElement('summary');
+            summary.textContent = /yaml/.test(cls) ? '메타데이터 (YAML)' : '원본 Payload (JSON)';
+            details.appendChild(summary);
+            pre.parentNode.insertBefore(details, pre);
+            details.appendChild(pre);
+        });
+    }
+
+    function pairTranslationBlocks(section) {
+        // Show 현재 번역문 / 제안 번역문 side by side for quick diffing.
+        const headings = Array.from(section.querySelectorAll('h4'));
+        const current = headings.find((h) => h.textContent.includes('현재 번역문'));
+        const proposed = headings.find((h) => h.textContent.includes('제안 번역문'));
+        if (!current || !proposed) return;
+        const currentPre = current.nextElementSibling;
+        const proposedPre = proposed.nextElementSibling;
+        if (!currentPre || !proposedPre) return;
+
+        const grid = document.createElement('div');
+        grid.className = 'translation-pair';
+        const left = document.createElement('div');
+        const right = document.createElement('div');
+        left.appendChild(current);
+        left.appendChild(currentPre);
+        right.appendChild(proposed);
+        right.appendChild(proposedPre);
+        grid.appendChild(left);
+        grid.appendChild(right);
+        section.appendChild(grid);
+    }
+
+    function buildDashboard() {
+        const counts = { pass: 0, warning: 0, needs_revision: 0, blocked: 0 };
+        let pendingApproval = 0;
+        findings.forEach((f) => {
+            if (counts[f.status] === undefined) counts[f.status] = 0;
+            counts[f.status] += 1;
+            if (f.applyStatus === 'pending_approval') pendingApproval += 1;
+        });
+
+        const cards = [
+            { label: '총 검수 항목', value: findings.length, key: 'total' },
+            { label: STATUS_LABELS.needs_revision, value: counts.needs_revision || 0, key: 'needs_revision' },
+            { label: STATUS_LABELS.warning, value: counts.warning || 0, key: 'warning' },
+            { label: STATUS_LABELS.pass, value: counts.pass || 0, key: 'pass' },
+            { label: '승인 대기 제안', value: pendingApproval, key: 'pending' },
+        ];
+        if (counts.blocked) {
+            cards.push({ label: STATUS_LABELS.blocked, value: counts.blocked, key: 'blocked' });
+        }
+
+        dashboardContent.innerHTML = '';
+        cards.forEach((card) => {
+            const el = document.createElement('div');
+            el.className = `stat-card stat-${card.key}`;
+            el.innerHTML = `<div class="stat-value"></div><div class="stat-label"></div>`;
+            el.querySelector('.stat-value').textContent = card.value;
+            el.querySelector('.stat-label').textContent = card.label;
+            dashboardContent.appendChild(el);
+        });
+
+        const metaBits = [];
+        if (frontMatter.report_id) metaBits.push(`report_id: ${frontMatter.report_id}`);
+        if (frontMatter.source_file_id) metaBits.push(`source: ${frontMatter.source_file_id}`);
+        if (frontMatter.translation_model) metaBits.push(`translation: ${frontMatter.translation_model}`);
+        if (frontMatter.audit_model) metaBits.push(`audit: ${frontMatter.audit_model}`);
+        if (frontMatter.generated_at) metaBits.push(frontMatter.generated_at);
+        if (metaBits.length) {
+            const meta = document.createElement('div');
+            meta.className = 'report-meta';
+            meta.textContent = metaBits.join(' · ');
+            dashboardContent.appendChild(meta);
+        }
+
+        filterBar.innerHTML = '';
+        const filters = [['all', '전체']].concat(
+            Object.keys(STATUS_LABELS)
+                .filter((k) => counts[k])
+                .map((k) => [k, `${STATUS_LABELS[k]} (${counts[k]})`])
+        );
+        filters.forEach(([key, label]) => {
+            const btn = document.createElement('button');
+            btn.className = 'filter-btn';
+            btn.dataset.filter = key;
+            btn.textContent = label;
+            btn.addEventListener('click', () => applyFilter(key));
+            filterBar.appendChild(btn);
+        });
+    }
+
+    function applyFilter(key) {
+        activeFilter = key;
+        filterBar.querySelectorAll('.filter-btn').forEach((btn) => {
+            btn.classList.toggle('active', btn.dataset.filter === key);
+        });
+        markdownBody.querySelectorAll('.finding').forEach((section) => {
+            section.style.display = key === 'all' || section.dataset.status === key ? '' : 'none';
+        });
+        navMenu.querySelectorAll('.nav-link').forEach((link) => {
+            link.style.display = key === 'all' || link.dataset.status === key ? '' : 'none';
+        });
+    }
+
+    function buildNav() {
+        navMenu.innerHTML = '';
+        findings.forEach((f) => {
+            const link = document.createElement('a');
+            link.className = 'nav-link';
+            link.href = `#${f.anchor}`;
+            link.dataset.status = f.status;
+            const dot = document.createElement('span');
+            dot.className = `nav-dot status-${f.status}`;
+            const label = document.createElement('span');
+            label.textContent = f.heading;
+            link.appendChild(dot);
+            link.appendChild(label);
+            navMenu.appendChild(link);
+        });
+    }
+
+    // --- PDF export (unchanged behavior) ---
+    exportBtn.addEventListener('click', () => {
+        const opts = {
+            margin: 10,
+            filename: `${frontMatter.report_id || 'review-report'}.pdf`,
+            image: { type: 'jpeg', quality: 0.95 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        };
+        html2pdf().set(opts).from(markdownBody).save();
     });
 
-    // --- Copy to Clipboard ---
-    window.copyViewerText = function(btn) {
-        let textToCopy = '';
-        
-        // 1. Check if it's a full card copy
-        if (btn.classList.contains('copy-full-btn')) {
-            const itemIndex = Number(btn.getAttribute('data-item-index'));
-            const item = Number.isInteger(itemIndex) ? parsedData.items[itemIndex] : null;
-            if (!item) return;
-            textToCopy = formatReviewItemForAI(item);
-        } else {
-            // 2. Individual section copy
-            const container = btn.closest('.diff-panel') || btn.closest('.action-card');
-            if (!container) return;
-            
-            const contentEl = container.querySelector('.diff-content') || container.querySelector('.action-content');
-            if (!contentEl) return;
-            
-            textToCopy = contentEl.getAttribute('data-raw-text');
-            
-            if (!textToCopy || textToCopy.trim() === '') {
-                textToCopy = contentEl.innerText;
-            } else {
-                // Unescape manually if data-raw-text is used since we passed escaped string
-                const unescapeHTML = (str) => {
-                    const txt = document.createElement('textarea');
-                    txt.innerHTML = str;
-                    return txt.value;
-                };
-                textToCopy = unescapeHTML(textToCopy);
-            }
-        }
-
-        navigator.clipboard.writeText(textToCopy.trim()).then(() => {
-            const icon = btn.querySelector('i');
-            icon.className = 'ri-check-line';
-            btn.classList.add('copied');
-            setTimeout(() => {
-                icon.className = 'ri-clipboard-line';
-                btn.classList.remove('copied');
-            }, 2000);
-        }).catch(err => {
-            console.error('Failed to copy: ', err);
-            alert('복사에 실패했습니다.');
-        });
-    };
+    // Auto-load ?file=/api/report/{task_id}
+    const fileParam = new URLSearchParams(window.location.search).get('file');
+    if (fileParam) loadFromUrl(fileParam);
 });

@@ -122,13 +122,13 @@ async def background_inspection_task(task_id, params):
             if event["type"] == "complete":
                 base_name = os.path.splitext(params.source_file_name)[0] if params.source_file_name else f"review_{task_id}"
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                output_filename = f"{base_name}_review_report_{timestamp}.txt"
+                output_filename = f"{base_name}_review_report_{timestamp}.md"
                 output_path = os.path.join(UPLOAD_DIR, output_filename)
                 with open(output_path, "w", encoding="utf-8") as f:
                     f.write(event["output_data"])
                 
                 TASK_STORE[task_id]["result_path"] = output_path
-                TASK_STORE[task_id]["txt_path"] = output_path
+                TASK_STORE[task_id]["report_path"] = output_path
                 # Notify completion without large data payload
                 await queue.put({
                     "type": "complete", 
@@ -202,7 +202,7 @@ async def integrated_translation_task(task_id, params):
                 base_name = os.path.splitext(params.source_file_name)[0] if params.source_file_name else f"result_{task_id}"
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 
-                output_filename = f"{base_name}_review_{timestamp}.txt"
+                output_filename = f"{base_name}_review_{timestamp}.md"
                 output_path = os.path.join(UPLOAD_DIR, output_filename)
                 with open(output_path, "w", encoding="utf-8") as f:
                     f.write(event["output_data"])
@@ -220,7 +220,7 @@ async def integrated_translation_task(task_id, params):
                         zipf.write(excel_out, os.path.basename(excel_out))
                 
                 TASK_STORE[task_id]["result_path"] = zip_path
-                TASK_STORE[task_id]["txt_path"] = output_path
+                TASK_STORE[task_id]["report_path"] = output_path
                 await queue.put({"type": "log", "message": "Processing complete. Generating ZIP..."})
                 await queue.put({
                     "type": "complete", 
@@ -368,15 +368,15 @@ async def download_result(task_id: str, filename: str = None):
     return FileResponse(path, filename=filename)
 
 @app.get("/api/report/{task_id}")
-async def get_report_txt(task_id: str):
-    if task_id not in TASK_STORE or not TASK_STORE[task_id].get("txt_path"):
+async def get_report_markdown(task_id: str):
+    if task_id not in TASK_STORE or not TASK_STORE[task_id].get("report_path"):
         raise HTTPException(status_code=404, detail="Report not ready or task not found")
     
-    path = TASK_STORE[task_id]["txt_path"]
+    path = TASK_STORE[task_id]["report_path"]
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Report file missing from server")
     
-    return FileResponse(path, media_type="text/plain")
+    return FileResponse(path, media_type="text/markdown; charset=utf-8")
 
 # ─── Prompt Module 엔드포인트 ─────────────────────────────────────────────────
 

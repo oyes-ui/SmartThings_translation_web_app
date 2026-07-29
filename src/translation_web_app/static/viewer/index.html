@@ -17,6 +17,13 @@
 
     <!-- CSS -->
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="markdown.css">
+
+    <!-- Markdown rendering + sanitizing. DOMPurify is mandatory: report bodies
+         are user/agent-authored Markdown and may contain raw HTML. -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
 
     <!-- html2pdf.js for exporting -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -48,13 +55,14 @@
             <!-- Sidebar Navigation -->
             <aside class="sidebar" id="sidebar" style="display: none;">
                 <div class="sidebar-inner">
-                    <h3 class="sidebar-title">목차 (Languages)</h3>
+                    <h3 class="sidebar-title">목차 (Findings)</h3>
                     <nav class="nav-menu" id="nav-menu">
-                        <!-- Navigation Links injected here -->
+                        <!-- Navigation links injected here -->
                     </nav>
-                    <div class="version-info" style="margin-top: auto; padding: 20px 0 10px 0; border-top: 1px solid rgba(0,0,0,0.05); font-size: 11px; color: #94a3b8; display: flex; flex-direction: column; gap: 4px;">
+                    <div class="version-info"
+                        style="margin-top: auto; padding: 20px 0 10px 0; border-top: 1px solid rgba(0,0,0,0.05); font-size: 11px; color: #94a3b8; display: flex; flex-direction: column; gap: 4px;">
                         <span>Version v1.6.0</span>
-                        <span>Updated: 2026.06.02</span>
+                        <span>Markdown report viewer</span>
                     </div>
                 </div>
             </aside>
@@ -64,36 +72,39 @@
                 <!-- Upload Section -->
                 <section id="upload-section" class="upload-container">
                     <div class="upload-box" id="drop-zone">
-                        <input type="file" id="file-input" accept=".txt" hidden>
+                        <input type="file" id="file-input" accept=".md,.markdown,text/markdown" hidden>
                         <div class="upload-icon">
-                            <i class="ri-file-text-line"></i>
+                            <i class="ri-markdown-line"></i>
                         </div>
-                        <h2>TXT 리포트 파일을 업로드하세요</h2>
+                        <h2>Markdown 리포트(.md)를 업로드하세요</h2>
                         <p class="upload-hint">파일을 여길 드래그하거나 클릭하여 선택하세요.</p>
-                        <button class="btn btn-primary mt-4" onclick="document.getElementById('file-input').click()">
+                        <p class="upload-hint" style="margin-top:6px;">
+                            <code>?file=/api/report/{task_id}</code> 로 자동 로드도 가능합니다.
+                        </p>
+                        <button class="btn btn-primary mt-4"
+                            onclick="document.getElementById('file-input').click()">
                             파일 선택
                         </button>
                     </div>
                 </section>
 
+                <!-- Loading / error banner -->
+                <div id="status-banner" class="status-banner" style="display:none;"></div>
+
                 <!-- Dashboard / Executive Summary -->
                 <section id="dashboard" class="dashboard-section" style="display: none;">
                     <div class="dashboard-header">
                         <h2>리포트 요약 (Executive Summary)</h2>
+                        <div id="filter-bar" class="filter-bar"></div>
                     </div>
                     <div class="dashboard-grid" id="dashboard-content">
                         <!-- Dashboard widgets injected here -->
                     </div>
                 </section>
 
-                <!-- Report Items -->
+                <!-- Rendered Markdown -->
                 <section id="report-content" class="report-container" style="display: none;">
-                    <div class="report-header">
-                        <h2>상세 검수 항목</h2>
-                    </div>
-                    <div id="items-list" class="items-grid">
-                        <!-- Cards will be injected here -->
-                    </div>
+                    <article id="markdown-body" class="markdown-body"></article>
                 </section>
             </main>
         </div>
