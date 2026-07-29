@@ -39,7 +39,7 @@ class TextWorkbookStartRequest(BaseModel):
     update_date: str | None = None
     story: StoryText = Field(default_factory=StoryText)
     sections: list[SectionText] = Field(default_factory=list, max_length=4)
-    translation_model: str = "gemini-2.5-flash"
+    translation_model: str = "gemini-3.6-flash"
     audit_model: str = "gpt-5.4-mini"
     translation_thinking_budget: int | None = None
     audit_reasoning_effort: str | None = None

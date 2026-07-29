@@ -132,7 +132,7 @@ def main() -> None:
     parser.add_argument("--single-source", action="store_true")
     parser.add_argument("--source-sheet", default="US(미국)")
     parser.add_argument("--bx", action="store_true", help="BX 스타일 적용(영어 타겟)")
-    parser.add_argument("--translation-model", default="gemini-2.5-flash")
+    parser.add_argument("--translation-model", default="gemini-3.6-flash")
     parser.add_argument("--audit-model", default="gpt-5.2")
     parser.add_argument("--max-concurrency", type=int, default=5)
     parser.add_argument("--app-root", help="app repo 경로 명시")

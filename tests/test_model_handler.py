@@ -200,5 +200,73 @@ class ModelHandlerUsageTests(unittest.TestCase):
         self.assertEqual(set(gpt_calls.keys()) - {"reasoning_effort"}, set())
 
 
+class GeminiRequestConfigTests(unittest.TestCase):
+    """Gemini 3.6 deprecated temperature/top_p/top_k; later generations reject them."""
+
+    def _captured_config(self, **kwargs):
+        captured = {}
+
+        async def fake_generate_content(model, contents, config):
+            captured["model"] = model
+            captured["config"] = config
+            return FakeGeminiResponse()
+
+        handler = _handler_with_fake_gemini(fake_generate_content)
+        asyncio.run(handler.call_gemini("prompt", **kwargs))
+        return captured
+
+    def test_no_sampling_parameters_are_sent(self):
+        captured = self._captured_config(
+            model_name="gemini-3.6-flash",
+            system_instruction="sys",
+            response_json=True,
+            thinking_budget=0,
+        )
+        config = captured["config"]
+        for field in ("temperature", "top_p", "top_k"):
+            self.assertIsNone(
+                getattr(config, field, None),
+                msg=f"{field} must never be sent; Gemini 3.6+ deprecates it",
+            )
+
+    def test_thinking_on_sends_no_thinking_config(self):
+        """Thinking: On means the model's own default level, not an override."""
+        captured = self._captured_config(model_name="gemini-3.6-flash")
+        self.assertIsNone(captured["config"])
+
+    def test_thinking_off_sends_zero_budget(self):
+        captured = self._captured_config(model_name="gemini-3.6-flash", thinking_budget=0)
+        self.assertEqual(captured["config"].thinking_config.thinking_budget, 0)
+
+
+class DefaultModelTests(unittest.TestCase):
+    def test_gemini_defaults_are_current(self):
+        import inspect
+
+        from translation_web_app import checker_service, main
+        from translation_web_app.routers import text_workbooks
+
+        self.assertEqual(
+            inspect.signature(ModelHandler.call_gemini).parameters["model_name"].default,
+            "gemini-3.6-flash",
+        )
+        self.assertEqual(
+            inspect.signature(ModelHandler.count_tokens).parameters["model_name"].default,
+            "gemini-3.6-flash",
+        )
+        self.assertEqual(main.StartRequest.model_fields["translation_model"].default,
+                         "gemini-3.6-flash")
+        self.assertEqual(
+            text_workbooks.TextWorkbookStartRequest.model_fields["translation_model"].default,
+            "gemini-3.6-flash",
+        )
+        self.assertEqual(
+            inspect.signature(
+                checker_service.TranslationChecker.run_integrated_pipeline_generator
+            ).parameters["translation_model"].default,
+            "gemini-3.6-flash",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

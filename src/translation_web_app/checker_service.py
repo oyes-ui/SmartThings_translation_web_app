@@ -1022,7 +1022,7 @@ class TranslationChecker:
         if simple_fixed_text == target_text:
             simple_fixed_text = None
         return report, simple_fixed_text
-    async def _run_llm_translation(self, text, target_lang, model_name="gemini-2.5-flash", bx_style_on=False, glossary_context=None, rag_context=None, row_key="", source_lang="English", rag_identity_match=True, target_lang_code="", thinking_budget: int | None = None):
+    async def _run_llm_translation(self, text, target_lang, model_name="gemini-3.6-flash", bx_style_on=False, glossary_context=None, rag_context=None, row_key="", source_lang="English", rag_identity_match=True, target_lang_code="", thinking_budget: int | None = None):
         """
         내부 전용 번역 메서드: JSON 프롬프트 생성 및 LLM 호출을 담당합니다.
         """
@@ -1699,7 +1699,7 @@ class TranslationChecker:
         cell_range,
         bx_style_on,
         sheet_lang_map,
-        translation_model="gemini-2.5-flash",
+        translation_model="gemini-3.6-flash",
         audit_model="gpt-5.2",
         translation_thinking_budget: int | None = None,
         glossary_file_path=None,
