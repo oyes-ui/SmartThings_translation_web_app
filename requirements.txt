@@ -11,3 +11,4 @@ aiohttp
 openai
 chromadb
 tiktoken
+PyYAML

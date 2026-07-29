@@ -141,6 +141,37 @@ LANGUAGE_LOCALIZATION_RULES = {
     ],
 }
 
+# Heading shown above the language rules in prompts and in /api/prompt_modules.
+# Keys must stay in sync with LANGUAGE_LOCALIZATION_RULES.
+LANGUAGE_RULE_LABELS = {
+    "Korean": "Korean Honorifics & Style Consistency",
+    "English": "US English Consistency",
+    "English_US": "US English Consistency",
+    "English_UK": "British English Consistency",
+    "English_AU": "Australian English Consistency",
+    "English_SG": "Singapore English Consistency",
+    "German": "German Du-form Consistency",
+    "Japanese": "Japanese ます-form Consistency",
+    "French": "French Tone and Consistency",
+    "French_Belgium": "Belgian French Consistency",
+    "French_Canada": "Canadian French Consistency",
+    "Italian": "Italian UI Phrasing Consistency",
+    "Spanish": "Spain Spanish (Castilian) — Tú Form",
+    "Dutch": "Dutch Directness & Phrasing",
+    "Swedish": "Swedish UI Phrasing & Case Consistency",
+    "Arabic": "MSA & Arabic UI Conventions",
+    "Brazilian Portuguese": "Brazilian Portuguese Consistency",
+    "European Portuguese": "European Portuguese Consistency",
+    "Russian": "Russian Word Order & Phrasing",
+    "Turkish": "Turkish UI Phrasing Consistency",
+    "Simplified Chinese": "Simplified Chinese Consistency",
+    "Traditional Chinese": "Traditional Chinese Consistency",
+    "Polish": "Polish Grammar & Phrasing Consistency",
+    "Vietnamese": "Vietnamese Phrasing & Case Consistency",
+    "Thai": "Thai UI Phrasing & Punctuation",
+    "Indonesian": "Indonesian Phrasing & Style Consistency",
+}
+
 # Workbook sheet names are user-facing identifiers, while prompt modules use
 # canonical language names. Keep this conversion next to the language rules so
 # every caller of PromptBuilder gets the same behavior.

@@ -14,6 +14,12 @@ STATIC_DIR = APP_DIR / "static"
 TEMPLATE_DIR = APP_DIR / "assets" / "templates"
 SOURCE_WORKBOOK_TEMPLATE = TEMPLATE_DIR / "source_workbook_blank.xlsx"
 
+# Prompt rule files. Deliberately not env-overridable: these are code-adjacent
+# contract files, and an override would create a second source of prompt text.
+RULES_DIR = APP_DIR / "rules"
+LANGUAGE_RULES_DIR = RULES_DIR / "languages"
+BX_STYLE_RULES_PATH = RULES_DIR / "bx_style.md"
+
 
 def _env_path(name: str, default: Path) -> Path:
     value = os.getenv(name)

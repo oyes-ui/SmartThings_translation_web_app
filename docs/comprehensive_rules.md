@@ -77,7 +77,8 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 ## 3. 언어별 상세 특화 규칙 (Detailed Localization Rules)
 
 시스템은 아래와 같이 각 언어 및 시장별로 세분화된 규칙을 적용합니다.
-> **📌 매핑 변수**: `LANGUAGE_LOCALIZATION_RULES` (`src/translation_web_app/prompt_modules.py`)
+> **📌 매핑 원본**: `src/translation_web_app/rules/languages/{canonical_key}.md` (파일명 = canonical key)
+> — 런타임이 읽는 유일한 원본. `prompt_modules.LANGUAGE_LOCALIZATION_RULES`는 레거시이며 참조되지 않는다.
 
 ### 언어 매칭 전략
 > **📌 생성 로직**: `PromptBuilder.get_language_rule()` (`src/translation_web_app/prompt_builder.py`)
@@ -85,7 +86,7 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 `target_lang` 입력값을 아래 2단계로 매칭합니다.
 
 1. **Exact match** (대소문자 무시): `"english_us"` → `English_US` ✓
-2. **Fuzzy substring match** (최장 키 우선): 정확히 일치하는 키가 없으면, `LANGUAGE_LOCALIZATION_RULES`의 키를 길이 내림차순으로 정렬 후 `target_lang`에 포함된 키를 반환. 예: `"English_US_variant"` → `English_US` (`English`보다 먼저 매칭)
+2. **Fuzzy substring match** (최장 키 우선): 정확히 일치하는 키가 없으면, 규칙 파일의 canonical key를 길이 내림차순(동일 길이는 이름 오름차순)으로 정렬 후 `target_lang`에 포함된 키를 반환. 예: `"English_US_variant"` → `English_US` (`English`보다 먼저 매칭)
 3. **매칭 실패**: 두 단계 모두 해당 없으면 언어 섹션 자체가 프롬프트에서 생략됩니다.
 
 ---

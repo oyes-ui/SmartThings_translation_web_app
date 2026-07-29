@@ -62,7 +62,8 @@ PRICING = {
 
 # ---------------------------------------------------------------------------
 # Language target tables
-# target_lang strings must match PromptBuilder._LANGUAGE_RULE_LABELS keys
+# target_lang strings must match a canonical_key under
+# src/translation_web_app/rules/languages/ (the filename stem)
 # ---------------------------------------------------------------------------
 
 # Workflow A: Korean source → 4 CJK + US targets

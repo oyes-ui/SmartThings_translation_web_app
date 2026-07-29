@@ -411,15 +411,16 @@ async def prompt_universe():
     """Builds a Cytoscape-compatible graph of all prompt modules."""
     from translation_web_app.prompt_modules import (
         COMMON_LOCALIZATION_STANDARD as CLS,
-        LANGUAGE_LOCALIZATION_RULES as LLR,
-        BX_STYLE_RULES as BX,
         TYPOGRAPHY_AND_PUNCTUATION_RULES as TPR,
         GLOSSARY_BRACKET_WRAP_RULE as GBR,
         GLOSSARY_DISCLAIMER_NAV_EXCEPTION as GDNE,
         GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE as GDNQ
     )
-    from translation_web_app.prompt_builder import _LANGUAGE_RULE_LABELS as LRL
-    
+    from translation_web_app.rules_loader import get_rules
+
+    rules = get_rules()
+
+
     nodes, edges = [], []
     def n(i, l, t, c): nodes.append({"data": {"id": i, "label": l, "type": t, "content": c}})
     def e(s, t): edges.append({"data": {"source": s, "target": t}})
@@ -433,9 +434,9 @@ async def prompt_universe():
     # Language Branch
     n("b_l", "Language Specific", "branch", "Conditional rules by locale.")
     e("c_t", "b_l")
-    for k, r in LLR.items():
+    for k, language in rules.languages.items():
         nid = f"l_{k.lower().replace(' ', '_')}"
-        n(nid, LRL.get(k, k), "language", "\n".join(r))
+        n(nid, language.display_name, "language", "\n".join(language.prompt_rules()))
         e("b_l", nid); e(nid, "b_ctx")
 
     # Context Branch
@@ -448,11 +449,12 @@ async def prompt_universe():
     # BX Branch
     n("b_bx", "Samsung BX Style", "branch", "Voice attributes.")
     e("x_t", "b_bx"); e("x_d", "b_bx"); e("x_s", "b_bx")
-    for k, d in BX["voice_attributes"].items():
+    for k, actionable_rules in rules.bx.voice_attributes.items():
         desc = ""
-        if "definition" in d and d["definition"]:
-            desc += f"{d['definition']}\n\n"
-        desc += "\n".join(d["actionable_rules"])
+        definition = rules.bx.voice_definitions.get(k)
+        if definition:
+            desc += f"{definition}\n\n"
+        desc += "\n".join(actionable_rules)
         n(f"bx_{k.lower()}", f"Voice: {k}", "style", desc)
         e("b_bx", f"bx_{k.lower()}")
 

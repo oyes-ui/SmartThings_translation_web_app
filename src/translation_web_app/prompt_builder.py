@@ -13,7 +13,6 @@ from translation_web_app.prompt_modules import (
     AUDIT_CHECKLIST_RULES,
     AUDIT_GRADE_CRITERIA,
     AUDIT_INTRO,
-    BX_STYLE_RULES,
     COMMON_LOCALIZATION_STANDARD,
     GLOSSARY_BRACKET_WRAP_RULE,
     GLOSSARY_DEACTIVATION_MARKERS,
@@ -23,40 +22,14 @@ from translation_web_app.prompt_modules import (
     GLOSSARY_EXEMPT_MARKERS,
     GLOSSARY_NO_BRACKET_INSTRUCTION,
     GLOSSARY_TERM_RULES,
-    LANGUAGE_LOCALIZATION_RULES,
     resolve_language_identifier,
     TYPOGRAPHY_AND_PUNCTUATION_RULES,
 )
+from translation_web_app.rules_loader import get_rules
 
-
-_LANGUAGE_RULE_LABELS = {
-    "Korean": "Korean Honorifics & Style Consistency",
-    "English": "US English Consistency",
-    "English_US": "US English Consistency",
-    "English_UK": "British English Consistency",
-    "English_AU": "Australian English Consistency",
-    "English_SG": "Singapore English Consistency",
-    "German": "German Du-form Consistency",
-    "Japanese": "Japanese ます-form Consistency",
-    "French": "French Tone and Consistency",
-    "French_Belgium": "Belgian French Consistency",
-    "French_Canada": "Canadian French Consistency",
-    "Italian": "Italian UI Phrasing Consistency",
-    "Spanish": "Spain Spanish (Castilian) — Tú Form",
-    "Dutch": "Dutch Directness & Phrasing",
-    "Swedish": "Swedish UI Phrasing & Case Consistency",
-    "Arabic": "MSA & Arabic UI Conventions",
-    "Brazilian Portuguese": "Brazilian Portuguese Consistency",
-    "European Portuguese": "European Portuguese Consistency",
-    "Russian": "Russian Word Order & Phrasing",
-    "Turkish": "Turkish UI Phrasing Consistency",
-    "Simplified Chinese": "Simplified Chinese Consistency",
-    "Traditional Chinese": "Traditional Chinese Consistency",
-    "Polish": "Polish Grammar & Phrasing Consistency",
-    "Vietnamese": "Vietnamese Phrasing & Case Consistency",
-    "Thai": "Thai UI Phrasing & Punctuation",
-    "Indonesian": "Indonesian Phrasing & Style Consistency",
-}
+# Loaded at import so a malformed rule file stops the app from starting rather
+# than silently producing prompts with missing rules.
+_RULES = get_rules()
 
 
 class PromptBuilder:
@@ -64,12 +37,15 @@ class PromptBuilder:
         if not target_lang:
             return None
         normalized = resolve_language_identifier(target_lang).lower()
-        for lang_key, rule in LANGUAGE_LOCALIZATION_RULES.items():
+        languages = _RULES.languages
+        for lang_key in languages:
             if lang_key.lower() == normalized:
-                return lang_key, rule
-        for lang_key, rule in sorted(LANGUAGE_LOCALIZATION_RULES.items(), key=lambda item: len(item[0]), reverse=True):
+                return lang_key, list(languages[lang_key].prompt_rules())
+        # Longest key first so "english_us..." matches English_US, not English.
+        # The secondary key makes equal-length ties independent of file order.
+        for lang_key in sorted(languages, key=lambda key: (-len(key), key)):
             if lang_key.lower() in normalized:
-                return lang_key, rule
+                return lang_key, list(languages[lang_key].prompt_rules())
         return None
 
     def get_brackets(self, target_lang: str) -> str:
@@ -207,7 +183,7 @@ class PromptBuilder:
         return "\n\n".join(sections).strip()
 
     def build_bx_audit_prompt(self, source_text: str, translated_text: str, target_lang: str) -> str:
-        identity = BX_STYLE_RULES["system_identity"]
+        identity = _RULES.bx
         return f"""You are a Samsung BX Audit Expert.
 Evaluate if the following translation aligns with the Samsung BX Persona and Voice Attributes.
 
@@ -215,7 +191,7 @@ Source: {source_text}
 Translation: {translated_text}
 Target Language: {target_lang}
 
-Persona: {identity['persona']}
+Persona: {identity.persona}
 Voice Attributes to check:
 - OPEN: Use of wit, metaphor, or personification. Short, rhythmic "Double Take" headlines.
 - BOLD: Confidence, contrast, and impact. No hedging words.
@@ -249,7 +225,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
             },
             "language": {
                 "active": bool(language_rules),
-                "name": _LANGUAGE_RULE_LABELS.get(lang_key, lang_key) if lang_key else "No language-specific module",
+                "name": _RULES.languages[lang_key].display_name if lang_key else "No language-specific module",
                 "description": "; ".join(language_rules) if language_rules else "Only the common localization standard is applied.",
             },
             "bx": {
@@ -283,7 +259,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
 
     def _build_persona_section(self, target_lang: str, source_lang: str, bx_style_on: bool) -> str:
         if bx_style_on or self._is_bx_lang(target_lang):
-            role = BX_STYLE_RULES["system_identity"]["role"]
+            role = _RULES.bx.role
             return (
                 f"You are the {role}.\n"
                 f"Source Language: {source_lang}\n"
@@ -306,8 +282,11 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         if not match:
             return ""
         lang_key, rules = match
+        if not rules:
+            # A file may carry only agent_audit rules; emit no headed empty section.
+            return ""
         heading = "[언어별 현지화 기준]" if korean_heading else "[LANGUAGE SPECIFIC RULE]"
-        label = _LANGUAGE_RULE_LABELS.get(lang_key, lang_key)
+        label = _RULES.languages[lang_key].display_name
         return f"{heading}\n{label}\n" + "\n".join(f"- {item}" for item in rules)
 
     _BX_AUTO_LANGS = {"English_US", "English"}
@@ -316,25 +295,24 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         return target_lang in self._BX_AUTO_LANGS
 
     def _build_bx_section(self, target_lang: str) -> str:
-        identity = BX_STYLE_RULES["system_identity"]
-        voice = BX_STYLE_RULES["voice_attributes"]
+        bx = _RULES.bx
         lines = [
             "[SAMSUNG BX STYLE]",
-            f"Persona: {identity['persona']}",
-            f"Goal: {identity['goal']}",
+            f"Persona: {bx.persona}",
+            f"Goal: {bx.goal}",
             f"Target Language: {target_lang}",
             "",
             "Voice Attributes:",
         ]
-        for name, data in voice.items():
+        for name, actionable_rules in bx.voice_attributes.items():
             lines.append(f"- {name}:")
-            lines.extend(f"  - {rule}" for rule in data["actionable_rules"])
+            lines.extend(f"  - {rule}" for rule in actionable_rules)
         lines.append("")
         lines.append("Negative Constraints:")
-        lines.extend(f"- {item}" for item in BX_STYLE_RULES["negative_constraints"])
+        lines.extend(f"- {item}" for item in bx.negative_constraints)
         lines.append("")
         lines.append("Few-shot Examples:")
-        for example in BX_STYLE_RULES["few_shot_examples"]:
+        for example in bx.few_shot_examples:
             lines.append(f"Type: {example['type']}")
             lines.append(f"Input: {example['input']}")
             lines.append(f"Output: {example['output']}")

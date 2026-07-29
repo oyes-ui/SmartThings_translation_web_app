@@ -41,6 +41,7 @@ CONFIG_PATH = CONFIG_DIR / "config.json"
 # app repo 판별 마커
 APP_MARKER = Path("src") / "translation_web_app"
 RULES_REL = Path("docs") / "comprehensive_rules.md"
+RULES_DIR_REL = Path("src") / "translation_web_app" / "rules"
 REQUIREMENTS_REL = Path("requirements.txt")
 SERVICE_ACCOUNT_REL = Path("smartthings-explore-6d1922d106bd.json")
 
@@ -175,6 +176,7 @@ def inspect_environment(app_root: Path | None) -> dict:
 
     checks["src_translation_web_app"] = (ar / APP_MARKER).is_dir()
     checks["comprehensive_rules"] = (ar / RULES_REL).is_file()
+    checks["rules_dir"] = (ar / RULES_DIR_REL / "languages").is_dir()
     checks["requirements_txt"] = (ar / REQUIREMENTS_REL).is_file()
     checks["venv_python"] = _venv_python(ar)
     checks["rag_store_db"] = (rag_dir / "rag_store.db").is_file()
@@ -238,6 +240,7 @@ def _print_human(rep: dict) -> None:
     labels = {
         "src_translation_web_app": "src/translation_web_app",
         "comprehensive_rules": "docs/comprehensive_rules.md",
+        "rules_dir": "src/translation_web_app/rules/languages/",
         "requirements_txt": "requirements.txt",
         "venv_python": "venv python",
         "rag_store_db": "runtime/rag_db/rag_store.db",
