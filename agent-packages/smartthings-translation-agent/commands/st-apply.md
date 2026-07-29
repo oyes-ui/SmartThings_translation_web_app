@@ -13,6 +13,16 @@ argument-hint: <review-workbook.xlsx> <approval-manifest.json>
 
 ## 실행 경로
 
+`report_format_spec.md`의 표준 검수 승인 manifest(`manifest_schema_version: 1`,
+`approval_status: approved`)는 `scripts/report_manifest_adapter.py`가 처리한다. `approved`가
+아닌 항목은 결과의 `skipped`에 남고 적용되지 않는다. 이 manifest는 아래 draft/delivery 명령에
+직접 전달할 수 있다.
+
+```bash
+# 표준 검수 manifest의 승인 항목 확인 — 파일을 쓰지 않음
+python scripts/report_manifest_adapter.py approval-manifest.json --edits-only
+```
+
 live layer가 만든 manifest는 반드시 `approval: "approved"`와 각 변경의
 `verification: "verified"`를 가져야 한다. `preview`나 `fallback_delivery` 항목은 적용되지 않는다.
 

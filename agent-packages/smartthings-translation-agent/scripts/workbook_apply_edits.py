@@ -77,6 +77,10 @@ def _load_edits(edits_arg: str) -> list[dict]:
         raw = edits_arg
     data = json.loads(raw)
     if isinstance(data, dict) and "changes" in data:
+        if "manifest_schema_version" in data:
+            # report_format_spec 승인 manifest: approved 항목만 delivery 경로로 전달한다.
+            from report_manifest_adapter import approved_edits
+            return approved_edits(data)
         # ChatGPT for Excel/Office.js manifest는 승인·검증된 draft만 허용한다.
         from excel_live_manifest import approved_edits
         return approved_edits(data)
