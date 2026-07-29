@@ -187,6 +187,7 @@ SHEET_CODE_LANGUAGE_ALIASES = {
     "DE": "German",
     "IT": "Italian",
     "ES": "Spanish",
+    "CO": "Spanish_Colombia",
     "NL": "Dutch",
     "SE": "Swedish",
     "AE": "Arabic",

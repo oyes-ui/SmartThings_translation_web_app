@@ -29,7 +29,9 @@ class LanguageRuleEquivalenceTests(unittest.TestCase):
         self.builder = PromptBuilder()
 
     def test_every_legacy_language_has_a_rules_file(self):
-        self.assertEqual(set(self.bundle.languages), set(LANGUAGE_LOCALIZATION_RULES))
+        # Subset, not equality: locales added after the migration (e.g.
+        # Spanish_Colombia) have no legacy constant to compare against.
+        self.assertLessEqual(set(LANGUAGE_LOCALIZATION_RULES), set(self.bundle.languages))
 
     def test_rule_text_is_identical_for_every_language(self):
         for key, legacy in LANGUAGE_LOCALIZATION_RULES.items():
@@ -37,7 +39,12 @@ class LanguageRuleEquivalenceTests(unittest.TestCase):
                 self.assertEqual(list(self.bundle.languages[key].prompt_rules()), legacy)
 
     def test_display_names_are_identical(self):
-        self.assertEqual(self.bundle.display_names(), LANGUAGE_RULE_LABELS)
+        migrated = {
+            key: name
+            for key, name in self.bundle.display_names().items()
+            if key in LANGUAGE_RULE_LABELS
+        }
+        self.assertEqual(migrated, LANGUAGE_RULE_LABELS)
 
     def test_rendered_language_section_is_identical(self):
         """The real guarantee: same bytes reach the model, both headings."""
