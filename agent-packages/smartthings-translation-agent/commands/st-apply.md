@@ -14,13 +14,13 @@ argument-hint: <review-workbook.xlsx> <approval-manifest.json>
 ## 실행 경로
 
 `report_format_spec.md`의 표준 검수 승인 manifest(`manifest_schema_version: 1`,
-`approval_status: approved`)는 `scripts/report_manifest_adapter.py`가 처리한다. `approved`가
-아닌 항목은 결과의 `skipped`에 남고 적용되지 않는다. 이 manifest는 아래 draft/delivery 명령에
-직접 전달할 수 있다.
+`approval_status: approved`)는 `workbook_review_apply.py`가 직접 `decisions`로 변환한다.
+`approved` 외 상태는 Excel에 반영되지 않으며, 이 경로는 native review와 agent review 모두에
+공통으로 사용한다.
 
 ```bash
-# 표준 검수 manifest의 승인 항목 확인 — 파일을 쓰지 않음
-python scripts/report_manifest_adapter.py approval-manifest.json --edits-only
+python scripts/workbook_review_apply.py review.xlsx approval-manifest.json \
+  --output story_accepted.xlsx --glossary Glossary.csv --app-root /path/to/app --json
 ```
 
 live layer가 만든 manifest는 반드시 `approval: "approved"`와 각 변경의
