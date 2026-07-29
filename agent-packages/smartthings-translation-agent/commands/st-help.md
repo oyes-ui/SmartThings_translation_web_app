@@ -2,21 +2,26 @@
 description: SmartThings 번역 에이전트 개요·검수 포인트·명령 안내
 ---
 
-`agent-packages/smartthings-translation-agent/SKILL.md` 와 `agent-packages/smartthings-translation-agent/commands/` 를 근거로, 이 프로젝트를 처음 보는 사람도 이해할 수 있게 **한국어로** 다음을 간결히 출력하라:
+`/st-help`는 `/st-start`와 같은 시작 안내를 제공하는 호환 명령이다. 한국어로 짧고
+스캔 가능하게 아래를 안내한다.
 
-1. **프로젝트 한 줄 소개**: SmartThings 다국어 번역·검수를 돕는 app-aware 에이전트. 앱(`src/translation_web_app/`)의 규칙·RAG·용어집·Excel 파이프라인을 래퍼 스크립트로 호출(재구현 안 함). 동작 수준 Level 1~4(Excel만 → offline RAG → semantic RAG → full pipeline).
-2. **두 가지 실행 모드**: (a) **셀프 모드(크레딧 0)** — 에이전트가 `prompt_preview.py`+용어집+RAG(offline)로 직접 번역/검수. 소량·단건 기본값. (b) **파이프라인 모드(LLM 크레딧)** — `workbook_translate.py`/`workbook_audit.py`, `--pipeline`+승인 필요. (→ `agent-packages/smartthings-translation-agent/references/self-vs-pipeline.md`)
-3. **검수 포인트**: audit 6항목(① 문법/자연스러움 ② 의미 충실 ③ 용어집 준수 ④ 현지화 ⑤ 대소문자 ⑥ 포맷·BX), story 문장 요소 일관성(호칭·주어·조사/격·어미·접속 표현), title↔description 맥락, 안전 규칙(원본 Excel 불변 / 수정 전 승인 / 크레딧 사전확인 / 시크릿 미노출).
-4. **권장 검수 절차**: 아래 5단계를 짧게 안내한다.
-   1. `/st-glossary-filter`: 대상 언어의 source group과 bracket occurrence를 확정한다.
-   2. `/st-story-review`: AI 판정을 후보로 두고 실제 셀·용어집·문장 요소를 재평가한다.
-   3. `/st-rag`: 표현 통일이 쟁점인 항목만, 같은 source group·콘텐츠 유형 사례로 확인한다.
-   4. `/st-sections`: title-description 및 story 전체의 호칭·주어·조사/격·어미를 점검한다.
-   5. `/st-review-apply`: 사람이 승인한 감수 판정만 반영해 최종 하이라이트 납품본을 만든다.
-   6. `/st-story-apply`: AI 확정 수정안으로 납품 scope 전체를 재하이라이트·검증한 최종 복사본을 만든다.
-   7. `/st-obsidian-report`: result manifest를 근거로 언어별 반영 상태와 최종본 경로를 리포트에 갱신한다.
-   AI `Good`/`Needs Revision`은 모두 후보이며, 최종 판단은 실제 셀·source group·용어집·RAG·언어 규칙으로 한다.
-5. **명령 선택 가이드**: 전체 재평가는 `/st-story-review`, 특정 AI 판정의 이유는 `/st-audit-explain`, 과거 표현 근거는 `/st-rag`, 저수준 임시 편집은 `/st-edit`, AI 확정 수정안 납품은 `/st-story-apply`, 원어민 감수본의 승인 반영은 `/st-review-apply`이라고 한 줄로 구분한다.
-6. **명령 목록**(크레딧 표시): `/st-help`(0) `/st-setup`(0) `/st-rules`(0) `/st-prompt`(0) `/st-glossary`(0) `/st-glossary-filter`(0) `/st-inspect`(0) `/st-story-review`(0) `/st-review-apply`(0) `/st-sections`(0) `/st-highlight`(0) `/st-story-apply`(0) `/st-textbook`(0) `/st-rag`(0~) `/st-ragdb`(0/빌드시 크레딧) `/st-edit`(0) `/st-translate`(LLM) `/st-audit`(LLM) `/st-audit-explain`(0) `/st-review-summary`(0) `/st-notebooklm`(외부 MCP) `/st-obsidian-report`(0). 각 한 줄 설명.
+1. SmartThings 다국어 번역·검수를 돕는 app-aware 에이전트이며, app의 규칙·RAG·glossary·
+   Excel 파이프라인을 호출하고 재구현하지 않는다고 설명한다.
+2. 기본은 셀프 모드(크레딧 0), 대량 작업은 사용자 승인 뒤 파이프라인 모드(LLM)라고 구분한다.
+3. 검수는 문법/자연스러움, 의미 충실도, glossary, 현지화, 대소문자, 포맷·BX의 6항목과
+   story 맥락을 본다고 설명한다.
+4. 원본 Excel 불변, 수정 전 preview·승인, API 비용 사전 확인, secret 미노출을 강조한다.
 
-길게 늘어놓지 말고 스캔 가능한 요약으로.
+사용자에게는 다음 여섯 명령을 먼저 제시한다.
+
+| 명령 | 용도 | 크레딧 |
+| --- | --- | --- |
+| `/st-start` | 연결 상태와 다음 단계 | 0 |
+| `/st-ask` | 규칙·glossary·RAG 질의 | 0~ |
+| `/st-review` | 읽기 전용 검수·리포트·수정 제안 | 0 |
+| `/st-edit` | 일반 Excel 수정 preview·승인·복사본 적용 | 0 |
+| `/st-apply` | 승인 manifest 기반 납품본 | 0 |
+| `/st-pipeline` | 승인 후 LLM 번역·검수 | LLM |
+
+세부 명령은 고급/관리 또는 위 명령의 내부 구현으로 남아 있으며 즉시 삭제하지 않았다고
+안내한다.
