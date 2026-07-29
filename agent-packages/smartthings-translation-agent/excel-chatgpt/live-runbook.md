@@ -57,7 +57,15 @@ Office.js probe가 SmartThings workbook에서 substring rich text의 읽기·쓰
 - 사용자가 셀 단위 강조를 명시: live draft로 제한 가능
 - 용어 단위 색상 하이라이트 또는 납품본: Delivery Python `workbook_highlight_glossary.py`
 
-## 5. 기록
+## 5. Glossary import 준비
+
+Delivery/CLI 환경에서는 `glossary_live_prepare.py <csv> --locale es_CO --version <label> --output payload.json`으로
+사용자가 선택한 CSV를 path-free payload로 만든다. live session에서만 `officejs-glossary-import.js`에 그
+payload를 전달해 새 `__ST_GLOSSARY` hidden/protected table을 만든다. 기존 표는 절대 덮어쓰지 않는다.
+이 import 자체는 실제 Excel session에서 검증하기 전까지 PoC 준비물이며, glossary substring highlight의
+납품 기준은 계속 Delivery Python이다.
+
+## 6. 기록
 
 `manifest-schema.md` 형식에 surface/mode/변경/검증 결과와 glossary의 locale/version/checksum만 기록한다.
 파일 경로·CSV 원본 경로·secret은 남기지 않는다.
