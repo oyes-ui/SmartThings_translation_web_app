@@ -35,10 +35,12 @@
 
 워크북 전체를 LLM 파이프라인에 돌리기 전에, 아래 순서로 크레딧 0 self audit을 먼저 수행한다(→ `commands/st-audit.md`):
 
-1. `workbook_inspect.py --sections`로 story의 모든 section을 그룹째 뽑는다.
-2. 기존 RAG 사례(`rag_lookup.py`, 키 없어도 offline 조회 가능)를 곁들여 검수 6대 항목을 **story 전체 단위**로 먼저 훑는다(지칭/부사 반복, 톤 일관성 포함 → `response-patterns.md` C-2).
-3. 여기서 좁혀진 **후보 셀만** `prompt_preview.py --audit`으로 개별 검수한다.
-4. 대량·자동화·재현 가능한 산출물이 꼭 필요할 때만 승인 후 `--pipeline`으로 넘어간다.
+1. `workbook_inspect.py --sections`로 source와 target의 모든 section을 그룹째 뽑고 workbook의 실제 source group을 확정한다. 표준 story mapping의 `JA/TW → KR`은 적용하되, 개별 workbook의 선언이 우선한다.
+2. 기존 AI 후보와 무관하게 각 언어의 story 콘텐츠 셀(C7·C8·C10·C11·C13·C15·C16·C17)을 source↔target으로 **독립 재독해**한다. 의미 주체, 직역투, title 역할, section 연결, 용어/서식을 함께 점검한다.
+3. 독립 재독해와 AI 후보 재판정에서 좁혀진 셀만 `prompt_preview.py --audit`으로 개별 확인한다. `prompt_preview --audit`은 후보 확인 도구이며 story 전체 읽기를 대체하지 않는다.
+4. 표현 통일이 실제 쟁점인 경우에만 RAG를 사용한다. RAG 사례가 없더라도 문법·의미·직역투는 규칙/BX 기준으로 판단한다.
+5. 수정 수가 적을수록 독립 재점검을 생략하지 않고, 기존 후보 누락 여부를 더 엄격히 점검한다.
+6. 대량·자동화·재현 가능한 산출물이 꼭 필요할 때만 승인 후 `--pipeline`으로 넘어간다.
 
 ## 파이프라인 모드 — 앱의 유료 LLM (LLM 크레딧)
 

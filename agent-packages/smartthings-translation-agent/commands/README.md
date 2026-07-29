@@ -14,6 +14,7 @@
 - `/st-glossary-filter` → `st-glossary-filter.md`
 - `/st-inspect` → `st-inspect.md`
 - `/st-story-review` → `st-story-review.md`
+- `/st-review-apply` → `st-review-apply.md`
 - `/st-sections` → `st-sections.md`
 - `/st-highlight` → `st-highlight.md`
 - `/st-story-apply` → `st-story-apply.md`

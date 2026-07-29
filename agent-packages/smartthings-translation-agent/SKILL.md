@@ -33,7 +33,8 @@ python scripts/bootstrap.py --app-root <경로> --save
 
 - **셋업/시작**: "SmartThings 번역 에이전트 시작해줘", "셋업해줘", "bootstrap" → `scripts/bootstrap.py` + `references/setup-workflow.md`
 - **규칙 Q&A**: "이 언어는 존댓말 써야 해?", "용어집 대괄호 규칙이 뭐야?" → `references/rules-sources.md`
-- **통합 story 검수**: "AI 검수결과 다시 봐줘", "이 스토리 전체 맥락에서 재평가해줘" → `/st-story-review`: 실제 셀·source group·용어집·RAG·문장 요소를 순서대로 재검토
+- **통합 story 검수**: "AI 검수결과 다시 봐줘", "이 스토리 전체 맥락에서 재평가해줘" → `/st-story-review`: AI 후보 재판정 뒤 후보 비의존 독립 story 재검수를 수행
+- **감수본 최종 수용**: "감수본 수용안 만들어줘", "F/H 감수 의견 반영해 납품본 만들어줘" → `/st-review-apply`: 사람 승인 manifest만 반영하고 전체 재하이라이트·무결성 검증
 - **검수 피드백 토론**: "왜 Needs Revision이야?", "이 등급 근거 설명해줘" → `/st-audit-explain` + `references/response-patterns.md`
 - **RAG 사례 조회**: "과거에 이 표현 어떻게 번역했어?", "기존 사례 기준 이 독일어 괜찮아?" → `scripts/rag_lookup.py` + `references/rag-workflow.md`
 - **NotebookLM 보조 분석**: "NotebookLM 링크 참고해서 분석해줘", "검수 txt를 NotebookLM에 넣어둔 노트 기준으로 요약해줘", "노트북LM 자료까지 반영해서 반복 오류 패턴 찾아줘" → `references/notebooklm-workflow.md` + MCP `notebooklm` 도구(설치된 경우)
@@ -65,7 +66,8 @@ python scripts/bootstrap.py --app-root <경로> --save
 | `/st-rag` | 과거 번역 사례 RAG 조회 | 0(offline)~ |
 | `/st-ragdb` | RAG DB 현황/빌드/업데이트 | status 0 / 빌드 LLM |
 | `/st-inspect` | 워크북 읽기 전용 분석 | 0 |
-| `/st-story-review` | AI 결과를 실제 셀·용어집·RAG·story 맥락으로 통합 재평가 | 0 |
+| `/st-story-review` | AI 후보 재판정 + 독립 story 재검수(전체 콘텐츠 셀) | 0 |
+| `/st-review-apply` | 승인된 감수 판정만 C열에 반영해 최종 하이라이트 납품본 생성 | 0 |
 | `/st-sections` | 섹션 title↔description 및 story 문장 요소 일관성 검토 | 0 |
 | `/st-highlight` | 용어집 rich text 하이라이트(원본 불변) | 0 |
 | `/st-edit` | 승인된 셀 편집 적용(복사본) | 0 |
@@ -87,6 +89,8 @@ python scripts/bootstrap.py --app-root <경로> --save
 6. **AI 검수는 선제 검토 후보**: NotebookLM/LLM 검수 결과는 원어민 감수 전 적극 검토할 1차 후보 목록으로 본다. `Good` 판정이라도 코멘트나 수정안이 있으면 실제 Excel 값, RAG, 제품명 기준으로 재확인한다.
 7. **Excel rich text 주의**: `workbook_apply_edits.py`로 셀 값을 바꾸면 기존 rich text 하이라이트가 깨질 수 있다. 자동 수정본을 납품본으로 안내하기 전에는 최신 glossary로 `C7:C28` 전체를 재하이라이트하되, `KR(한국)`/`US(미국)` source sheet도 포함해야 한다.
 8. **감수본 대조 주의**: 번역사 표시본의 빨간 하이라이트만 신뢰하지 말고 C/F 전체 diff를 본다. 반복 CTA, 브랜드명, 제품명은 셀 단위보다 파일 전체 일관성으로 판단한다.
+9. **story review 종료 게이트**: 자동 Fix 전 `후보 기반 발견 수 / 독립 발견 수 / 유지 언어 수 / 언어별 완료 상태`를 산출한다. Fix 후에는 독립 재점검에 기록한 수정 셀과 실제 값 diff가 일치하고, 보호 언어 무결성·전체 재하이라이트 검증이 통과해야 한다.
+10. **감수본 수용 분리**: `/st-story-review`는 판단·리포트까지만 수행한다. 최종 수용본은 사람 승인 `accept`/`partial` manifest가 있을 때만 `/st-review-apply`로 생성한다. 현지화 수정은 원문 의미·기능 조건·UI 경로·glossary·문법 리스크가 없는 한 수용하며, RAG exact 사례는 참고이지 자동 거부 근거가 아니다.
 
 ## 도구 선택 흐름
 
@@ -97,10 +101,11 @@ python scripts/bootstrap.py --app-root <경로> --save
 RAG 사례 필요    → scripts/rag_lookup.py 실행 → references/rag-workflow.md 따라 결과 해석
 NotebookLM 링크  → references/notebooklm-workflow.md 확인 → MCP/인증 확인 → 승인 후 add_notebook+select_notebook 등록 → ask_question, 일회성이면 remove_notebook 정리
 Excel 분석       → scripts/workbook_inspect.py (읽기 전용)
-통합 story 검수  → /st-glossary-filter → /st-story-review → 필요한 표현만 /st-rag → /st-sections → /st-obsidian-report
+통합 story 검수  → source group 고정 → AI 후보 재판정 → 후보 비의존 독립 재독해 → 필요한 표현만 /st-rag → /st-sections → /st-obsidian-report
 섹션 맥락 검토   → scripts/workbook_inspect.py --sections → 호칭·주어·조사/격·어미·접속 표현까지 C-2 템플릿으로 제안 → 승인 후 workbook_apply_edits.py
 검수 리포트 분석 → LM 판정 목록 추출(Good 코멘트 포함) → 실제 현재 셀·source group·용어집·RAG 재확인 → `수정 필요`/`유지`/`false positive`/`추가 확인`으로 재분류
 감수본 요약     → review_summary.py 로 감수본/F열 변경·AI 수정안 겹침·리포트 판단 카운트 산출 → response-patterns.md 템플릿으로 최종 summary 작성
+감수본 최종 수용 → 언어별 `현재→감수안→최종안→판정→근거` manifest 확정 → workbook_review_apply.py → (명시 시 E:H 삭제) → 전 시트 C7:C28 재하이라이트 → 값 diff·보호 언어·텍스트 보존 검증 → Obsidian 증분 기록
 Excel 수정       → 변경안 제시 → 사용자 승인 → scripts/workbook_apply_edits.py → 필요 시 최신 glossary로 전체 재하이라이트
 용어집 하이라이트 → 사용자 승인 → scripts/workbook_highlight_glossary.py --include-source-sheets (원본 불변, *_highlighted_*.xlsx 생성)
 용어집 필터 판단 → target source group 소스 시트 + latest_glossary.csv 실제 매칭 → bracket occurrence/비활성 용어 예외 판단 → 필요 시 Obsidian 리포트
@@ -137,6 +142,11 @@ python scripts/workbook_apply_edits.py path/to/story.xlsx '[{"sheet":"JA(일본)
 python scripts/workbook_story_apply.py path/to/story.xlsx edits.json \
   --delivery-sheets "BR(브라질),RU(러시아),CN(중국)" \
   --glossary /path/to/Glossary_049_260715.csv --app-root /path/to/app --json
+
+# 원어민 감수본 수용 — F/H를 새로 판단하지 않고 approval manifest만 실행
+python scripts/workbook_review_apply.py path/to/review.xlsx approval.json \
+  --output path/to/story_1차수용_YYMMDD.xlsx --glossary /path/to/Glossary_260720.csv \
+  --drop-review-columns E:H --app-root /path/to/app --json
 
 # 셀프 번역/검수 프롬프트 (크레딧 0) — 받아서 에이전트가 직접 수행
 python scripts/prompt_preview.py --text "Turn on the light" --target-lang "DE(독일)" --row-key description

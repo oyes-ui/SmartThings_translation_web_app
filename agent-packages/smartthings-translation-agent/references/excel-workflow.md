@@ -46,6 +46,24 @@ python scripts/workbook_inspect.py <path.xlsx> --json              # 파싱용 J
    ```
    최신 glossary 사용 여부와 `KR(한국)`/`US(미국)` source sheet 포함 여부를 반드시 사용자에게 보고한다.
 
+### 원어민 감수본 수용 → 최종안
+
+감수 워크북이 `C=현재 문안 / F=감수 수정안 / H=감수 의견` 구조일 때는 `/st-story-apply`를 재사용하지 않는다. 검수 판단과 실제 반영을 분리한 `/st-review-apply`를 사용한다.
+
+1. `/st-story-review` 및 감수안 대조로 언어별 `수용 / 부분 수용 / 유지`를 먼저 결정하고, 각 행을 `현재 → 감수안 → 최종안 → 쉬운 이유 → 원문/RAG 근거`로 리포트에 기록한다.
+2. 결정만 담은 approval manifest를 만든다. `accept`는 F열을, `partial`은 명시한 `final_value`를, `hold`는 현재 C열을 유지한다. 실행 도구는 판정을 추론하지 않는다.
+3. `workbook_review_apply.py`가 원본 불변 복사본에 승인된 `C7:C28`만 적용한다. 보호 언어에는 `accept`/`partial`을 허용하지 않는다.
+4. 납품 템플릿에서 감수 메타데이터를 제거해야 할 때만 `--drop-review-columns E:H`를 명시한다. 삭제하지 않는 것이 기본값이다.
+5. 생성한 1차 수용본을 기준으로 전 시트 `C7:C28`을 `--include-source-sheets` 방식으로 재하이라이트한다. 결과의 text preservation, 승인 목록=C열 diff, 보호 언어 값·수식·병합 구조를 모두 검증한 파일만 최종본으로 안내한다.
+
+```bash
+python scripts/workbook_review_apply.py <review.xlsx> <approval.json> \
+  --output <story_1차수용_YYMMDD.xlsx> --glossary <Glossary.csv> \
+  --drop-review-columns E:H --app-root <app_root> --json
+```
+
+결과 manifest에는 1차 수용본, 최종 하이라이트본, 변경 목록, 보호 언어 검증, C열 diff, highlight report 경로가 들어간다. Obsidian 리포트에는 이 경로와 검증 결과를 기존 내용을 지우지 않고 증분 기록한다.
+
 ### edits JSON 형식
 
 ```json
