@@ -50,7 +50,21 @@ python scripts/bootstrap.py --app-root <경로> --save
 - **텍스트워크북 생성**: "이 텍스트로 source 워크북 만들어줘" → `scripts/text_workbook_create.py`
 - **RAG DB 관리**: "RAG DB 현황/재빌드" → `python -m translation_web_app.rag_db_builder` (→ `references/rag-workflow.md`)
 
-## 슬래시 명령어
+## 사용자 진입 명령
+
+초심자에게는 다음 여섯 명령을 우선 안내한다. 기존 세부 명령은 아래 표의 내부 구현 또는
+고급/관리 경로로 유지한다.
+
+| 명령 | 목적 | 크레딧 |
+|---|---|---|
+| `/st-start` | app 연결 상태·다음 단계 안내 | 0 |
+| `/st-ask` | 규칙·용어집·RAG 사례 질의 | 0~ |
+| `/st-review` | 읽기 전용 통합 검수·리포트·수정 제안 | 0 |
+| `/st-edit` | 일반 Excel 수정 preview·승인·복사본 적용 | 0 |
+| `/st-apply` | 승인 manifest 기반 감수본·납품본 생성 | 0 |
+| `/st-pipeline` | 승인 후 앱 LLM 번역 또는 검수 | LLM |
+
+## 세부 슬래시 명령어
 
 각 명령은 `commands/*.md`(Claude Code는 `.claude/commands/`)로 정의되며, 해당 스크립트를 호출한다.
 상세 옵션은 각 명령 파일/참조문서에 있다. (크레딧: 0 = LLM 미호출)

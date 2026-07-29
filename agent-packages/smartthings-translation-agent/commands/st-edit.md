@@ -1,13 +1,32 @@
 ---
-description: 승인된 셀 편집을 임시 복사본에 적용 (원본 불변, 크레딧 0)
-argument-hint: <xlsx 경로> '<edits JSON>'
+description: 일반 Excel 셀 편집 preview·승인·복사본 적용 (원본 불변, 크레딧 0)
+argument-hint: <xlsx 경로> '<edits JSON>' [--dry-run]
 ---
 
-**사용자 승인을 받은** 셀 편집만 적용한다. 원본은 그대로 두고 타임스탬프 복사본을 생성한다. rich text 하이라이트는 보존되지 않을 수 있으므로, 이 명령의 산출물은 단독 납품본으로 안내하지 않는다.
+`/st-edit`는 검수 승인과 별개의 일상 수정 경로다. 기본은 preview이며, 사용자 승인 뒤에만
+원본이 아닌 타임스탬프 복사본을 만든다. rich text 하이라이트는 보존되지 않을 수 있으므로,
+재하이라이트·전체 검증 전 산출물은 `draft`이며 단독 납품본으로 안내하지 않는다.
 
 ```bash
-python agent-packages/smartthings-translation-agent/scripts/workbook_apply_edits.py $ARGUMENTS
-```
-edits 예: `'[{"sheet":"JA(일본)","cell":"C10","new_value":"..."}]'`. 참조: `agent-packages/smartthings-translation-agent/references/excel-workflow.md`
+# 1) preview — 파일을 쓰지 않음
+python agent-packages/smartthings-translation-agent/scripts/workbook_apply_edits.py \
+  <workbook.xlsx> '<edits JSON>' --dry-run --json
 
-story 검수에서 확정된 수정안을 납품용으로 만들 때는 `/st-story-apply`를 사용한다. 해당 명령은 delivery scope 전체 재하이라이트와 값 변경 검증까지 완료한다.
+# 2) 사용자 승인 후 적용 — 원본은 불변
+python agent-packages/smartthings-translation-agent/scripts/workbook_apply_edits.py \
+  <workbook.xlsx> '<edits JSON>' --json
+```
+edits는 `before`와 `after`를 권장한다:
+
+```json
+[{"sheet":"JA(일본)","cell":"C10","before":"기존 문구","after":"승인된 문구"}]
+```
+
+적용 도구는 `before` 불일치, 수식 셀, 병합 범위, 보호/숨김 시트를 기본 중단한다. 해당
+예외는 명시적 `--allow-*` 플래그와 사용자 승인 뒤에만 처리한다. 저장 뒤에는 대상값뿐 아니라
+시트 순서·병합·보호·고정 창과 승인 범위 밖 값/수식까지 다시 비교한다. 검증 실패본은 delivery로
+안내하지 않는다. 참조: `agent-packages/smartthings-translation-agent/references/excel-workflow.md`
+
+story 검수나 감수 승인안을 납품용으로 만들 때는 `/st-apply`(현재 내부 호환 경로:
+`/st-story-apply`, `/st-review-apply`)를 사용한다. 해당 경로만 delivery scope 전체
+재하이라이트와 값 변경 검증까지 완료한다.

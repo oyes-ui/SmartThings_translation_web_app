@@ -4,7 +4,19 @@
 
 도구별 slash command 설치 위치가 다를 수 있으므로, 이 패키지는 공통 원본만 제공한다. 설치 시 각 도구가 요구하는 commands 폴더로 필요한 파일을 복사한다.
 
-## Commands
+## Primary commands
+
+- `/st-start` → `st-start.md` — 연결 상태·다음 단계
+- `/st-ask` → `st-ask.md` — 규칙·용어집·RAG 질의
+- `/st-review` → `st-review.md` — 읽기 전용 검수·리포트·제안
+- `/st-edit` → `st-edit.md` — 일반 Excel 수정 preview·승인·복사본 적용
+- `/st-apply` → `st-apply.md` — 승인 manifest 기반 납품본 생성
+- `/st-pipeline` → `st-pipeline.md` — 승인 후 LLM 번역·검수
+
+## Legacy/internal commands
+
+아래 명령은 즉시 삭제하지 않는다. Primary command의 내부 구현 또는 고급/관리 작업으로
+유지하며, workflow가 안정된 뒤 deprecated 처리한다.
 
 - `/st-help` → `st-help.md`
 - `/st-setup` → `st-setup.md`
