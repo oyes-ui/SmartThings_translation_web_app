@@ -40,11 +40,65 @@ def _atomic_json(path: Path, payload: dict) -> None:
     os.replace(tmp, path)
 
 
+APPROVED_STATUS = "approved"
+
+
+def decisions_from_report_changes(changes: list) -> list[dict]:
+    """Convert a report_format_spec.md approval manifest into apply decisions.
+
+    The two vocabularies describe different things and are deliberately not
+    merged: ``approval_status`` is a gate (did a human sign off?), ``decision``
+    is which text wins (F column / an override / no change). Only rows a human
+    approved cross over, and they carry their own ``after`` text, so no F column
+    is required -- that is what lets AI/agent proposals use this tool unchanged.
+    """
+    decisions: list[dict] = []
+    for index, raw in enumerate(changes):
+        if not isinstance(raw, dict):
+            raise ValueError(f"changes[{index}]는 객체여야 합니다.")
+        status = str(raw.get("approval_status", "")).strip().lower()
+        if status != APPROVED_STATUS:
+            continue  # pending/rejected never reach Excel
+        if "after" not in raw or not _text(raw["after"]):
+            raise ValueError(f"changes[{index}]: 승인 항목에는 비어 있지 않은 after가 필요합니다.")
+        if "before" not in raw:
+            raise ValueError(f"changes[{index}]: 승인 항목에는 드리프트 검증용 before가 필요합니다.")
+        decisions.append({
+            "sheet": raw.get("sheet"),
+            "cell": raw.get("cell"),
+            "decision": "accept",
+            "final_value": _text(raw["after"]),
+            "expected_before": _text(raw["before"]),
+            "finding_id": raw.get("finding_id", ""),
+            "rule_ids": raw.get("rule_ids", []),
+            "basis": ", ".join(raw.get("rule_ids", []) or []),
+        })
+    return decisions
+
+
 def _load_manifest(path: Path) -> dict:
+    """Accept either the native decisions manifest or a report-format one.
+
+    Auto-detecting here rather than shipping a separate adapter script means
+    there is no conversion step anyone can forget to run.
+    """
     data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict) or not isinstance(data.get("decisions"), list):
-        raise ValueError("판정 manifest는 decisions 배열을 가진 JSON 객체여야 합니다.")
-    return data
+    if not isinstance(data, dict):
+        raise ValueError("manifest는 JSON 객체여야 합니다.")
+    if isinstance(data.get("decisions"), list):
+        return data
+    if isinstance(data.get("changes"), list):
+        converted = dict(data)
+        converted["decisions"] = decisions_from_report_changes(data["changes"])
+        if not converted["decisions"]:
+            raise ValueError(
+                "report manifest에 approval_status='approved' 항목이 없습니다. "
+                "승인되지 않은 제안은 Excel에 반영하지 않습니다."
+            )
+        return converted
+    raise ValueError(
+        "manifest는 decisions 배열(판정) 또는 changes 배열(report_format_spec)을 가져야 합니다."
+    )
 
 
 def _parse_c_range(raw: str) -> tuple[int, int]:
@@ -179,10 +233,29 @@ def _apply_decisions(wb, decisions: list[dict]) -> tuple[list[dict], list[dict]]
         comment_cell = str(item.get("comment_cell") or f"H{item['cell'][1:]}").upper()
         comment = _text(ws[comment_cell].value)
         decision = item["decision"]
+
+        # Drift guard: the workbook may have moved on since the review was written.
+        if "expected_before" in item:
+            expected_before = _text(item["expected_before"])
+            if expected_before != current:
+                raise ValueError(
+                    f"{item['sheet']}!{item['cell']}: 워크북이 검수 이후 변경되었습니다. "
+                    f"expected_before={expected_before!r} != 현재값={current!r}"
+                )
+
         if decision == "accept":
-            if not reviewer or reviewer == current:
+            # final_value present -> AI/agent proposal, no F column involved.
+            # absent -> the original Excel-reviewer path, F column is the proposal.
+            if "final_value" in item and _text(item["final_value"]):
+                final = _text(item["final_value"])
+                if final == current:
+                    raise ValueError(
+                        f"{item['sheet']}!{item['cell']}: 수용 final_value가 현재값과 같습니다."
+                    )
+            elif not reviewer or reviewer == current:
                 raise ValueError(f"{item['sheet']}!{item['cell']}: 수용할 F열 수정안이 없거나 현재값과 같습니다.")
-            final = reviewer
+            else:
+                final = reviewer
         elif decision == "partial":
             if "final_value" not in item or not _text(item["final_value"]):
                 raise ValueError(f"{item['sheet']}!{item['cell']}: 부분 수용에는 final_value가 필요합니다.")
@@ -196,6 +269,8 @@ def _apply_decisions(wb, decisions: list[dict]) -> tuple[list[dict], list[dict]]
             "current": current, "reviewer_proposal": reviewer, "reviewer_comment": comment,
             "final": final, "reason": item.get("reason", ""), "basis": item.get("basis", ""),
             "rag_basis": item.get("rag_basis", ""), "source_sheet": item.get("source_sheet", _source_for_sheet(item["sheet"])),
+            "finding_id": item.get("finding_id", ""), "rule_ids": item.get("rule_ids", []),
+            "before_verified": "expected_before" in item,
         }
         if decision != "hold":
             ws[item["cell"]].value = final
