@@ -38,10 +38,11 @@ matter, 셀별 finding 블록, `changes[].sheet/cell/before/after/rule_ids/appro
 승인 manifest). 이 manifest는 Excel F열이 아직 없는 AI/에이전트 제안 단계의 산출물이며,
 이미 구현된
 [`workbook_review_apply.py`](../agent-packages/smartthings-translation-agent/scripts/workbook_review_apply.py)의
-`decision`(`accept`/`partial`/`hold`) 승인 스키마와 이름·값 집합이 다르다. 두 스키마는
-아직 자동 변환되지 않으며, 이 간극을 어떻게 메울지는
-[`roadmap_gemini36_colombia_rules_reports.md`](roadmap_gemini36_colombia_rules_reports.md)
-§4 "미해결 간극"에서 결정한다.
+`decision`(`accept`/`partial`/`hold`) 승인 스키마와 이름·값 집합이 다르다. 두 필드는
+의미가 다르므로(승인 게이트 vs 최종 텍스트 선택) 이름을 통일하지 않고 각자 유지하며,
+`workbook_review_apply.py`가 두 형식을 모두 직접 읽어 자동 변환한다 — 별도 어댑터
+스크립트는 없다. 확정된 변환 규칙과 드리프트 검증은
+[`report_format_spec.md`](report_format_spec.md)의 "적용 계약 (확정)" 절을 따른다.
 
 ## 사용자 워크플로
 
@@ -121,6 +122,50 @@ deprecated 처리한다. 용어집 CRUD, RAG DB 빌드, 텍스트 workbook 생�
 숨긴다. NotebookLM은 핵심 경로가 아닌 선택 기능으로 유지 여부를 사용 빈도와 대체 가능성으로
 결정한다.
 
+## ChatGPT for Excel 전용 레이어
+
+ChatGPT for Excel은 Codex/CLI의 대체물이 아니라, 현재 열려 있는 workbook을 안전하게
+읽고 수정하는 실행 표면이다. 공통 SmartThings skill의 규칙·RAG 우선순위·승인 정책·
+`report_format_spec.md` manifest 계약을 공유하되, Excel 전용 지침은 별도 레이어에 둔다.
+
+```text
+excel-chatgpt/
+├─ SKILL.md                  # live workbook 대상과 안전 게이트
+├─ edit-workflow.md          # preview → 승인 → Office.js 적용 → 재읽기/diff
+├─ officejs-capabilities.md  # requirement set·지원 API·fallback
+└─ manifest-schema.md        # 공통 report/manifest 계약 참조
+```
+
+- 이 레이어는 로컬 Python, `openpyxl`, 로컬 파일 경로를 호출하지 않는다. 현재 workbook의
+  활성 sheet/선택 range와 Office.js live API만으로 읽기·쓰기·수식 결과 검증을 수행한다.
+- RAG·glossary·규칙은 SmartThings app API/MCP가 제공한다. Excel layer는 secret이나 DB를
+  직접 다루지 않는다.
+- Office.js requirement set 미지원, rich text 보존 불확실성, 보호/병합/수식 위험은
+  수정 중단과 CLI 복사본 경로 fallback의 조건이다. 이벤트는 세션 재시작 뒤 재등록해야 하므로
+  영구 감사 기록은 manifest와 workbook diff로 남긴다.
+- live Excel 편집도 `before` 확인, 승인, 변경 범위 재읽기, 수식 오류 확인, 변경 요약을
+  필수로 한다. `CO(콜롬비아)` C열 2~3개 셀의 PoC에서 glossary rich text와 구조 보존을
+  확인하기 전에는 live Excel 산출물을 자동 납품본으로 취급하지 않는다.
+
+### Glossary 하이라이팅 투트랙
+
+`/st-edit --highlight-glossary`는 별도 사용자 명령이 아니라 `/st-edit`의 하위 workflow로
+제공한다. 같은 glossary 버전과 manifest를 공유하되, Live Excel과 Delivery Python을
+명확히 구분한다.
+
+- **Live Excel**: 사용자가 명시적으로 가져온 glossary CSV를 숨김/보호
+  `__ST_GLOSSARY` table에 저장하거나 승인된 app API/MCP에서 조회한다. 매칭 preview,
+  대상 셀, glossary version/checksum, `before`/`after` diff를 표시한다. Office.js rich text
+  보존이 검증된 경우에만 부분 문자열 하이라이트를 적용한다.
+- **Delivery Python**: 기존 `openpyxl` 하이라이터가 CSV를 읽어 원본 불변 복사본에
+  용어 단위 rich text 하이라이트를 적용한다. 납품 범위, KR/US source sheet, 텍스트 보존,
+  highlight report를 검증하며, 이 경로가 납품용 기준이다.
+- Live Excel은 임의의 로컬 경로, `.env`, DB를 자동으로 읽지 않는다. 사용자가 선택한
+  CSV의 원본 경로는 기록하지 않고 glossary version/checksum/locale만 manifest에 남긴다.
+- Office.js capability 또는 rich text 보존 검증에 실패하면 조용히 셀 전체 강조로 바꾸지
+  않는다. 사용자가 명시적으로 셀 단위 강조를 선택하지 않은 한 Delivery Python 경로로
+  fallback한다.
+
 ## 에이전트 기능 정리와 역할
 
 - 유지·강화: 규칙 검색, RAG DB 검색, prompt preview, Excel 구조 확인, 검수 리포트,
@@ -144,6 +189,11 @@ deprecated 처리한다. 용어집 CRUD, RAG DB 빌드, 텍스트 workbook 생�
 5. **제한적 자동화**: 정량 기준을 충족한 저위험 규칙부터 자동 반영 범위를 검토한다.
 6. **명령 통합과 편집 안정화**: 여섯 사용자 명령으로 안내를 단순화하고, `/st-edit`의
    dry-run·before 검증·원본 불변·rich text 재하이라이트·workbook diff 검증을 자동화한다.
+7. **live Excel PoC**: ChatGPT for Excel 레이어에서 CO C열의 제한된 편집을 수행하고,
+   Office.js requirement set, rich text 보존, 수식/병합/보호 시트, manifest/diff 일치를
+   CLI 경로와 비교 검증한다.
+8. **glossary 하이라이팅 투트랙**: `__ST_GLOSSARY` import와 Live Excel preview를 만들고,
+   같은 glossary 입력에서 Delivery Python rich text 결과와 매칭·텍스트 보존을 비교한다.
 
 ## 수용 기준
 
@@ -154,5 +204,9 @@ deprecated 처리한다. 용어집 CRUD, RAG DB 빌드, 텍스트 workbook 생�
 - 적용된 변경은 manifest·리포트·수정본 Excel 사이에서 추적 가능하다.
 - 일반 `/st-edit` 수정도 승인 전 preview와 적용 후 workbook diff를 남기며, `draft`와
   재하이라이트/검증을 마친 납품본을 구분한다.
+- ChatGPT for Excel은 공통 skill의 별도 실행 레이어이며, 지원하지 않는 live 기능은
+  CLI/복사본 경로로 fallback한다.
+- glossary 하이라이팅은 Live Excel preview와 Delivery Python rich text 납품 경로를 함께
+  제공하며, 납품 기준은 후자의 전체 검증 결과다.
 - NotebookLM을 포함한 선택 기능의 유지 여부는 사용 근거와 대체 경로를 갖는다.
 - 자동화 확대는 골든셋 및 사람 검수 비교 결과를 통과한 범위에서만 이뤄진다.

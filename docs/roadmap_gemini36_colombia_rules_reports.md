@@ -71,7 +71,27 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
 **범위**: 번역/검수 프롬프트와 glossary/RAG 식별자에 한정한다. 날짜·통화(COP)·주소
 같은 i18n은 이 앱이 렌더링하지 않는 영역이라 제외한다.
 
-### 3. 프롬프트 및 에이전트 검수 규칙 외부화
+### 3. 프롬프트 및 에이전트 검수 규칙 외부화 — ✅ 구현 완료
+
+구현 결과 확정된 사항(계획 대비 추가):
+
+- 규칙 항목은 문자열이 아니라 **객체**다: `rule_id`(필수, 전역 유일), `text`(필수),
+  `scope`(필수, 리스트). `severity`/`status`/`locale`/`examples`는 선택.
+  마이그레이션된 69개 규칙에는 아무도 분류하지 않은 `severity`를 임의로 넣지 않았다.
+- `rule_order: sequence` — 배열 순서가 곧 모델이 보는 순서라는 계약 선언.
+  v1 로더는 이 값만 허용한다.
+- `scope`는 리스트다. 한 규칙이 `[app_prompt, agent_audit]` 둘 다일 수 있다.
+  `agent_audit` 전용 규칙은 앱의 번역·검수 프롬프트 **양쪽 모두에서 제외**되며,
+  `rules_loader.get_rules().rules_for_scope("agent_audit")`로만 조회된다.
+- 본문(body)은 앱이 파싱하지 않는다. 규칙 문구를 본문에 중복 기재하지 않는다
+  (규칙 수정이 이 기능의 최빈 작업이므로 편집 지점을 하나로 유지).
+- `{canonical_key}.md`이므로 4개 파일명에 공백이 들어간다(`Simplified Chinese.md` 등).
+  언더스코어 정규화는 `English_US`/`French_Canada`의 의미를 깨뜨리므로 쓰지 않는다.
+- 레거시 상수는 삭제하지 않고 **마이그레이션 등가성 테스트의 기준값**으로 활용했다
+  (`tests/test_rules_migration_equivalence.py`). 이 테스트는 레거시 상수 삭제 커밋에서
+  함께 삭제한다.
+
+
 
 - 변경 빈도가 높은 언어별 규칙과 BX 규칙을 런타임에서 읽는 Markdown 파일로 외부화한다.
 - 파일은 YAML front matter와 사람이 읽는 Markdown 본문을 사용한다.
@@ -116,6 +136,17 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
   렌더링하고 DOMPurify로 정화하며, `.md` 업로드와 `?file=/api/report/{taskId}` 자동 로드를
   지원한다. 다크 모드와 PDF 내보내기는 유지한다. TXT 리포트 및 TXT 전용 뷰어와의 하위
   호환은 유지하지 않는다.
+- **✅ 해소됨 (계약 확정)**: 아래 간극은 `report_format_spec.md`의 "적용 계약 (확정)"
+  절로 확정되고 `workbook_review_apply.py`에 구현·테스트되었다. 결론은 (a)/(b) 중
+  하나가 아니라 둘 다였다 — 두 필드는 의미가 다르므로 이름을 통일하지 않고 각자 유지하되
+  (`approval_status`=승인 게이트, `decision`=최종 텍스트 선택), 도구가 두 형식을 모두
+  직접 읽어 변환하고(어댑터 스크립트 없음), `accept`가 `final_value`를 받아 F열 의존을
+  없앴다. 추가로, 이 문서가 요구했지만 도구에 없던 `before` 드리프트 검증
+  (`expected_before`)을 구현했다. §4와 apply 확장을 별도 브랜치로 나눠도 되는 시점은
+  지금부터다.
+
+  <details><summary>원래 기록된 간극 (이력용)</summary>
+
 - **미해결 간극**: `report_format_spec.md`의 승인 manifest는 `approval_status`
   (`approved`/…)로 AI 제안의 승인 여부를 표시하고, 이미 구현된
   `agent-packages/smartthings-translation-agent/scripts/workbook_review_apply.py`는
@@ -125,6 +156,8 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
   `report_format_spec.md` manifest → `workbook_review_apply.py` 입력 변환 어댑터를 만들거나,
   (b) `workbook_review_apply.py`가 `final_value`를 가진 `accept`도 받도록 확장해 F열 의존을
   없앤다. 이 결정 전까지 두 문서를 "이미 정합됨"으로 취급하지 않는다.
+
+  </details>
 
 ### 5. 에이전트 명령 통합과 안전한 일반 Excel 수정
 
@@ -187,6 +220,25 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
   경로에서 각각 검증한다. PoC를 통과하기 전에는 live Excel 결과를 자동 납품본으로
   취급하지 않는다.
 
+#### Glossary 하이라이팅 투트랙
+
+두 경로는 같은 glossary 버전과 edit manifest를 사용하며, 결과의 신뢰 수준만 다르다.
+
+| 경로 | 목적 | glossary 공급 방식 | 산출물과 게이트 |
+| --- | --- | --- | --- |
+| **Live Excel** | 현재 열린 workbook에서 매칭 preview·일상 수정·결과 확인 | 사용자가 명시적으로 가져온 CSV를 숨김/보호 `__ST_GLOSSARY` table에 저장하거나, 승인된 app API/MCP에서 조회 | 매칭 목록, `before`/`after`, 적용 범위 diff. Office.js가 rich-text run 보존을 지원·검증한 경우에만 부분 문자열 하이라이트를 적용한다. 그렇지 않으면 수정 없이 후보만 보여 주고 delivery 경로로 보낸다. |
+| **Delivery Python** | 납품본의 정확한 용어 단위 rich text 하이라이트와 파일 단위 무결성 검증 | 기존 glossary CSV를 `openpyxl` 하이라이터가 읽음 | 원본 불변 복사본, rich text 하이라이트, 전체 납품 범위와 KR/US source sheet 검증, highlight report. 이 경로가 rich text의 기준 구현이다. |
+
+- Live Excel에서 임의의 로컬 경로를 자동 탐색하거나 `.env`·DB를 읽지 않는다. CSV는 사용자가
+  명시적으로 선택/가져오기 해야 하며, 저장 시 원본 경로 대신 glossary 버전·checksum·locale만
+  manifest에 기록한다.
+- `/st-edit --highlight-glossary`는 새 사용자 명령을 추가하지 않고 `/st-edit`의 하위
+  workflow로 제공한다. `preview`가 기본이며, 실제 반영 전 매칭 용어·대상 셀·사용 glossary
+  버전을 보여준다.
+- Live Excel의 Office.js capability 또는 rich text 보존 검증이 실패하면 실패를 숨기거나
+  셀 전체 색상으로 대체하지 않는다. 사용자가 명시적으로 셀 단위 강조를 선택하지 않은 한
+  Delivery Python 경로를 제안한다.
+
 ## 구현 순서와 의존성
 
 1. 언어/BX 규칙 파일과 검증 로더(§3)를 먼저 완성한다. 기존 로케일(Spain, German 등)의
@@ -204,6 +256,9 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
    재하이라이트, workbook diff 검증을 구현한다.
 7. ChatGPT for Excel 전용 레이어(§6) PoC를 수행한다. 공통 규칙/manifest를 재사용하고,
    Office.js capability fallback과 rich text 보존 검증을 통과한 범위만 live edit로 확대한다.
+8. glossary 하이라이팅 투트랙을 구현한다. `__ST_GLOSSARY` import/버전 관리와 Live Excel
+   preview를 먼저 만들고, Delivery Python 산출물과 동일한 입력에서 매칭·텍스트 보존 결과를
+   비교한다.
 
 위 순서 번호는 실행 순서이며 §번호와 다르다. §2가 최우선 목표라는 원칙은 유지하되,
 그 실현 경로는 "§3을 우회해 빠르게"가 아니라 "§3 위에 한 번에 제대로 짓기"다(목적
@@ -269,4 +324,6 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
   적용한다. `draft`와 재하이라이트·검증을 마친 `delivery` 산출물을 구분한다.
 - ChatGPT for Excel 레이어는 공통 규칙과 manifest 계약을 재사용하며, 지원하지 않는
   Office.js 기능 또는 rich text 보존 불확실성이 있으면 수정하지 않고 CLI 경로로 fallback한다.
+- glossary 하이라이팅은 Live Excel preview 경로와 Delivery Python rich text 경로를 모두
+  제공하며, 부분 문자열 하이라이트의 납품 기준은 Delivery Python 검증을 통과한 결과다.
 - `/viewer`에서 Markdown 파일 업로드와 API URL 자동 로드가 가능하며, 비신뢰 HTML은 정화된다.
