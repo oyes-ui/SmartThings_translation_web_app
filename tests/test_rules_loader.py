@@ -2,7 +2,6 @@
 """Schema and validation tests for the Markdown rule loader."""
 
 import tempfile
-import textwrap
 import unittest
 from pathlib import Path
 
@@ -316,6 +315,21 @@ class GradeEnumContractTests(unittest.TestCase):
 
         # report_builder normalizes to lowercase before lookup.
         self.assertEqual(set(_GRADE_TO_STATUS), {g.lower() for g in self.grades})
+
+    def test_rules_sources_doc_lists_the_real_checklist_labels(self):
+        """The agent doc used to paraphrase these; 4 of 6 names did not match.
+
+        Agents read that list to explain grades, so a paraphrase there becomes a
+        wrong category name in a delivered report.
+        """
+        labels = [label for label, _ in load_rules().doc("audit").labelled("checklist")]
+        doc = (
+            Path(__file__).resolve().parents[1]
+            / "agent-packages/smartthings-translation-agent/references/rules-sources.md"
+        ).read_text(encoding="utf-8")
+        for label in labels:
+            with self.subTest(label=label):
+                self.assertIn(label, doc)
 
     def test_agent_review_summary_parses_every_korean_label(self):
         """The agent greps the Korean labels out of the rendered report."""

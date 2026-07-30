@@ -4,15 +4,22 @@
 
 ## 우선순위
 
-1. **`src/translation_web_app/rules/`** — **언어별 규칙과 BX 규칙의 Single Source of Truth.**
+1. **`src/translation_web_app/rules/`** — **모든 규칙 텍스트의 Single Source of Truth.**
    런타임이 실제로 읽는 Markdown 파일. 충돌 시 **이 디렉터리가 최종 기준**.
    - `rules/languages/{canonical_key}.md` — 언어별 규칙 (파일명 = canonical key)
    - `rules/bx_style.md` — Samsung BX 보이스
-2. **`src/translation_web_app/prompt_modules.py`** — 그 **외 모든 규칙**의 Single Source of Truth
-   (용어집 마커·대괄호 규칙, 타이포그래피, 검수 체크리스트/등급, 시트코드 alias).
-   ⚠️ 이 파일의 `LANGUAGE_LOCALIZATION_RULES` / `BX_STYLE_RULES` / `LANGUAGE_RULE_LABELS`는
-   **레거시이며 런타임에서 참조하지 않는다.** 마이그레이션 검증용으로 남아 있을 뿐이므로
-   언어·BX 규칙을 물어볼 때 이 상수들을 인용하지 말 것.
+   - `rules/common.md` — 전 언어 공통 품질 기준
+   - `rules/typography.md` — 구두점·간격·케이스
+   - `rules/glossary.md` — 용어집 문구, bracket/nav path 규칙
+   - `rules/audit.md` — 검수 도입부·체크리스트·등급 기준
+2. **`src/translation_web_app/prompt_modules.py`** — **규칙 텍스트가 아닌 판정 로직**만 남는다.
+   - `SHEET_CODE_LANGUAGE_ALIASES` / `resolve_language_identifier` — 시트코드 → canonical 키
+   - `GLOSSARY_EXEMPT_MARKERS` / `GLOSSARY_DEACTIVATION_MARKERS` — Excel `rule` 열과의 입력 계약
+   ⚠️ 이 파일에 남아 있는 **규칙 텍스트 상수는 전부 레거시이며 런타임에서 참조하지 않는다**
+   (`LANGUAGE_LOCALIZATION_RULES`, `LANGUAGE_RULE_LABELS`, `BX_STYLE_RULES`,
+   `COMMON_LOCALIZATION_STANDARD`, `TYPOGRAPHY_AND_PUNCTUATION_RULES`, `GLOSSARY_TERM_RULES`,
+   `GLOSSARY_*` 지시문, `AUDIT_INTRO`, `AUDIT_CHECKLIST_RULES`, `AUDIT_GRADE_CRITERIA`).
+   마이그레이션 검증용으로만 남아 있으니 규칙을 물어볼 때 인용하지 말 것.
 3. **`docs/comprehensive_rules.md`** — 사람이 읽기 좋게 정리한 종합 문서. 설명·근거가 풍부.
 4. **Obsidian 번역 규칙 노트** — *선택적 보조*. 없어도 동작해야 한다. 사용자가 명시적으로 "옵시디언 노트랑 비교해줘"라고 할 때만 참조. (자동 연결은 향후 wiki skill/RAG로 예정)
 
@@ -32,6 +39,20 @@ rules:
   text: Use Du-form consistently unless ...
 ```
 
+`common`/`typography`/`glossary`/`audit` 파일은 각 규칙에 `slot`(프롬프트 내 위치)을 갖고,
+`audit`의 checklist·grade는 `label`(카테고리명·등급명)도 갖는다.
+
+```yaml
+kind: audit
+canonical_key: audit
+rules:
+- rule_id: audit-002
+  slot: checklist          # intro | checklist | grade
+  label: 문법/유창성        # LLM 응답으로 되돌아오는 이름
+  scope: [app_prompt]
+  text: 오타, 문법 오류, ...
+```
+
 - `scope: [app_prompt]` — 앱 번역/검수 프롬프트에 들어간다.
 - `scope: [agent_audit]` — **프롬프트에 들어가지 않는다.** 에이전트 검수 체크리스트 전용.
   코드에서는 `rules_loader.get_rules().rules_for_scope("agent_audit")`로 조회한다.
@@ -45,14 +66,16 @@ rules:
 | 출처 | 다루는 내용 | comprehensive_rules.md 섹션 |
 |------|------------|------------------------------|
 | `rules/languages/*.md` | 언어별 특화 규칙(존댓말, 따옴표, 철자 변형 등) | §3 |
-| `rules/bx_style.md` | Samsung BX 브랜드 보이스(Confident Explorer) | §[4] BX Style |
-| `COMMON_LOCALIZATION_STANDARD` | 모든 언어 공통 품질 기준(의도 보존, 직역 회피, 간결성) | §1, §[2] Common |
-| `GLOSSARY_TERM_RULES` / `GLOSSARY_BRACKET_WRAP_RULE` | 용어집 용어 처리, 대괄호 래핑 | §4 |
-| `GLOSSARY_EXEMPT_MARKERS` | 대괄호 생략 조건 (`no bracket`, `대괄호 제외`, `괄호 제외`) | §4 |
-| `GLOSSARY_DISCLAIMER_NAV_EXCEPTION` 외 | 네비게이션 경로·disclaimer 예외 | §4 |
-| `TYPOGRAPHY_AND_PUNCTUATION_RULES` | 구두점·간격·케이스 | §5 |
-| `AUDIT_CHECKLIST_RULES` (6개) | 검수 6대 항목 | §2, §[4] Checklist |
-| `AUDIT_GRADE_CRITERIA` | 등급 기준(Excellent / Good / Needs Revision) | §2 |
+| `rules/bx_style.md` | Samsung BX 브랜드 보이스(Confident Explorer) | §1.2 |
+| `rules/common.md` | 모든 언어 공통 품질 기준(의도 보존, 직역 회피, 간결성) | §1.1 |
+| `rules/glossary.md` `slot: term_rule` / `bracket_wrap` | 용어집 용어 처리, 대괄호 래핑 | §4 |
+| `rules/glossary.md` `slot: nav_exception` / `nav_quote_*` | 네비게이션 경로·disclaimer 예외 | §4 |
+| `rules/typography.md` | 구두점·간격·케이스 | §5 |
+| `rules/audit.md` `slot: checklist` (6개) | 검수 6대 항목 (`label` = 카테고리명) | §2 |
+| `rules/audit.md` `slot: grade` | 등급 기준(Excellent / Good / Needs Revision) | §2 |
+| `GLOSSARY_EXEMPT_MARKERS` (Python) | 대괄호 생략 조건 (`no bracket`, `대괄호 제외`, `괄호 제외`) | §4 |
+| `GLOSSARY_DEACTIVATION_MARKERS` (Python) | 용어집 미적용 조건 (`비활성화`, `deactivate`, `disable`) | — |
+| `SHEET_CODE_LANGUAGE_ALIASES` (Python) | 시트코드 → canonical 키 | §3 |
 
 ## 언어 키 형식 주의
 
@@ -61,15 +84,15 @@ rules:
 - `PromptBuilder.get_language_rule(target_lang)`은 fuzzy substring 매칭으로 둘을 흡수한다.
 - RAG 조회 시에는 `scripts/rag_lookup.py`가 코드/시트명/풀워드를 모두 받아 정규화한다 → `rag-workflow.md` 참조.
 
-## 검수 6대 항목 (AUDIT_CHECKLIST_RULES)
+## 검수 6대 항목 (`rules/audit.md` `slot: checklist`)
 
-검수 등급을 설명할 때 이 카테고리로 나눠 설명한다:
-1. 문법·자연스러움 (Grammar/Fluency)
-2. 의미 충실도 (Meaning Fidelity)
-3. 용어집 준수 (Glossary Compliance)
-4. 현지화 (Localization)
-5. 케이스 (Case)
-6. 서식 (Formatting/BX)
+검수 등급을 설명할 때 이 카테고리로 나눠 설명한다. **이 이름은 LLM 응답의 `evaluation[].category`로 되돌아오므로 임의로 바꿔 쓰지 말 것:**
+1. 문법/유창성
+2. 원문의미 충실도
+3. 용어집 준수
+4. 현지화
+5. 대소문자 표기
+6. 서식 및 표기
 
-> 정확한 문구는 항상 원본에서 직접 확인할 것 — 언어·BX 규칙은 `src/translation_web_app/rules/`,
-> 나머지는 `prompt_modules.py`. 이 표는 탐색용 인덱스일 뿐이다.
+> 정확한 문구는 항상 `src/translation_web_app/rules/`에서 직접 확인할 것.
+> `prompt_modules.py`에는 판정 로직만 남아 있다. 이 표는 탐색용 인덱스일 뿐이다.

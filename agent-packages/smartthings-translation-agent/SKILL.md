@@ -110,7 +110,7 @@ python scripts/bootstrap.py --app-root <경로> --save
 
 ```
 시작/셋업        → skill 폴더에서 scripts/bootstrap.py --app-root <경로> --json → app_root·level 확인 → 필요 시 --save
-규칙 질문        → references/rules-sources.md 읽고 답변 (docs/comprehensive_rules.md + prompt_modules.py 우선)
+규칙 질문        → references/rules-sources.md 읽고 답변 (src/translation_web_app/rules/ 우선, 설명은 docs/comprehensive_rules.md)
 검수 등급 설명   → /st-audit-explain → AI 판정과 최종 판단을 분리해 6개 카테고리별로 설명
 RAG 사례 필요    → scripts/rag_lookup.py 실행 → references/rag-workflow.md 따라 결과 해석
 NotebookLM 링크  → references/notebooklm-workflow.md 확인 → MCP/인증 확인 → 승인 후 add_notebook+select_notebook 등록 → ask_question, 일회성이면 remove_notebook 정리

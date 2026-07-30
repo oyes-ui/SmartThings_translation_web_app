@@ -1,6 +1,6 @@
 # [가이드 02] 종합 규칙 모음 (Comprehensive Rules)
 
-이 문서는 시스템 내부(`src/translation_web_app/prompt_modules.py`)에 정의된 모든 번역 및 검수 규칙을 한곳에 모은 참조 문서입니다. 소스 코드 내부의 실제 변수명 및 상수를 표기하여 코드와 정책 간 완벽한 동기화(Source of Truth)를 제공합니다.
+이 문서는 모든 번역 및 검수 규칙을 한곳에 모은 참조 문서입니다. **런타임 규칙 텍스트의 Source of Truth는 `src/translation_web_app/rules/`의 Markdown 파일입니다** (`languages/{canonical_key}.md`, `bx_style.md`, `common.md`, `typography.md`, `glossary.md`, `audit.md`). `prompt_modules.py`에는 판정 로직만 남습니다 — 시트코드 alias, glossary 마커 매칭, bracket 정책. 각 섹션의 📌 표기는 해당 규칙의 실제 원본 위치를 가리킵니다.
 
 ---
 
@@ -8,7 +8,7 @@
 
 ### 1.1 공통 현지화 표준 (Common Standards)
 모든 언어에 공통적으로 적용되는 기본 원칙입니다.
-> **📌 매핑 변수**: `COMMON_LOCALIZATION_STANDARD` (`src/translation_web_app/prompt_modules.py`)
+> **📌 매핑 원본**: `src/translation_web_app/rules/common.md`
 
 - 원문의 의도, 뉘앙스 및 사용자 혜택을 보존할 것.
 - 직역보다는 해당 시장에 적합하고 자연스러운 표현을 우선할 것.
@@ -20,16 +20,17 @@
 
 ### 1.2 삼성 BX 스타일 가이드 (Samsung BX Style)
 `target_lang`이 `English_US` 또는 `English`일 때 자동으로 적용되는 영문 브랜드 보이스 규칙입니다. (구 UI 전역 토글 제거됨)
-> **📌 매핑 변수**: `BX_STYLE_RULES` (`src/translation_web_app/prompt_modules.py`)
+> **📌 매핑 원본**: `src/translation_web_app/rules/bx_style.md`
+> — `prompt_modules.BX_STYLE_RULES`는 레거시이며 참조되지 않는다.
 > **📌 활성화 조건**: `target_lang ∈ {"English_US", "English"}` 일 때 자동 활성. 또는 `bx_style_on=True` 파라미터를 명시하면 임의 언어에도 강제 적용 가능.
 
 #### 1.2.1 페르소나 (Persona)
-> **📌 매핑 변수**: `BX_STYLE_RULES["system_identity"]`
+> **📌 매핑 원본**: `rules/bx_style.md` front matter의 `identity`
 
 - **자신감 있는 탐험가 (Confident Explorer)**: 기술 매뉴얼이 아닌 친근하고 자신감 있는 가이드처럼 영문 카피를 작성한다. OPEN/BOLD/AUTHENTIC 보이스를 아래 구체 기법으로 구현한다.
 
 #### 1.2.2 핵심 보이스 속성 (Voice Attributes)
-> **📌 매핑 변수**: `BX_STYLE_RULES["voice_attributes"]`
+> **📌 매핑 원본**: `rules/bx_style.md`의 `group: OPEN|BOLD|AUTHENTIC` 규칙
 > **📌 참고**: 직역 금지·hedging 금지·격식체 지양 등 COMMON과 중복되는 원칙은 여기서 제외하고 COMMON에 일원화됨.
 
 - **OPEN** (reveals, invites):
@@ -48,7 +49,7 @@
   3. Find a tangible benefit: pull out a specific, relatable benefit instead of a broad claim. (e.g., 'Never run out of eggs again.')
 
 #### 1.2.3 부정 제약 사항 (Negative Constraints)
-> **📌 매핑 변수**: `BX_STYLE_RULES["negative_constraints"]`
+> **📌 매핑 원본**: `rules/bx_style.md`의 `group: NEGATIVE` 규칙
 > **📌 참고**: COMMON 중복 항목(직역 금지, hedging 금지, 격식 지양) 제거 후 BX 고유 제약만 유지.
 
 - Do NOT use negative framing — always reframe into a positive benefit. (e.g., 'Don't worry about bills' → 'Enjoy savings')
@@ -61,9 +62,10 @@
 
 AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 > **📌 매핑 변수**: 
-> - 검수 도입부: `AUDIT_INTRO`
-> - 체크리스트: `AUDIT_CHECKLIST_RULES`
-> - 채점 등급: `AUDIT_GRADE_CRITERIA` (`Excellent`, `Good`, `Needs Revision`)
+> - 검수 도입부: `rules/audit.md`의 `slot: intro`
+> - 체크리스트: `rules/audit.md`의 `slot: checklist` (`label` = 카테고리명)
+> - 채점 등급: `rules/audit.md`의 `slot: grade` (`label` = `Excellent`/`Good`/`Needs Revision`).
+>   등급명은 LLM 응답으로 되돌아오는 계약이며, 디코더 3곳과의 일치를 `tests/test_rules_loader.py::GradeEnumContractTests`가 강제합니다.
 
 1. **문법/유창성**: 오타, 문법 오류, 성수 일치, 관용구 사용 등 정밀 점검.
 2. **원문의미 충실도**: 원문의 핵심 의미·뉘앙스·사용자 혜택이 번역에서 손실 없이 전달되었는지 확인. 직역 여부와 무관하게 '정보 손실' 또는 '의미 왜곡'이 발생했는지만 판단한다.
@@ -163,7 +165,8 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 
 ---
 
-### 🇧🇪 BE (벨기에) - French (`French_BE` / `French_Belgium`)
+### 🇧🇪 BE (벨기에) - French (`French_Belgium`)
+> **⚠️ 주의**: `French_BE`/`French_CA`는 canonical 키가 아닙니다. 시트 설정에 이 값을 넣으면 fuzzy 매칭이 `French`로 떨어져 본토 프랑스어 규칙이 적용됩니다.
 > **💡 정책 요약**: `Vous-form` 일관 사용. 따옴표는 `«...»` (길르메) 사용. 벨기에 시장에 적합한 중립적 톤 유지. 프랑스 본토 전용 관용구 지양.
 
 ```text
@@ -175,7 +178,7 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 
 ---
 
-### 🇨🇦 CA (캐나다) - French (`French_CA` / `French_Canada`)
+### 🇨🇦 CA (캐나다) - French (`French_Canada`)
 > **💡 정책 요약**: `Vous-form` 일관 사용. 따옴표는 `«...»` (길르메) 사용. 북미 프랑스어 표준 및 자연스러운 어구 우선.
 
 ```text
@@ -378,10 +381,10 @@ AI 검수 시 다음 6가지 항목을 기준으로 점수를 매깁니다.
 Glossary에 등록된 용어는 번역 참고 자료가 아니라 필수 준수 기준으로 적용됩니다. AI가 문장을 자연스럽게 다듬더라도 등록 용어의 대소문자, 띄어쓰기, 시장별 표기는 그대로 유지하며, 문맥에 따라 괄호 적용 여부만 다르게 제어합니다.
 
 > **📌 매핑 변수**: 
-> - 기본 용어집 규칙: `GLOSSARY_TERM_RULES`
-> - 브래킷 래핑 규칙: `GLOSSARY_BRACKET_WRAP_RULE`
+> - 기본 용어집 규칙: `rules/glossary.md`의 `slot: term_rule`
+> - 브래킷 래핑 규칙: `rules/glossary.md`의 `slot: bracket_wrap` (`{open}`/`{close}` placeholder는 Python이 치환)
 > - 대괄호 수동 제외 키워드: `GLOSSARY_EXEMPT_MARKERS` (`["no bracket", "대괄호 제외", "괄호 제외"]`)
-> - 타이틀/버튼 대괄호 자동 제외: `GLOSSARY_NO_BRACKET_INSTRUCTION`
+> - 타이틀/버튼 대괄호 자동 제외: `rules/glossary.md`의 `slot: no_bracket`
 
 > **📌 참고**: §4(용어집)와 §5(타이포)는 문서상 별도 섹션이지만, 실제 프롬프트 출력 시 `_build_formatting_section()`이 두 섹션을 `[GLOSSARY RULES]` → `[Typography and Punctuation Rules]` 순서로 하나의 블록으로 조립한다.
 
@@ -531,10 +534,10 @@ No glossary terms are provided for this source text.
 메뉴 경로(nav path), 고지 문구(disclaimer), 따옴표와 마침표 위치처럼 UI에서 반복적으로 노출되는 표기를 언어별 관행에 맞춰 제어합니다. 특히 사용자가 실제 화면에서 따라가야 하는 메뉴 경로는 각 언어권에 익숙한 기호로 감싸 구분성을 높입니다.
 
 > **📌 매핑 변수**: 
-> - 타이포그래피 기본 규칙: `TYPOGRAPHY_AND_PUNCTUATION_RULES`
-> - Nav path 예외 처리: `GLOSSARY_DISCLAIMER_NAV_EXCEPTION`
-> - Nav path 범용 규칙: `GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE`
-> - Nav path JA 전용 규칙: `GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_JA`
+> - 타이포그래피 기본 규칙: `rules/typography.md`
+> - Nav path 예외 처리: `rules/glossary.md`의 `slot: nav_exception`
+> - Nav path 범용 규칙: `rules/glossary.md`의 `slot: nav_quote_default`
+> - Nav path 동아시아(JA/CN/TW) 전용 규칙: `rules/glossary.md`의 `slot: nav_quote_east_asian`
 
 - **Typography 기본 규칙**: 모든 번역/검수 프롬프트에 `[Typography and Punctuation Rules]` 블록으로 삽입됨.
   > **📌 매핑 변수**: `TYPOGRAPHY_AND_PUNCTUATION_RULES`
@@ -729,7 +732,7 @@ Use these examples as style and terminology reference to maintain consistency.
 - Apply term-specific rule or remark exceptions before generic formatting rules.
 ```
 
-> **📌 참고**: `GLOSSARY_TERM_RULES["rules"][1]` 상수(`Glossary capitalization is authoritative...`)는 `src/translation_web_app/prompt_modules.py`에 정의되어 있으나, 현재 조립 로직(`src/translation_web_app/prompt_builder.py` line 413)에서는 위 하드코딩 문구가 대신 삽입됩니다.
+> **📌 참고**: 위 bracket precedence 문구는 이전에 `prompt_builder.py`의 하드코딩 리터럴이었고, 이제 `rules/glossary.md`의 `slot: bracket_precedence`로 분리되어 있습니다. 기본 용어집 규칙은 `slot: term_rule`입니다.
 
 ##### 🔹 문맥(`row_key`) 및 타겟 언어에 따른 동적 서식 분기 프롬프트
 
@@ -937,4 +940,5 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
 ---
 
 > [!TIP]
-> 모든 규칙은 `src/translation_web_app/prompt_modules.py`의 상수를 소스 오브 트루스(Source of Truth)로 사용합니다.
+> 규칙 텍스트는 `src/translation_web_app/rules/`의 Markdown 파일이 Source of Truth입니다.
+> `prompt_modules.py`에 남은 동명 상수는 마이그레이션 검증용 레거시이며 런타임에서 참조되지 않습니다.
