@@ -1,9 +1,17 @@
 # -*- coding: utf-8 -*-
 """Load and validate the Markdown prompt rule files.
 
-Rule content lives in ``rules/languages/{canonical_key}.md`` and
-``rules/bx_style.md`` as YAML front matter plus a human-readable body. The body
-is never parsed; the front matter is the only normative content.
+Rule content lives under ``rules/`` as YAML front matter plus a human-readable
+body. The body is never parsed; the front matter is the only normative content.
+
+- ``rules/languages/{canonical_key}.md`` -- per-language rules
+- ``rules/bx_style.md`` -- Samsung BX voice
+- ``rules/{common,typography,glossary,audit}.md`` -- flat rule documents whose
+  items are positioned by ``slot``
+
+A ``slot`` names a position in the assembled prompt. Python owns where a slot is
+emitted and any branching between slots (e.g. picking the East-Asian navigation
+quote rule); Markdown owns only the text.
 
 Files are read once per process and cached. Validation failures raise
 ``RuleFileError`` at import time of :mod:`translation_web_app.prompt_builder`,
@@ -34,6 +42,28 @@ SEVERITIES = ("blocker", "major", "minor", "info")
 RULE_ORDERS = ("sequence",)
 BX_GROUPS = ("OPEN", "BOLD", "AUTHENTIC", "NEGATIVE")
 
+# Non-language, non-BX rule documents. Each is a flat rule list whose items are
+# placed by `slot`, so one generic kind covers all of them instead of a bespoke
+# dataclass + loader + RuleBundle field per category.
+DOC_KINDS = ("common", "typography", "glossary", "audit")
+
+# Slots a rule can occupy. The Python side owns *where* a slot is emitted and any
+# branching between slots; the Markdown owns the text.
+DOC_SLOTS = {
+    "common": ("standard",),
+    "typography": ("rule",),
+    "glossary": (
+        "term_rule", "bracket_precedence", "no_bracket", "bracket_wrap",
+        "nav_exception", "nav_quote_default", "nav_quote_east_asian",
+    ),
+    "audit": ("intro", "checklist", "grade"),
+}
+
+# Slots whose text is fed through str.format() and therefore must keep their
+# placeholders. Validated at load time: a missing placeholder would otherwise
+# silently emit a literal "{open}" into a prompt.
+SLOT_REQUIRED_PLACEHOLDERS = {"bracket_wrap": ("open", "close")}
+
 _LANGUAGE_FIELDS = {
     "schema_version", "kind", "canonical_key", "display_name",
     "locale", "rule_order", "rules", "notes",
@@ -42,7 +72,14 @@ _BX_FIELDS = {
     "schema_version", "kind", "canonical_key", "display_name", "rule_order",
     "identity", "rules", "examples", "voice_definitions", "notes",
 }
-_RULE_FIELDS = {"rule_id", "text", "scope", "status", "severity", "locale", "examples", "group"}
+_DOC_FIELDS = {
+    "schema_version", "kind", "canonical_key", "display_name", "rule_order",
+    "rules", "notes",
+}
+_RULE_FIELDS = {
+    "rule_id", "text", "scope", "status", "severity", "locale", "examples",
+    "group", "slot", "label",
+}
 _IDENTITY_FIELDS = ("role", "persona", "goal")
 
 _FRONT_MATTER_RE = re.compile(r"\A---\n(?P<front>.*?)\n---(?:\n(?P<body>.*))?\Z", re.DOTALL)
@@ -87,6 +124,8 @@ class Rule:
     locale: str | None = None
     examples: tuple[str, ...] = ()
     group: str | None = None
+    slot: str | None = None
+    label: str | None = None
 
     def in_scope(self, scope: str) -> bool:
         return scope in self.scope and self.status == "active"
@@ -159,9 +198,45 @@ class BxStyle:
 
 
 @dataclass(frozen=True)
+class RuleDoc:
+    """A flat rule document (common / typography / glossary / audit)."""
+
+    canonical_key: str
+    display_name: str
+    schema_version: int
+    source_path: Path
+    rules: tuple[Rule, ...]
+    body: str = ""
+
+    def slot(self, slot: str) -> tuple[Rule, ...]:
+        """Active app_prompt rules in a slot, in file order."""
+        return tuple(r for r in self.rules if r.slot == slot and r.in_scope("app_prompt"))
+
+    def texts(self, slot: str) -> tuple[str, ...]:
+        return tuple(r.text for r in self.slot(slot))
+
+    def one(self, slot: str) -> str:
+        """The single rule text in a slot; '' when absent.
+
+        Replaces the old positional indexing (e.g. GLOSSARY_TERM_RULES['rules'][0]),
+        so reordering a file can no longer silently change a prompt.
+        """
+        found = self.texts(slot)
+        return found[0] if found else ""
+
+    def labelled(self, slot: str) -> tuple[tuple[str, str], ...]:
+        """(label, text) pairs — audit checklist categories and grade criteria."""
+        return tuple((r.label or "", r.text) for r in self.slot(slot))
+
+
+@dataclass(frozen=True)
 class RuleBundle:
     languages: Mapping[str, LanguageRules]
     bx: BxStyle
+    docs: Mapping[str, RuleDoc] = field(default_factory=dict)
+
+    def doc(self, kind: str) -> RuleDoc:
+        return self.docs[kind]
 
     def display_names(self) -> dict[str, str]:
         return {key: value.display_name for key, value in self.languages.items()}
@@ -173,7 +248,9 @@ class RuleBundle:
         """Every rule in a scope, paired with its canonical key.
 
         This is how agent-side tooling reaches ``agent_audit`` rules, which are
-        deliberately excluded from both the translation and audit prompts.
+        deliberately excluded from both the translation and audit prompts. Every
+        rule source must be listed here or its rules become invisible to that
+        tooling with no error.
         """
         found: list[tuple[str, Rule]] = [
             (key, rule)
@@ -181,6 +258,8 @@ class RuleBundle:
             for rule in language.scoped(scope)
         ]
         found.extend(("bx_style", rule) for rule in self.bx.rules if rule.in_scope(scope))
+        for kind, document in self.docs.items():
+            found.extend((kind, rule) for rule in document.rules if rule.in_scope(scope))
         return tuple(found)
 
 
@@ -266,8 +345,15 @@ def _parse_rules(
     path: Path,
     errors: list[str],
     seen_rule_ids: dict[str, Path],
-    allow_group: bool,
+    groups: tuple[str, ...] | None = None,
+    slots: tuple[str, ...] | None = None,
 ) -> tuple[Rule, ...]:
+    """Parse the shared ``rules`` array.
+
+    ``groups`` / ``slots`` are the per-kind vocabularies: when given, the
+    corresponding field is required and validated against them; when None the
+    field is rejected as unknown.
+    """
     raw_rules = front.get("rules")
     if not isinstance(raw_rules, list) or not raw_rules:
         errors.append(
@@ -283,7 +369,11 @@ def _parse_rules(
             errors.append(f"{_rel(path)}: {where} must be a mapping, got {type(item).__name__}")
             continue
 
-        allowed = _RULE_FIELDS if allow_group else _RULE_FIELDS - {"group"}
+        allowed = set(_RULE_FIELDS)
+        if groups is None:
+            allowed.discard("group")
+        if slots is None:
+            allowed -= {"slot", "label"}
         for name in sorted(set(item) - allowed):
             errors.append(
                 f"{_rel(path)}: {where} has unknown field {name!r} "
@@ -359,13 +449,32 @@ def _parse_rules(
             )
             continue
         group = item.get("group")
-        if allow_group:
-            if group not in BX_GROUPS:
+        if groups is not None and group not in groups:
+            errors.append(
+                f"{_rel(path)}: {where}.group {group!r} is not supported "
+                f"({', '.join(groups)})"
+            )
+            continue
+
+        slot = item.get("slot")
+        if slots is not None:
+            if slot not in slots:
                 errors.append(
-                    f"{_rel(path)}: {where}.group {group!r} is not supported "
-                    f"({', '.join(BX_GROUPS)})"
+                    f"{_rel(path)}: {where}.slot {slot!r} is not supported "
+                    f"({', '.join(slots)})"
                 )
                 continue
+            missing = [
+                name for name in SLOT_REQUIRED_PLACEHOLDERS.get(slot, ())
+                if "{" + name + "}" not in text
+            ]
+            if missing:
+                errors.append(
+                    f"{_rel(path)}: {where}.text is missing required placeholder(s) "
+                    f"{', '.join('{' + n + '}' for n in missing)} for slot {slot!r}"
+                )
+                continue
+
         parsed.append(
             Rule(
                 rule_id=rule_id,
@@ -375,7 +484,9 @@ def _parse_rules(
                 severity=severity,
                 locale=item.get("locale"),
                 examples=tuple(raw_examples),
-                group=group if allow_group else None,
+                group=group if groups is not None else None,
+                slot=slot if slots is not None else None,
+                label=item.get("label") if slots is not None else None,
             )
         )
     return tuple(parsed)
@@ -390,7 +501,7 @@ def _load_language_file(
     _check_common(front, path, "language", _LANGUAGE_FIELDS, errors)
     canonical_key = _require_str(front, "canonical_key", path, errors)
     display_name = _require_str(front, "display_name", path, errors)
-    rules = _parse_rules(front, path, errors, seen_rule_ids, allow_group=False)
+    rules = _parse_rules(front, path, errors, seen_rule_ids)
     if canonical_key is None or display_name is None:
         return None
     if canonical_key != path.stem:
@@ -407,6 +518,37 @@ def _load_language_file(
         rules=rules,
         body=body,
         locale=front.get("locale"),
+    )
+
+
+def _load_doc_file(
+    path: Path, kind: str, errors: list[str], seen_rule_ids: dict[str, Path]
+) -> RuleDoc | None:
+    """Load one of the flat rule documents (common/typography/glossary/audit)."""
+    if not path.is_file():
+        errors.append(f"{_rel(path)}: file not found")
+        return None
+    front, body = _split_front_matter(path, errors)
+    if front is None:
+        return None
+    _check_common(front, path, kind, _DOC_FIELDS, errors)
+    display_name = _require_str(front, "display_name", path, errors)
+    rules = _parse_rules(front, path, errors, seen_rule_ids, slots=DOC_SLOTS[kind])
+    if display_name is None:
+        return None
+    canonical_key = front.get("canonical_key")
+    if canonical_key != kind:
+        errors.append(
+            f"{_rel(path)}: canonical_key {canonical_key!r} must equal the kind {kind!r}"
+        )
+        return None
+    return RuleDoc(
+        canonical_key=kind,
+        display_name=display_name,
+        schema_version=front.get("schema_version", SCHEMA_VERSION),
+        source_path=path,
+        rules=rules,
+        body=body,
     )
 
 
@@ -454,7 +596,7 @@ def _load_bx_file(path: Path, errors: list[str], seen_rule_ids: dict[str, Path])
         )
         return None
 
-    rules = _parse_rules(front, path, errors, seen_rule_ids, allow_group=True)
+    rules = _parse_rules(front, path, errors, seen_rule_ids, groups=BX_GROUPS)
     return BxStyle(
         role=identity["role"],
         persona=identity["persona"],
@@ -502,11 +644,28 @@ def load_rules(rules_dir: Path | str = RULES_DIR) -> RuleBundle:
 
     bx = _load_bx_file(bx_path, errors, seen_rule_ids)
 
+    docs: dict[str, RuleDoc] = {}
+    for kind in DOC_KINDS:
+        document = _load_doc_file(rules_dir / f"{kind}.md", kind, errors, seen_rule_ids)
+        if document is not None:
+            docs[kind] = document
+
+    # Reject stray *.md at the rules/ root. Without this an unexpected or
+    # misspelled filename is silently ignored -- it fails open, so a typo'd
+    # rule file would look installed while contributing nothing.
+    expected = {"bx_style.md"} | {f"{kind}.md" for kind in DOC_KINDS}
+    for path in sorted(rules_dir.glob("*.md")) if rules_dir.is_dir() else []:
+        if path.name not in expected:
+            errors.append(
+                f"{_rel(path)}: unexpected rule file (expected one of "
+                f"{', '.join(sorted(expected))}, or a file under languages/)"
+            )
+
     if errors:
         detail = "\n".join(f"  - {message}" for message in errors)
         raise RuleFileError(f"{len(errors)} problem(s) in {_rel(rules_dir)}:\n{detail}")
     assert bx is not None  # guaranteed: a missing/invalid bx file appends an error
-    return RuleBundle(languages=languages, bx=bx)
+    return RuleBundle(languages=languages, bx=bx, docs=docs)
 
 
 @lru_cache(maxsize=1)

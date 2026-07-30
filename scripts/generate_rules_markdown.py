@@ -27,9 +27,20 @@ if str(ROOT / "src") not in sys.path:
 
 from translation_web_app.paths import LANGUAGE_RULES_DIR, RULES_DIR  # noqa: E402
 from translation_web_app.prompt_modules import (  # noqa: E402
+    AUDIT_CHECKLIST_RULES,
+    AUDIT_GRADE_CRITERIA,
+    AUDIT_INTRO,
     BX_STYLE_RULES,
+    COMMON_LOCALIZATION_STANDARD,
+    GLOSSARY_BRACKET_WRAP_RULE,
+    GLOSSARY_DISCLAIMER_NAV_EXCEPTION,
+    GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE,
+    GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_EAST_ASIAN,
+    GLOSSARY_NO_BRACKET_INSTRUCTION,
+    GLOSSARY_TERM_RULES,
     LANGUAGE_LOCALIZATION_RULES,
     LANGUAGE_RULE_LABELS,
+    TYPOGRAPHY_AND_PUNCTUATION_RULES,
 )
 
 SCHEMA_VERSION = 1
@@ -179,6 +190,129 @@ def verify_bx(document: str) -> None:
         raise SystemExit("round-trip mismatch for bx_style: voice attribute order differs")
 
 
+# The bracket-precedence sentence lives as a literal inside prompt_builder rather
+# than a constant, so it is transcribed here once and asserted against the source
+# file by verify_doc() below.
+BRACKET_PRECEDENCE = (
+    "Bracket precedence (highest first): a term marked no-bracket / 대괄호 제외 is never "
+    "bracketed; inside a navigation path no term is bracketed; otherwise apply the generic "
+    "bracket rule below. Term-specific exceptions always override the generic rule."
+)
+
+DOC_BUILDERS: dict[str, tuple[str, list[dict]]] = {}
+
+
+def _doc_rule(slug: str, index: int, slot: str, text: str, label: str | None = None) -> dict:
+    rule: dict = {
+        "rule_id": f"{slug}-{index:03d}",
+        "slot": slot,
+        "scope": FlowList(["app_prompt"]),
+    }
+    if label is not None:
+        rule["label"] = label
+    rule["text"] = text
+    return rule
+
+
+def build_doc_payloads() -> dict[str, dict]:
+    common = [
+        _doc_rule("common", i, "standard", text)
+        for i, text in enumerate(COMMON_LOCALIZATION_STANDARD["rules"], 1)
+    ]
+    typography = [
+        _doc_rule("typography", i, "rule", text)
+        for i, text in enumerate(TYPOGRAPHY_AND_PUNCTUATION_RULES["rules"], 1)
+    ]
+    glossary = [
+        _doc_rule("glossary", 1, "term_rule", GLOSSARY_TERM_RULES["rules"][0]),
+        _doc_rule("glossary", 2, "bracket_precedence", BRACKET_PRECEDENCE),
+        _doc_rule("glossary", 3, "bracket_wrap", GLOSSARY_BRACKET_WRAP_RULE),
+        _doc_rule("glossary", 4, "nav_exception", GLOSSARY_DISCLAIMER_NAV_EXCEPTION),
+        _doc_rule("glossary", 5, "no_bracket", GLOSSARY_NO_BRACKET_INSTRUCTION),
+        _doc_rule("glossary", 6, "nav_quote_default", GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE),
+        _doc_rule("glossary", 7, "nav_quote_east_asian",
+                  GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_EAST_ASIAN),
+    ]
+    audit = [_doc_rule("audit", 1, "intro", AUDIT_INTRO)]
+    for i, (category, description) in enumerate(AUDIT_CHECKLIST_RULES, 2):
+        audit.append(_doc_rule("audit", i, "checklist", description, label=category))
+    offset = len(audit) + 1
+    for i, (grade, criteria) in enumerate(AUDIT_GRADE_CRITERIA.items(), offset):
+        audit.append(_doc_rule("audit", i, "grade", criteria, label=grade))
+
+    specs = {
+        "common": (COMMON_LOCALIZATION_STANDARD["name"], common),
+        "typography": (TYPOGRAPHY_AND_PUNCTUATION_RULES["name"], typography),
+        "glossary": ("Glossary Rules", glossary),
+        "audit": ("Audit Criteria", audit),
+    }
+    return {
+        kind: {
+            "schema_version": SCHEMA_VERSION,
+            "kind": kind,
+            "canonical_key": kind,
+            "display_name": display_name,
+            "rule_order": "sequence",
+            "rules": rules,
+        }
+        for kind, (display_name, rules) in specs.items()
+    }
+
+
+DOC_BODY_NOTES = {
+    "common": "Applies to every target language, before the language-specific section.",
+    "typography": "`display_name` is emitted as the prompt section heading, so it is load-bearing.",
+    "glossary": (
+        "`bracket_wrap` keeps its `{open}`/`{close}` placeholders — Python substitutes the\n"
+        "locale's brackets. `nav_quote_default` and `nav_quote_east_asian` are the two arms of\n"
+        "one branch; Python decides which applies."
+    ),
+    "audit": (
+        "`checklist` labels are the `evaluation[].category` values the model echoes back.\n"
+        "`grade` labels are the grade enum; three decoders depend on them, so a test pins the set."
+    ),
+}
+
+
+def build_doc_document(kind: str, payload: dict) -> str:
+    return (
+        f"---\n{dump_front_matter(payload)}---\n\n"
+        f"# {payload['display_name']}\n\n"
+        f"{BODY_NOTICE}\n\n"
+        f"{DOC_BODY_NOTES[kind]}\n\n"
+        f"## Notes\n\n"
+        f"(Rationale, source references, and open questions go here.)\n"
+    )
+
+
+def verify_doc(kind: str, payload: dict, document: str) -> None:
+    """Reload the emitted YAML and require it to equal the source constants."""
+    reloaded = yaml.safe_load(document.split("---\n", 2)[1])
+    if [r["text"] for r in reloaded["rules"]] != [r["text"] for r in payload["rules"]]:
+        raise SystemExit(f"round-trip mismatch for {kind}: rule text differs")
+    if [r.get("slot") for r in reloaded["rules"]] != [r["slot"] for r in payload["rules"]]:
+        raise SystemExit(f"round-trip mismatch for {kind}: slots differ")
+    if [r.get("label") for r in reloaded["rules"]] != [r.get("label") for r in payload["rules"]]:
+        raise SystemExit(f"round-trip mismatch for {kind}: labels differ")
+    if kind == "glossary":
+        # This sentence had no constant; it was a literal inside prompt_builder.
+        # While that literal still existed we cross-checked the transcription
+        # against it. Once prompt_builder reads the slot from Markdown the
+        # literal is gone, and rules/glossary.md becomes the source — so the
+        # check applies only when there is still something to compare against.
+        source = (ROOT / "src/translation_web_app/prompt_builder.py").read_text(encoding="utf-8")
+
+        def _flat(text: str) -> str:
+            # Drop quote chars so Python's implicit concatenation across lines
+            # ("...a " "b...") collapses to the runtime value before comparing.
+            return " ".join(text.replace('"', "").split())
+
+        if "Bracket precedence" in source and _flat(BRACKET_PRECEDENCE) not in _flat(source):
+            raise SystemExit(
+                "BRACKET_PRECEDENCE no longer matches the literal in prompt_builder.py"
+            )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", default=str(RULES_DIR))
@@ -200,6 +334,10 @@ def main() -> int:
         document = build_language_document(canonical_key)
         verify_language(canonical_key, document)
         documents[languages_dir / f"{canonical_key}.md"] = document
+    for kind, payload in build_doc_payloads().items():
+        document = build_doc_document(kind, payload)
+        verify_doc(kind, payload, document)
+        documents[out_dir / f"{kind}.md"] = document
 
     if args.check:
         mismatches = [

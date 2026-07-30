@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 """Proves the Markdown rule files reproduce the legacy constants exactly.
 
-TEMPORARY. Delete this whole file in the same commit that removes
-LANGUAGE_LOCALIZATION_RULES, LANGUAGE_RULE_LABELS and BX_STYLE_RULES from
-prompt_modules.py. Its only job is to show the migration changed no prompt
-byte; once the legacy constants are gone there is nothing left to compare
-against, and the durable coverage lives in tests/test_rules_loader.py and
-tests/test_prompt_builder.py.
+TEMPORARY. Delete this whole file in the same commit that removes the legacy
+constants from prompt_modules.py (LANGUAGE_LOCALIZATION_RULES,
+LANGUAGE_RULE_LABELS, BX_STYLE_RULES, COMMON_LOCALIZATION_STANDARD,
+TYPOGRAPHY_AND_PUNCTUATION_RULES, GLOSSARY_TERM_RULES, the GLOSSARY_*
+instruction strings, AUDIT_INTRO, AUDIT_CHECKLIST_RULES, AUDIT_GRADE_CRITERIA).
+Its only job is to show the migration changed no prompt byte; once the legacy
+constants are gone there is nothing left to compare against, and the durable
+coverage lives in tests/test_rules_loader.py and tests/test_prompt_builder.py.
+
+The grade-enum test in GradeEnumContractTests is the exception: it compares
+decoders against each other, not against a legacy constant, so it must be moved
+to test_rules_loader.py rather than deleted.
 """
 
 import inspect
@@ -15,10 +21,21 @@ import unittest
 from translation_web_app import prompt_builder as prompt_builder_module
 from translation_web_app.prompt_builder import PromptBuilder
 from translation_web_app.prompt_modules import (
+    AUDIT_CHECKLIST_RULES,
+    AUDIT_GRADE_CRITERIA,
+    AUDIT_INTRO,
     BX_STYLE_RULES,
+    COMMON_LOCALIZATION_STANDARD,
+    GLOSSARY_BRACKET_WRAP_RULE,
+    GLOSSARY_DISCLAIMER_NAV_EXCEPTION,
+    GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE,
+    GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_EAST_ASIAN,
+    GLOSSARY_NO_BRACKET_INSTRUCTION,
+    GLOSSARY_TERM_RULES,
     LANGUAGE_LOCALIZATION_RULES,
     LANGUAGE_RULE_LABELS,
     SHEET_CODE_LANGUAGE_ALIASES,
+    TYPOGRAPHY_AND_PUNCTUATION_RULES,
 )
 from translation_web_app.rules_loader import load_rules
 
@@ -82,13 +99,54 @@ class BxStyleEquivalenceTests(unittest.TestCase):
         )
 
 
+class DocEquivalenceTests(unittest.TestCase):
+    """common / typography / glossary / audit md == the legacy constants."""
+
+    def setUp(self):
+        self.bundle = load_rules()
+
+    def test_common_standard(self):
+        doc = self.bundle.doc("common")
+        self.assertEqual(list(doc.texts("standard")), COMMON_LOCALIZATION_STANDARD["rules"])
+        self.assertEqual(doc.display_name, COMMON_LOCALIZATION_STANDARD["name"])
+
+    def test_typography(self):
+        doc = self.bundle.doc("typography")
+        self.assertEqual(list(doc.texts("rule")), TYPOGRAPHY_AND_PUNCTUATION_RULES["rules"])
+        # display_name is emitted as the prompt section heading, so it is load-bearing.
+        self.assertEqual(doc.display_name, TYPOGRAPHY_AND_PUNCTUATION_RULES["name"])
+
+    def test_glossary_slots(self):
+        doc = self.bundle.doc("glossary")
+        self.assertEqual(doc.one("term_rule"), GLOSSARY_TERM_RULES["rules"][0])
+        self.assertEqual(doc.one("bracket_wrap"), GLOSSARY_BRACKET_WRAP_RULE)
+        self.assertEqual(doc.one("nav_exception"), GLOSSARY_DISCLAIMER_NAV_EXCEPTION)
+        self.assertEqual(doc.one("no_bracket"), GLOSSARY_NO_BRACKET_INSTRUCTION)
+        self.assertEqual(doc.one("nav_quote_default"), GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE)
+        self.assertEqual(
+            doc.one("nav_quote_east_asian"), GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_EAST_ASIAN
+        )
+
+    def test_audit_intro_checklist_and_grades(self):
+        doc = self.bundle.doc("audit")
+        self.assertEqual(doc.one("intro"), AUDIT_INTRO)
+        self.assertEqual(list(doc.labelled("checklist")), list(AUDIT_CHECKLIST_RULES))
+        self.assertEqual(list(doc.labelled("grade")), list(AUDIT_GRADE_CRITERIA.items()))
+
+
 class SingleActiveSourceTests(unittest.TestCase):
     def test_prompt_builder_does_not_reference_legacy_constants(self):
         """Exactly one active source: the md files, not the kept-but-legacy dicts."""
         source = inspect.getsource(prompt_builder_module)
-        self.assertNotIn("LANGUAGE_LOCALIZATION_RULES", source)
-        self.assertNotIn("BX_STYLE_RULES", source)
-        self.assertNotIn("LANGUAGE_RULE_LABELS", source)
+        for name in (
+            "LANGUAGE_LOCALIZATION_RULES", "BX_STYLE_RULES", "LANGUAGE_RULE_LABELS",
+            "COMMON_LOCALIZATION_STANDARD", "TYPOGRAPHY_AND_PUNCTUATION_RULES",
+            "GLOSSARY_TERM_RULES", "GLOSSARY_BRACKET_WRAP_RULE", "GLOSSARY_NO_BRACKET_INSTRUCTION",
+            "GLOSSARY_DISCLAIMER_NAV_", "AUDIT_INTRO", "AUDIT_CHECKLIST_RULES",
+            "AUDIT_GRADE_CRITERIA",
+        ):
+            with self.subTest(constant=name):
+                self.assertNotIn(name, source)
 
 
 if __name__ == "__main__":

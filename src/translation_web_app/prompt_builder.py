@@ -10,20 +10,9 @@ import json
 import re
 
 from translation_web_app.prompt_modules import (
-    AUDIT_CHECKLIST_RULES,
-    AUDIT_GRADE_CRITERIA,
-    AUDIT_INTRO,
-    COMMON_LOCALIZATION_STANDARD,
-    GLOSSARY_BRACKET_WRAP_RULE,
     GLOSSARY_DEACTIVATION_MARKERS,
-    GLOSSARY_DISCLAIMER_NAV_EXCEPTION,
-    GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE,
-    GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_EAST_ASIAN,
     GLOSSARY_EXEMPT_MARKERS,
-    GLOSSARY_NO_BRACKET_INSTRUCTION,
-    GLOSSARY_TERM_RULES,
     resolve_language_identifier,
-    TYPOGRAPHY_AND_PUNCTUATION_RULES,
 )
 from translation_web_app.rules_loader import get_rules
 
@@ -167,7 +156,7 @@ class PromptBuilder:
         row_key: str = "",
         glossary_context=None,
     ) -> str:
-        sections = [AUDIT_INTRO]
+        sections = [_RULES.doc("audit").one("intro")]
 
         language_section = self._build_language_section(target_lang, korean_heading=True)
         if language_section:
@@ -220,7 +209,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
         return {
             "common": {
                 "active": True,
-                "name": COMMON_LOCALIZATION_STANDARD["name"],
+                "name": _RULES.doc("common").display_name,
                 "description": "Meaning preservation, natural local expression, cultural fit, tone, and risky wording controls.",
             },
             "language": {
@@ -240,7 +229,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
             },
             "typography": {
                 "active": True,
-                "name": TYPOGRAPHY_AND_PUNCTUATION_RULES["name"],
+                "name": _RULES.doc("typography").display_name,
                 "description": "Target-locale punctuation, spacing, quotation marks, and sentence-ending style are enforced.",
             },
             "glossary": {
@@ -275,7 +264,8 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
 
     def _build_common_section(self, korean_heading: bool = False) -> str:
         heading = "[공통 현지화 품질 기준]" if korean_heading else "[COMMON LOCALIZATION STANDARD]"
-        return heading + "\n" + "\n".join(f"- {rule}" for rule in COMMON_LOCALIZATION_STANDARD["rules"])
+        texts = _RULES.doc("common").texts("standard")
+        return heading + "\n" + "\n".join(f"- {text}" for text in texts)
 
     def _build_language_section(self, target_lang: str, korean_heading: bool = False) -> str:
         match = self.get_language_rule(target_lang)
@@ -380,7 +370,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
 
         return [
             {"id": "intro", "label": "검수자 역할 정의", "module_key": None, "active": True, "always": True,
-             "content": AUDIT_INTRO},
+             "content": _RULES.doc("audit").one("intro")},
             {"id": "language", "label": "언어별 현지화 기준", "module_key": "language",
              "active": bool(lang_content), "always": False,
              "content": lang_content or "(이 타겟 언어에 적용되는 언어별 규칙 없음)"},
@@ -398,18 +388,20 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
 
     def _build_audit_checklist(self) -> str:
         lines = ["[검수 가이드라인]"]
-        for i, (cat, desc) in enumerate(AUDIT_CHECKLIST_RULES, 1):
+        for i, (cat, desc) in enumerate(_RULES.doc("audit").labelled("checklist"), 1):
             lines.append(f"{i}. {cat}: {desc}")
         return "\n".join(lines)
 
     def _build_audit_output_format(self) -> str:
-        last = len(AUDIT_CHECKLIST_RULES) - 1
+        checklist = _RULES.doc("audit").labelled("checklist")
+        grades = _RULES.doc("audit").labelled("grade")
+        last = len(checklist) - 1
         cat_lines = [
             f'    {{"category": "{cat}", "comment": "상세한 분석 결과"}}{"," if i < last else ""}'
-            for i, (cat, _) in enumerate(AUDIT_CHECKLIST_RULES)
+            for i, (cat, _) in enumerate(checklist)
         ]
-        grade_opts = " | ".join(AUDIT_GRADE_CRITERIA)
-        grade_criteria = "\n".join(f'  - "{k}": {v}' for k, v in AUDIT_GRADE_CRITERIA.items())
+        grade_opts = " | ".join(label for label, _ in grades)
+        grade_criteria = "\n".join(f'  - "{k}": {v}' for k, v in grades)
         return (
             "[출력 형식]\nJSON 형식으로 반환하세요:\n"
             "{\n"
@@ -432,12 +424,13 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
             "[GLOSSARY RULES]",
         ]
 
+        glossary_doc = _RULES.doc("glossary")
+        typography_doc = _RULES.doc("typography")
+
         if glossary_available:
             lines.extend([
-                f"- {GLOSSARY_TERM_RULES['rules'][0]}",
-                "- Bracket precedence (highest first): a term marked no-bracket / 대괄호 제외 is never "
-                "bracketed; inside a navigation path no term is bracketed; otherwise apply the generic "
-                "bracket rule below. Term-specific exceptions always override the generic rule.",
+                f"- {glossary_doc.one('term_rule')}",
+                f"- {glossary_doc.one('bracket_precedence')}",
             ])
         else:
             lines.append("No glossary terms are provided for this source text.")
@@ -446,12 +439,14 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
 
         # No-bracket rule is a structural rule for title/button — always add it regardless of glossary.
         if context_mode == "title_button":
-            lines.append(f"- {GLOSSARY_NO_BRACKET_INSTRUCTION}")
+            lines.append(f"- {glossary_doc.one('no_bracket')}")
         elif glossary_available:
             brackets = self.get_brackets(target_lang)
-            wrap_rule = GLOSSARY_BRACKET_WRAP_RULE.format(open=brackets[0], close=brackets[1])
+            wrap_rule = glossary_doc.one("bracket_wrap").format(
+                open=brackets[0], close=brackets[1]
+            )
             if context_mode == "disclaimer":
-                wrap_rule += f" {GLOSSARY_DISCLAIMER_NAV_EXCEPTION}"
+                wrap_rule += f" {glossary_doc.one('nav_exception')}"
             lines.append(f"- {wrap_rule}")
 
         # Nav path quote rule is typography, not glossary — always applies for disclaimer rows.
@@ -459,15 +454,12 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
             is_east_asian = target_lang and any(k in target_lang for k in (
                 "Japanese", "일본", "Chinese", "중국", "Taiwan", "대만"
             ))
-            if is_east_asian:
-                quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE_EAST_ASIAN
-            else:
-                quote_rule = GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE
-            lines.append(f"- {quote_rule}")
+            slot = "nav_quote_east_asian" if is_east_asian else "nav_quote_default"
+            lines.append(f"- {glossary_doc.one(slot)}")
 
         lines += [
-            f"\n[{TYPOGRAPHY_AND_PUNCTUATION_RULES['name']}]",
-            *[f"- {r}" for r in TYPOGRAPHY_AND_PUNCTUATION_RULES["rules"]],
+            f"\n[{typography_doc.display_name}]",
+            *[f"- {text}" for text in typography_doc.texts("rule")],
         ]
         return "\n".join(lines)
 

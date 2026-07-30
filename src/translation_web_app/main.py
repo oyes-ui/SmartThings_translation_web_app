@@ -409,17 +409,15 @@ async def prompt_modules(
 @app.get("/api/prompt_universe")
 async def prompt_universe():
     """Builds a Cytoscape-compatible graph of all prompt modules."""
-    from translation_web_app.prompt_modules import (
-        COMMON_LOCALIZATION_STANDARD as CLS,
-        TYPOGRAPHY_AND_PUNCTUATION_RULES as TPR,
-        GLOSSARY_BRACKET_WRAP_RULE as GBR,
-        GLOSSARY_DISCLAIMER_NAV_EXCEPTION as GDNE,
-        GLOSSARY_DISCLAIMER_NAV_QUOTE_RULE as GDNQ
-    )
     from translation_web_app.rules_loader import get_rules
 
     rules = get_rules()
-
+    common, typography, glossary = (
+        rules.doc("common"), rules.doc("typography"), rules.doc("glossary")
+    )
+    GBR = glossary.one("bracket_wrap")
+    GDNE = glossary.one("nav_exception")
+    GDNQ = glossary.one("nav_quote_default")
 
     nodes, edges = [], []
     def n(i, l, t, c): nodes.append({"data": {"id": i, "label": l, "type": t, "content": c}})
@@ -427,8 +425,8 @@ async def prompt_universe():
 
     # Core
     n("c_p", "Persona & Goal", "core", "Base persona for translation and audit.")
-    n("c_c", CLS["name"], "core", "\n".join(CLS["rules"]))
-    n("c_t", TPR["name"], "core", "\n".join(TPR["rules"]))
+    n("c_c", common.display_name, "core", "\n".join(common.texts("standard")))
+    n("c_t", typography.display_name, "core", "\n".join(typography.texts("rule")))
     e("c_p", "c_c"); e("c_c", "c_t")
 
     # Language Branch

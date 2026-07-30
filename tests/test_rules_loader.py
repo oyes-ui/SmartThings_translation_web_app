@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 from translation_web_app.prompt_modules import SHEET_CODE_LANGUAGE_ALIASES
-from translation_web_app.rules_loader import RuleFileError, load_rules
+from translation_web_app.rules_loader import DOC_KINDS, RuleFileError, load_rules
 
 
 VALID_LANGUAGE = """\
@@ -60,6 +60,53 @@ examples:
 """
 
 
+def _doc_fixture(kind, slot, extra_rule=""):
+    return f"""\
+---
+schema_version: 1
+kind: {kind}
+canonical_key: {kind}
+display_name: {kind.title()} Fixture
+rule_order: sequence
+rules:
+- rule_id: {kind}-001
+  slot: {slot}
+  scope: [app_prompt]
+  text: Fixture text for {kind}.
+{extra_rule}---
+
+# {kind}
+"""
+
+
+# Minimal valid doc files. Every DOC_KIND is mandatory, so the fixture tree must
+# supply all of them or load_rules() reports them missing.
+VALID_DOCS = {
+    "common": _doc_fixture("common", "standard"),
+    "typography": _doc_fixture("typography", "rule"),
+    "glossary": _doc_fixture(
+        "glossary", "term_rule",
+        "- rule_id: glossary-002\n"
+        "  slot: bracket_wrap\n"
+        "  scope: [app_prompt]\n"
+        "  text: Wrap glossary terms in '{open}' and '{close}'.\n",
+    ),
+    "audit": _doc_fixture(
+        "audit", "intro",
+        "- rule_id: audit-002\n"
+        "  slot: checklist\n"
+        "  label: 문법/유창성\n"
+        "  scope: [app_prompt]\n"
+        "  text: Checklist fixture.\n"
+        "- rule_id: audit-003\n"
+        "  slot: grade\n"
+        "  label: Excellent\n"
+        "  scope: [app_prompt]\n"
+        "  text: Grade fixture.\n",
+    ),
+}
+
+
 class RuleLoaderTestCase(unittest.TestCase):
     """Builds a throwaway rules tree so no tracked file is ever broken."""
 
@@ -69,6 +116,8 @@ class RuleLoaderTestCase(unittest.TestCase):
         (self.root / "languages").mkdir()
         self.write_language(VALID_LANGUAGE)
         self.write_bx(VALID_BX)
+        for kind, text in VALID_DOCS.items():
+            self.write_doc(kind, text)
         self.addCleanup(self._tmp.cleanup)
 
     def write_language(self, text, name="German.md"):
@@ -76,6 +125,9 @@ class RuleLoaderTestCase(unittest.TestCase):
 
     def write_bx(self, text):
         (self.root / "bx_style.md").write_text(text, encoding="utf-8")
+
+    def write_doc(self, kind, text):
+        (self.root / f"{kind}.md").write_text(text, encoding="utf-8")
 
     def assertRuleError(self, fragment):
         with self.assertRaises(RuleFileError) as ctx:
@@ -226,6 +278,56 @@ class RealRuleFilesTests(unittest.TestCase):
         for key, language in load_rules().languages.items():
             with self.subTest(language=key):
                 self.assertTrue(language.prompt_rules())
+
+    def test_every_doc_kind_is_present(self):
+        self.assertEqual(set(load_rules().docs), set(DOC_KINDS))
+
+    def test_bracket_wrap_keeps_its_placeholders(self):
+        """A missing {open}/{close} would emit a literal brace into the prompt."""
+        text = load_rules().doc("glossary").one("bracket_wrap")
+        self.assertIn("{open}", text)
+        self.assertIn("{close}", text)
+
+
+class GradeEnumContractTests(unittest.TestCase):
+    """The audit grade names are a wire contract with three separate decoders.
+
+    rules/audit.md is the single source. checker_service maps them to Korean
+    labels, report_builder maps them to finding statuses, and the agent's
+    review_summary parses the Korean labels back out of a report. Nothing
+    validated that these agreed, so a renamed or added grade could silently
+    stop being decoded on one path. This test is that validation and must
+    outlive the temporary migration-equivalence file.
+    """
+
+    def setUp(self):
+        self.grades = {label for label, _ in load_rules().doc("audit").labelled("grade")}
+
+    def test_grades_are_not_empty(self):
+        self.assertTrue(self.grades)
+
+    def test_checker_service_korean_labels_cover_every_grade(self):
+        from translation_web_app.checker_service import _GRADE_KR
+
+        self.assertEqual(set(_GRADE_KR), self.grades)
+
+    def test_report_builder_status_map_covers_every_grade(self):
+        from translation_web_app.report_builder import _GRADE_TO_STATUS
+
+        # report_builder normalizes to lowercase before lookup.
+        self.assertEqual(set(_GRADE_TO_STATUS), {g.lower() for g in self.grades})
+
+    def test_agent_review_summary_parses_every_korean_label(self):
+        """The agent greps the Korean labels out of the rendered report."""
+        from translation_web_app.checker_service import _GRADE_KR
+
+        summary = (
+            Path(__file__).resolve().parents[1]
+            / "agent-packages/smartthings-translation-agent/scripts/review_summary.py"
+        ).read_text(encoding="utf-8")
+        for grade in self.grades:
+            with self.subTest(grade=grade):
+                self.assertIn(_GRADE_KR[grade], summary)
 
 
 if __name__ == "__main__":

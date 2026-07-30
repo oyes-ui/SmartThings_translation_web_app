@@ -20,7 +20,7 @@ import io
 import urllib.parse
 from translation_web_app.model_handler import ModelHandler
 from translation_web_app.prompt_builder import PromptBuilder
-from translation_web_app.prompt_modules import AUDIT_GRADE_CRITERIA
+from translation_web_app.rules_loader import get_rules
 from translation_web_app.report_builder import build_front_matter, render_finding, render_report
 
 _GRADE_KR = {"Excellent": "우수", "Good": "양호", "Needs Revision": "수정 필요"}
@@ -1211,7 +1211,7 @@ class TranslationChecker:
             eval_text = "\n".join(lines) if lines else "검수 결과 없음."
             grade = response.get("grade", "")
             grade_label = _GRADE_KR.get(grade, grade)
-            grade_desc = AUDIT_GRADE_CRITERIA.get(grade, "")
+            grade_desc = dict(get_rules().doc("audit").labelled("grade")).get(grade, "")
             if grade_label:
                 suffix = f" — {grade_desc}" if grade_desc else ""
                 eval_text += f"\n\n최종 평가: {grade_label}{suffix}"
