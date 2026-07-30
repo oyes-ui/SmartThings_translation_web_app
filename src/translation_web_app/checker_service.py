@@ -603,10 +603,10 @@ class TranslationChecker:
 
         for term in relevant_terms:
             tgt = self._get_target_val(self.glossary[term]["targets"], target_lang_code)
+            # `rule` keeps its spaces: the exempt markers below contain them.
             rule = self.glossary[term].get("rule", "").lower()
-            clean_rule = rule.replace(" ", "")
 
-            if skip_deactivated and ("비활성화" in clean_rule or "deactivate" in clean_rule or "disable" in clean_rule):
+            if skip_deactivated and self.prompt_builder.is_glossary_deactivated(rule):
                 continue
 
             if tgt:
@@ -635,9 +635,7 @@ class TranslationChecker:
         for s_term in relevant_terms:
             meta = self.glossary[s_term]
             
-            rule = meta.get("rule", "").lower()
-            clean_rule = rule.replace(" ", "")
-            if "비활성화" in clean_rule or "deactivate" in clean_rule or "disable" in clean_rule:
+            if self.prompt_builder.is_glossary_deactivated(meta.get("rule", "")):
                 continue
 
             t_term = self._get_target_val(meta["targets"], target_lang_code)
@@ -661,9 +659,7 @@ class TranslationChecker:
         for s_term in relevant_terms:
             meta = self.glossary[s_term]
 
-            rule = meta.get("rule", "").lower()
-            clean_rule = rule.replace(" ", "")
-            if "비활성화" in clean_rule or "deactivate" in clean_rule or "disable" in clean_rule:
+            if self.prompt_builder.is_glossary_deactivated(meta.get("rule", "")):
                 continue
 
             t_term = self._get_target_val(meta["targets"], target_lang_code)
@@ -1850,8 +1846,7 @@ class TranslationChecker:
                     for s_term in (self._get_relevant_glossary_terms(source_text) or []):
                         meta = self.glossary.get(s_term)
                         if meta:
-                            rule = meta.get("rule", "").lower().replace(" ", "")
-                            if "비활성화" in rule or "deactivate" in rule or "disable" in rule:
+                            if self.prompt_builder.is_glossary_deactivated(meta.get("rule", "")):
                                 continue
                             target_val = self._get_target_val(meta["targets"], tgt_lang_code)
                             if target_val:
@@ -2079,9 +2074,7 @@ class TranslationChecker:
                     meta = self.glossary.get(s_term)
                     if meta:
                         # Skip deactivated terms for highlighting
-                        rule = meta.get("rule", "").lower()
-                        clean_rule = rule.replace(" ", "")
-                        if "비활성화" in clean_rule or "deactivate" in clean_rule or "disable" in clean_rule:
+                        if self.prompt_builder.is_glossary_deactivated(meta.get("rule", "")):
                             continue
 
                         t_meta = meta["targets"]
@@ -2316,8 +2309,7 @@ class TranslationChecker:
                         for s_term in (self._get_relevant_glossary_terms(source_text) or []):
                             meta = self.glossary.get(s_term)
                             if meta:
-                                rule = meta.get("rule", "").lower().replace(" ", "")
-                                if "비활성화" in rule or "deactivate" in rule or "disable" in rule:
+                                if self.prompt_builder.is_glossary_deactivated(meta.get("rule", "")):
                                     continue
                                 target_val = self._get_target_val(meta["targets"], tgt_lang_code)
                                 if target_val:
@@ -2529,9 +2521,7 @@ class TranslationChecker:
                         meta = self.glossary.get(s_term)
                         if meta:
                             # Skip deactivated terms
-                            rule = meta.get("rule", "").lower()
-                            clean_rule = rule.replace(" ", "")
-                            if "비활성화" in clean_rule or "deactivate" in clean_rule or "disable" in clean_rule:
+                            if self.prompt_builder.is_glossary_deactivated(meta.get("rule", "")):
                                 continue
 
                             t_meta = meta["targets"]
