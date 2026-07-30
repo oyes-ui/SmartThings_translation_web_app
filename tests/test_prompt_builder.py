@@ -2,7 +2,9 @@
 
 import asyncio
 import json
+import re
 import unittest
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -13,6 +15,7 @@ from translation_web_app.prompt_modules import (
     resolve_language_identifier,
 )
 from translation_web_app.prompt_builder import PromptBuilder
+from translation_web_app.rules_loader import load_rules
 
 
 class PromptBuilderTests(unittest.TestCase):
@@ -520,6 +523,60 @@ class PromptModuleApiTests(unittest.TestCase):
         self.assertTrue(payload["typography"]["active"])
         self.assertIn("punctuation", payload["typography"]["description"])
         self.assertIn("German", payload["target_lang"])
+
+
+class SheetConfigCanonicalKeyTests(unittest.TestCase):
+    """Every sheet config that ships with the product must name a real rule file.
+
+    A `lang` value that isn't a canonical key does NOT fail loudly: it falls
+    through get_language_rule's fuzzy substring match to a shorter key. That is
+    how BE/CA sheets silently received mainland French rules for months —
+    "French_BE" is not a key, so it matched "French".
+    """
+
+    MAPS = {
+        "src/translation_web_app/static/index.html": None,
+        "sheet_langs.json": None,
+        "agent-packages/smartthings-translation-agent/scripts/_app_pipeline.py": None,
+    }
+
+    def setUp(self):
+        self.root = Path(__file__).resolve().parents[1]
+        self.builder = PromptBuilder()
+        self.canonical = set(load_rules().languages)
+
+    def _assert_all_langs_canonical(self, langs, source):
+        for sheet, lang in sorted(langs.items()):
+            with self.subTest(source=source, sheet=sheet, lang=lang):
+                self.assertIn(
+                    lang, self.canonical,
+                    msg=(f"{source}: {sheet} -> {lang!r} is not a canonical key; "
+                         f"it would fuzzy-match to "
+                         f"{(self.builder.get_language_rule(lang) or ['<none>'])[0]!r}"),
+                )
+
+    def test_sheet_langs_json(self):
+        data = json.loads((self.root / "sheet_langs.json").read_text(encoding="utf-8"))
+        self._assert_all_langs_canonical(
+            {sheet: info["lang"] for sheet, info in data.items()}, "sheet_langs.json")
+
+    def test_index_html_default_sheet_config(self):
+        html = (self.root / "src/translation_web_app/static/index.html").read_text(encoding="utf-8")
+        pairs = re.findall(r'"([^"]+\([^"]*\))":\s*\{\s*"lang":\s*"([^"]+)"', html)
+        self.assertGreaterEqual(len(pairs), 20, "sheet config block not found in index.html")
+        self._assert_all_langs_canonical(dict(pairs), "index.html")
+
+    def test_agent_default_sheet_langs(self):
+        source = (self.root / "agent-packages/smartthings-translation-agent/scripts/_app_pipeline.py")
+        pairs = re.findall(r'"([^"]+\([^"]*\))":\s*\{"lang":\s*"([^"]+)"', source.read_text(encoding="utf-8"))
+        self.assertGreaterEqual(len(pairs), 20, "DEFAULT_SHEET_LANGS not found")
+        self._assert_all_langs_canonical(dict(pairs), "_app_pipeline.py")
+
+    def test_belgium_and_canada_get_their_own_rules(self):
+        """Regression guard for the specific bug: BE/CA must not resolve to French."""
+        for lang in ("French_Belgium", "French_Canada"):
+            with self.subTest(lang=lang):
+                self.assertEqual((self.builder.get_language_rule(lang) or [None])[0], lang)
 
 
 if __name__ == "__main__":
