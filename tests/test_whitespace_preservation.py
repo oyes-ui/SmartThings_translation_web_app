@@ -21,6 +21,8 @@ import unittest
 import zipfile
 
 import openpyxl
+from openpyxl.cell.rich_text import CellRichText, TextBlock
+from openpyxl.cell.text import InlineFont
 
 from translation_web_app.checker_service import TranslationChecker
 
@@ -154,6 +156,68 @@ class RichTextNoBareSpaceRunTests(unittest.TestCase):
                 if not (content and content.strip() == "" and "preserve" not in (attr or ""))
             )
             self.assertIn("Galaxy Device", reconstructed)
+        finally:
+            os.unlink(path)
+
+
+class WorkbookWhitespaceHardeningTests(unittest.TestCase):
+    """A bare space run can also enter a workbook from an Excel round-trip or an earlier
+    pipeline pass (not just our own writer). The pre-save hardening pass must fold any
+    such run — otherwise Excel trims it, dropping the space AND bleeding the neighbouring
+    run's colour across the merge ("Bixby ผู้ช่วย" -> blue "Bixbyผู้ช่วย...").
+    """
+
+    _T_RUN = re.compile(r'<t(\s[^>]*)?>(.*?)</t>', re.DOTALL)
+
+    def setUp(self):
+        self.checker = TranslationChecker()
+
+    def _fragile_cell(self):
+        # blue term, then a STANDALONE space run, then following text (the shape Excel
+        # leaves after re-segmenting a highlighted cell).
+        return CellRichText([
+            TextBlock(InlineFont(), "พบกับ "),
+            TextBlock(InlineFont(color="0000FF"), "Bixby"),
+            TextBlock(InlineFont(), " "),               # <-- bare whitespace run
+            TextBlock(InlineFont(), "ผู้ช่วย"),
+        ])
+
+    def test_harden_cell_folds_bare_space_and_preserves_text(self):
+        hardened = self.checker._harden_richtext_cell(self._fragile_cell())
+        self.assertEqual(str(hardened), "พบกับ Bixby ผู้ช่วย")
+        bare = [b for b in hardened
+                if isinstance(b, TextBlock) and b.text and b.text.strip() == ""]
+        self.assertEqual(bare, [])
+
+    def test_harden_cell_leaves_clean_cell_identical(self):
+        clean = CellRichText([
+            TextBlock(InlineFont(color="0000FF"), "Bixby"),
+            TextBlock(InlineFont(), " is ready"),
+        ])
+        self.assertIs(self.checker._harden_richtext_cell(clean), clean)
+
+    def test_harden_workbook_emits_no_bare_space_run(self):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "S"
+        ws["A1"].value = self._fragile_cell()
+        self.assertEqual(self.checker._harden_workbook_whitespace_runs(wb), 1)
+        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as fh:
+            path = fh.name
+        try:
+            wb.save(path)
+            bad = []
+            with zipfile.ZipFile(path) as z:
+                for name in z.namelist():
+                    if name.endswith(".xml") and ("worksheets/" in name or "sharedStrings" in name):
+                        xml = z.read(name).decode("utf-8")
+                        for attr, content in self._T_RUN.findall(xml):
+                            if content and content.strip() == "" and "preserve" not in (attr or ""):
+                                bad.append(content)
+            self.assertEqual(bad, [])
+            # and the text survives a strict (Excel-style) reparse that drops bare runs
+            self.assertEqual(str(openpyxl.load_workbook(path, rich_text=True)["S"]["A1"].value),
+                             "พบกับ Bixby ผู้ช่วย")
         finally:
             os.unlink(path)
 

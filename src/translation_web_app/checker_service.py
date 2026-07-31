@@ -1310,14 +1310,26 @@ class TranslationChecker:
         if last_end < len(text):
             parts.append([text[last_end:], get_font(False)])
 
-        # openpyxl's whitespace() helper only marks a run xml:space="preserve" when it
-        # has BOTH whitespace and non-whitespace text (`stripped and text != stripped`).
-        # A run that is ONLY whitespace therefore ships WITHOUT preserve, and Excel then
-        # trims it on open — gluing two consecutive highlighted glossary terms together
-        # ("Galaxy Device" -> "GalaxyDevice"). Fold every whitespace-only segment into a
-        # neighbouring run so no standalone space run is ever emitted.
+        rt = CellRichText()
+        for segment_text, segment_font in self._fold_bare_whitespace_runs(parts):
+            rt.append(TextBlock(text=segment_text, font=segment_font))
+        return rt
+
+    @staticmethod
+    def _fold_bare_whitespace_runs(blocks):
+        """Fold whitespace-only rich-text segments into an adjacent run.
+
+        openpyxl's ``whitespace()`` helper marks a run ``xml:space="preserve"`` only when
+        it holds BOTH whitespace and non-whitespace text (``stripped and text != stripped``).
+        A run that is ONLY whitespace therefore ships unprotected, and Excel trims it on
+        open — dropping the space (gluing consecutive highlighted terms, "Galaxy Device"
+        -> "GalaxyDevice") and, worse, collapsing the neighbouring run's colour across the
+        merge. Merging every whitespace-only segment into a neighbour guarantees no bare
+        space run is ever emitted; the character stream is unchanged. ``blocks`` is a list
+        of ``[text, font]`` (font may be None for a plain segment).
+        """
         folded: list = []
-        for seg_text, seg_font in parts:
+        for seg_text, seg_font in blocks:
             if seg_text == "":
                 continue
             if folded and seg_text.strip() == "":
@@ -1327,11 +1339,52 @@ class TranslationChecker:
         if len(folded) >= 2 and folded[0][0].strip() == "":
             folded[1][0] = folded[0][0] + folded[1][0]   # leading space -> following run
             folded.pop(0)
+        return folded
 
+    @classmethod
+    def _harden_richtext_cell(cls, value):
+        """Return ``value`` with every bare whitespace-only run folded away.
+
+        Accepts a :class:`CellRichText` — freshly built by :meth:`_apply_rich_text` or
+        loaded from a workbook that Excel / an earlier pipeline pass re-segmented into a
+        standalone space run. Anything else is returned unchanged.
+        """
+        if not isinstance(value, CellRichText):
+            return value
+        blocks = []
+        for part in value:
+            if isinstance(part, TextBlock):
+                blocks.append([part.text or "", part.font])
+            else:
+                blocks.append([str(part), None])
+        if not any(text and text.strip() == "" for text, _ in blocks):
+            return value  # already free of bare whitespace runs
         rt = CellRichText()
-        for segment_text, segment_font in folded:
-            rt.append(TextBlock(text=segment_text, font=segment_font))
+        for seg_text, seg_font in cls._fold_bare_whitespace_runs(blocks):
+            rt.append(seg_text if seg_font is None else TextBlock(text=seg_text, font=seg_font))
         return rt
+
+    @classmethod
+    def _harden_workbook_whitespace_runs(cls, wb) -> int:
+        """Fold bare whitespace-only rich-text runs across every cell before saving.
+
+        :meth:`_apply_rich_text` never emits such runs, but a workbook loaded after an
+        Excel round-trip or an earlier pipeline pass can still carry them in cells this
+        run did not rewrite. Running this immediately before ``wb.save`` keeps the
+        delivered file free of the fragile structure regardless of how a cell got its
+        rich text. Returns the number of cells repaired.
+        """
+        hardened = 0
+        for ws in wb.worksheets:
+            for row in ws.iter_rows():
+                for cell in row:
+                    value = cell.value
+                    if isinstance(value, CellRichText):
+                        new_value = cls._harden_richtext_cell(value)
+                        if new_value is not value:
+                            cell.value = new_value
+                            hardened += 1
+        return hardened
 
     @staticmethod
     def _cell_text_for_highlighting(value) -> str:
@@ -1907,6 +1960,7 @@ class TranslationChecker:
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             out_excel_path = source_file_path.replace(".xlsx", f"_translated_{timestamp}.xlsx")
+            self._harden_workbook_whitespace_runs(wb)
             wb.save(out_excel_path)
             self._verify_saved_cell_text(out_excel_path, expected_texts)
             output_data = self._render_report(
@@ -2167,6 +2221,7 @@ class TranslationChecker:
         # 6. Save results
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         out_excel_path = source_file_path.replace(".xlsx", f"_translated_{timestamp}.xlsx")
+        self._harden_workbook_whitespace_runs(wb)
         wb.save(out_excel_path)
         self._verify_saved_cell_text(out_excel_path, expected_texts)
         
@@ -2376,6 +2431,7 @@ class TranslationChecker:
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             out_excel_path = source_file_path.replace(".xlsx", f"_highlighted_{timestamp}.xlsx")
+            self._harden_workbook_whitespace_runs(wb)
             wb.save(out_excel_path)
 
             report_text = self._render_highlight_report(
@@ -2599,6 +2655,7 @@ class TranslationChecker:
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         out_excel_path = source_file_path.replace(".xlsx", f"_highlighted_{timestamp}.xlsx")
+        self._harden_workbook_whitespace_runs(wb)
         wb.save(out_excel_path)
         
         # Highlight Only 모드에서도 괄호 오류 등을 기록하기 위해 ordered_results 활용
