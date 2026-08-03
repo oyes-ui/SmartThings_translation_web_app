@@ -152,6 +152,8 @@ async def run_apply(args) -> dict:
         "revised": applied["revised"],
         "final": highlighted["excel_path"],
         "change_log": applied["change_log"],
+        "revision_manifest": applied.get("revision_manifest"),
+        "revision_id": applied.get("revision_id"),
         "highlight_report": report_path,
         "glossary": str(glossary),
         "cell_range": args.cell_range,

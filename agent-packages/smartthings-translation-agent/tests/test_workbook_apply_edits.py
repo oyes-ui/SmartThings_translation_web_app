@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import tempfile
 import unittest
+import json
 from pathlib import Path
 
 import openpyxl
@@ -53,6 +54,18 @@ class WorkbookApplyEditsTests(unittest.TestCase):
             result = apply_edits(source, _load_edits(str(manifest)))
             self.assertEqual(result["status"], "ok")
             self.assertEqual(openpyxl.load_workbook(result["revised"])["CO(콜롬비아)"]["C2"].value, "Buenas")
+
+    def test_second_edit_chains_to_parent_revision(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = self._source(tmp)
+            first = apply_edits(source, [{
+                "sheet": "CO(콜롬비아)", "cell": "C2", "before": "Hola", "after": "Buenas",
+            }])
+            second = apply_edits(Path(first["revised"]), [{
+                "sheet": "CO(콜롬비아)", "cell": "C2", "before": "Buenas", "after": "Saludos",
+            }])
+            second_revision = json.loads(Path(second["revision_manifest"]).read_text(encoding="utf-8"))
+            self.assertEqual(second_revision["parent_revision"], first["revision_id"])
 
     def test_preview_and_safety_gates_do_not_write_a_copy(self):
         with tempfile.TemporaryDirectory() as tmp:

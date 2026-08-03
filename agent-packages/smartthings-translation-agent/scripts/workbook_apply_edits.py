@@ -66,6 +66,7 @@ _bootstrap_project()
 import openpyxl  # noqa: E402
 from openpyxl.utils import get_column_letter, column_index_from_string  # noqa: E402
 from openpyxl.utils.cell import coordinate_from_string  # noqa: E402
+from workbook_manifest import create_edit_revision, resolve_ledger  # noqa: E402
 
 
 def _load_edits(edits_arg: str) -> list[dict]:
@@ -143,6 +144,8 @@ def _preflight_edits(wb, edits: list[dict], *, allow_formula: bool,
                 "old_value": old_value,
                 "new_value": new_value,
                 "has_rich_text_risk": isinstance(old_value, str) and bool(old_value),
+                "reason": edit.get("reason"),
+                "rule_ids": edit.get("rule_ids", []),
             })
         except Exception as e:
             errors.append({"index": i, "edit": edit, "error": str(e)})
@@ -188,7 +191,11 @@ def _outside_value_changes(before: dict, after: dict, allowed: set) -> list[dict
 def apply_edits(src_path: Path, edits: list[dict], *, dry_run: bool = False,
                 allow_formula: bool = False, allow_merged: bool = False,
                 allow_protected: bool = False, allow_hidden: bool = False) -> dict:
-    wb = openpyxl.load_workbook(src_path)  # 서식 유지 위해 data_only 미사용
+    # 파일을 작업 대상으로 받은 시점의 기준선은 원본 외부 ledger에만 기록한다.
+    # rich_text=True는 이미 검수 표시가 있는 복사본을 다시 수정할 때 비대상 셀의
+    # rich-text run을 plain string으로 평탄화하지 않기 위한 것이다.
+    baseline, baseline_path, _parent = resolve_ledger(src_path)
+    wb = openpyxl.load_workbook(src_path, rich_text=True)  # 서식 유지 위해 data_only 미사용
     planned, errors = _preflight_edits(
         wb, edits,
         allow_formula=allow_formula,
@@ -201,7 +208,10 @@ def apply_edits(src_path: Path, edits: list[dict], *, dry_run: bool = False,
         # 하나라도 실패하면 파일을 쓰지 않고 중단 (부분 적용 방지)
         return {"status": "aborted", "errors": errors, "applied": []}
     if dry_run:
-        return {"status": "preview", "source": str(src_path), "planned": planned}
+        return {
+            "status": "preview", "source": str(src_path), "planned": planned,
+            "baseline_manifest": str(baseline_path), "workbook_id": baseline["workbook_id"],
+        }
 
     source_structure = _structure_snapshot(wb)
     source_values = _value_snapshot(wb)
@@ -226,7 +236,7 @@ def apply_edits(src_path: Path, edits: list[dict], *, dry_run: bool = False,
 
     # 저장 결과 재검증: 허가된 대상 셀의 값이 실제로 반영됐는지 확인한다.
     # 구조/병합 범위까지 검증해야 하므로 read_only 모드를 쓰지 않는다.
-    verify_wb = openpyxl.load_workbook(out_path, read_only=False, data_only=False)
+    verify_wb = openpyxl.load_workbook(out_path, read_only=False, data_only=False, rich_text=True)
     verification_structure = _structure_snapshot(verify_wb)
     verification_values = _value_snapshot(verify_wb)
     verification_errors = []
@@ -249,12 +259,18 @@ def apply_edits(src_path: Path, edits: list[dict], *, dry_run: bool = False,
             "structure_changed": structure_changed,
         }
 
+    revision, revision_path = create_edit_revision(src_path, out_path, change_log)
+
     # 변경 로그도 atomic write 로 함께 기록
     log_path = out_path.with_suffix(".changes.json")
     log_payload = {
         "source": str(src_path),
         "revised": str(out_path),
         "timestamp": ts,
+        "workbook_id": baseline["workbook_id"],
+        "baseline_manifest": str(baseline_path),
+        "revision_manifest": str(revision_path),
+        "revision_id": revision["revision_id"],
         "changes": change_log,
         "verification": {
             "target_values_verified": True,
@@ -274,6 +290,8 @@ def apply_edits(src_path: Path, edits: list[dict], *, dry_run: bool = False,
         "source": str(src_path),
         "revised": str(out_path),
         "change_log": str(log_path),
+        "revision_manifest": str(revision_path),
+        "revision_id": revision["revision_id"],
         "applied": change_log,
     }
 

@@ -41,6 +41,7 @@ python scripts/bootstrap.py --app-root <경로> --save
 - **원어민/번역사 감수본 대조·요약**: "감수본 반영여부 확인", "AI 검수 대비 최종 summary", "번역사 수정 제안 몇 건이야?" → `scripts/review_summary.py` + `references/response-patterns.md`
 - **Excel 분석/수정**: "이 워크북 JA 시트 문제 셀 알려줘", "이 셀 이렇게 고쳐줘" → `scripts/workbook_inspect.py`, `scripts/workbook_apply_edits.py` + `references/excel-workflow.md`
 - **Excel 용어집 하이라이트**: "용어집 용어만 글자색 하이라이트해줘", "highlight_only 실행" → `scripts/workbook_highlight_glossary.py` + `references/excel-workflow.md`
+- **Excel 수정 검수 표시**: "수정 문자 빨간색과 용어집 파란색을 같이 보여줘" → 승인 revision manifest 기준 `scripts/workbook_incremental_highlight.py` (빨강 후 파랑, glossary 우선)
 - **섹션·story 맥락 검토**: "타이틀이 디스크립션 맥락을 잘 반영했는지 봐줘", "조사나 어미가 story 안에서 일관적인지 봐줘" → `/st-sections` + `scripts/workbook_inspect.py --sections`
 - **번역/검수 (셀프, 크레딧 0)**: "이 문구 독일어로 번역해줘", "이 번역 검수해줘" → `scripts/prompt_preview.py` 로 프롬프트 받아 직접 수행 + `references/self-vs-pipeline.md`
 - **번역/검수 (파이프라인, LLM)**: "워크북 전체 자동 번역/검수 돌려줘" → 승인 후 `scripts/workbook_translate.py`/`scripts/workbook_audit.py --pipeline`
@@ -101,7 +102,7 @@ python scripts/bootstrap.py --app-root <경로> --save
 4. **시크릿 미노출**: API 키·`.env` 내용을 출력하거나 로그에 남기지 않는다.
 5. **NotebookLM 외부 자료 주의**: NotebookLM 링크 등록, source 추가, Google 인증은 사용자 승인 후 진행한다. NotebookLM 답변은 보조 분석 결과이며 app/RAG/Excel 기준 사실과 구분해서 사용한다.
 6. **AI 검수는 선제 검토 후보**: NotebookLM/LLM 검수 결과는 원어민 감수 전 적극 검토할 1차 후보 목록으로 본다. `Good` 판정이라도 코멘트나 수정안이 있으면 실제 Excel 값, RAG, 제품명 기준으로 재확인한다.
-7. **Excel rich text 주의**: `workbook_apply_edits.py`로 셀 값을 바꾸면 기존 rich text 하이라이트가 깨질 수 있다. 자동 수정본을 납품본으로 안내하기 전에는 최신 glossary로 `C7:C28` 전체를 재하이라이트하되, `KR(한국)`/`US(미국)` source sheet도 포함해야 한다.
+7. **Excel rich text 주의**: 수정 검수본은 revision manifest의 red→blue 증분 renderer를 사용한다. 단, 자동 수정본을 납품본으로 안내하기 전에는 최신 glossary로 `C7:C28` 전체를 재하이라이트하되, `KR(한국)`/`US(미국)` source sheet도 포함해야 한다.
 8. **감수본 대조 주의**: 번역사 표시본의 빨간 하이라이트만 신뢰하지 말고 C/F 전체 diff를 본다. 반복 CTA, 브랜드명, 제품명은 셀 단위보다 파일 전체 일관성으로 판단한다.
 9. **story review 종료 게이트**: 자동 Fix 전 `후보 기반 발견 수 / 독립 발견 수 / 유지 언어 수 / 언어별 완료 상태`를 산출한다. Fix 후에는 독립 재점검에 기록한 수정 셀과 실제 값 diff가 일치하고, 보호 언어 무결성·전체 재하이라이트 검증이 통과해야 한다.
 10. **감수본 수용 분리**: `/st-story-review`는 판단·리포트까지만 수행한다. 최종 수용본은 사람 승인 `accept`/`partial` manifest가 있을 때만 `/st-review-apply`로 생성한다. 현지화 수정은 원문 의미·기능 조건·UI 경로·glossary·문법 리스크가 없는 한 수용하며, RAG exact 사례는 참고이지 자동 거부 근거가 아니다.
@@ -120,7 +121,7 @@ Excel 분석       → scripts/workbook_inspect.py (읽기 전용)
 검수 리포트 분석 → LM 판정 목록 추출(Good 코멘트 포함) → 실제 현재 셀·source group·용어집·RAG 재확인 → `수정 필요`/`유지`/`false positive`/`추가 확인`으로 재분류
 감수본 요약     → review_summary.py 로 감수본/F열 변경·AI 수정안 겹침·리포트 판단 카운트 산출 → response-patterns.md 템플릿으로 최종 summary 작성
 감수본 최종 수용 → 언어별 `현재→감수안→최종안→판정→근거` manifest 확정 → workbook_review_apply.py → (명시 시 E:H 삭제) → 전 시트 C7:C28 재하이라이트 → 값 diff·보호 언어·텍스트 보존 검증 → 유효 result manifest로 Obsidian 상태 sync
-Excel 수정       → 변경안 제시 → 사용자 승인 → scripts/workbook_apply_edits.py → 필요 시 최신 glossary로 전체 재하이라이트
+Excel 수정       → 기준 manifest 생성 → 변경안 제시 → 사용자 승인 → scripts/workbook_apply_edits.py → 검수본은 revision red→glossary blue 증분 합성 → 납품 시 glossary-only 검증
 용어집 하이라이트 → 사용자 승인 → scripts/workbook_highlight_glossary.py --include-source-sheets (원본 불변, *_highlighted_*.xlsx 생성)
 용어집 필터 판단 → target source group 소스 시트 + latest_glossary.csv 실제 매칭 → bracket occurrence/비활성 용어 예외 판단 → 필요 시 Obsidian 리포트
 ```

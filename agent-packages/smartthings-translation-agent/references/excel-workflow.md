@@ -46,6 +46,19 @@ python scripts/workbook_inspect.py <path.xlsx> --json              # 파싱용 J
    ```
    최신 glossary 사용 여부와 `KR(한국)`/`US(미국)` source sheet 포함 여부를 반드시 사용자에게 보고한다.
 
+### Revision manifest와 검수 표시
+
+워크북을 `/st-edit` 경로로 처음 받으면 원본 옆 `.st-history/<workbook-id>/baseline.json`에 기준선이
+기록된다. 원본은 수정되지 않으며 기준선에는 원본 바이너리·값·구조 fingerprint만 저장한다. 승인된
+복사본마다 revision manifest가 생성되어 변경 셀의 before/after, 문자 diff, 삭제 텍스트, 승인·검증
+결과를 기록한다.
+
+검수본이 필요하면 `workbook_incremental_highlight.py`를 사용한다. 수정/삽입 문자와 삭제 위치의 앞뒤
+단어를 먼저 빨간 rich text로 표시하고, 이어 glossary term을 파란색으로 표시한다. 겹치는 구간은
+glossary 파란색이 우선한다. 셀의 최종 텍스트 fingerprint와 glossary checksum이 같고 rich text가
+유지된 셀은 재실행에서 건너뛴다. 납품본에는 빨간 표시를 남기지 않고 기존 delivery glossary 경로를
+사용한다.
+
 ### 원어민 감수본 수용 → 최종안
 
 감수 워크북이 `C=현재 문안 / F=감수 수정안 / H=감수 의견` 구조일 때는 `/st-story-apply`를 재사용하지 않는다. 검수 판단과 실제 반영을 분리한 `/st-review-apply`를 사용한다.

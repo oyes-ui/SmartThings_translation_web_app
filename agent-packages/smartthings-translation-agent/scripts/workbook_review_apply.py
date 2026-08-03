@@ -24,6 +24,7 @@ from openpyxl.utils.cell import column_index_from_string, coordinate_from_string
 
 import _app_pipeline as ap
 from workbook_highlight_glossary import _report_path_for, run_highlight
+from workbook_manifest import create_edit_revision, resolve_ledger
 
 
 DECISIONS = {"accept", "partial", "hold"}
@@ -299,6 +300,7 @@ async def run_apply(args) -> dict:
     glossary = Path(args.glossary).expanduser()
     if not source.is_file() or not approval_path.is_file() or not glossary.is_file():
         raise FileNotFoundError("workbook, approval manifest, glossary 경로를 모두 확인하세요.")
+    baseline, baseline_path, _parent = resolve_ledger(source)
     # Validate/re-exec into the app runtime before creating any acceptance copy.
     app_root = ap.bootstrap_project(args.app_root)
     ap.maybe_reexec_with_app_venv(app_root)
@@ -326,6 +328,12 @@ async def run_apply(args) -> dict:
     os.replace(temp, output)
     expected = {(change["sheet"], change["cell"]) for change in changes}
     diff_validation = _verify_expected_c_diff(source, output, expected)
+    revision_changes = [
+        {"sheet": change["sheet"], "cell": change["cell"], "old_value": change["current"],
+         "new_value": change["final"], "reason": change.get("reason"), "rule_ids": change.get("rule_ids", [])}
+        for change in changes
+    ]
+    revision, revision_path = create_edit_revision(source, output, revision_changes)
 
     highlight_args = SimpleNamespace(
         app_root=str(app_root), workbook=str(output), glossary=str(glossary), sheets=None,
@@ -341,6 +349,8 @@ async def run_apply(args) -> dict:
     report_path = _report_path_for(highlighted)
     result = {
         "status": "ok", "source": str(source), "approval_manifest": str(approval_path),
+        "workbook_id": baseline["workbook_id"], "baseline_manifest": str(baseline_path),
+        "revision_manifest": str(revision_path), "revision_id": revision["revision_id"],
         "acceptance_copy": str(output), "final": str(final), "glossary": str(glossary),
         "cell_range": args.cell_range, "review_columns_removed": args.drop_review_columns or None,
         "decisions": decision_records, "changes": changes, "decision_counts": {
