@@ -21,7 +21,7 @@
    `GLOSSARY_*` 지시문, `AUDIT_INTRO`, `AUDIT_CHECKLIST_RULES`, `AUDIT_GRADE_CRITERIA`).
    마이그레이션 검증용으로만 남아 있으니 규칙을 물어볼 때 인용하지 말 것.
 3. **`docs/comprehensive_rules.md`** — 사람이 읽기 좋게 정리한 종합 문서. 설명·근거가 풍부.
-4. **Obsidian 번역 규칙 노트** — *선택적 보조*. 없어도 동작해야 한다. 사용자가 명시적으로 "옵시디언 노트랑 비교해줘"라고 할 때만 참조. (자동 연결은 향후 wiki skill/RAG로 예정)
+4. **Obsidian 번역 규칙 노트** — *선택적 보조*. 없어도 동작해야 한다. 사용자가 명시적으로 "옵시디언 노트랑 비교해줘"라고 할 때만 `scripts/obsidian_workflow.py search`로 참조한다. CLI가 실행 중이지 않으면 읽기 전용 파일 검색으로 fallback한다.
 
 ## 규칙 파일 형식
 

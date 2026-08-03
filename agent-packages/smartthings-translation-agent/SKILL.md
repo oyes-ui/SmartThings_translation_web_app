@@ -46,7 +46,7 @@ python scripts/bootstrap.py --app-root <경로> --save
 - **번역/검수 (파이프라인, LLM)**: "워크북 전체 자동 번역/검수 돌려줘" → 승인 후 `scripts/workbook_translate.py`/`scripts/workbook_audit.py --pipeline`
 - **용어집 관리**: "용어집에 이 단어 있어?", "용어 추가/수정/CSV 가져오기" → `scripts/glossary_manage.py`
 - **용어집 필터/활성화 판단**: "이 파일에서 어떤 용어 활성화해야 해?" → target의 source group 문구 + 실제 glossary 매칭 확인 → `references/glossary-report-workflow.md`
-- **Obsidian 리포트 작성**: "옵시디언용 리포트 만들어줘", "BR 검수 결과를 기존 리포트에 반영해줘" → markdown 초안 작성 또는 언어별 증분 갱신 → `references/glossary-report-workflow.md`
+- **Obsidian 리포트 작성·검색**: "옵시디언용 리포트 만들어줘", "기존 vault 사례와 비교해줘" → workspace 초안 생성, 명시 요청 시 vault 검색·언어별 증분 갱신 → `scripts/obsidian_workflow.py` + `references/glossary-report-workflow.md`
 - **텍스트워크북 생성**: "이 텍스트로 source 워크북 만들어줘" → `scripts/text_workbook_create.py`
 - **RAG DB 관리**: "RAG DB 현황/재빌드" → `python -m translation_web_app.rag_db_builder` (→ `references/rag-workflow.md`)
 
@@ -115,11 +115,11 @@ python scripts/bootstrap.py --app-root <경로> --save
 RAG 사례 필요    → scripts/rag_lookup.py 실행 → references/rag-workflow.md 따라 결과 해석
 NotebookLM 링크  → references/notebooklm-workflow.md 확인 → MCP/인증 확인 → 승인 후 add_notebook+select_notebook 등록 → ask_question, 일회성이면 remove_notebook 정리
 Excel 분석       → scripts/workbook_inspect.py (읽기 전용)
-통합 story 검수  → source group 고정 → AI 후보 재판정 → 후보 비의존 독립 재독해 → 필요한 표현만 /st-rag → /st-sections → /st-obsidian-report
+통합 story 검수  → source group 고정 → AI 후보 재판정 → 후보 비의존 독립 재독해 → 필요한 표현만 /st-rag → /st-sections → 표준 리포트 → 필요 시 Obsidian stage
 섹션 맥락 검토   → scripts/workbook_inspect.py --sections → 호칭·주어·조사/격·어미·접속 표현까지 C-2 템플릿으로 제안 → 승인 후 workbook_apply_edits.py
 검수 리포트 분석 → LM 판정 목록 추출(Good 코멘트 포함) → 실제 현재 셀·source group·용어집·RAG 재확인 → `수정 필요`/`유지`/`false positive`/`추가 확인`으로 재분류
 감수본 요약     → review_summary.py 로 감수본/F열 변경·AI 수정안 겹침·리포트 판단 카운트 산출 → response-patterns.md 템플릿으로 최종 summary 작성
-감수본 최종 수용 → 언어별 `현재→감수안→최종안→판정→근거` manifest 확정 → workbook_review_apply.py → (명시 시 E:H 삭제) → 전 시트 C7:C28 재하이라이트 → 값 diff·보호 언어·텍스트 보존 검증 → Obsidian 증분 기록
+감수본 최종 수용 → 언어별 `현재→감수안→최종안→판정→근거` manifest 확정 → workbook_review_apply.py → (명시 시 E:H 삭제) → 전 시트 C7:C28 재하이라이트 → 값 diff·보호 언어·텍스트 보존 검증 → 유효 result manifest로 Obsidian 상태 sync
 Excel 수정       → 변경안 제시 → 사용자 승인 → scripts/workbook_apply_edits.py → 필요 시 최신 glossary로 전체 재하이라이트
 용어집 하이라이트 → 사용자 승인 → scripts/workbook_highlight_glossary.py --include-source-sheets (원본 불변, *_highlighted_*.xlsx 생성)
 용어집 필터 판단 → target source group 소스 시트 + latest_glossary.csv 실제 매칭 → bracket occurrence/비활성 용어 예외 판단 → 필요 시 Obsidian 리포트
@@ -191,6 +191,7 @@ highlight/translate/audit 가 공유한다.
 - `references/excel-workflow.md` — SmartThings 워크북 포맷과 편집 규약
 - `references/self-vs-pipeline.md` — 셀프 모드(크레딧 0) vs 앱 파이프라인(LLM) 의사결정
 - `references/glossary-report-workflow.md` — source group 확정문구 기반 용어집 필터/활성화 판단, Obsidian 리포트 작성 규약
+- `docs/obsidian-skill-dependencies.md` — 선택 설치 Obsidian skills, MIT 출처, stage/search/publish/Base 운영
 - `references/response-patterns.md` — 한국어 응답 템플릿
 - `references/portability.md` — 다른 에이전트 도구(Codex/Claude/Antigravity)로 설치하는 법
 

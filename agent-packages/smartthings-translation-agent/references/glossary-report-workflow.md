@@ -278,13 +278,10 @@ Obsidian vault/iCloud 경로는 workspace 밖일 수 있다. 저장 전 확인:
 3. 작은 테스트 파일 생성/삭제로 쓰기 가능 여부를 확인할 수 있음
 4. 쓰기 권한이 없으면 workspace 안에 초안을 만들고 경로를 사용자에게 알려준다
 
-현재 사용자의 기본 리포트 경로로 확인된 위치:
+vault 기본 경로는 코드나 skill에 고정하지 않는다. 사용자가 이번 작업의 vault 경로를 지정하면 그 경로를 우선한다.
 
-```text
-/Users/df_n67/Library/Mobile Documents/iCloud~md~obsidian/Documents/Dptls_vault_raw/10 Projects/SmartThings_2026/AI 번역검수 리포트
-```
-
-단, 이 경로는 환경 의존적이므로 다른 세션/사용자에게 일반화하지 않는다. 사용자가 경로를 지정하면 그 경로를 우선한다.
+초안은 workspace에 먼저 만든다. vault 발행, 기존 보고서의 locale 섹션 갱신, Base 현황판 생성은
+명시 승인 후 `scripts/obsidian_workflow.py`의 `publish` 또는 `init-base`에 `--apply`를 붙여 실행한다.
 
 ### Obsidian 저장 명령 예시
 
@@ -300,17 +297,19 @@ ls -la "$OBSIDIAN_REPORT_DIR"
 touch "$OBSIDIAN_REPORT_DIR/.codex_write_test" && rm "$OBSIDIAN_REPORT_DIR/.codex_write_test"
 ```
 
-초안 리포트를 workspace에 만든 뒤 Obsidian 폴더로 복사:
+초안 리포트를 workspace에 만든 뒤 Obsidian 초안 형식으로 stage:
 
 ```bash
-cp "output/260715-049_QuickPanel_BR_RU_CN_용어집필터_초안.md" \
-  "$OBSIDIAN_REPORT_DIR/260715-049_QuickPanel_BR_RU_CN_용어집필터_초안.md"
+python scripts/obsidian_workflow.py stage "output/260715-049_QuickPanel_BR_RU_CN_용어집필터_초안.md" \
+  --output "output/obsidian/260715-049_QuickPanel_BR_RU_CN_용어집필터_초안.md"
 ```
 
-복사 확인:
+사용자 승인 후 vault에 발행:
 
 ```bash
-ls -l "$OBSIDIAN_REPORT_DIR/260715-049_QuickPanel_BR_RU_CN_용어집필터_초안.md"
+python scripts/obsidian_workflow.py publish \
+  "output/obsidian/260715-049_QuickPanel_BR_RU_CN_용어집필터_초안.md" \
+  "$OBSIDIAN_REPORT_DIR" "260715-049_QuickPanel_BR_RU_CN_용어집필터_초안.md" --apply
 ```
 
 ## 안전 메모

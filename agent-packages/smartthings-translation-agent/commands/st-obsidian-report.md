@@ -1,6 +1,6 @@
 # /st-obsidian-report
 
-SmartThings 번역/검수 작업 내용을 Obsidian용 Markdown 리포트로 새로 작성하거나 기존 리포트의 언어별 섹션을 증분 갱신한다.
+SmartThings 번역/검수 작업 내용을 Obsidian용 Markdown 리포트로 준비·검색·명시 발행·납품 상태 갱신한다.
 
 ## Arguments
 
@@ -16,14 +16,28 @@ SmartThings 번역/검수 작업 내용을 Obsidian용 Markdown 리포트로 새
 
 ## Workflow
 
-1. `references/glossary-report-workflow.md`의 "Obsidian 리포트 작성" 섹션을 따른다.
-2. 새 리포트면 Markdown front matter를 포함해 초안을 만들고, 기존 리포트면 해당 언어 섹션만 갱신한다.
-3. 언어별 섹션에 `AI 판정`, `최종 판단`, `source group`, `RAG 근거`, `최종 문안/제안`, `반영 상태`를 기록한다.
-4. 기본 운영은 검수 직후 제안·근거만 기록하고 `반영 상태: 미확인`으로 둔다. 여러 언어 검수 후 현재 납품 워크북을 한 번 읽어 반영 상태만 일괄 갱신한다.
-5. `/st-story-apply`를 실행한 경우 `.delivery.json`, `/st-review-apply`를 실행한 경우 `.review_apply.json` result manifest를 읽어 `최종본 경로`, `glossary`, `값 변경 검증`, `highlight report`를 작업 메모에 기록한다. 감수본 수용은 언어별 `현재→감수안→최종안→판정→근거`를 포함하며, manifest가 없는 수정본은 `반영 완료`로 표시하지 않는다.
-6. Obsidian vault/iCloud 경로는 먼저 `ls -la`로 접근 가능 여부를 확인한다.
-7. workspace 밖 경로에 저장해야 하면 필요한 권한 승인을 받은 뒤 복사한다.
-8. 저장 후 `ls -l`로 파일 존재를 확인한다.
+1. `references/glossary-report-workflow.md`와 `docs/obsidian-skill-dependencies.md`를 따른다.
+2. 기본은 `stage`: 표준 Markdown 리포트를 workspace의 Obsidian 초안으로 변환한다. 구조화 finding, anchor, `before/after`, rule ID, approval 상태는 유지한다.
+3. `search`는 사용자가 Obsidian 자료 검색·비교를 **명시**했을 때만 실행한다. `--vault-name`과 실행 중인 Obsidian CLI가 있으면 CLI를 사용하고, 아니면 읽기 전용 파일 검색으로 fallback한다.
+4. `publish`와 `init-base`는 vault를 변경하므로 사용자 승인과 `--apply`가 필수다. 기존 리포트는 `--locale`로 지정한 언어 섹션만 증분 갱신한다.
+5. `sync-status`는 `/st-story-apply`의 `.delivery.json` 또는 `/st-review-apply`의 `.review_apply.json`처럼 유효한 result manifest만 근거로 `applied`와 납품 검증을 기록한다.
+
+```bash
+# workspace 초안 생성 (기본, vault 미변경)
+python scripts/obsidian_workflow.py stage outputs/review/review-001.md \
+  --output outputs/obsidian/review-001.md
+
+# 명시 요청한 vault 검색 (CLI 미가동이면 파일 검색 fallback)
+python scripts/obsidian_workflow.py search "/path/to/vault" "콜롬비아 tú" --limit 10
+
+# vault 발행 / 기존 CO 섹션만 갱신 (사용자 승인 후에만)
+python scripts/obsidian_workflow.py publish outputs/obsidian/review-001.md "/path/to/vault" \
+  "SmartThings/review-001.md" --locale CO --apply
+
+# front matter 기반 읽기 전용 현황판 생성 (사용자 승인 후에만)
+python scripts/obsidian_workflow.py init-base "/path/to/vault" \
+  --output "SmartThings/SmartThings Translation Reviews.base" --apply
+```
 
 ## Report Shape
 
@@ -43,3 +57,4 @@ SmartThings 번역/검수 작업 내용을 Obsidian용 Markdown 리포트로 새
 - Excel 원본은 수정하지 않는다.
 - 리포트에 API 키, `.env` 내용, 비밀 값은 쓰지 않는다.
 - 사용자가 경로를 지정하면 그 경로를 우선하고, 기존 개인 경로를 다른 환경에 일반화하지 않는다.
+- Obsidian 노트는 canonical 규칙·glossary보다 낮은 보조 근거다. 사용자가 명시하지 않으면 자동 검색하지 않는다.

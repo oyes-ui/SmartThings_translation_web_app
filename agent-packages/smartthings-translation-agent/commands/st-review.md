@@ -16,3 +16,6 @@ python scripts/review_report_builder.py story.xlsx proposals.json \
 ```
 
 사람이 manifest의 항목을 `approval_status: approved`로 바꾼 뒤에만 `/st-apply`가 이를 처리한다.
+
+Obsidian용 연결은 기본적으로 workspace 초안만 만든다. 사용자가 vault 발행 또는 과거 노트 검색을
+명시한 경우에만 `/st-obsidian-report`와 `scripts/obsidian_workflow.py`를 사용한다.

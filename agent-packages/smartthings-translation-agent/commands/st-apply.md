@@ -40,3 +40,13 @@ python scripts/workbook_story_apply.py story.xlsx approval-manifest.json \
 
 원어민 감수의 `accept`/`partial` 판정 manifest는 기존 `/st-review-apply`를 계속 사용한다. live
 manifest는 `before`/`after`가 확정된 일반 편집·콜롬비아 현지화 수정의 handoff 계약이다.
+
+## Obsidian 상태 반영
+
+`/st-apply` 자체는 vault를 쓰지 않는다. 사용자가 명시적으로 요청한 경우에만 성공 result manifest를
+근거로 workspace Obsidian 초안의 상태를 갱신한다. manifest가 없거나 검증 실패면 `applied`로 기록하지 않는다.
+
+```bash
+python scripts/obsidian_workflow.py sync-status outputs/obsidian/review-001.md \
+  story_final.review_apply.json --output outputs/obsidian/review-001-applied.md
+```
