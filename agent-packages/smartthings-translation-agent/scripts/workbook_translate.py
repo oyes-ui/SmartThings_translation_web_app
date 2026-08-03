@@ -73,7 +73,16 @@ async def run_translate(args) -> dict:
 
     events: list[dict] = []
     with redirect:
-        checker = TranslationChecker(max_concurrency=max(1, args.max_concurrency))
+        checker = TranslationChecker(
+            max_concurrency=max(1, args.max_concurrency),
+            backtranslation_lang=args.backtranslation_lang,
+            backtranslation_sheet=args.backtranslation_sheet,
+            # NOTE: run_integrated_pipeline_generator(audit_model=...)의 audit_model 인자는
+            # checker_service.py 내부에서 실제로 쓰이지 않는 죽은 파라미터다(감수/역번역은
+            # 항상 TranslationChecker(model_name=...) 하나만 참조). --audit-model 이 실제로
+            # 감수·역번역 모델을 바꾸게 하려면 여기서 명시적으로 넘겨야 한다.
+            model_name=args.audit_model,
+        )
         async for event in checker.run_integrated_pipeline_generator(
             source_file_path=str(workbook),
             cell_range=args.cell_range,
@@ -135,6 +144,14 @@ def main() -> None:
     parser.add_argument("--translation-model", default="gemini-3.6-flash")
     parser.add_argument("--audit-model", default="gpt-5.2")
     parser.add_argument("--max-concurrency", type=int, default=5)
+    parser.add_argument("--backtranslation-lang",
+                        help="역번역 참조 언어 강제 지정(예: 'Korean'). 미지정 시 기존 동작"
+                             "(=번역 source_lang으로 역번역) 그대로.")
+    parser.add_argument("--backtranslation-sheet",
+                        help="역번역 결과를 기록할 별도 시트명(예: 'CO(콜롬비아) 역번역'). "
+                             "워크북에 미리 존재해야 하며(workbook_add_target_sheet.py "
+                             "--backtranslation-sheet 로 생성), --backtranslation-lang과 "
+                             "함께 지정해야 실제로 기록된다.")
     parser.add_argument("--app-root", help="app repo 경로 명시")
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--verbose", action="store_true")

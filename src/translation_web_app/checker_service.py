@@ -93,6 +93,8 @@ class TranslationChecker:
         short_text_whitelist=None,
         skip_llm_when_glossary_mismatch: bool = False,
         no_backtranslation: bool = False,
+        backtranslation_lang: str = None,
+        backtranslation_sheet: str = None,
         gemini_api_key: str = None,
         openai_api_key: str = None,
         audit_reasoning_effort: str = None,
@@ -110,6 +112,12 @@ class TranslationChecker:
         self._sem = asyncio.Semaphore(self.max_concurrency)
             
         self.no_backtranslation = no_backtranslation
+        # 역번역 참조 언어를 실제 번역 source_lang과 분리하고 싶을 때 사용(예: 소스가
+        # 영어라도 한국어 리뷰어를 위해 항상 한국어로 역번역). None이면 기존 동작(=source_lang) 유지.
+        self.backtranslation_lang = backtranslation_lang
+        # 역번역 결과를 같은 시트의 인접 열이 아니라 별도 시트(같은 좌표)에 기록하고 싶을 때
+        # 시트명을 지정한다. None이면 역번역 결과를 Excel에 기록하지 않는다(보고서에만 남음).
+        self.backtranslation_sheet = backtranslation_sheet
 
         # Whitelist
         default_whitelist = {"ok", "on", "off", "ai", "5g", "go", "up", "usb", "nfc"}
@@ -1250,6 +1258,22 @@ class TranslationChecker:
         except Exception as e:
             return f"[역번역 오류]: {e}"
 
+    def _write_backtranslation_cell(self, ws, coord: str, back_translation) -> None:
+        """역번역 결과를 별도 시트(self.backtranslation_sheet)의 같은 좌표에 기록한다.
+
+        self.backtranslation_lang 과 self.backtranslation_sheet 이 모두 설정된 경우에만
+        동작(opt-in) — 기존 24개 언어 시트나 웹 UI 경로(항상 둘 다 None)에는 영향을 주지 않는다.
+        대상 시트는 번역 시트와 동일한 파일 안에서 미리 준비돼 있어야 한다
+        (workbook_add_target_sheet.py --backtranslation-sheet 참고); 없으면 조용히 건너뛴다
+        (배치 전체를 중단시키지 않도록).
+        """
+        if not self.backtranslation_lang or not self.backtranslation_sheet or not back_translation:
+            return
+        wb = ws.parent
+        if self.backtranslation_sheet not in wb.sheetnames:
+            return
+        wb[self.backtranslation_sheet][coord] = back_translation
+
     def _apply_rich_text(self, text: str, keywords: list, base_font=None):
         """
         텍스트 내의 키워드를 파란색으로 하이라이트하되, 나머지 텍스트는 base_font의 스타일을 유지합니다.
@@ -1547,8 +1571,9 @@ class TranslationChecker:
                 res["ai_text"], res["ai_json"] = ai_tuple
                 res["back_translation"] = "[역번역 비활성화됨]"
             else:
+                bt_ref_lang = self.backtranslation_lang or source_lang
                 bt_task = self._with_semaphore(
-                    self.get_back_translation(target, tgt_lang, source_lang)
+                    self.get_back_translation(target, tgt_lang, bt_ref_lang)
                 )
                 ai_tuple, bt = await asyncio.gather(qa_task, bt_task)
                 res["ai_text"], res["ai_json"] = ai_tuple
@@ -1921,6 +1946,7 @@ class TranslationChecker:
                     else:
                         res = await self.process_item(item_data, captured_src_lang, tgt_lang, sheet_lang_map, tgt_lang_code, rag_identity_match=rag_identity_match)
                         res["logs"] = logs
+                        self._write_backtranslation_cell(ws, coord, res.get("back_translation"))
 
                     return index, res
 
@@ -2175,7 +2201,8 @@ class TranslationChecker:
             else:
                 res = await self.process_item(item_data, source_lang, target_lang, sheet_lang_map, target_lang_code, rag_identity_match=rag_identity_match)
                 res["logs"] = logs
-            
+                self._write_backtranslation_cell(ws, coord, res.get("back_translation"))
+
             return index, res
 
         # Flatten all cells into a list of tasks
