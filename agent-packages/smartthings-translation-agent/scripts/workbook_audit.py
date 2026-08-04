@@ -73,7 +73,7 @@ async def run_audit(args) -> dict:
 
     events: list[dict] = []
     with redirect:
-        checker = TranslationChecker(max_concurrency=max(1, args.max_concurrency))
+        checker = TranslationChecker(max_concurrency=max(1, args.max_concurrency), model_name=args.audit_model)
         async for event in checker.run_inspection_async_generator(
             source_file_path=str(workbook),
             target_file_path=str(workbook),
@@ -109,6 +109,7 @@ async def run_audit(args) -> dict:
         "cell_range": args.cell_range,
         "selected_sheets": selected_sheets,
         "source_groups": source_groups,
+        "audit_model": args.audit_model,
     })
     return summary
 
@@ -131,6 +132,7 @@ def main() -> None:
     parser.add_argument("workbook", help="검수할 .xlsx (기존 번역 포함)")
     parser.add_argument("--pipeline", action="store_true",
                         help="유료 LLM 파이프라인 실행 확인 플래그 (없으면 거부)")
+    parser.add_argument("--audit-model", default="gpt-5.4-mini", help="검수 모델 (기본: gpt-5.4-mini)")
     parser.add_argument("--cell-range", default="C7:C28")
     parser.add_argument("--sheets", help="대상 시트 CSV")
     parser.add_argument("--target-lang", default="", help="단일 모드 fallback 타겟 언어")
