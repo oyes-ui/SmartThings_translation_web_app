@@ -10,10 +10,6 @@ from translation_web_app.gemini_auth import build_gemini_client
 
 load_dotenv()
 
-# OpenAI 기본 endpoint에서 아직 접근 불가능한(조직 인증 대기 등) 모델의 명시적 allowlist.
-# 여기 있는 모델만 OpenRouter로 라우팅하고, 나머지는 전부 기존 direct OpenAI 경로를 그대로 탄다.
-OPENROUTER_MODELS = {"gpt-5.6-luna"}
-
 class ModelHandler:
     def __init__(self, gemini_api_key: str = None, openai_api_key: str = None):
         # OpenAI config — runtime key takes priority over .env
@@ -21,16 +17,6 @@ class ModelHandler:
         self.openai_client = None
         if self.openai_api_key:
             self.openai_client = AsyncOpenAI(api_key=self.openai_api_key)
-
-        # OpenRouter config — direct OpenAI endpoint에서 아직 접근 불가능한 모델
-        # (OPENROUTER_MODELS 참고)만 이 client로 라우팅한다.
-        self.openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
-        self.openrouter_client = None
-        if self.openrouter_api_key:
-            self.openrouter_client = AsyncOpenAI(
-                api_key=self.openrouter_api_key,
-                base_url="https://openrouter.ai/api/v1",
-            )
 
         # Gemini config (New SDK) — runtime key takes priority over .env
         # Vertex AI(서비스 계정)가 우선이고, 평문 API Key는 fallback (build_gemini_client 참고)
@@ -163,11 +149,7 @@ class ModelHandler:
 
     async def call_gpt(self, prompt, model_name="gpt-5.4-mini", system_instruction=None,
                         response_json=False, reasoning_effort: str | None = None):
-        use_openrouter = model_name in OPENROUTER_MODELS
-        client = self.openrouter_client if use_openrouter else self.openai_client
-        if not client:
-            if use_openrouter:
-                return f"OpenRouter API Key not configured (required for {model_name})."
+        if not self.openai_client:
             return "OpenAI API Key not configured."
 
         try:
@@ -182,10 +164,8 @@ class ModelHandler:
 
             messages.append({"role": "user", "content": final_prompt})
 
-            # OpenRouter는 "openai/<model>" 슬러그를 요구한다. usage_stats/리포트에는
-            # 원래 model_name을 그대로 남겨 프라이싱 테이블 등과 이름이 어긋나지 않게 한다.
             kwargs = {
-                "model": f"openai/{model_name}" if use_openrouter else model_name,
+                "model": model_name,
                 "messages": messages
             }
             if response_json:
@@ -193,7 +173,7 @@ class ModelHandler:
             if reasoning_effort:
                 kwargs["reasoning_effort"] = reasoning_effort
 
-            response = await client.chat.completions.create(**kwargs)
+            response = await self.openai_client.chat.completions.create(**kwargs)
             res_text = response.choices[0].message.content.strip()
 
             usage = getattr(response, "usage", None)
