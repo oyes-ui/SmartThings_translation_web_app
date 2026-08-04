@@ -24,6 +24,14 @@
     <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+    <!-- Renders `> [!type] title` callouts (Obsidian + GitHub alert syntax).
+         Module scripts are deferred, so this resolves before app.js's
+         DOMContentLoaded handler runs. No bundled global build exists, so it
+         is loaded via jsdelivr's ESM re-export instead of a plain <script>. -->
+    <script type="module">
+        import obsidianCallouts from "https://cdn.jsdelivr.net/npm/markdown-it-obsidian-callouts@0.3.4/+esm";
+        window.mditObsidianCallouts = obsidianCallouts;
+    </script>
 
     <!-- html2pdf.js for exporting -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>

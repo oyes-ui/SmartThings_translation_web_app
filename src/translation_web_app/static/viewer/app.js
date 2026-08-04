@@ -150,9 +150,14 @@ document.addEventListener('DOMContentLoaded', () => {
         findings = collectFindings(bodyText);
 
         const md = window.markdownit({ html: true, linkify: true, breaks: false });
+        // Renders `> [!type] title` (Obsidian callouts / GitHub alerts). Absent
+        // if the CDN module failed to load -- callouts then fall back to plain
+        // blockquotes, which is degraded but never broken.
+        if (window.mditObsidianCallouts) md.use(window.mditObsidianCallouts);
         // DOMPurify is the security boundary: report bodies can contain raw HTML
         // written by an agent or a human, and html:true above lets it through.
-        const clean = DOMPurify.sanitize(md.render(bodyText), { USE_PROFILES: { html: true } });
+        // svg:true is required too -- callout title icons are inline <svg>.
+        const clean = DOMPurify.sanitize(md.render(bodyText), { USE_PROFILES: { html: true, svg: true } });
         markdownBody.innerHTML = clean;
 
         decorateFindings();
@@ -199,18 +204,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             collapseStructuredBlocks(section);
             pairTranslationBlocks(section);
+            addCopyButtons(section);
         });
     }
 
     function collapseStructuredBlocks(section) {
-        // YAML/JSON stay in the file; the viewer just folds them away.
+        // Only the finding's own YAML meta block needs client-side folding --
+        // report_builder.py emits it as a bare fenced block. The Payload JSON
+        // blocks are already wrapped in a native <details> in the .md itself
+        // (report_builder.py's _details()), so they collapse the same way
+        // here and in Obsidian; re-wrapping them here would double-nest.
         section.querySelectorAll('pre > code').forEach((code) => {
             const cls = code.className || '';
-            if (!/language-(yaml|json)/.test(cls)) return;
+            if (!/language-yaml/.test(cls)) return;
             const pre = code.parentElement;
             const details = document.createElement('details');
             const summary = document.createElement('summary');
-            summary.textContent = /yaml/.test(cls) ? '메타데이터 (YAML)' : '원본 Payload (JSON)';
+            summary.textContent = '메타데이터 (YAML)';
             details.appendChild(summary);
             pre.parentNode.insertBefore(details, pre);
             details.appendChild(pre);
@@ -218,26 +228,65 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function pairTranslationBlocks(section) {
-        // Show 현재 번역문 / 제안 번역문 side by side for quick diffing.
-        const headings = Array.from(section.querySelectorAll('h4'));
-        const current = headings.find((h) => h.textContent.includes('현재 번역문'));
-        const proposed = headings.find((h) => h.textContent.includes('제안 번역문'));
+        // Show 현재 번역문 / 제안 번역문 side by side, directly under 원문 --
+        // NOT at the end of the card. 원문/현재 번역문/제안 번역문 render as
+        // `.callout` divs (title baked into `.callout-title-inner`), not
+        // h4 headings, so match on that instead. Insert the grid at 현재
+        // 번역문's original slot before moving it in; appendChild alone would
+        // relocate the pair to the bottom, after 검수 상세 / Payload sections.
+        const callouts = Array.from(section.querySelectorAll('.callout'));
+        const byTitle = (text) => callouts.find((c) => {
+            const title = c.querySelector('.callout-title-inner');
+            return title && title.textContent.trim() === text;
+        });
+        const current = byTitle('현재 번역문');
+        const proposed = byTitle('제안 번역문');
         if (!current || !proposed) return;
-        const currentPre = current.nextElementSibling;
-        const proposedPre = proposed.nextElementSibling;
-        if (!currentPre || !proposedPre) return;
 
         const grid = document.createElement('div');
         grid.className = 'translation-pair';
-        const left = document.createElement('div');
-        const right = document.createElement('div');
-        left.appendChild(current);
-        left.appendChild(currentPre);
-        right.appendChild(proposed);
-        right.appendChild(proposedPre);
-        grid.appendChild(left);
-        grid.appendChild(right);
-        section.appendChild(grid);
+        section.insertBefore(grid, current);
+        grid.appendChild(current);
+        grid.appendChild(proposed);
+    }
+
+    // The old card UI let reviewers copy a cell's text with one click (to
+    // paste back into Excel); the callout redesign dropped that. Restored
+    // here as a per-callout button -- 원문/현재 번역문/제안 번역문 only, the
+    // three things someone would actually paste elsewhere.
+    const COPYABLE_CALLOUTS = ['원문', '현재 번역문', '제안 번역문'];
+
+    function addCopyButtons(section) {
+        section.querySelectorAll('.callout').forEach((callout) => {
+            const titleEl = callout.querySelector('.callout-title-inner');
+            const title = titleEl ? titleEl.textContent.trim() : '';
+            if (!COPYABLE_CALLOUTS.includes(title)) return;
+            const code = callout.querySelector('.callout-content pre code');
+            if (!code) return;
+
+            const btn = document.createElement('button');
+            btn.className = 'copy-btn';
+            btn.type = 'button';
+            btn.title = `${title} 복사`;
+            btn.innerHTML = '<i class="ri-file-copy-line"></i>';
+            btn.addEventListener('click', () => copyToClipboard(code.textContent, btn));
+            callout.querySelector('.callout-title').appendChild(btn);
+        });
+    }
+
+    async function copyToClipboard(text, btn) {
+        try {
+            await navigator.clipboard.writeText(text);
+            btn.innerHTML = '<i class="ri-check-line"></i>';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.innerHTML = '<i class="ri-file-copy-line"></i>';
+                btn.classList.remove('copied');
+            }, 1500);
+        } catch (err) {
+            console.error('Failed to copy:', err);
+            alert('클립보드 복사에 실패했습니다.');
+        }
     }
 
     function buildDashboard() {

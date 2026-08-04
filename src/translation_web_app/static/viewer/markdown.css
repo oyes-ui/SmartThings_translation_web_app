@@ -40,6 +40,16 @@
     margin: 16px 0 6px;
 }
 
+/* 검수 상세의 개별 항목 라벨 (대소문자 점검 / 용어집 점검 / RAG / 역번역 / AI 검수 결과) */
+.markdown-body h5 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary, #64748b);
+    margin: 14px 0 6px;
+    padding-left: 9px;
+    border-left: 2px solid rgba(100, 116, 139, 0.3);
+}
+
 .markdown-body p,
 .markdown-body li {
     margin: 6px 0;
@@ -76,19 +86,48 @@
 }
 
 .markdown-body table {
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     width: 100%;
-    margin: 12px 0;
-    font-size: 14px;
+    margin: 14px 0;
+    font-size: 13.5px;
     display: block;
     overflow-x: auto;
+    border: 1px solid rgba(100, 116, 139, 0.25);
+    border-radius: 10px;
 }
 
 .markdown-body th,
 .markdown-body td {
-    border: 1px solid rgba(100, 116, 139, 0.25);
-    padding: 7px 10px;
+    border-bottom: 1px solid rgba(100, 116, 139, 0.2);
+    padding: 8px 12px;
     text-align: left;
+    vertical-align: top;
+}
+
+.markdown-body tr:last-child td {
+    border-bottom: none;
+}
+
+.markdown-body th {
+    background: rgba(100, 116, 139, 0.09);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-secondary, #64748b);
+}
+
+.markdown-body tr:nth-child(even) td {
+    background: rgba(100, 116, 139, 0.05);
+}
+
+/* 검수 상세 표: 첫 열은 "대소문자 점검" 류의 짧은 라벨 */
+.markdown-body td:first-child {
+    font-weight: 600;
+    color: var(--text-secondary, #64748b);
+    white-space: nowrap;
+    width: 1%;
 }
 
 .markdown-body blockquote {
@@ -99,14 +138,31 @@
 }
 
 /* --- Finding sections --- */
+/* Ties into the app's own card language (--glass-bg/--shadow-md/--radius-lg
+   from styles.css) instead of the ad-hoc --card-bg fallback this used to use,
+   so a finding reads as the same "card" as the dashboard stat cards above it. */
 
 .markdown-body .finding {
-    background: var(--card-bg, #fff);
-    border: 1px solid rgba(100, 116, 139, 0.18);
-    border-radius: 14px;
-    padding: 18px 20px;
-    margin: 16px 0;
+    background: var(--glass-bg, #fff);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color, rgba(100, 116, 139, 0.18));
+    border-left: 4px solid var(--border-color, rgba(100, 116, 139, 0.18));
+    border-radius: var(--radius-lg, 14px);
+    box-shadow: var(--shadow-md, none);
+    padding: 20px 22px;
+    margin: 18px 0;
+    transition: box-shadow var(--transition-fast, 150ms ease);
 }
+
+.markdown-body .finding:hover {
+    box-shadow: var(--shadow-lg, var(--shadow-md, none));
+}
+
+.markdown-body .finding[data-status="pass"] { border-left-color: var(--success, #10b981); }
+.markdown-body .finding[data-status="warning"] { border-left-color: var(--warning, #f59e0b); }
+.markdown-body .finding[data-status="needs_revision"] { border-left-color: var(--error, #ef4444); }
+.markdown-body .finding[data-status="blocked"] { border-left-color: var(--text-secondary, #94a3b8); }
 
 .markdown-body .finding details {
     margin: 8px 0;
@@ -131,6 +187,99 @@
     .translation-pair {
         grid-template-columns: 1fr;
     }
+}
+
+/* --- Callouts (markdown-it-obsidian-callouts: `> [!type] title`) ---
+   Colors match Obsidian's own defaults (its style/index.css, not shipped via
+   npm) so a report looks the same here as it does in Obsidian. */
+
+.markdown-body .callout {
+    border-radius: 10px;
+    border-left: 4px solid rgb(var(--callout-color));
+    background: rgba(var(--callout-color), 0.08);
+    padding: 12px 14px;
+    margin: 10px 0;
+}
+
+.markdown-body .callout-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    color: rgb(var(--callout-color));
+}
+
+.markdown-body .callout-title-icon svg {
+    width: 15px;
+    height: 15px;
+    display: block;
+}
+
+/* Per-cell copy button (원문/현재 번역문/제안 번역문 only -- app.js's
+   COPYABLE_CALLOUTS), restoring the old card UI's copy-to-paste-into-Excel
+   workflow. */
+.markdown-body .callout .copy-btn {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid rgba(var(--callout-color), 0.35);
+    border-radius: 5px;
+    color: rgb(var(--callout-color));
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 150ms ease;
+}
+
+.markdown-body .callout .copy-btn:hover {
+    background: rgba(var(--callout-color), 0.15);
+}
+
+.markdown-body .callout .copy-btn.copied {
+    color: var(--success, #10b981);
+    border-color: var(--success, #10b981);
+}
+
+.markdown-body .callout-content {
+    margin-top: 6px;
+}
+
+.markdown-body .callout-content > *:first-child { margin-top: 0; }
+.markdown-body .callout-content > *:last-child { margin-bottom: 0; }
+.markdown-body .callout-content pre { margin: 0; }
+
+.markdown-body .callout[data-callout="note"],
+.markdown-body .callout[data-callout="info"],
+.markdown-body .callout[data-callout="todo"] { --callout-color: 8, 109, 221; }
+
+.markdown-body .callout[data-callout="tip"],
+.markdown-body .callout[data-callout="abstract"] { --callout-color: 0, 191, 188; }
+
+.markdown-body .callout[data-callout="success"] { --callout-color: 8, 185, 78; }
+
+.markdown-body .callout[data-callout="question"],
+.markdown-body .callout[data-callout="warning"] { --callout-color: 236, 117, 0; }
+
+.markdown-body .callout[data-callout="failure"],
+.markdown-body .callout[data-callout="danger"],
+.markdown-body .callout[data-callout="bug"] { --callout-color: 233, 49, 71; }
+
+.markdown-body .callout[data-callout="example"] { --callout-color: 120, 82, 238; }
+
+.markdown-body .callout[data-callout="quote"] { --callout-color: 158, 158, 158; }
+
+/* translation-pair now holds two .callout divs directly (each carries its
+   own title), not heading+pre pairs. */
+.translation-pair .callout {
+    margin: 0;
+    height: 100%;
 }
 
 /* --- Status chips / dots --- */
@@ -254,10 +403,32 @@
     color: #e2e8f0;
 }
 
-[data-theme="dark"] .markdown-body .finding,
+/* .finding is intentionally absent here: it's driven by --glass-bg/--border-color,
+   which already flip for dark theme in styles.css. */
 [data-theme="dark"] .stat-card {
     background: rgba(30, 41, 59, 0.6);
     border-color: rgba(148, 163, 184, 0.2);
+}
+
+[data-theme="dark"] .markdown-body table {
+    border-color: rgba(148, 163, 184, 0.2);
+}
+
+[data-theme="dark"] .markdown-body th,
+[data-theme="dark"] .markdown-body td {
+    border-color: rgba(148, 163, 184, 0.15);
+}
+
+[data-theme="dark"] .markdown-body th {
+    background: rgba(148, 163, 184, 0.12);
+}
+
+[data-theme="dark"] .markdown-body tr:nth-child(even) td {
+    background: rgba(148, 163, 184, 0.06);
+}
+
+[data-theme="dark"] .markdown-body h5 {
+    border-left-color: rgba(148, 163, 184, 0.3);
 }
 
 [data-theme="dark"] .markdown-body pre {
@@ -267,6 +438,10 @@
 
 [data-theme="dark"] .markdown-body :not(pre) > code {
     background: rgba(148, 163, 184, 0.22);
+}
+
+[data-theme="dark"] .markdown-body .callout {
+    background: rgba(var(--callout-color), 0.15);
 }
 
 [data-theme="dark"] .status-pass { background: rgba(16, 185, 129, 0.22); color: #6ee7b7; }

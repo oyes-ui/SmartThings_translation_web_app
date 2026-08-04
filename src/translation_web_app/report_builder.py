@@ -61,6 +61,125 @@ def _anchor(finding_id: str) -> str:
     return re.sub(r"[^0-9a-z]+", "-", finding_id.lower()).strip("-")
 
 
+def _table_cell(value: Any) -> str:
+    """Escape a value for a GFM table cell: no raw newlines, no unescaped `|`."""
+    text = _text(value).strip()
+    text = text.replace("|", "\\|")
+    return re.sub(r"\r\n|\r|\n", "<br>", text)
+
+
+# GFM alert / Obsidian callout type per section. Obsidian aliases some of
+# these (important/summary -> tip's color, etc.) but the viewer plugin
+# (markdown-it-obsidian-callouts) only ships icons for this exact set, so
+# stick to it rather than Obsidian's full alias list.
+_CALLOUT_TYPES = {
+    "원문": "quote",
+    "현재 번역문": "note",
+    "제안 번역문": "tip",
+    "대소문자 점검": "info",
+    "용어집 점검": "info",
+    "RAG 일관성 참고": "example",
+    "역번역": "quote",
+}
+
+
+def _callout(title: str, body: str) -> str:
+    """`> [!type] title` callout, body pre-fenced and `>`-prefixed to nest inside it.
+
+    Both Obsidian and GitHub read this as a blockquote, so it degrades to a
+    plain (unstyled but still readable) blockquote anywhere that doesn't
+    recognize the `[!type]` marker -- never broken, just less colorful.
+    """
+    callout_type = _CALLOUT_TYPES[title]
+    lines = [f"> [!{callout_type}] {title}"]
+    lines.extend(f"> {line}" if line else ">" for line in body.split("\n"))
+    return "\n".join(lines)
+
+
+def _labeled_text(label: str, value: Any, fallback: str) -> str:
+    """대소문자/용어집/역번역: 서로 독립된 자유 서술이라 각자 콜아웃으로 보존한다.
+
+    A shared table would force these into one row shape, but each is its own
+    free-text report with its own internal structure that a table cell would
+    flatten. The content is still fenced inside the callout so its own
+    literal Markdown-looking characters (backticks, `- ` runs) are never
+    reinterpreted.
+    """
+    text = _text(value).strip() or fallback
+    return _callout(label, _fence(text))
+
+
+def _rag_case_text(case: Mapping[str, Any]) -> str:
+    match_type = _text(case.get("type")).upper()
+    if _text(case.get("type")).strip().lower() == "semantic" and case.get("score") is not None:
+        match_type += f" ({case['score']}%)"
+    header = f"{match_type} | {_text(case.get('story_id'))} | {_text(case.get('section'))}"
+    return f"{header}\n- 번역: {_text(case.get('target'))}"
+
+
+def _rag_callout(res: Mapping[str, Any]) -> str:
+    """RAG 일관성 참고: 사례가 여러 건이면 콜아웃 하나 안에 사례별로 code fence를 따로 둔다.
+
+    Built from rag_json (checker_service's structured per-case list), not by
+    re-splitting the pre-flattened rag_text -- one case's data was never one
+    string to begin with. A single merged fence would visually mash unrelated
+    cases together; separate fences per case make each one scannable on its
+    own, same reasoning as the AI 검수 결과 table over a single blob.
+    """
+    cases = None
+    try:
+        parsed = json.loads(_text(res.get("rag_json")).strip() or "[]")
+    except (ValueError, TypeError):
+        parsed = None
+    if isinstance(parsed, list) and parsed and all(isinstance(c, dict) and "target" in c for c in parsed):
+        cases = parsed
+
+    if cases:
+        body = "\n\n".join(_fence(_rag_case_text(case)) for case in cases)
+    else:
+        text = _text(res.get("rag_text")).strip() or "[별도 지적 사항 없음]"
+        body = _fence(text)
+    return _callout("RAG 일관성 참고", body)
+
+
+def _details(summary: str, body: str) -> str:
+    """Native `<details>` so this collapses by default in Obsidian too --
+    app.js's client-side collapsing only ever affected the web viewer, never
+    the raw .md file Obsidian reads directly."""
+    return f"<details>\n<summary>{summary}</summary>\n\n{body}\n\n</details>"
+
+
+def _ai_result_block(res: Mapping[str, Any], audit: Mapping[str, Any]) -> str:
+    """AI 검수 결과: evaluation이 실제 category/comment 쌍이므로 표로 만든다.
+
+    Built from the parsed ai_json (the model's structured output), not the
+    pre-flattened ai_text string -- so category/comment pairs land in real
+    table rows instead of being re-parsed out of prose. Falls back to ai_text
+    for bypass/skip/error paths where there is no evaluation list at all.
+    """
+    evaluation = audit.get("evaluation")
+    if isinstance(evaluation, list) and evaluation and all(isinstance(item, dict) for item in evaluation):
+        lines = ["| 항목 | 결과 |", "| --- | --- |"]
+        for item in evaluation:
+            category = _table_cell(item.get("category")) or "-"
+            comment = _table_cell(item.get("comment")) or "-"
+            lines.append(f"| {category} | {comment} |")
+        return "\n".join(lines)
+    ai_text = _text(res.get("ai_text")).strip() or "[해당 없음]"
+    return _fence(ai_text)
+
+
+def _detail_block(res: Mapping[str, Any], audit: Mapping[str, Any]) -> str:
+    blocks = [
+        _labeled_text("대소문자 점검", res.get("case_section"), "[별도 지적 사항 없음]"),
+        _labeled_text("용어집 점검", res.get("glossary_section"), "[별도 지적 사항 없음]"),
+        _rag_callout(res),
+        _labeled_text("역번역", res.get("back_translation"), "[해당 없음]"),
+        f"##### AI 검수 결과\n\n{_ai_result_block(res, audit)}",
+    ]
+    return "\n\n".join(blocks)
+
+
 def parse_audit_json(raw: Any) -> dict:
     """Best-effort parse of the stored audit payload; never raises."""
     if isinstance(raw, dict):
@@ -155,42 +274,28 @@ def render_finding(res: Mapping[str, Any], *, label: str = "", revision: int = 1
     if label:
         heading += f" ({label.strip()})"
 
-    detail_lines = [
-        f"- 대소문자 점검: {_text(res.get('case_section')) or '[별도 지적 사항 없음]'}",
-        f"- 용어집 점검: {_text(res.get('glossary_section')) or '[별도 지적 사항 없음]'}",
-        f"- RAG 일관성 참고: {_text(res.get('rag_text')) or '[별도 지적 사항 없음]'}",
-        f"- 역번역: {_text(res.get('back_translation')) or '[해당 없음]'}",
-        f"- AI 검수 결과: {_text(res.get('ai_text')) or '[해당 없음]'}",
-    ]
-
     parts = [
         f"{heading} {{#{_anchor(finding_id)}}}",
         "",
         _yaml_block(meta),
         "",
-        "#### 원문",
+        _callout("원문", _fence(res.get("source"))),
         "",
-        _fence(res.get("source")),
+        _callout("현재 번역문", _fence(current)),
         "",
-        "#### 현재 번역문",
-        "",
-        _fence(current),
-        "",
-        "#### 제안 번역문",
-        "",
-        _fence(suggestion or NO_SUGGESTION),
+        _callout("제안 번역문", _fence(suggestion or NO_SUGGESTION)),
         "",
         "#### 검수 상세",
         "",
-        "\n".join(detail_lines),
+        _detail_block(res, audit),
         "",
         "#### 원본 검수 Payload",
         "",
-        _fence(_text(res.get("ai_json")) or "{}", "json"),
+        _details("펼쳐서 보기 (JSON)", _fence(_text(res.get("ai_json")) or "{}", "json")),
         "",
         "#### RAG Payload",
         "",
-        _fence(_text(res.get("rag_json")) or "[]", "json"),
+        _details("펼쳐서 보기 (JSON)", _fence(_text(res.get("rag_json")) or "[]", "json")),
         "",
     ]
     return "\n".join(parts)

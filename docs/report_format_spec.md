@@ -24,6 +24,12 @@
 - Excel 반영은 `apply_status: approved`인 항목만, 원본이 아닌 새 Excel 사본에 적용한다.
 - 모든 변경 제안은 셀 위치, 근거 규칙, 적용 전후 값을 식별할 수 있어야 한다.
 - 명시 규칙·glossary·시장 기준·RAG 사례의 우선순위는 별도 규칙 명세를 따른다.
+- 원문/현재 번역문/제안 번역문과 검수 상세의 개별 항목은 `> [!type] 제목` 콜아웃(Obsidian
+  callout이자 GitHub alert 표준 문법)으로 감싼다. `[!type]`을 모르는 렌더러에서는 그냥
+  평범한 blockquote로 보이므로 어디서 열어도 깨지지 않는다 — 색·아이콘이 없어질 뿐이다.
+  타입은 `markdown-it-obsidian-callouts`가 아이콘을 갖고 있는 집합
+  (`note`/`info`/`tip`/`warning`/`success`/`example`/`quote`/`question`/`failure`/`danger`/
+  `bug`/`abstract`/`todo`)으로 제한한다.
 
 ## 문서 구조
 
@@ -33,12 +39,16 @@ YAML front matter       # 기계 판독용 작업 메타데이터
 ## 요약                 # 사람용 전체 요약
 ## 셀 검수              # 안정된 셀별 구조
 ### {시트} · {셀}
-  YAML finding block    # 상태, 근거 규칙, 적용 상태
-  #### 원문
-  #### 현재 번역문
-  #### 제안 번역문
+  YAML finding block         # 상태, 근거 규칙, 적용 상태
+  > [!quote] 원문             # 콜아웃 (Obsidian callout / GitHub alert 문법)
+  > [!note] 현재 번역문
+  > [!tip] 제안 번역문
   #### 변경 이유
   #### 검수 상세
+    > [!info] 대소문자 점검 / 용어집 점검   # 각자 독립된 콜아웃
+    > [!example] RAG 일관성 참고
+    > [!quote] 역번역
+    ##### AI 검수 결과                    # evaluation 표 (없으면 콜아웃)
   #### 원본 검수 Payload
 ## Agent Notes          # 선택적, 자유 서술 영역
 ## Decision Log         # 선택적, 승인·보류 이력
@@ -84,23 +94,20 @@ rag_evidence_ids:
   - rag-de-0021
 ```
 
-#### 원문
+> [!quote] 원문
+> ```text
+> Make home care easier with SmartThings.
+> ```
 
-```text
-Make home care easier with SmartThings.
-```
+> [!note] 현재 번역문
+> ```text
+> Mache die Pflege deines Zuhauses mit SmartThings einfacher.
+> ```
 
-#### 현재 번역문
-
-```text
-Mache die Pflege deines Zuhauses mit SmartThings einfacher.
-```
-
-#### 제안 번역문
-
-```text
-Mit SmartThings wird die Pflege deines Zuhauses einfacher.
-```
+> [!tip] 제안 번역문
+> ```text
+> Mit SmartThings wird die Pflege deines Zuhauses einfacher.
+> ```
 
 #### 변경 이유
 
@@ -109,35 +116,61 @@ Mit SmartThings wird die Pflege deines Zuhauses einfacher.
 
 #### 검수 상세
 
-- 대소문자: 별도 지적 사항 없음
-- 용어집: 준수
-- RAG 일관성: 유사 DE 사례 2건 참고
-- AI 검수: Needs Revision
+> [!info] 대소문자 점검
+> ```text
+> 별도 지적 사항 없음
+> ```
+
+> [!info] 용어집 점검
+> ```text
+> 준수
+> ```
+
+> [!example] RAG 일관성 참고
+> ```text
+> 유사 DE 사례 2건 참고
+> ```
+
+> [!quote] 역번역
+> ```text
+> Make home care easier.
+> ```
+
+##### AI 검수 결과
+
+| 항목 | 결과 |
+| --- | --- |
+| 문법/유창성 | 자연스럽습니다. |
+| 현지화 | 지역 어휘 사용을 확인했습니다. |
 
 #### 원본 검수 Payload
 
 ```json
 {
   "grade": "Needs Revision",
+  "evaluation": [
+    {"category": "문법/유창성", "comment": "자연스럽습니다."},
+    {"category": "현지화", "comment": "지역 어휘 사용을 확인했습니다."}
+  ],
   "suggested_fix": "Mit SmartThings wird die Pflege deines Zuhauses einfacher."
 }
 ```
 ````
 
-렌더러는 각 `yaml`, `text`, `json` code block을 독립적으로 처리한다.
+렌더러는 각 `yaml`, `text`, `json` code block과 `> [!type]` 콜아웃을 독립적으로 처리한다.
 
 ## 기존 TXT 및 뷰어 필드 대응
 
 | 기존 TXT/HTML 필드 | Markdown 위치 | 비고 |
 | --- | --- | --- |
-| `[상세 - 원문]` / `sourceText` | `#### 원문` | 변경 없이 보존 |
-| `[상세 - 번역문]` / `targetText` | `#### 현재 번역문` | 실제 Excel/파이프라인 값 |
-| 없음 | `#### 제안 번역문` | AI 또는 에이전트의 수정 권고 |
-| `[상세 - 대소문자 점검]` / `casingCheck` | `#### 검수 상세` | 항목별 bullet |
-| `[상세 - 용어집 점검]` / `glossaryCheck` | `#### 검수 상세` | 항목별 bullet |
-| `[상세 - RAG 일관성 참고]` / `ragCheck` | `#### 검수 상세` 및 `rag_evidence_ids` | 근거 ID 연결 |
-| `[상세 - 역번역]` | `#### 검수 상세` | 필요할 때 text block 추가 |
-| `[상세 - AI 검수 결과]` / `geminiQa` | `#### 검수 상세` | 사람용 결과 |
+| `[상세 - 원문]` / `sourceText` | `[!quote] 원문` 콜아웃 | 변경 없이 보존 |
+| `[상세 - 번역문]` / `targetText` | `[!note] 현재 번역문` 콜아웃 | 실제 Excel/파이프라인 값 |
+| 없음 | `[!tip] 제안 번역문` 콜아웃 | AI 또는 에이전트의 수정 권고 |
+| `[상세 - 대소문자 점검]` / `casingCheck` | `#### 검수 상세` → `[!info] 대소문자 점검` 콜아웃 | 다른 항목과 표를 공유하지 않는 독립 콜아웃 |
+| `[상세 - 용어집 점검]` / `glossaryCheck` | `#### 검수 상세` → `[!info] 용어집 점검` 콜아웃 | 독립 콜아웃 |
+| `[상세 - RAG 일관성 참고]` / `ragCheck` | `#### 검수 상세` → `[!example] RAG 일관성 참고` 콜아웃 및 `rag_evidence_ids` | 독립 콜아웃, 근거 ID 연결 |
+| `[상세 - 역번역]` | `#### 검수 상세` → `[!quote] 역번역` 콜아웃 | 독립 콜아웃 |
+| `[상세 - AI 검수 결과]` / `geminiQa` | `#### 검수 상세` → `##### AI 검수 결과` | `ai_json.evaluation`(category/comment 쌍)이 있으면 `항목`/`결과` 표로, 없으면(bypass/skip/error) `text` code block으로 — 여기만 콜아웃이 아니라 표인 이유는 실제로 key/value 쌍의 목록이라서다 |
 | `[상세 - AI Payload]` | `#### 원본 검수 Payload` | 원본 JSON 보존 |
 
 ## 앱과 에이전트의 역할
@@ -228,8 +261,12 @@ Excel 적용 전에는 리포트의 승인 결과를 별도 manifest로 고정�
 
 ## 뷰어 요구사항
 
-- Markdown heading과 코드 블록을 안전하게 렌더링한다.
+- Markdown heading, 코드 블록, `> [!type]` 콜아웃을 안전하게 렌더링한다. 앱 뷰어는
+  `markdown-it-obsidian-callouts`로 렌더링한다 — 플러그인 로드에 실패해도 콜아웃은 평범한
+  blockquote로 표시될 뿐 리포트가 깨지지는 않는다.
 - `finding_id`, `status`, `apply_status`를 읽어 기존 HTML 카드와 같은 요약·필터 UI를 제공할 수 있다.
-- `현재 번역문`과 `제안 번역문`을 나란히 보여 변경 여부를 즉시 확인할 수 있게 한다.
+- `현재 번역문`과 `제안 번역문`을 나란히 보여 변경 여부를 즉시 확인할 수 있게 한다(콜아웃
+  `.callout-title-inner` 텍스트로 식별 — 더 이상 `#### 현재 번역문` 헤딩이 아니다).
 - YAML/JSON 구조는 뷰어가 숨기거나 접을 수 있지만, 파일 내용에서는 보존한다.
-- 비신뢰 HTML은 DOMPurify로 정화한다.
+- 비신뢰 HTML은 DOMPurify로 정화한다. 콜아웃 아이콘은 인라인 `<svg>`이므로 DOMPurify
+  `USE_PROFILES`에 `svg: true`도 함께 켠다 — `html: true`만으로는 아이콘이 사라진다.

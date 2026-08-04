@@ -57,9 +57,9 @@ class GradeMappingTests(unittest.TestCase):
 class FindingTests(unittest.TestCase):
     def test_required_sections_present(self):
         out = render_finding(_res())
-        for heading in ("#### 원문", "#### 현재 번역문", "#### 제안 번역문",
-                        "#### 검수 상세", "#### 원본 검수 Payload"):
-            self.assertIn(heading, out)
+        for marker in ("> [!quote] 원문", "> [!note] 현재 번역문", "> [!tip] 제안 번역문",
+                       "#### 검수 상세", "#### 원본 검수 Payload"):
+            self.assertIn(marker, out)
 
     def test_metadata_block(self):
         meta = _finding_yaml(render_finding(_res()))
@@ -88,6 +88,83 @@ class FindingTests(unittest.TestCase):
         out = render_finding(_res(source="use ``` then ```` here"))
         # The opening fence must be longer than the longest run in the body.
         self.assertIn("`````text", out)
+
+    def test_detail_items_are_individually_fenced_not_a_shared_table(self):
+        """대소문자/용어집/RAG/역번역 are independent free-text reports; a shared
+        table would flatten each one's own internal structure (e.g. glossary's
+        own bullet sub-checks) into a single cell. Each becomes its own
+        callout, blank-quoted so its fenced content nests correctly."""
+        out = render_finding(_res(case_section="line1\nline2 | pipe"))
+        self.assertIn(
+            "> [!info] 대소문자 점검\n> ```text\n> line1\n> line2 | pipe\n> ```", out
+        )
+        self.assertNotIn("| 대소문자 점검 |", out)
+
+    def test_callout_survives_a_blank_line_in_the_body(self):
+        """A blank line inside fenced content must become a bare `>`, not a
+        line that silently exits the blockquote."""
+        out = render_finding(_res(case_section="line1\n\nline3"))
+        self.assertIn("> line1\n>\n> line3", out)
+
+    def test_ai_evaluation_renders_as_a_table_from_structured_json(self):
+        """AI 검수 결과's category/comment pairs come from ai_json (the model's
+        actual structured output), not by re-parsing the flattened ai_text."""
+        out = render_finding(_res(ai_json=json.dumps({
+            "grade": "Good",
+            "evaluation": [
+                {"category": "문법/유창성", "comment": "자연스럽습니다."},
+                {"category": "현지화", "comment": "지역 어휘 | 표기 확인"},
+            ],
+            "suggested_fix": "",
+        }, ensure_ascii=False)))
+        self.assertIn("##### AI 검수 결과", out)
+        self.assertIn("| 항목 | 결과 |", out)
+        self.assertIn("| 문법/유창성 | 자연스럽습니다. |", out)
+        self.assertIn("| 현지화 | 지역 어휘 \\| 표기 확인 |", out)
+
+    def test_ai_text_falls_back_to_a_fence_when_no_evaluation_list(self):
+        """Bypass/skip/error paths only ever set ai_text, not a structured
+        evaluation list -- those must still render (as a fence), not vanish."""
+        out = render_finding(_res(ai_text="[Bypassed: Translate Only Mode]",
+                                   ai_json="{}"))
+        self.assertIn("##### AI 검수 결과\n\n```text\n[Bypassed: Translate Only Mode]\n```", out)
+
+    def test_payload_sections_collapse_by_default_in_raw_markdown(self):
+        """Folding must live in the .md itself (native <details>, no `open`
+        attribute) -- app.js's old client-side wrapping only ever affected the
+        web viewer, never a report opened directly in Obsidian."""
+        out = render_finding(_res())
+        self.assertIn("#### 원본 검수 Payload\n\n<details>\n<summary>", out)
+        self.assertIn("#### RAG Payload\n\n<details>\n<summary>", out)
+        self.assertNotIn("<details open>", out)
+        self.assertNotIn('<details open="', out)
+
+    def test_rag_cases_render_as_separate_fences_not_merged(self):
+        """Two RAG matches must be two independent fenced blocks inside the
+        callout, not one fence with both cases concatenated -- each case has
+        its own shape (type/score/story/section) that a shared blob loses."""
+        rag_json = json.dumps([
+            {"type": "semantic", "score": 92.3, "story_id": "story-039", "section": "C15",
+             "source": "...", "target": "Ahorro inteligente de energía"},
+            {"type": "exact", "score": 100.0, "story_id": "story-012", "section": "C7",
+             "source": "...", "target": "Ahorro de energía inteligente"},
+        ], ensure_ascii=False)
+        out = render_finding(_res(rag_json=rag_json))
+        self.assertIn("> [!example] RAG 일관성 참고", out)
+        self.assertIn("> SEMANTIC (92.3%) | story-039 | C15", out)
+        self.assertIn("> EXACT | story-012 | C7", out)
+        # Two distinct fences, not one merged block: 4 fence markers (2 opens + 2 closes).
+        rag_section = out[out.index("[!example] RAG"):out.index("[!quote] 역번역")]
+        self.assertEqual(rag_section.count("```text"), 2)
+
+    def test_rag_error_payload_is_not_mistaken_for_case_data(self):
+        """rag_json can hold an `[{"error": ...}]` shape on lookup failure --
+        that must fall back to rag_text, not be rendered as a fake case."""
+        out = render_finding(_res(
+            rag_text="RAG 조회 오류: timeout",
+            rag_json=json.dumps([{"error": "timeout"}], ensure_ascii=False),
+        ))
+        self.assertIn("> RAG 조회 오류: timeout", out)
 
 
 class ReportTests(unittest.TestCase):
