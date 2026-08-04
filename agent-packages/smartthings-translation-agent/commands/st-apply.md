@@ -13,7 +13,7 @@ argument-hint: <review-workbook.xlsx> <approval-manifest.json>
 
 ## 실행 경로
 
-`report_format_spec.md`의 표준 검수 승인 manifest(`manifest_schema_version: 1`,
+`report_format_spec.md`의 표준 검수 승인 manifest(`manifest_schema_version: 1` 또는 `2`,
 `approval_status: approved`)는 `workbook_review_apply.py`가 직접 `decisions`로 변환한다.
 `approved` 외 상태는 Excel에 반영되지 않으며, 이 경로는 native review와 agent review 모두에
 공통으로 사용한다.

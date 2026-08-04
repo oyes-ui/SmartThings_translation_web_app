@@ -7,6 +7,11 @@ class ScoreTests(unittest.TestCase):
   g=[{"id":"a","before":"A","expected_after":"B"},{"id":"b","before":"C","expected_after":"C"}]
   r=[{"id":"a","before":"A","proposed_after":"B"},{"id":"b","before":"C","proposed_after":"D"}]
   x=evaluate(g,r);self.assertEqual(x["exact_matches"],1);self.assertEqual(x["false_positive_changes"],1)
+
+ def test_critical_miss_blocks_shadow_exit(self):
+  g=[{"id":"a","before":"A","expected_after":"B","severity":"critical"}]
+  r=[{"id":"a","before":"A","proposed_after":"A","source":"agent"}]
+  x=evaluate(g,r);self.assertEqual(x["critical_missed_changes"],1);self.assertFalse(x["shadow_exit_ready"])
  def test_id_mismatch(self):
   with self.assertRaises(ValueError):evaluate([{"id":"a"}],[])
 if __name__=="__main__":unittest.main()

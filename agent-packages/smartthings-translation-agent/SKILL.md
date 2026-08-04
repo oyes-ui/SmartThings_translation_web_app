@@ -39,7 +39,8 @@ python scripts/bootstrap.py --app-root <경로> --save
 - **RAG 사례 조회**: "과거에 이 표현 어떻게 번역했어?", "기존 사례 기준 이 독일어 괜찮아?" → `scripts/rag_lookup.py` + `references/rag-workflow.md`
 - **NotebookLM 보조 분석**: "NotebookLM 링크 참고해서 분석해줘", "검수 txt를 NotebookLM에 넣어둔 노트 기준으로 요약해줘", "노트북LM 자료까지 반영해서 반복 오류 패턴 찾아줘" → `references/notebooklm-workflow.md` + MCP `notebooklm` 도구(설치된 경우)
 - **원어민/번역사 감수본 대조·요약**: "감수본 반영여부 확인", "AI 검수 대비 최종 summary", "번역사 수정 제안 몇 건이야?" → `scripts/review_summary.py` + `references/response-patterns.md`
-- **Excel 분석/수정**: "이 워크북 JA 시트 문제 셀 알려줘", "이 셀 이렇게 고쳐줘" → `scripts/workbook_inspect.py`, `scripts/workbook_apply_edits.py` + `references/excel-workflow.md`
+- **언어 시트 에이전트 검수**: "이 워크북 JA 시트 전체 검수해줘" → `/st-inspect`: 결정론적 glossary 근거 패킷 + 5개 관점 검수 + pending approval 리포트
+- **Excel 분석/수정**: "이 워크북 구조나 셀을 보여줘", "이 셀 이렇게 고쳐줘" → `scripts/workbook_inspect.py --raw`, `scripts/workbook_apply_edits.py` + `references/excel-workflow.md`
 - **Excel 용어집 하이라이트**: "용어집 용어만 글자색 하이라이트해줘", "highlight_only 실행" → `scripts/workbook_highlight_glossary.py` + `references/excel-workflow.md`
 - **Excel 수정 검수 표시**: "수정 문자 빨간색과 용어집 파란색을 같이 보여줘" → 승인 revision manifest 기준 `scripts/workbook_incremental_highlight.py` (빨강 후 파랑, glossary 우선)
 - **섹션·story 맥락 검토**: "타이틀이 디스크립션 맥락을 잘 반영했는지 봐줘", "조사나 어미가 story 안에서 일관적인지 봐줘" → `/st-sections` + `scripts/workbook_inspect.py --sections`
@@ -60,7 +61,8 @@ python scripts/bootstrap.py --app-root <경로> --save
 |---|---|---|
 | `/st-start` | app 연결 상태·다음 단계 안내 | 0 |
 | `/st-ask` | 규칙·용어집·RAG 사례 질의 | 0~ |
-| `/st-review` | 읽기 전용 통합 검수·리포트·수정 제안 | 0 |
+| `/st-inspect` | 언어 시트 에이전트 검수·리포트·수정 제안 | 0 |
+| `/st-review` | `/st-inspect` 호환 alias (4주 shadow 전환 기간) | 0 |
 | `/st-edit` | 일반 Excel 수정 preview·승인·복사본 적용 | 0 |
 | `/st-apply` | 승인 manifest 기반 감수본·납품본 생성 | 0 |
 | `/st-pipeline` | 승인 후 앱 LLM 번역 또는 검수 | LLM |
@@ -80,7 +82,6 @@ python scripts/bootstrap.py --app-root <경로> --save
 | `/st-glossary-filter` | source group 확정문구 + 실제 용어집 매칭으로 활성/예외 판단 | 0 |
 | `/st-rag` | 과거 번역 사례 RAG 조회 | 0(offline)~ |
 | `/st-ragdb` | RAG DB 현황/빌드/업데이트 | status 0 / 빌드 LLM |
-| `/st-inspect` | 워크북 읽기 전용 분석 | 0 |
 | `/st-story-review` | AI 후보 재판정 + 독립 story 재검수(전체 콘텐츠 셀) | 0 |
 | `/st-review-apply` | 승인된 감수 판정만 C열에 반영해 최종 하이라이트 납품본 생성 | 0 |
 | `/st-sections` | 섹션 title↔description 및 story 문장 요소 일관성 검토 | 0 |

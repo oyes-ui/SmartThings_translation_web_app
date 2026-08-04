@@ -8,6 +8,7 @@
 
 - `/st-start` → `st-start.md` — 연결 상태·다음 단계
 - `/st-ask` → `st-ask.md` — 규칙·용어집·RAG 질의
+- `/st-inspect` → `st-inspect.md` — 언어 시트 에이전트 검수·리포트·제안
 - `/st-review` → `st-review.md` — 읽기 전용 검수·리포트·제안
 - `/st-edit` → `st-edit.md` — 일반 Excel 수정 preview·승인·복사본 적용
 - `/st-apply` → `st-apply.md` — 승인 manifest 기반 납품본 생성
@@ -24,7 +25,6 @@
 - `/st-prompt` → `st-prompt.md`
 - `/st-glossary` → `st-glossary.md`
 - `/st-glossary-filter` → `st-glossary-filter.md`
-- `/st-inspect` → `st-inspect.md`
 - `/st-story-review` → `st-story-review.md`
 - `/st-review-apply` → `st-review-apply.md`
 - `/st-sections` → `st-sections.md`

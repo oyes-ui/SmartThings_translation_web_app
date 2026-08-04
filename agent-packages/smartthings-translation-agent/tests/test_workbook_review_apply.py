@@ -117,6 +117,12 @@ class ReportManifestConversionTests(unittest.TestCase):
         self.assertEqual(decisions[0]["expected_before"], "current")
         self.assertEqual(decisions[0]["basis"], "fr-tone-001")
 
+    def test_v2_context_does_not_change_changes_contract(self):
+        manifest = {"manifest_schema_version": 2, "review_context": {"sheet_reviews": []}, "changes": self.CHANGES}
+        decisions = decisions_from_report_changes(manifest["changes"])
+        self.assertEqual(len(decisions), 1)
+        self.assertEqual(decisions[0]["finding_id"], "FR-C8")
+
     def test_approved_row_requires_before_and_after(self):
         with self.assertRaises(ValueError):
             decisions_from_report_changes(
