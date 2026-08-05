@@ -456,6 +456,7 @@ If it adheres well, start with [PASS]. If it needs improvement, start with [FAIL
             ))
             slot = "nav_quote_east_asian" if is_east_asian else "nav_quote_default"
             lines.append(f"- {glossary_doc.one(slot)}")
+            lines.append(f"- {glossary_doc.one('disclaimer_linebreak')}")
 
         lines += [
             f"\n[{typography_doc.display_name}]",

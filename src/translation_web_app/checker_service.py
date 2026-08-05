@@ -220,6 +220,12 @@ class TranslationChecker:
                                     target_lang: str = "") -> list:
         return self._glossary_checker._check_brand_concatenation(source_text, target_text, target_lang_code, target_lang)
 
+    def _check_disclaimer_linebreak(self, source_text: str, target_text: str, row_key: str = "") -> list:
+        return self._glossary_checker._check_disclaimer_linebreak(source_text, target_text, row_key)
+
+    def _check_nav_path_bracket_leak(self, target_text: str, row_key: str = "") -> list:
+        return self._glossary_checker._check_nav_path_bracket_leak(target_text, row_key)
+
     def _analyze_sentence_case(self, target_text: str, target_lang: str, glossary_terms=None):
         return self._glossary_checker._analyze_sentence_case(target_text, target_lang, glossary_terms)
 
@@ -811,6 +817,8 @@ class TranslationChecker:
         glossary_case_issues = self._check_glossary_casing(source, target, tgt_code)
         glossary_bracket_issues = self._check_glossary_brackets(source, target, tgt_code, tgt_lang, row_key=row_key)
         brand_concat_issues = self._check_brand_concatenation(source, target, tgt_code, tgt_lang)
+        disclaimer_linebreak_issues = self._check_disclaimer_linebreak(source, target, row_key)
+        nav_bracket_leak_issues = self._check_nav_path_bracket_leak(target, row_key)
 
         # Construct Partial Report Sections
         case_section = "대소문자 하드룰(문장형) 점검:\n" + case_report if case_report else "별도 지적 사항 없음."
@@ -822,6 +830,8 @@ class TranslationChecker:
         if glossary_case_issues: glossary_parts.append("용어집 대소문자 표기 점검:\n" + "\n".join(f"- {msg}" for msg in glossary_case_issues))
         if glossary_bracket_issues: glossary_parts.append("용어집 괄호 규정 점검:\n" + "\n".join(f"- {msg}" for msg in glossary_bracket_issues))
         if brand_concat_issues: glossary_parts.append("브랜드 띄어쓰기 점검:\n" + "\n".join(f"- {msg}" for msg in brand_concat_issues))
+        if disclaimer_linebreak_issues: glossary_parts.append("디스클레이머 줄바꿈 서식 점검:\n" + "\n".join(f"- {msg}" for msg in disclaimer_linebreak_issues))
+        if nav_bracket_leak_issues: glossary_parts.append("Nav path 표기 변환 점검:\n" + "\n".join(f"- {msg}" for msg in nav_bracket_leak_issues))
         glossary_section = "\n\n".join(glossary_parts) if glossary_parts else "별도 지적 사항 없음."
 
         # RAG consistency check (Post-translation/audit, does not use LLM)
@@ -1681,6 +1691,10 @@ class TranslationChecker:
                             logs.append(issue)
                         for issue in self._check_brand_concatenation(source_text, target_text, tgt_lang_code, tgt_lang):
                             logs.append(issue)
+                        for issue in self._check_disclaimer_linebreak(source_text, target_text, row_key):
+                            logs.append(issue)
+                        for issue in self._check_nav_path_bracket_leak(target_text, row_key):
+                            logs.append(issue)
 
                         original_target_terms = []
                         for s_term in (self._get_relevant_glossary_terms(source_text) or []):
@@ -1891,6 +1905,16 @@ class TranslationChecker:
                 brand_concat_issues = self._check_brand_concatenation(source_text, target_text, target_lang_code, target_lang)
                 if brand_concat_issues:
                     logs.extend(brand_concat_issues)
+
+                # 5. Disclaimer multi-line '* ' prefix check
+                disclaimer_linebreak_issues = self._check_disclaimer_linebreak(source_text, target_text, row_key)
+                if disclaimer_linebreak_issues:
+                    logs.extend(disclaimer_linebreak_issues)
+
+                # 6. Nav path bracket-leak check (Korean '[...]' path not converted to target quotes)
+                nav_bracket_leak_issues = self._check_nav_path_bracket_leak(target_text, row_key)
+                if nav_bracket_leak_issues:
+                    logs.extend(nav_bracket_leak_issues)
 
                 original_target_terms = []
                 relevant_terms = self._get_relevant_glossary_terms(source_text)

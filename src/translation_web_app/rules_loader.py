@@ -55,6 +55,7 @@ DOC_SLOTS = {
     "glossary": (
         "term_rule", "bracket_precedence", "no_bracket", "bracket_wrap",
         "nav_exception", "nav_quote_default", "nav_quote_east_asian",
+        "disclaimer_linebreak",
     ),
     "audit": ("intro", "checklist", "grade"),
 }

@@ -546,6 +546,48 @@ class GlossaryChecker:
 
         return issues
 
+    def _check_disclaimer_linebreak(self, source_text: str, target_text: str, row_key: str = "") -> list:
+        """Disclaimer cells that break across multiple lines must start EVERY
+        line — including the first — with '* ' (asterisk + space). Confirmed
+        against production story data (KR/US/DE all apply it to every line).
+
+        Only enforced when the source itself already uses the convention (2+
+        non-empty lines, all '*'-prefixed), so disclaimers that aren't a
+        bulleted list don't get false-flagged.
+        """
+        if not source_text or not target_text:
+            return []
+        if self.prompt_builder.get_glossary_context_mode(row_key) != "disclaimer":
+            return []
+
+        source_lines = [ln for ln in source_text.split("\n") if ln.strip()]
+        if len(source_lines) < 2 or not all(ln.strip().startswith("*") for ln in source_lines):
+            return []
+
+        issues = []
+        for i, ln in enumerate((tl for tl in target_text.split("\n") if tl.strip()), 1):
+            if not re.match(r'^\*\s', ln.strip()):
+                snippet = ln.strip()[:40]
+                issues.append(f"[디스클레이머 서식] {i}번째 줄이 '* '로 시작하지 않습니다: '{snippet}'")
+        return issues
+
+    def _check_nav_path_bracket_leak(self, target_text: str, row_key: str = "") -> list:
+        """Korean source wraps a navigation path as a single '[Settings > X > Y]'
+        span, but every translation target must convert it to that locale's
+        quotation marks (project rule, confirmed against production story
+        data). A literal bracket-wrapped path surviving in the output means the
+        model failed to convert Korean's bracket convention.
+        """
+        if not target_text:
+            return []
+        if self.prompt_builder.get_glossary_context_mode(row_key) != "disclaimer":
+            return []
+
+        issues = []
+        for m in re.finditer(r'\[[^\[\]]*>[^\[\]]*\]', target_text):
+            issues.append(f"[nav path 서식] 한국어 원문의 대괄호 경로 표기가 타겟 언어 따옴표로 변환되지 않았습니다: '{m.group(0)}'")
+        return issues
+
     def _split_context_terms(self, glossary_context):
         """Return (all_target_terms, exempt_target_terms) from a glossary context.
 

@@ -33,6 +33,10 @@ rules:
   slot: nav_quote_east_asian
   scope: [app_prompt]
   text: Enclose navigation paths in quotation marks appropriate for the target language.
+- rule_id: glossary-008
+  slot: disclaimer_linebreak
+  scope: [app_prompt]
+  text: If the disclaimer text spans multiple lines, start every line — including the first — with '* ' (an asterisk followed by a space).
 ---
 
 # Glossary Rules
