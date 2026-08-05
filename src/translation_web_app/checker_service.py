@@ -164,6 +164,11 @@ class TranslationChecker:
     def validate_constraints(self, target_text: str, constraint_card: dict):
         return self._glossary_checker.validate_constraints(target_text, constraint_card)
 
+    def is_term_active_for_occurrence(
+        self, source_term: str, rule: str, story: str | None = None, cell: str | None = None
+    ) -> bool:
+        return self._glossary_checker.is_term_active_for_occurrence(source_term, rule, story=story, cell=cell)
+
     def _get_target_val(self, targets: dict, lang_code: str) -> str | None:
         return self._glossary_checker._get_target_val(targets, lang_code)
 
@@ -1193,6 +1198,12 @@ class TranslationChecker:
         """
         yield {"type": "log", "message": "Starting Integrated Translation & Audit Pipeline..."}
 
+        # Same story-id convention as run_inspection_async_generator, so an
+        # occurrence-activation-manifest entry (keyed by story/cell/term) is
+        # actually reachable here too, not just from the read-only audit flow.
+        match = re.search(r"(?:story[_ -]?)?(\d{3})(?:\D|$)", os.path.basename(str(source_file_path)), re.IGNORECASE)
+        story_for_run = match.group(1) if match else None
+
         # --- Multi-Source Mode ---
         if source_groups:
             try:
@@ -1276,14 +1287,14 @@ class TranslationChecker:
                         glossary_context=glossary_dict, rag_context=rag_context_str, row_key=row_key,
                         source_lang=captured_src_lang, rag_identity_match=rag_identity_match, target_lang_code=tgt_lang_code,
                         thinking_budget=translation_thinking_budget,
-                        constraint_card=self.resolve_constraints(source_text, tgt_lang_code, row_key=row_key),
+                        constraint_card=self.resolve_constraints(source_text, tgt_lang_code, row_key=row_key, story=story_for_run, cell=coord),
                     )
 
                     original_target_terms = []
                     for s_term in (self._get_relevant_glossary_terms(source_text) or []):
                         meta = self.glossary.get(s_term)
                         if meta:
-                            if self.prompt_builder.is_glossary_deactivated(meta.get("rule", "")):
+                            if not self.is_term_active_for_occurrence(s_term, meta.get("rule", ""), story=story_for_run, cell=coord):
                                 continue
                             target_val = self._get_target_val(meta["targets"], tgt_lang_code)
                             if target_val:
@@ -1299,7 +1310,7 @@ class TranslationChecker:
                     target_cell = ws[coord]
                     target_cell.value = self._apply_rich_text(translation, original_target_terms, base_font=target_cell.font)
 
-                    item_data = {"cell_ref": coord, "sheet_name": ws.title, "source": source_text, "target": translation, "row_key": row_key}
+                    item_data = {"cell_ref": coord, "sheet_name": ws.title, "source": source_text, "target": translation, "row_key": row_key, "story_id": story_for_run}
                     if skip_audit:
                         res = {**item_data, "case_section": "[Bypassed]", "glossary_section": "[Bypassed]", "rag_text": "[Bypassed]", "rag_json": "[]", "back_translation": "[Bypassed]", "ai_text": "[Bypassed: Translate Only Mode]", "ai_json": "{}", "logs": logs}
                     else:
@@ -1479,20 +1490,20 @@ class TranslationChecker:
                 rag_identity_match=rag_identity_match,
                 target_lang_code=target_lang_code,
                 thinking_budget=translation_thinking_budget,
-                constraint_card=self.resolve_constraints(source_text, target_lang_code, row_key=row_key),
+                constraint_card=self.resolve_constraints(source_text, target_lang_code, row_key=row_key, story=story_for_run, cell=coord),
             )
-            
+
             # Extract plain glossary targets (removing EXCEPTION strings if any)
             # Use case-insensitive target language code matching
             original_target_terms = []
-            
+
             relevant_terms_for_highlight = self._get_relevant_glossary_terms(source_text)
             if relevant_terms_for_highlight:
                 for s_term in relevant_terms_for_highlight:
                     meta = self.glossary.get(s_term)
                     if meta:
-                        # Skip deactivated terms for highlighting
-                        if self.prompt_builder.is_glossary_deactivated(meta.get("rule", "")):
+                        # Skip terms inactive for this story/cell occurrence (manifest-aware)
+                        if not self.is_term_active_for_occurrence(s_term, meta.get("rule", ""), story=story_for_run, cell=coord):
                             continue
 
                         t_meta = meta["targets"]
@@ -1519,8 +1530,9 @@ class TranslationChecker:
                 "source": source_text,
                 "target": translation,
                 "row_key": row_key,
+                "story_id": story_for_run,
             }
-            
+
             if skip_audit:
                 res = {
                     "sheet_name": ws.title,
@@ -1626,6 +1638,12 @@ class TranslationChecker:
         Relies on the target text already being present in the Excel file.
         """
         yield {"type": "log", "message": "Starting Highlight Only Pipeline..."}
+
+        # Same story-id convention as the inspection/translate pipelines, so an
+        # occurrence-activation-manifest entry (story/cell/term) is reachable
+        # here too instead of falling back to the glossary's global rule only.
+        match = re.search(r"(?:story[_ -]?)?(\d{3})(?:\D|$)", os.path.basename(str(source_file_path)), re.IGNORECASE)
+        story_for_run = match.group(1) if match else None
 
         # --- Multi-Source Mode ---
         if source_groups:
@@ -1733,7 +1751,7 @@ class TranslationChecker:
                         for s_term in (self._get_relevant_glossary_terms(source_text) or []):
                             meta = self.glossary.get(s_term)
                             if meta:
-                                if self.prompt_builder.is_glossary_deactivated(meta.get("rule", "")):
+                                if not self.is_term_active_for_occurrence(s_term, meta.get("rule", ""), story=story_for_run, cell=coord):
                                     continue
                                 target_val = self._get_target_val(meta["targets"], tgt_lang_code)
                                 if target_val:
@@ -1955,8 +1973,8 @@ class TranslationChecker:
                     for s_term in relevant_terms:
                         meta = self.glossary.get(s_term)
                         if meta:
-                            # Skip deactivated terms
-                            if self.prompt_builder.is_glossary_deactivated(meta.get("rule", "")):
+                            # Skip terms inactive for this story/cell occurrence (manifest-aware)
+                            if not self.is_term_active_for_occurrence(s_term, meta.get("rule", ""), story=story_for_run, cell=coord):
                                 continue
 
                             t_meta = meta["targets"]

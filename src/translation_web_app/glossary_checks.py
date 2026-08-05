@@ -113,6 +113,22 @@ class GlossaryChecker:
         nav_spans = self._get_navigation_path_spans(target_text)
         return self._constraint_resolver().validate_target(target_text, constraints, navigation_spans=nav_spans)
 
+    def is_term_active_for_occurrence(
+        self, source_term: str, rule: str, story: str | None = None, cell: str | None = None
+    ) -> bool:
+        """Whether a glossary term is active for one story/cell occurrence.
+
+        Mirrors :meth:`ConstraintResolver.resolve`'s own activation precedence
+        (an occurrence-manifest entry overrides the glossary's global rule
+        text) without building a full constraint card — for call sites
+        (highlight term selection) that only need the active/inactive
+        decision, not bracket policy.
+        """
+        entry = self.activation_manifest.lookup(story, cell, source_term)
+        if entry is not None:
+            return bool(entry.get("active"))
+        return not self.prompt_builder.is_glossary_deactivated(rule)
+
     async def load_glossary_from_file(self, file_path: str, source_lang_code: str):
         """
         3행 구조의 용어집 CSV를 로드합니다.
