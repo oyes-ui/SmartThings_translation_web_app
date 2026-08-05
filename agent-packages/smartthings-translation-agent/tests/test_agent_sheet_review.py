@@ -50,7 +50,7 @@ class AgentSheetReviewTests(unittest.IsolatedAsyncioTestCase):
             with patch("agent_sheet_review._hard_rule_evidence", new=AsyncMock(return_value=evidence)):
                 packet = await build_packet(path, "CO(콜롬비아)", glossary=Path(tmp) / "g.csv", app_root=Path(tmp))
             self.assertEqual(packet["deterministic_evidence"], evidence)
-            self.assertEqual(packet["hard_rule_policy"], "inject_only_no_recalculation")
+        self.assertEqual(packet["hard_rule_policy"], "resolver_card_required; proposals_must_be_validated_before_merge")
 
     async def test_raw_mode_keeps_legacy_inspection_available(self):
         with tempfile.TemporaryDirectory() as tmp:

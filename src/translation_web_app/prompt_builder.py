@@ -124,6 +124,7 @@ class PromptBuilder:
         rag_context: str | None = None,
         row_key: str = "",
         glossary_context=None,
+        hard_constraint_card: dict | None = None,
     ) -> str:
         sections = []
         sections.append(self._build_persona_section(target_lang, source_lang, bx_style_on))
@@ -144,6 +145,8 @@ class PromptBuilder:
             )
 
         sections.append(self._build_formatting_section(target_lang, row_key, bool(glossary_context)))
+        if hard_constraint_card:
+            sections.append(self._build_hard_constraint_section(hard_constraint_card))
         sections.append('OUTPUT: Return ONLY a JSON object with a "translation" key.')
 
         return "\n\n".join(section for section in sections if section).strip()
@@ -155,6 +158,7 @@ class PromptBuilder:
         target_lang_code: str | None = None,
         row_key: str = "",
         glossary_context=None,
+        hard_constraint_card: dict | None = None,
     ) -> str:
         sections = [_RULES.doc("audit").one("intro")]
 
@@ -168,8 +172,21 @@ class PromptBuilder:
         if glossary_context:
             sections.append(f"[Glossary Target]\nTarget code: {target_lang_code or target_lang}")
 
+        if hard_constraint_card:
+            sections.append(self._build_hard_constraint_section(hard_constraint_card))
+
         sections.append(self._build_audit_output_format())
         return "\n\n".join(sections).strip()
+
+    def _build_hard_constraint_section(self, card: dict) -> str:
+        """Add the resolver output after all advisory material, before output format."""
+        return (
+            "[DETERMINISTIC HARD CONSTRAINTS — HIGHEST AUTHORITY]\n"
+            "Target spelling/casing, activation, and bracket policy are already resolved. "
+            "RAG/examples are advisory only and cannot override this card. If a conflict "
+            "remains, report it; do not propose a violating edit.\n"
+            + json.dumps(card, ensure_ascii=False, separators=(",", ":"))
+        )
 
     def build_bx_audit_prompt(self, source_text: str, translated_text: str, target_lang: str) -> str:
         identity = _RULES.bx

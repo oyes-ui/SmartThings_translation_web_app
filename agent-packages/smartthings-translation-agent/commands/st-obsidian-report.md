@@ -19,6 +19,8 @@ SmartThings 번역/검수 작업 내용을 Obsidian용 Markdown 리포트로 준
 1. `references/glossary-report-workflow.md`와 `docs/obsidian-skill-dependencies.md`를 따른다.
 2. 기본은 `stage`: 표준 Markdown 리포트를 workspace의 Obsidian 초안으로 변환한다. 구조화 finding, anchor, `before/after`, rule ID, approval 상태는 유지한다.
 3. `search`는 사용자가 Obsidian 자료 검색·비교를 **명시**했을 때만 실행한다. `--vault-name`과 실행 중인 Obsidian CLI가 있으면 CLI를 사용하고, 아니면 읽기 전용 파일 검색으로 fallback한다.
+4. renderer는 명시한다: `approval_review`는 Story별 `[!example]-` 접이식 callout과 셀별 source/current/proposed/decision/rule IDs/bracket reasons/RAG advisory를 사용하고, `full_audit`는 앱/에이전트 raw payload를 보존한다. HTML `<details>`는 금지한다.
+5. 발행 전에는 Markdown 원문에서 `<details>`가 없는지, 모든 finding에 rule IDs·approval 상태가 있는지, 접이식 callout과 표가 깨지지 않는지 확인한다.
 4. `publish`와 `init-base`는 vault를 변경하므로 사용자 승인과 `--apply`가 필수다. 기존 리포트는 `--locale`로 지정한 언어 섹션만 증분 갱신한다.
 5. `sync-status`는 `/st-story-apply`의 `.delivery.json` 또는 `/st-review-apply`의 `.review_apply.json`처럼 유효한 result manifest만 근거로 `applied`와 납품 검증을 기록한다.
 

@@ -74,6 +74,8 @@ async def run_audit(args) -> dict:
     events: list[dict] = []
     with redirect:
         checker = TranslationChecker(max_concurrency=max(1, args.max_concurrency), model_name=args.audit_model)
+        if args.activation_manifest:
+            checker.load_activation_manifest(str(Path(args.activation_manifest).expanduser()))
         async for event in checker.run_inspection_async_generator(
             source_file_path=str(workbook),
             target_file_path=str(workbook),
@@ -110,16 +112,22 @@ async def run_audit(args) -> dict:
         "selected_sheets": selected_sheets,
         "source_groups": source_groups,
         "audit_model": args.audit_model,
+        "activation_manifest": args.activation_manifest,
     })
     return summary
 
 
-def _write_report(summary: dict, workbook: str) -> str | None:
+def _write_report(summary: dict, workbook: str, report_dir: str | None = None) -> str | None:
     report = summary.get("output_data")
     if not report:
         return None
-    out = Path(workbook).with_suffix("")
-    report_path = Path(f"{out}.audit_report.txt")
+    if report_dir:
+        base = Path(workbook).stem
+        report_path = Path(report_dir) / f"{base}.audit_report.md"
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        out = Path(workbook).with_suffix("")
+        report_path = Path(f"{out}.audit_report.md")
     try:
         ap.write_text_atomic(report_path, report)
         return str(report_path)
@@ -138,11 +146,13 @@ def main() -> None:
     parser.add_argument("--target-lang", default="", help="단일 모드 fallback 타겟 언어")
     parser.add_argument("--target-lang-code", help="단일 모드 fallback 타겟 코드")
     parser.add_argument("--glossary", help="용어집 CSV 경로(기본: runtime/glossary/latest_glossary.csv)")
+    parser.add_argument("--activation-manifest", help="story/cell/term activation overlay JSON (glossary lexical values stay fixed)")
     parser.add_argument("--sheet-langs", help="sheet_langs JSON 파일 경로")
     parser.add_argument("--single-source", action="store_true")
     parser.add_argument("--source-sheet", default="US(미국)")
     parser.add_argument("--max-concurrency", type=int, default=5)
     parser.add_argument("--app-root", help="app repo 경로 명시")
+    parser.add_argument("--report-dir", help="검수 Markdown 리포트 출력 폴더 (기본: 워크북 옆)")
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
@@ -170,7 +180,7 @@ def main() -> None:
             print(f"❌ {e}")
         sys.exit(1)
 
-    report_path = _write_report(res, args.workbook)
+    report_path = _write_report(res, args.workbook, args.report_dir)
     if report_path:
         res["report_path"] = report_path
 

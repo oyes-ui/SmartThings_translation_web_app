@@ -58,6 +58,7 @@ class StartRequest(BaseModel):
     source_file_name: str = None
     target_file_id: str = None
     glossary_file_id: str = None
+    activation_manifest_file_id: str | None = None  # uploaded story/cell/term overlay JSON
     source_sheet: str = None # Added for explicit source sheet selection
     sheets: list[str] = None # Used as target sheets in integrated mode
     sheet_langs: dict = {} # {"Sheet1": {"lang": "Korean", "code": "ko_KR"}}
@@ -100,6 +101,12 @@ async def background_inspection_task(task_id, params):
         glossary = resolve_glossary_file(params.glossary_file_id)
         glossary_path = glossary.path
         await queue.put({"type": "log", "message": glossary.message})
+        if params.activation_manifest_file_id:
+            manifest_path = os.path.join(UPLOAD_DIR, params.activation_manifest_file_id)
+            if not os.path.isfile(manifest_path):
+                raise FileNotFoundError("activation manifest 파일을 찾을 수 없습니다.")
+            checker.load_activation_manifest(manifest_path)
+            await queue.put({"type": "log", "message": "occurrence activation manifest 로드 완료"})
 
         # Run generator
         gen = checker.run_inspection_async_generator(

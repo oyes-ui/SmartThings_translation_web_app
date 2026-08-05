@@ -143,10 +143,10 @@ def _rag_callout(res: Mapping[str, Any]) -> str:
 
 
 def _details(summary: str, body: str) -> str:
-    """Native `<details>` so this collapses by default in Obsidian too --
-    app.js's client-side collapsing only ever affected the web viewer, never
-    the raw .md file Obsidian reads directly."""
-    return f"<details>\n<summary>{summary}</summary>\n\n{body}\n\n</details>"
+    """Use Obsidian-native collapsed callouts; raw HTML is intentionally banned."""
+    lines = [f"> [!example]- {summary}"]
+    lines.extend(f"> {line}" if line else ">" for line in body.split("\n"))
+    return "\n".join(lines)
 
 
 def _ai_result_block(res: Mapping[str, Any], audit: Mapping[str, Any]) -> str:
@@ -251,21 +251,27 @@ def render_finding(res: Mapping[str, Any], *, label: str = "", revision: int = 1
 
     audit = parse_audit_json(res.get("ai_json"))
     grade = _text(audit.get("grade"))
+    constraint_status = _text((res.get("constraint_validation") or {}).get("status")) or "not_available"
     suggestion = _text(audit.get("suggested_fix")).strip()
     current = _text(res.get("target"))
     # A suggestion identical to the current text is not a change.
     if suggestion and suggestion == current:
         suggestion = ""
 
+    rendered_status = "blocked" if constraint_status == "blocked" else status_for_grade(grade)
+    if constraint_status == "human_review" and rendered_status == "pass":
+        rendered_status = "warning"
     meta = {
         "finding_id": finding_id,
         "revision": revision,
-        "status": status_for_grade(grade),
-        "apply_status": "pending_approval" if suggestion else "not_applicable",
+        "status": rendered_status,
+        "apply_status": "pending_approval" if suggestion and constraint_status == "pass" else "not_applicable",
         "sheet": sheet,
         "cell": cell,
         "rule_ids": [],
         "rag_evidence_ids": [],
+        "constraint_status": constraint_status,
+        "constraint_rule_ids": sorted({rule for term in (res.get("hard_constraint_card") or {}).get("terms", []) for rule in term.get("rule_ids", [])}),
     }
     if grade:
         meta["audit_grade"] = grade
@@ -284,6 +290,11 @@ def render_finding(res: Mapping[str, Any], *, label: str = "", revision: int = 1
         _callout("현재 번역문", _fence(current)),
         "",
         _callout("제안 번역문", _fence(suggestion or NO_SUGGESTION)),
+        "",
+        _details("규칙 합성 판정", _fence(json.dumps({
+            "constraint_card": res.get("hard_constraint_card", {}),
+            "validation": res.get("constraint_validation", {}),
+        }, ensure_ascii=False, indent=2), "json")),
         "",
         "#### 검수 상세",
         "",

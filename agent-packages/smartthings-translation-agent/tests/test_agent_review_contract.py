@@ -24,7 +24,7 @@ class AgentReviewContractTests(unittest.TestCase):
         self.assertEqual(budget.report()["semantic_used"], 2)
 
     def test_two_independent_roles_are_required_for_subjective_change(self):
-        base = {"sheet": "CO(콜롬비아)", "cell": "C10", "finding_id": "co-c10", "after": "Buenas", "stance": "support"}
+        base = {"sheet": "CO(콜롬비아)", "cell": "C10", "finding_id": "co-c10", "after": "Buenas", "stance": "support", "constraint_status": "pass"}
         proposals, queue = merge_subjective_opinions([
             {**base, "role": "grammar_fluency"},
             {**base, "role": "localization_tone"},
@@ -33,13 +33,22 @@ class AgentReviewContractTests(unittest.TestCase):
         self.assertEqual(queue, [])
 
     def test_single_or_opposed_subjective_change_is_queued(self):
-        base = {"sheet": "CO(콜롬비아)", "cell": "C10", "finding_id": "co-c10", "after": "Buenas"}
+        base = {"sheet": "CO(콜롬비아)", "cell": "C10", "finding_id": "co-c10", "after": "Buenas", "constraint_status": "pass"}
         proposals, queue = merge_subjective_opinions([
             {**base, "role": "grammar_fluency", "stance": "support"},
             {**base, "role": "semantic_fidelity", "stance": "oppose"},
         ])
         self.assertEqual(proposals, [])
         self.assertEqual(len(queue), 1)
+
+    def test_blocked_constraint_cannot_be_merged_even_with_two_supporters(self):
+        base = {"sheet": "CO(콜롬비아)", "cell": "C10", "finding_id": "co-c10", "after": "Buenas", "stance": "support", "constraint_status": "blocked"}
+        proposals, queue = merge_subjective_opinions([
+            {**base, "role": "grammar_fluency"},
+            {**base, "role": "localization_tone"},
+        ])
+        self.assertEqual(proposals, [])
+        self.assertEqual(queue[0]["reason"], "blocked_by_deterministic_constraint")
 
 
 if __name__ == "__main__":

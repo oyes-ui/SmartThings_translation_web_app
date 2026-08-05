@@ -24,6 +24,8 @@
 - Excel 반영은 `apply_status: approved`인 항목만, 원본이 아닌 새 Excel 사본에 적용한다.
 - 모든 변경 제안은 셀 위치, 근거 규칙, 적용 전후 값을 식별할 수 있어야 한다.
 - 명시 규칙·glossary·시장 기준·RAG 사례의 우선순위는 별도 규칙 명세를 따른다.
+- `constraint_status`, `constraint_rule_ids`, `bracket_reasons`는 resolver가 결정한 값이다. 모델/RAG 의견은 이를 변경하지 못하며, `blocked`와 `human_review`는 승인 manifest에서 자동 적용 후보가 될 수 없다.
+- HTML `<details>`는 사용하지 않는다. 접어야 하는 raw payload와 Story 블록은 Obsidian native `[!example]-` callout으로 작성한다.
 - 원문/현재 번역문/제안 번역문과 검수 상세의 개별 항목은 `> [!type] 제목` 콜아웃(Obsidian
   callout이자 GitHub alert 표준 문법)으로 감싼다. `[!type]`을 모르는 렌더러에서는 그냥
   평범한 blockquote로 보이므로 어디서 열어도 깨지지 않는다 — 색·아이콘이 없어질 뿐이다.
@@ -174,6 +176,11 @@ rag_evidence_ids:
 | `[상세 - AI Payload]` | `#### 원본 검수 Payload` | 원본 JSON 보존 |
 
 ## 앱과 에이전트의 역할
+
+### Renderer variant
+
+- `full_audit`: 모든 셀의 앱 평가, constraint card, RAG/AI 원본 payload를 보존한다.
+- `approval_review`: Story별 `[!example]-` callout 안에 수정 후보만 배치하되, 각 셀에 source/current/proposed/decision/rule IDs/bracket reasons/RAG advisory를 유지한다.
 
 ### 앱 리포트
 

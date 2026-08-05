@@ -54,7 +54,7 @@ class SemanticRagBudget:
                 "semantic_evidence_ids": list(self.evidence_ids)}
 
 
-def validate_opinion(opinion: dict[str, Any]) -> dict[str, Any]:
+def validate_opinion(opinion: dict[str, Any], *, require_constraint_verdict: bool = False) -> dict[str, Any]:
     """Validate an opinion returned by a specialist before lead aggregation."""
     role = opinion.get("role")
     if role not in SPECIALIST_ROLES:
@@ -67,23 +67,38 @@ def validate_opinion(opinion: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("opinion에는 sheet, cell, finding_id가 필요합니다.")
     if stance not in {"support", "oppose", "review"}:
         raise ValueError("stance는 support, oppose, review 중 하나여야 합니다.")
+    constraint_status = str(opinion.get("constraint_status", "not_checked"))
+    if require_constraint_verdict and constraint_status not in {"pass", "human_review", "blocked"}:
+        raise ValueError("병합 전 opinion에는 resolver constraint_status가 필요합니다.")
     return {
         "role": role, "sheet": sheet, "cell": cell, "finding_id": finding_id,
         "stance": stance, "reason": str(opinion.get("reason", "")).strip(),
         "after": opinion.get("after"), "rule_ids": list(opinion.get("rule_ids", [])),
+        "constraint_status": constraint_status,
     }
 
 
-def merge_subjective_opinions(opinions: list[dict[str, Any]]) -> tuple[list[dict], list[dict]]:
+def merge_subjective_opinions(opinions: list[dict[str, Any]], *, enforce_constraints: bool = True) -> tuple[list[dict], list[dict]]:
     """Return proposals and human-review items using the two-role/no-opposition gate."""
     groups: dict[tuple[str, str, str, str], list[dict]] = {}
     for raw in opinions:
-        item = validate_opinion(raw)
+        item = validate_opinion(raw, require_constraint_verdict=enforce_constraints)
         key = (item["sheet"], item["cell"], item["finding_id"], str(item["after"]))
         groups.setdefault(key, []).append(item)
 
     proposals, queue = [], []
     for (sheet, cell, finding_id, _after), items in groups.items():
+        constraint_statuses = {item["constraint_status"] for item in items}
+        if "blocked" in constraint_statuses:
+            queue.append({"finding_id": finding_id, "sheet": sheet, "cell": cell,
+                          "reason": "blocked_by_deterministic_constraint",
+                          "opinions": items})
+            continue
+        if "human_review" in constraint_statuses:
+            queue.append({"finding_id": finding_id, "sheet": sheet, "cell": cell,
+                          "reason": "deterministic_constraint_requires_human_review",
+                          "opinions": items})
+            continue
         supporters = {item["role"] for item in items if item["stance"] == "support"}
         opponents = [item for item in items if item["stance"] == "oppose"]
         if len(supporters) >= 2 and not opponents and items[0]["after"]:

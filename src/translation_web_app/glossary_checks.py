@@ -17,6 +17,7 @@ from __future__ import annotations
 import re
 
 from translation_web_app.prompt_builder import PromptBuilder
+from translation_web_app.constraint_resolver import ConstraintResolver, OccurrenceActivationManifest
 
 # Quote-pair styles that can delimit a navigation path across target locales.
 # Real DB targets mix these inconsistently even within one language (e.g. RU rows use
@@ -78,6 +79,39 @@ class GlossaryChecker:
         self.glossary_headers = []
         self.source_lang_code = None
         self._glossary_word_set = set()
+        self.activation_manifest = OccurrenceActivationManifest()
+
+    def load_activation_manifest(self, path: str | None) -> None:
+        """Load occurrence activation separately from the glossary lexical data."""
+        self.activation_manifest = OccurrenceActivationManifest.from_file(path)
+
+    def _constraint_resolver(self) -> ConstraintResolver:
+        return ConstraintResolver(
+            glossary=self.glossary,
+            get_relevant_terms=self._get_relevant_glossary_terms,
+            get_target=self._get_target_val,
+            is_deactivated=self.prompt_builder.is_glossary_deactivated,
+            has_exempt_marker=self.prompt_builder.has_exempt_marker,
+            get_context_mode=self.prompt_builder.get_glossary_context_mode,
+            activation_manifest=self.activation_manifest,
+        )
+
+    def resolve_constraints(self, source_text: str, target_lang_code: str, *, row_key: str = "",
+                            story: str | None = None, cell: str | None = None,
+                            inside_navigation_path: bool = False):
+        """Return the authoritative lexical/activation/bracket constraint card."""
+        resolver = self._constraint_resolver()
+        constraints = resolver.resolve(source_text, target_lang_code, row_key=row_key,
+                                       story=story, cell=cell,
+                                       inside_navigation_path=inside_navigation_path)
+        return resolver.card(constraints)
+
+    def validate_constraints(self, target_text: str, constraint_card: dict):
+        """Validate a candidate without allowing the candidate to alter rules."""
+        from translation_web_app.constraint_resolver import TermConstraint
+        constraints = [TermConstraint(**term) for term in constraint_card.get("terms", [])]
+        nav_spans = self._get_navigation_path_spans(target_text)
+        return self._constraint_resolver().validate_target(target_text, constraints, navigation_spans=nav_spans)
 
     async def load_glossary_from_file(self, file_path: str, source_lang_code: str):
         """

@@ -107,6 +107,8 @@ python scripts/bootstrap.py --app-root <경로> --save
 8. **감수본 대조 주의**: 번역사 표시본의 빨간 하이라이트만 신뢰하지 말고 C/F 전체 diff를 본다. 반복 CTA, 브랜드명, 제품명은 셀 단위보다 파일 전체 일관성으로 판단한다.
 9. **story review 종료 게이트**: 자동 Fix 전 `후보 기반 발견 수 / 독립 발견 수 / 유지 언어 수 / 언어별 완료 상태`를 산출한다. Fix 후에는 독립 재점검에 기록한 수정 셀과 실제 값 diff가 일치하고, 보호 언어 무결성·전체 재하이라이트 검증이 통과해야 한다.
 10. **감수본 수용 분리**: `/st-story-review`는 판단·리포트까지만 수행한다. 최종 수용본은 사람 승인 `accept`/`partial` manifest가 있을 때만 `/st-review-apply`로 생성한다. 현지화 수정은 원문 의미·기능 조건·UI 경로·glossary·문법 리스크가 없는 한 수용하며, RAG exact 사례는 참고이지 자동 거부 근거가 아니다.
+11. **규칙 합성은 모델보다 우선**: glossary는 target 문자열·대소문자·브랜드 표기를 항상 강제한다. 활성화는 story/cell/term manifest가 우선이고 기존 glossary 비활성화는 fallback이다. 대괄호는 `section_role`·quoted UI/navigation path·glossary exempt를 합성해 하나라도 `no_bracket`이면 제거한다. RAG/LLM/서브에이전트는 이 결과를 바꿀 수 없으며, 제안은 resolver 검증 후에만 병합한다.
+12. **리포트 renderer 계약**: `docs/report_format_spec.md`를 공통 계약으로 사용한다. `approval_review`는 Story별 Obsidian native collapsed callout, `full_audit`는 원본 앱 payload까지 보존한다. raw HTML `<details>`를 쓰지 않으며, 생성 후 callout/표/원본 payload가 보이는지 Markdown QA를 한다.
 
 ## 도구 선택 흐름
 

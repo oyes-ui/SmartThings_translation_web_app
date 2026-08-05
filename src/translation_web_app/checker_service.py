@@ -154,6 +154,16 @@ class TranslationChecker:
     async def load_glossary_from_file(self, file_path: str, source_lang_code: str):
         return await self._glossary_checker.load_glossary_from_file(file_path, source_lang_code)
 
+    def load_activation_manifest(self, file_path: str | None) -> None:
+        """Occurrence activation is a per-story overlay, never a replacement glossary."""
+        self._glossary_checker.load_activation_manifest(file_path)
+
+    def resolve_constraints(self, source_text: str, target_lang_code: str, **kwargs):
+        return self._glossary_checker.resolve_constraints(source_text, target_lang_code, **kwargs)
+
+    def validate_constraints(self, target_text: str, constraint_card: dict):
+        return self._glossary_checker.validate_constraints(target_text, constraint_card)
+
     def _get_target_val(self, targets: dict, lang_code: str) -> str | None:
         return self._glossary_checker._get_target_val(targets, lang_code)
 
@@ -341,6 +351,8 @@ class TranslationChecker:
             
             ws_source = wb_source[src_sheet]
             ws_target = wb_target[sheet_name]
+            story_digits = re.findall(r"\d+", str(ws_source["C5"].value or ""))
+            story_id = story_digits[-1][-3:].zfill(3) if story_digits else None
             
             extracted_count = 0
             extracted_coords = set()
@@ -379,6 +391,7 @@ class TranslationChecker:
                                     "source": s_val,
                                     "target": t_val,
                                     "row_key": row_key,
+                                    "story_id": story_id,
                                 })
                                 extracted_count += 1
                 except Exception as e:
@@ -442,7 +455,7 @@ class TranslationChecker:
         )
         return rag_context_str, [f"[RAG] 유사 사례 {len(results)}건 적용됨 (시트: {sheet_title}, 셀: {coord})"]
 
-    async def _run_llm_translation(self, text, target_lang, model_name="gemini-3.6-flash", bx_style_on=False, glossary_context=None, rag_context=None, row_key="", source_lang="English", rag_identity_match=True, target_lang_code="", thinking_budget: int | None = None):
+    async def _run_llm_translation(self, text, target_lang, model_name="gemini-3.6-flash", bx_style_on=False, glossary_context=None, rag_context=None, row_key="", source_lang="English", rag_identity_match=True, target_lang_code="", thinking_budget: int | None = None, constraint_card: dict | None = None):
         """
         내부 전용 번역 메서드: JSON 프롬프트 생성 및 LLM 호출을 담당합니다.
         """
@@ -480,6 +493,7 @@ class TranslationChecker:
             rag_context=rag_context,
             row_key=row_key,
             glossary_context=glossary_context,
+            hard_constraint_card=constraint_card,
         )
 
         try:
@@ -497,13 +511,18 @@ class TranslationChecker:
             else:
                 translation = str(response_data)
             translation = self._strip_glossary_brackets_by_policy(translation, glossary_context, row_key)
-            return self._restore_glossary_target_casing(translation, glossary_context)
+            translation = self._restore_glossary_target_casing(translation, glossary_context)
+            if constraint_card:
+                verdict = self.validate_constraints(translation, constraint_card)
+                if verdict["status"] == "blocked":
+                    raise ValueError(f"resolver가 번역 결과를 차단했습니다: {verdict['blocked']}")
+            return translation
         except Exception as e:
             return f"[번역 오류] {str(e)}"
 
 
     # ----------------- LLM Calls -----------------
-    async def check_with_llm_qa(self, source_text, target_text, source_lang, target_lang, target_lang_code, row_key: str = ""):
+    async def check_with_llm_qa(self, source_text, target_text, source_lang, target_lang, target_lang_code, row_key: str = "", constraint_card: dict | None = None):
         glossary_dict = self._get_glossary_context_as_dict(
             target_lang_code,
             source_text=source_text,
@@ -529,7 +548,8 @@ class TranslationChecker:
             target_lang=target_lang,
             target_lang_code=target_lang_code,
             row_key=row_key,
-            glossary_context=glossary_dict
+            glossary_context=glossary_dict,
+            hard_constraint_card=constraint_card,
         )
         try:
             # ModelHandler가 JSON 모드를 지원하므로 딕셔너리로 바로 받을 수 있음
@@ -798,10 +818,15 @@ class TranslationChecker:
         if source.strip().lower() in self.short_text_whitelist or target.strip().lower() in self.short_text_whitelist:
             is_placeholder = False
         
-        pre_mismatch = self._precheck_glossary_mismatch(source, target, tgt_code)
-        skip_llm = self.skip_llm_when_glossary_mismatch and bool(pre_mismatch)
-        
         row_key = item.get("row_key", "")
+        story = item.get("story_id") or getattr(self, "_inspection_story_id", None)
+        constraint_card = self.resolve_constraints(
+            source, tgt_code, row_key=row_key, story=story, cell=cell_ref,
+        )
+        constraint_validation = self.validate_constraints(target, constraint_card)
+        pre_mismatch = self._precheck_glossary_mismatch(source, target, tgt_code)
+        # A deterministic lexical/bracket violation is never delegated to the LLM.
+        skip_llm = (self.skip_llm_when_glossary_mismatch and bool(pre_mismatch)) or constraint_validation["status"] == "blocked"
         
         relevant_terms_for_case = self._get_relevant_glossary_terms(source)
         glossary_targets_for_case = []
@@ -885,7 +910,9 @@ class TranslationChecker:
             "rag_json": rag_json,
             "back_translation": "",
             "ai_text": "",
-            "ai_json": ""
+            "ai_json": "",
+            "hard_constraint_card": constraint_card,
+            "constraint_validation": constraint_validation,
         }
 
         # Skip Logic
@@ -903,7 +930,8 @@ class TranslationChecker:
         else:
             # LLM Calls
             qa_task = self._with_semaphore(
-                self.check_with_llm_qa(source, target, source_lang, tgt_lang, tgt_code, row_key=row_key)
+                self.check_with_llm_qa(source, target, source_lang, tgt_lang, tgt_code, row_key=row_key,
+                                       constraint_card=constraint_card)
             )
             
             if self.no_backtranslation:
@@ -947,6 +975,9 @@ class TranslationChecker:
         """
         def _fmt_result(res):
             return render_finding(res)
+
+        match = re.search(r"(?:story[_ -]?)?(\d{3})(?:\D|$)", os.path.basename(str(source_file_path)), re.IGNORECASE)
+        self._inspection_story_id = match.group(1) if match else None
 
         # --- Multi-Source Mode ---
         if source_groups:
@@ -1245,6 +1276,7 @@ class TranslationChecker:
                         glossary_context=glossary_dict, rag_context=rag_context_str, row_key=row_key,
                         source_lang=captured_src_lang, rag_identity_match=rag_identity_match, target_lang_code=tgt_lang_code,
                         thinking_budget=translation_thinking_budget,
+                        constraint_card=self.resolve_constraints(source_text, tgt_lang_code, row_key=row_key),
                     )
 
                     original_target_terms = []
@@ -1447,6 +1479,7 @@ class TranslationChecker:
                 rag_identity_match=rag_identity_match,
                 target_lang_code=target_lang_code,
                 thinking_budget=translation_thinking_budget,
+                constraint_card=self.resolve_constraints(source_text, target_lang_code, row_key=row_key),
             )
             
             # Extract plain glossary targets (removing EXCEPTION strings if any)
