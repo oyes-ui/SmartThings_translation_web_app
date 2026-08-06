@@ -36,7 +36,7 @@ rules:
 - rule_id: glossary-008
   slot: disclaimer_linebreak
   scope: [app_prompt]
-  text: If the disclaimer text spans multiple lines, start every line — including the first — with '* ' (an asterisk followed by a space).
+  text: Disclaimer text always starts with '* ' (an asterisk followed by a space). If the disclaimer spans multiple lines, every line — not just the first — must start with '* '.
 ---
 
 # Glossary Rules

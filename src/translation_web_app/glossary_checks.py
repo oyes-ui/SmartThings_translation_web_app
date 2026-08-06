@@ -597,21 +597,17 @@ class GlossaryChecker:
         return issues
 
     def _check_disclaimer_linebreak(self, source_text: str, target_text: str, row_key: str = "") -> list:
-        """Disclaimer cells that break across multiple lines must start EVERY
-        line — including the first — with '* ' (asterisk + space). Confirmed
-        against production story data (KR/US/DE all apply it to every line).
-
-        Only enforced when the source itself already uses the convention (2+
-        non-empty lines, all '*'-prefixed), so disclaimers that aren't a
-        bulleted list don't get false-flagged.
+        """Every disclaimer cell must start EVERY line with '* ' (asterisk +
+        space) — unconditional project rule, independent of line count or of
+        whether the source itself already uses '*'. A single-line disclaimer
+        needs the marker too, not just multi-line ones. Confirmed against
+        production story data (KR/US/DE all apply it to every line).
         """
         if not source_text or not target_text:
             return []
-        if self.prompt_builder.get_glossary_context_mode(row_key) != "disclaimer":
+        if source_text.strip().lower() == "x" or target_text.strip().lower() == "x":
             return []
-
-        source_lines = [ln for ln in source_text.split("\n") if ln.strip()]
-        if len(source_lines) < 2 or not all(ln.strip().startswith("*") for ln in source_lines):
+        if self.prompt_builder.get_glossary_context_mode(row_key) != "disclaimer":
             return []
 
         issues = []
