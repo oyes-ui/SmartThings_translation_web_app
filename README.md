@@ -27,6 +27,10 @@ pinned: false
 - **Context-Aware Formatting**: Row Key 기반으로 타이틀/버튼 vs 설명문 맥락을 자동 판정하여 용어집 괄호 처리 최적화
 - **Typography Standards**: 언어별 표준 문장 부호 및 타이포그래피 규칙 자동 적용
 - **Prompt Inspector**: 실시간 프롬프트 조립 상태를 육안으로 확인할 수 있는 전용 디버그 도구 제공
+- **안전한 Excel 수정 흐름**: preview → 사람 승인 → 원본 불변 복사본 적용 → rich text·구조 검증을 분리
+- **시트 단위 에이전트 검수**: `/st-inspect`가 결정론적 용어집 근거와 읽기 전용 수정 제안을 제공하며,
+  필요할 때만 5개 독립 관점의 합의 게이트를 사용
+- **Excel Live 레이어**: ChatGPT for Excel과 Claude for Excel에서 같은 승인 manifest·fallback 정책을 공유
 
 ---
 
@@ -36,6 +40,17 @@ pinned: false
 
 1.  **[가이드 01] 통합 사용 가이드**: [user_guide.md](docs/user_guide.md) - 설치, 실행, 워크플로우 및 용어집 활용 (A to Z)
 2.  **[가이드 02] 종합 규칙 모음**: [comprehensive_rules.md](docs/comprehensive_rules.md) - 프롬프트 로직, 국가별 규칙, BX 스타일 등 모든 내부 엔진 규칙 참조
+
+### 번역 에이전트 기본 흐름
+
+`/st-start`로 연결 상태를 확인한 뒤, 규칙·용어집·RAG 사례는 `/st-ask`, 읽기 전용 언어 시트 검수는
+`/st-inspect`를 사용합니다. 제안은 항상 `pending_approval` manifest로 남으며, 사람이 승인한 항목만
+`/st-apply` 또는 `/st-edit`로 **원본이 아닌 복사본**에 반영합니다. 전체 LLM 번역·검수는 비용이 발생할 수
+있으므로 `/st-pipeline`에서 명시적으로 실행합니다.
+
+`/st-review`는 `/st-inspect`의 전환 기간 호환 alias입니다. 5개 역할의 병렬 검수는 기본값이 아니라
+`--multi-agent`로 승인한 시트에서만 동작합니다. 한 역할이라도 의견서가 없거나 검수 뒤 셀 값이 변경되면
+자동 수정 제안을 만들지 않고 사람 검토로 보류합니다.
 
 ---
 
@@ -133,6 +148,15 @@ docker run -p 7860:7860 -e GOOGLE_API_KEY="your_key_here" translation-checker
 ## 📦 Release History (최근 주요 업데이트)
 
 상세한 변경 내역은 [CHANGELOG.md](docs/CHANGELOG.md)에서 확인할 수 있습니다.
+
+### [Unreleased] - 2026-08
+- **Added**: `/st-inspect`의 선택형 5역할 합의 게이트. 역할별 프롬프트·의견서·병합 결과를 분리해
+  독립적인 검토 근거만 수정 제안으로 승격
+- **Safety**: 누락·다른 `packet_id` 의견서는 검수를 `incomplete`로 끝내며, 검수 뒤 셀 값이 바뀐 항목은
+  `source_drift`로 보류
+- **Added**: ChatGPT for Excel과 Claude for Excel이 공통 live manifest 검증기를 사용. live rich text
+  보존을 검증하지 못하면 Delivery Python 복사본 경로로 fallback
+- **Fixed**: disclaimer `* ` 접두 규칙과 용어 활성화 manifest를 번역·하이라이트 경로에 일관되게 적용
 
 ### [v1.7.0] - 2026-06-25
 - **Added**: 번역 에이전트 셀프 모드 — `prompt_preview.py` 가 앱과 동일한 프롬프트를 조립해 LLM 크레딧 없이 직접 번역/검수

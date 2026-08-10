@@ -9,10 +9,16 @@
 - `/st-start` → `st-start.md` — 연결 상태·다음 단계
 - `/st-ask` → `st-ask.md` — 규칙·용어집·RAG 질의
 - `/st-inspect` → `st-inspect.md` — 언어 시트 에이전트 검수·리포트·제안
-- `/st-review` → `st-review.md` — 읽기 전용 검수·리포트·제안
 - `/st-edit` → `st-edit.md` — 일반 Excel 수정 preview·승인·복사본 적용
 - `/st-apply` → `st-apply.md` — 승인 manifest 기반 납품본 생성
 - `/st-pipeline` → `st-pipeline.md` — 승인 후 LLM 번역·검수
+
+`/st-review` → `st-review.md`는 `/st-inspect`의 전환 기간 호환 alias다. 새 안내와 자동화는
+`/st-inspect <xlsx> --sheet "<언어 시트>"`를 사용한다. 기본 검수는 리드 에이전트의 2-pass이며,
+5개 역할 합의 게이트는 사용자가 `--multi-agent`를 승인한 시트에서만 실행한다.
+
+합의 게이트에서는 모든 역할이 같은 `packet_id`를 포함한 의견서를 남겨야 한다. 누락·불일치가 있거나
+검수 후 셀 값이 변경되면 `changes[]`를 만들지 않고 `incomplete` 또는 `source_drift`로 사람 검토에 보낸다.
 
 ## Legacy/internal commands
 
