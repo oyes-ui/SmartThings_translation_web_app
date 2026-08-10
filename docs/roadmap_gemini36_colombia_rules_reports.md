@@ -174,6 +174,15 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
 
 #### 4-A. `/st-inspect` 시트 검수와 다중 에이전트 의견 계약
 
+**목표 우선순위**: 1차 목표는 앱의 검수 파이프라인에서 API(Gemini/GPT)가 하던 역할을
+에이전트가 대체하는 것이다 — `checker_service.py`가 이미 쓰는 패턴(결정론적 근거를 계산해
+LLM 판단에 주입, 재계산하지 않음)을 그대로 따르되 검수 단위를 셀에서 시트 전체로 넓힌다.
+이 부분은 `/st-story-review`로 이미 실전 검증됐다(039 회귀 사례). 2차 확장 목표는 더 복잡한
+규칙·판단을 부담 없이(크레딧 0으로) 다루기 위한 5-역할 멀티에이전트다 — 이건 아직 실측
+검증되지 않았고, 아래 명시된 문제(프롬프트 빌더 부재, role 앵커링 위험, 병합 게이트 우회
+가능성)도 전부 이 2차 확장에만 해당한다. 1차 목표(기본 운영 경로)는 이 문제들과 무관하게
+그 자체로 안정적이다.
+
 - `/st-inspect <xlsx> --sheet "<언어 시트>"`를 기본 읽기 전용 검수 진입점으로 둔다.
   `--sheet`는 필수이며 검수 단위는 언어 시트 전체다. 기존 `workbook_inspect.py`의
   구조·셀 덤프는 `--raw`로 유지한다. `/st-review`는 4주 전환 기간의 호환 alias이며,
@@ -246,45 +255,70 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
 9. 사람이 `.md`를 읽고 항목별 승인/거절을 정한다.
 10. 승인된 항목만 `/st-apply`가 원본이 아닌 새 복사본에 반영한다.
 
-**구현 시 확정해야 할 사항 (재량에 맡기지 말 것)**:
+**구현 완료 (2026-08-10)**: 아래 항목은 코드로 강제되며, 산문 규칙이 아니다.
 
-1. `review_report_builder.build_review_artifacts()`의 `proposals` 인자를 자유 형식 리스트가
-   아니라 `merge_subjective_opinions()` 반환값(및 결정론적 제안)만 받도록 시그니처를 좁힌다.
-   검증 코드 추가가 아니라 타입/호출 경로로 우회를 원천 차단한다.
-2. `incomplete`는 새 필드가 아니라 `sheet_reviews[].status` 값으로 표현한다
-   (`review_report_builder._normalise_context`의 허용 필드 집합을 유지한다).
-3. `review_report_builder._change_block()`/`_markdown()`을 확장해 `supporting_roles`와 반대
-   의견이 `.md` 리포트에 실제로 렌더링되게 한다 — JSON manifest에만 남기고 끝내지 않는다.
-4. `agent_sheet_review.py`의 `build_packet()` 출력에 `packet_id`(또는 해시)를 추가하고, opinion이
-   이 값으로 근거 패킷과 연결됐는지 검증한다.
-5. "5명 병렬 배정"은 Agent 툴을 역할별 프롬프트로 5회 호출하는 것을 의미하며, 리드 1명이 5개
-   관점을 서술하는 것으로 대체할 수 없다.
-6. **role별 프롬프트를 만드는 전용 빌더가 없다.** 지금은 `PromptBuilder`가
-   `GlossaryChecker(PromptBuilder())` 형태로 결정론적 bracket 정책 계산에만 쓰이고, 5개 role
-   subagent에게 줄 지시문은 리드 에이전트가 `st-inspect.md`의 한 줄 설명을 보고 매번 즉석으로
-   구성한다. role별 프롬프트 템플릿을 근거 패킷과 함께 버전 관리되는 형태로 만든다.
-7. **한 role의 subagent가 다른 role의 opinion을 보고 판단하지 않게 한다.** ES_CO 파일럿의
-   `scripts/build_story_ui_review.py`에서 실제로 `story_and_ui_coherence` role의 opinion이
-   `semantic_fidelity` role의 `after` 값을 그대로 재사용하고 사유만 새로 붙여 만들어진 사례가
-   확인됐다(30-41행 `copied()`). 이러면 병합 게이트가 "2개 관점 지지"로 집계해도 실제로는
-   한쪽이 다른 쪽 결론에 앵커링된 것이라 독립성이 없다. subagent 프롬프트는 근거 패킷만
-   포함하고 다른 role의 진행 중이거나 완료된 opinion은 절대 포함하지 않는다.
+1. `review_report_builder.build_review_artifacts()`는 `merge_subjective_opinions()`가 돌려주는
+   `ReviewMergeResult`만 받는다. 리스트를 넘기면 `TypeError` — 리드 에이전트가 의견서를 요약해
+   `changes[]`를 만들 입력 경로 자체가 없다. `review_report_builder.py`의 CLI(자유 형식
+   `proposals.json`을 받던 경로)는 제거했고, 리포트 생성은 `scripts/agent_sheet_merge.py`가 맡는다.
+2. `incomplete`는 `sheet_reviews[].status` 값으로 표현한다(허용 필드 집합 유지). 한 역할이라도
+   의견서가 없거나 `packet_id`가 다르면 제안을 하나도 만들지 않고 후보를 전부
+   `human_review_queue`로 보낸다. 재시도 로직은 없다.
+3. `.md` 리포트에 `supporting_roles`, 반대·보류 의견 상세, 관점별 완료 여부와 빠진 역할,
+   `incomplete` 경고, 독립성 경고를 렌더링한다.
+4. `build_packet()`이 `packet_id`(근거 필드의 sha256 앞 16자)와 `cell_snapshot`을 출력한다.
+   스냅샷은 검수 시점과 리포트 시점의 셀 값 차이를 `source_drift`로 잡는 데 쓴다.
+5. "5명 병렬 배정"은 역할별 프롬프트로 Agent 툴을 5회 호출하는 것이다. 대화 요약으로 대체할 수
+   없으며, 파일로 남지 않은 의견서는 수행되지 않은 것으로 처리된다.
+6. `scripts/agent_role_prompts.py`가 5개 role 프롬프트를 버전 관리한다.
+   `build_role_prompt(role, packet)`은 **패킷만** 인자로 받으므로 다른 role의 의견이 들어갈
+   자리가 구조적으로 없다 — 이것이 앵커링 방지의 실질적 강제 수단이다.
+7. `detect_role_anchoring()`이 한 role의 support가 전부 다른 role의 (finding_id, after)와
+   일치하는 경우를 리포트에 경고로 남긴다(차단하지 않음). 개별 finding의 텍스트 일치는 신호가
+   될 수 없다 — 합의 게이트가 동일 `after`로 그룹핑하므로 승격된 제안은 모두 축자 일치다.
+   따라서 판정은 role 단위로 한다.
 
-**1차 실측 계측**: 5-역할 경로를 처음 실측할 때, role뿐 아니라 **row-type(title/description/
-disclaimer/button)도 finding에 같이 태그**한다. `/st-story-review`의 "039 회귀 점검 기준"과
-최근 disclaimer/bracket 커밋을 보면 이 저장소의 실제 결함은 role(관점)보다 row-type(콘텐츠
-유형)로 더 뚜렷하게 뭉치는 경향이 있다. 태그를 남겨두면 "5-역할이 1명-2회독보다 나은가"와
-"찾아낸 문제가 role별로 흩어져 있나 row-type별로 뭉쳐 있나"를 같은 실험 한 번으로 같이 확인할
-수 있다. 후자가 뭉쳐 있다면 이후 role 분할축을 row-type 기준으로 재검토할 근거가 된다(단,
-story_and_ui_coherence처럼 title→description→disclaimer 연결을 보는 역할은 row-type을
-쪼개면 수행할 수 없으므로 축을 바꾸더라도 cross-cutting 역할로는 남겨야 한다).
+**ES_CO 실측으로 확인된 사실 (2026-08-10 조사)**: 5-역할 합의 게이트는 이미 2026-08-04에 정상
+작동했다(저장소 밖 `04_st_inspect_co/full_review/`, opinions 110 → proposals 21 /
+human_review_queue 43). 실제 간극은 게이트가 아니라 **그 결과가 v2 산출물이 되지 못한 것**이었다 —
+`es_co_merge_st_inspect.py`가 자체 스키마(`proposals[]`)로만 저장해 `workbook_review_apply.py`가
+읽을 수 없었다. 신규 경로로 재현한 결과 21/43과 finding_id 집합까지 완전히 일치했고, 산출된
+manifest는 승인 후 `decisions[]`로 변환된다.
+
+또한 앵커링은 1개가 아니라 **2개 role**에서 확인됐다:
+`story_and_ui_coherence`의 support 8건 전부가 `semantic_fidelity`와 일치하고
+(`scripts/build_story_ui_review.py`의 `copied()`가 원인),
+`style_and_hard_rule_exceptions`의 support 11건 전부가 `localization_tone`과 일치한다.
+21개 proposal 중 **3건**이 이 에코 지지에 의존한다(`story_049_C10_device_control`,
+`story_049_C08_control_common_noun`, `story_051_C17_kia_connect_case`). 나머지 18건은 독립
+지지만으로도 2-role 게이트를 통과한다.
+
+**1차 실측 계측 (구현 완료)**: `ROW_TYPES`/`row_type_for_cell()`을 `agent_review_contract.py`에
+두어 패킷 빌더와 병합이 같은 매핑을 공유한다. 모든 제안·큐 항목에 `row_type`이 붙고 리포트에
+"콘텐츠 유형별 finding" 집계가 나온다.
+
+기존 ES_CO 데이터(제안 21 / 큐 43)로 측정한 결과는 아래와 같다. 두 축의 집중도가 비슷해
+(최다 row-type 41% vs 최다 role 32%) **현 데이터만으로는 분할축을 바꿀 근거가 없다.**
+앵커링 없는 재실행 결과가 나온 뒤 다시 본다.
+
+| row_type | 제안 | 검토 필요 | 합계 |
+|---|---|---|---|
+| description | 8 | 18 | 26 |
+| disclaimer | 6 | 15 | 21 |
+| title | 6 | 7 | 13 |
+| button | 1 | 3 | 4 |
+
+축을 바꾸더라도 `story_and_ui_coherence`처럼 title→description→disclaimer 연결을 보는 역할은
+row-type을 쪼개면 수행할 수 없으므로 cross-cutting 역할로 남겨야 한다.
 
 **검수 소요 시간 제약**: 5-역할 경로(escalation)가 반영되더라도 기본 경로(단일 에이전트
 2-pass)의 소요 시간은 그대로 유지한다.
 
-- escalation 전환 조건("반복 누락 패턴 확인" 또는 "명시적 비교 요청")은 리드 에이전트의 자체
-  판단에 맡기지 않는다. `--semantic-rag-budget N`과 같은 방식으로 **사용자가 시트 단위로 명시
-  승인해야만** 5-역할 경로가 켜지도록 한다 — 판단이 애매할 때 무거운 경로로 새는 것을 막는다.
+- escalation은 **코드에서 opt-in이다(구현 완료)**. `build_packet()`은 기본적으로
+  `review_mode: "lead_2pass"`와 빈 `subagent_roles`를 내보내고, `--multi-agent`로 사용자가 그
+  시트를 승인했을 때만 5개 역할을 노출한다. 승인되지 않은 패킷으로는 `agent_role_prompts.py`가
+  프롬프트를 만들지 않고 `agent_sheet_merge.py`도 병합을 거부한다 — 판단이 애매할 때 리드가
+  무거운 경로를 임의로 고르는 길이 코드에서 막혀 있다.
 - 5-역할 경로를 쓸 때는 5개 subagent 호출을 반드시 병렬로 발행한다. 순차 실행 시 지연이
   5배가 된다.
 - 결정론적 근거는 1회 계산 후 공유 주입(이미 구현됨, 역할별 재계산으로 퇴행시키지 않는다).

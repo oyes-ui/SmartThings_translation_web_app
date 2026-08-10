@@ -11,13 +11,17 @@ argument-hint: <xlsx 경로> [--sheet <시트>]
 주입, 5개 서브에이전트 취합, `pending_approval` manifest 정책을 동일하게 따른다.
 
 출력은 schema v2의 Markdown 리포트와 수정 제안이다. 기존 `changes[]` 계약은 유지한다. 각 제안에는
-sheet/cell, before/after, rule IDs, RAG 근거 또는 보류 사유를 남긴다. 제안 확정 뒤에는 아래 읽기 전용 생성기로 공통 Markdown 리포트와 `pending_approval` manifest를
-고정한다. 이 명령은 workbook을 수정하지 않는다.
+sheet/cell, before/after, rule IDs, 지지 관점, RAG 근거 또는 보류 사유를 남긴다. 리포트와
+`pending_approval` manifest는 병합 단계에서 함께 만들어진다. 이 명령은 workbook을 수정하지 않는다.
 
 ```bash
-python scripts/review_report_builder.py story.xlsx proposals.json \
-  --report-id review-YYYYMMDD-001 --source-file-id story-001 --output-dir outputs/review --json
+python scripts/agent_sheet_merge.py --packet packet.json --opinions-dir <역할별 의견서 dir> \
+  --workbook story.xlsx --report-id review-YYYYMMDD-001 --output-dir outputs/review
 ```
+
+`review_report_builder.py`는 라이브러리이며 더 이상 CLI로 직접 호출하지 않는다. 자유 형식
+`proposals.json`을 받던 경로는 §4-A에 따라 제거됐다 — 리드 에이전트가 의견서를 요약해
+`changes[]`를 만드는 우회를 막기 위해서다.
 
 사람이 manifest의 항목을 `approval_status: approved`로 바꾼 뒤에만 `/st-apply`가 이를 처리한다.
 

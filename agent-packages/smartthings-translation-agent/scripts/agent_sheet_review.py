@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import re
 import sys
@@ -17,7 +18,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _app_pipeline as ap
-from agent_review_contract import SPECIALIST_ROLES
+from agent_review_contract import ROW_TYPES, SPECIALIST_ROLES
 from workbook_inspect import CONTENT_ROW_END, CONTENT_ROW_START, inspect_workbook
 
 
@@ -33,10 +34,8 @@ def _source_sheet_for(target_sheet: str, sheet_names: list[str]) -> str:
 
 def _row_key(row: int) -> str:
     # PromptBuilder's row-key policy is semantic, not an Excel formatting rule.
-    return {7: "title", 8: "description", 10: "title", 11: "description", 12: "disclaimer", 13: "button",
-            15: "title", 16: "description", 17: "disclaimer", 18: "button",
-            20: "title", 21: "description", 22: "disclaimer", 23: "button",
-            25: "title", 26: "description", 27: "disclaimer", 28: "button"}.get(row, "")
+    # Shared with the merge so findings carry the same content-type tag.
+    return ROW_TYPES.get(row, "")
 
 
 async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: str,
@@ -80,7 +79,8 @@ async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: s
             card = checker.resolve_constraints(source, target_info["code"], row_key=_row_key(row),
                                                story=story, cell=f"C{row}")
             validation = checker.validate_constraints(target, card)
-            evidence.append({"cell": f"C{row}", "hard_rule_issues": issues,
+            evidence.append({"cell": f"C{row}", "row_type": _row_key(row),
+                             "hard_rule_issues": issues,
                              "sentence_case_report": case_report or None,
                              "simple_case_fix": simple_fix or None,
                              "constraint_card": card,
@@ -90,10 +90,43 @@ async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: s
         wb.close()
 
 
+def _cell_snapshot(workbook: Path, sheet: str) -> dict[str, str]:
+    """Record the target cell values the specialists actually reviewed.
+
+    build_review_artifacts compares this against the workbook at report time, so a
+    cell edited between packet and merge is reported as drift instead of silently
+    proposed over.
+    """
+    import openpyxl
+
+    wb = openpyxl.load_workbook(workbook, read_only=True, data_only=False)
+    try:
+        ws = wb[sheet]
+        snapshot = {}
+        for row in range(CONTENT_ROW_START, CONTENT_ROW_END + 1):
+            value = ws.cell(row, 3).value
+            if value is not None:
+                snapshot[f"C{row}"] = str(value)
+        return snapshot
+    finally:
+        wb.close()
+
+
+def _packet_id(packet: dict[str, Any]) -> str:
+    """Hash only the evidence a specialist reasons over, not the packet envelope."""
+    evidence = {key: packet[key] for key in (
+        "workbook_name", "target_sheet", "source_sheet", "target_sections", "source_sections",
+        "deterministic_evidence", "candidate_overlay", "cell_snapshot",
+    )}
+    canonical = json.dumps(evidence, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
+
+
 async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = None,
                        app_root: Path | None = None, semantic_rag_budget: int = 0,
                        activation_manifest: Path | None = None,
-                       candidate_overlay: Path | None = None) -> dict[str, Any]:
+                       candidate_overlay: Path | None = None,
+                       multi_agent: bool = False) -> dict[str, Any]:
     if semantic_rag_budget < 0:
         raise ValueError("semantic RAG budget은 0 이상이어야 합니다.")
     inspect = inspect_workbook(workbook, sheet, None, with_sections=True)
@@ -118,14 +151,15 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
         overlay_entries = [row for row in rows if isinstance(row, dict)
                            and (story is None or str(row.get("story", "")).zfill(3) == story)
                            and str(row.get("sheet", sheet)) == sheet]
-    return {
-        "schema_version": 1,
+    packet = {
+        "schema_version": 2,
         "kind": "agent_sheet_review_packet",
         "workbook_name": workbook.name,
         "target_sheet": sheet,
         "source_sheet": source_sheet,
         "target_sections": inspect["sheets"][sheet].get("groups", []),
         "source_sections": source.get("groups", []),
+        "cell_snapshot": _cell_snapshot(workbook, sheet),
         "deterministic_evidence": deterministic,
         "deterministic_evidence_status": "available" if deterministic else "not_loaded",
         "candidate_overlay": overlay_entries,
@@ -134,11 +168,17 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
             "english_first_candidates; ES is reference-only; global glossary output is lexical/conflict evidence"
             if candidate_overlay else None
         ),
-        "subagent_roles": list(SPECIALIST_ROLES),
+        # The five-role split is an escalation, not the default: the roles appear
+        # only when the user approved this sheet for it, so an unsure lead cannot
+        # quietly pick the five-times-slower path.
+        "review_mode": "multi_agent" if multi_agent else "lead_2pass",
+        "subagent_roles": list(SPECIALIST_ROLES) if multi_agent else [],
         "semantic_rag_budget": semantic_rag_budget,
         "hard_rule_policy": "resolver_card_required; proposals_must_be_validated_before_merge",
         "structure_policy": "no_deterministic_structure_checker_in_v1",
     }
+    packet["packet_id"] = _packet_id(packet)
+    return packet
 
 
 def main() -> None:
@@ -146,6 +186,8 @@ def main() -> None:
     parser.add_argument("workbook")
     parser.add_argument("--sheet", required=True, help="검수할 언어 시트")
     parser.add_argument("--raw", action="store_true", help="기존 구조/section 읽기 전용 출력만 수행")
+    parser.add_argument("--multi-agent", action="store_true",
+                        help="5개 관점 병렬 검수(escalation)를 이 시트에 승인한다. 기본은 리드 2-pass")
     parser.add_argument("--semantic-rag-budget", type=int, default=0)
     parser.add_argument("--glossary", type=Path)
     parser.add_argument("--app-root", type=Path)
@@ -164,7 +206,8 @@ def main() -> None:
                                           glossary=args.glossary, app_root=args.app_root,
                                           semantic_rag_budget=args.semantic_rag_budget,
                                           activation_manifest=args.activation_manifest,
-                                          candidate_overlay=args.candidate_overlay))
+                                          candidate_overlay=args.candidate_overlay,
+                                          multi_agent=args.multi_agent))
         print(json.dumps(packet, ensure_ascii=False, indent=2))
     except Exception as error:
         print(json.dumps({"status": "error", "error": str(error)}, ensure_ascii=False))
