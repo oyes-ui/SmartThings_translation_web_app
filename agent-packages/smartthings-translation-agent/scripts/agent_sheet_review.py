@@ -92,7 +92,8 @@ async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: s
 
 async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = None,
                        app_root: Path | None = None, semantic_rag_budget: int = 0,
-                       activation_manifest: Path | None = None) -> dict[str, Any]:
+                       activation_manifest: Path | None = None,
+                       candidate_overlay: Path | None = None) -> dict[str, Any]:
     if semantic_rag_budget < 0:
         raise ValueError("semantic RAG budget은 0 이상이어야 합니다.")
     inspect = inspect_workbook(workbook, sheet, None, with_sections=True)
@@ -106,6 +107,17 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
                                                    activation_manifest=activation_manifest)
     elif glossary or app_root:
         raise ValueError("결정론적 glossary 검사는 --glossary와 --app-root를 함께 지정해야 합니다.")
+    overlay_entries: list[dict[str, Any]] = []
+    if candidate_overlay:
+        payload = json.loads(candidate_overlay.read_text(encoding="utf-8"))
+        rows = payload.get("occurrences", payload.get("entries", []))
+        if not isinstance(rows, list):
+            raise ValueError("candidate overlay의 occurrences/entries는 list여야 합니다.")
+        story_match = re.search(r"(?:story[_ -]?)?(\d{3})(?:\D|$)", workbook.name, re.IGNORECASE)
+        story = story_match.group(1) if story_match else None
+        overlay_entries = [row for row in rows if isinstance(row, dict)
+                           and (story is None or str(row.get("story", "")).zfill(3) == story)
+                           and str(row.get("sheet", sheet)) == sheet]
     return {
         "schema_version": 1,
         "kind": "agent_sheet_review_packet",
@@ -116,6 +128,12 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
         "source_sections": source.get("groups", []),
         "deterministic_evidence": deterministic,
         "deterministic_evidence_status": "available" if deterministic else "not_loaded",
+        "candidate_overlay": overlay_entries,
+        "candidate_overlay_status": "available" if candidate_overlay else "not_loaded",
+        "candidate_overlay_policy": (
+            "english_first_candidates; ES is reference-only; global glossary output is lexical/conflict evidence"
+            if candidate_overlay else None
+        ),
         "subagent_roles": list(SPECIALIST_ROLES),
         "semantic_rag_budget": semantic_rag_budget,
         "hard_rule_policy": "resolver_card_required; proposals_must_be_validated_before_merge",
@@ -133,6 +151,8 @@ def main() -> None:
     parser.add_argument("--app-root", type=Path)
     parser.add_argument("--activation-manifest", type=Path,
                         help="story/cell/term activation overlay; glossary lexical values remain authoritative")
+    parser.add_argument("--candidate-overlay", type=Path,
+                        help="English-first candidate ledger; injects story-specific glossary review evidence only")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
     try:
@@ -143,7 +163,8 @@ def main() -> None:
         packet = asyncio.run(build_packet(Path(args.workbook).expanduser(), args.sheet,
                                           glossary=args.glossary, app_root=args.app_root,
                                           semantic_rag_budget=args.semantic_rag_budget,
-                                          activation_manifest=args.activation_manifest))
+                                          activation_manifest=args.activation_manifest,
+                                          candidate_overlay=args.candidate_overlay))
         print(json.dumps(packet, ensure_ascii=False, indent=2))
     except Exception as error:
         print(json.dumps({"status": "error", "error": str(error)}, ensure_ascii=False))

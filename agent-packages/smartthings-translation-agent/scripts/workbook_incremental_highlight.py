@@ -25,7 +25,7 @@ from openpyxl.styles import Font
 from openpyxl.cell.text import InlineFont
 
 import _app_pipeline as ap
-from workbook_manifest import load_revision, text_sha256, update_render_state
+from workbook_manifest import file_sha256, load_revision, text_sha256, update_render_state
 
 
 RED = "FF0000"
@@ -76,7 +76,44 @@ def _term_spans(text: str, terms: list[str]) -> tuple[list[list[int]], list[str]
     return _merge_spans(found), unmatched
 
 
-def render_cell(text: str, *, base_font: Font | None, red_spans: list[list[int]], blue_spans: list[list[int]]) -> CellRichText | str:
+def _fold_bare_whitespace_runs(rt: CellRichText) -> CellRichText:
+    """Fold whitespace-only rich-text runs into a neighbour.
+
+    openpyxl's ``whitespace()`` helper only marks a run ``xml:space="preserve"``
+    when it contains BOTH whitespace and non-whitespace text.  A run that is
+    *only* whitespace ships without the attribute and Excel trims it on open.
+    This is the same fix as ``TranslationChecker._fold_bare_whitespace_runs``
+    but operates on a finished ``CellRichText`` without requiring the app import.
+    """
+    blocks: list[list] = []
+    for part in rt:
+        if isinstance(part, TextBlock):
+            blocks.append([part.text or "", part.font])
+        else:
+            blocks.append([str(part), None])
+    if not any(text and text.strip() == "" for text, _ in blocks):
+        return rt  # no bare whitespace runs
+    folded: list[list] = []
+    for seg_text, seg_font in blocks:
+        if seg_text == "":
+            continue
+        if folded and seg_text.strip() == "":
+            folded[-1][0] += seg_text
+        else:
+            folded.append([seg_text, seg_font])
+    if len(folded) >= 2 and folded[0][0].strip() == "":
+        folded[1][0] = folded[0][0] + folded[1][0]
+        folded.pop(0)
+    out = CellRichText()
+    for seg_text, seg_font in folded:
+        out.append(seg_text if seg_font is None else TextBlock(text=seg_text, font=seg_font))
+    return out
+
+
+def render_cell(
+    text: str, *, base_font: Font | None, red_spans: list[list[int]], blue_spans: list[list[int]],
+    blue_color: str = BLUE,
+) -> CellRichText | str:
     """Compose a cell in one pass. Blue is intentionally evaluated after red."""
     if not text or not (red_spans or blue_spans):
         return text
@@ -91,11 +128,11 @@ def render_cell(text: str, *, base_font: Font | None, red_spans: list[list[int]]
         if not segment:
             continue
         # Glossary wins intentionally: red is calculated first, then blue overlays it.
-        color = BLUE if any(left <= start and end <= right for left, right in blue_spans) else (
+        color = blue_color if any(left <= start and end <= right for left, right in blue_spans) else (
             RED if any(left <= start and end <= right for left, right in red_spans) else None
         )
         result.append(TextBlock(text=segment, font=_font(base_font, color)))
-    return result
+    return _fold_bare_whitespace_runs(result)
 
 
 def _relevant_target_terms(checker, source_text: str, target_code: str) -> tuple[list[str], list[dict]]:
@@ -168,87 +205,84 @@ async def run_incremental_highlight(args) -> dict:
         raise FileNotFoundError("workbook, glossary, revision manifest 경로를 모두 확인하세요.")
     revision = load_revision(revision_path)
     wb = openpyxl.load_workbook(workbook, rich_text=True, data_only=False)
-    sheet_langs = ap.load_sheet_langs(args.sheet_langs)
-    groups = ap.default_source_groups(ap.split_sheets(args.sheets), wb.sheetnames, args.include_source_sheets)
-    if not groups:
-        raise ValueError("유효한 source group이 없습니다. --sheets 또는 --include-source-sheets를 확인하세요.")
-    load_dotenv(app_root / ".env")
-    checker = TranslationChecker(max_concurrency=1, no_backtranslation=True)
-    red_by_cell = _red_by_cell(revision)
-    old_state = revision.get("render_state", {}).get("cells", {})
-    new_state: dict[str, dict] = {}
-    applied = skipped = 0
-    unmatched: dict[str, list[str]] = {}
-
-    for group in groups:
-        source_sheet = group["source_sheet"]
-        source_info = sheet_langs[source_sheet]
-        await checker.load_glossary_from_file(str(glossary), source_info["code"])
-        source_ws = wb[source_sheet]
-        source_cells = list(_range_cells(source_ws, args.cell_range))
-        for target_sheet in group["target_sheets"]:
-            target_info = sheet_langs[target_sheet]
-            target_ws = wb[target_sheet]
-            for source_cell in source_cells:
-                target_cell = target_ws[source_cell.coordinate]
-                text = _cell_text(target_cell.value)
-                if not text or text.lower() == "x":
-                    continue
-                key = f"{target_sheet}!{target_cell.coordinate}"
-                terms, excluded = _relevant_target_terms(checker, _cell_text(source_cell.value), target_info["code"])
-                blue, missing = _term_spans(text, terms)
-                red = red_by_cell.get((target_sheet, target_cell.coordinate), [])
-                highlighted_terms = [term for term in terms if term not in missing]
-                desired = {
-                    "text_sha256": text_sha256(text), "terms_sha256": _sha(terms),
-                    "red_spans": red, "blue_spans": blue, "highlighted_terms": highlighted_terms,
-                    "excluded_terms": excluded, "unmatched_terms": missing,
-                }
-                # Skip only when this workbook retained the prior rich-text rendering.
-                if old_state.get(key) == desired and _is_rich_text(target_cell.value):
-                    new_state[key] = desired
-                    skipped += 1
-                    continue
-                target_cell.value = render_cell(text, base_font=target_cell.font, red_spans=red, blue_spans=blue)
-                if _cell_text(target_cell.value) != text:
-                    raise RuntimeError(f"rich-text renderer가 문안을 변경했습니다: {key}")
-                new_state[key] = desired
-                if missing or excluded:
-                    unmatched[key] = missing
-                applied += 1
-
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output = _next_output_path(workbook, timestamp)
-    tmp = output.with_suffix(output.suffix + ".tmp")
-    wb.save(tmp)
-    os.replace(tmp, output)
-    verify = openpyxl.load_workbook(output, rich_text=True, data_only=False)
     try:
-        for key, state in new_state.items():
-            sheet, cell = key.split("!", 1)
-            if text_sha256(_cell_text(verify[sheet][cell].value)) != state["text_sha256"]:
-                raise RuntimeError(f"저장 후 텍스트 무결성 실패: {key}")
+        sheet_langs = ap.load_sheet_langs(args.sheet_langs)
+        groups = ap.default_source_groups(ap.split_sheets(args.sheets), wb.sheetnames, args.include_source_sheets)
+        if not groups:
+            raise ValueError("유효한 source group이 없습니다. --sheets 또는 --include-source-sheets를 확인하세요.")
+        load_dotenv(app_root / ".env")
+        checker = TranslationChecker(max_concurrency=1, no_backtranslation=True)
+        red_by_cell = _red_by_cell(revision)
+        old_state = revision.get("render_state", {}).get("cells", {})
+        new_state: dict[str, dict] = {}
+        applied = skipped = 0
+        unmatched: dict[str, list[str]] = {}
+
+        for group in groups:
+            source_sheet = group["source_sheet"]
+            source_info = sheet_langs[source_sheet]
+            await checker.load_glossary_from_file(str(glossary), source_info["code"])
+            source_ws = wb[source_sheet]
+            source_cells = list(_range_cells(source_ws, args.cell_range))
+            for target_sheet in group["target_sheets"]:
+                target_info = sheet_langs[target_sheet]
+                target_ws = wb[target_sheet]
+                for source_cell in source_cells:
+                    target_cell = target_ws[source_cell.coordinate]
+                    text = _cell_text(target_cell.value)
+                    if not text or text.lower() == "x":
+                        continue
+                    key = f"{target_sheet}!{target_cell.coordinate}"
+                    terms, excluded = _relevant_target_terms(checker, _cell_text(source_cell.value), target_info["code"])
+                    blue, missing = _term_spans(text, terms)
+                    red = red_by_cell.get((target_sheet, target_cell.coordinate), [])
+                    highlighted_terms = [term for term in terms if term not in missing]
+                    desired = {
+                        "text_sha256": text_sha256(text), "terms_sha256": _sha(terms),
+                        "red_spans": red, "blue_spans": blue, "highlighted_terms": highlighted_terms,
+                        "excluded_terms": excluded, "unmatched_terms": missing,
+                    }
+                    # Skip only when this workbook retained the prior rich-text rendering.
+                    if old_state.get(key) == desired and _is_rich_text(target_cell.value):
+                        new_state[key] = desired
+                        skipped += 1
+                        continue
+                    target_cell.value = render_cell(text, base_font=target_cell.font, red_spans=red, blue_spans=blue)
+                    if _cell_text(target_cell.value) != text:
+                        raise RuntimeError(f"rich-text renderer가 문안을 변경했습니다: {key}")
+                    new_state[key] = desired
+                    if missing or excluded:
+                        unmatched[key] = missing
+                    applied += 1
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output = _next_output_path(workbook, timestamp)
+        tmp = output.with_suffix(output.suffix + ".tmp")
+        wb.save(tmp)
+        os.replace(tmp, output)
+        verify = openpyxl.load_workbook(output, rich_text=True, data_only=False)
+        try:
+            for key, state in new_state.items():
+                sheet, cell = key.split("!", 1)
+                if text_sha256(_cell_text(verify[sheet][cell].value)) != state["text_sha256"]:
+                    raise RuntimeError(f"저장 후 텍스트 무결성 실패: {key}")
+        finally:
+            verify.close()
     finally:
-        verify.close()
         wb.close()
     state = {
         "renderer": "incremental_red_then_glossary_blue_v1",
-        "glossary": {"file": glossary.name, "sha256": ap_hash_file(glossary)},
+        "glossary": {"file": glossary.name, "sha256": file_sha256(glossary)},
         "cells": new_state,
         "last_output": output.name,
-        "last_output_sha256": ap_hash_file(output),
+        "last_output_sha256": file_sha256(output),
         "applied_cells": applied, "skipped_cells": skipped, "unmatched_terms": unmatched,
     }
     update_render_state(revision_path, state)
     return {"status": "ok", "output": str(output), "revision_manifest": str(revision_path), **state}
 
 
-def ap_hash_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
+
 
 
 def main() -> None:

@@ -71,6 +71,19 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
 **범위**: 번역/검수 프롬프트와 glossary/RAG 식별자에 한정한다. 날짜·통화(COP)·주소
 같은 i18n은 이 앱이 렌더링하지 않는 영역이라 제외한다.
 
+**배치 롤아웃 현황 (2026-08-03)**: `@translation_data/@excel/`의 31개 스토리 워크북에
+`CO(콜롬비아)` 시트를 채우는 작업. 도구는 `agent-packages/smartthings-translation-agent/scripts/`에
+있다(1회성 작업이라 SKILL.md/references/에는 등록하지 않음 — 스크립트 자체 docstring에
+사용법이 있다):
+- `workbook_add_target_sheet.py` — 대상 시트(+선택적 역번역 시트) 생성, 멱등적
+- `workbook_fix_sheet_names.py` — 시트명 오류 보정(046/048 결함, 콜롬비아와 무관)
+- `co_batch_cost_estimate.py` — 실행 전 무료 비용 추정
+- `batch_co_rollout.py` — 준비→번역→검증→매니페스트 순차 오케스트레이터, `--prep-only`로 크레딧 0 사전점검 가능
+
+4개 파일(001, 002, 보정된 046/048) 파일럿 완료 — 셀 수 일치, 한국어 역번역(별도 시트)
+정상, tú/vos/어휘 규칙 준수 확인됨. 나머지 ~26개 파일은 RAG DB(`rag_store.db`) 갱신
+후 진행 예정 — `batch_co_rollout.py`를 그대로 재사용하면 된다(실행 전 비용 추정 후 승인 필요).
+
 ### 3. 프롬프트 및 에이전트 검수 규칙 외부화 — ✅ 구현 완료
 
 구현 결과 확정된 사항(계획 대비 추가):
@@ -159,20 +172,163 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
 
   </details>
 
+#### 4-A. `/st-inspect` 시트 검수와 다중 에이전트 의견 계약
+
+- `/st-inspect <xlsx> --sheet "<언어 시트>"`를 기본 읽기 전용 검수 진입점으로 둔다.
+  `--sheet`는 필수이며 검수 단위는 언어 시트 전체다. 기존 `workbook_inspect.py`의
+  구조·셀 덤프는 `--raw`로 유지한다. `/st-review`는 4주 전환 기간의 호환 alias이며,
+  shadow 평가 뒤 유지·폐기를 결정한다.
+- 기본 운영 경로는 **언어별 리드 에이전트의 시트 전체 2-pass**다. 5개 전문 관점의
+  병렬 검수는 기본값을 대체하지 않고, 반복 누락 패턴이 확인됐거나 효과를 비교할 때
+  사용하는 escalation 경로다.
+- 다중 에이전트 경로에서는 문법·유창성, 원문 의미, 현지화·톤,
+  표기·스타일/하드룰 예외, story·section·UI 기능 조건의 5개 관점이 각각 독립된
+  **서면 의견서**를 제출한다. 문제가 없을 때도 `no_findings` 완료 의견서를 남긴다.
+  단순히 서브에이전트를 실행했거나 리드 에이전트가 대화를 요약한 사실만으로는
+  coverage를 인정하지 않는다.
+- 각 의견서는 동일한 시트 컨텍스트와 deterministic 근거 패킷 식별자,
+  `role`, `status`, `findings`를 가진다. `agent_runs`는 수동 주장값이 아니라 실제
+  수집된 의견서에서 생성한다. 역할별 API 모델 호출 결과는 app/API 검수로 별도
+  표기하며, 런타임 서브에이전트 의견으로 가장하거나 이를 대체할 수 없다.
+- `GlossaryChecker`, `PromptBuilder.resolve_glossary_bracket_policy`,
+  `_analyze_sentence_case`, `_check_glossary_casing` 등의 용어집·케이싱·bracket·브랜드·
+  navigation path 결과는 근거 패킷으로 주입한다. 서브에이전트는 하드룰을 재계산하거나
+  다른 결론으로 덮어쓰지 않고, 문맥상 예외·추가 위험·수정안의 자연스러움만 판단한다.
+- 리드 에이전트는 다중 에이전트 모드에서 서면 의견을 대신 요약해 `changes[]`를 만들 수
+  없다. 주관적 수정은 서로 다른 최소 두 관점의 독립 지지와 반대 의견 부재가 있을 때만
+  병합 결과에서 후보가 된다. 하드룰 위반은 해당 체커 근거로 제안한다.
+- 한 관점이라도 의견서가 없거나 입력 패킷과 연결되지 않으면 시트 상태는
+  `incomplete`다. 이때 `changes[]`를 만들지 않고, 빠진 역할·이견·단일 의견·source
+  불확실성은 `human_review_queue`에 기록한다. Markdown 리포트에는 관점별 완료 여부,
+  finding별 지지/반대 역할, 빠진 역할과 보류 사유를 표시한다.
+- offline RAG는 에이전트가 자율적으로 조회한다. semantic RAG는
+  `--semantic-rag-budget N`으로 시트별 사전 승인한 예산 안에서만 사용하고(기본 `0`),
+  실제 호출 수와 근거 ID만 리포트에 남긴다. 예산이 소진되면 offline 근거만 사용하며
+  해소되지 않은 일관성 쟁점은 사람 검토 큐로 보낸다. RAG는 규칙·glossary보다 우선하지
+  않는다.
+
+**역할 정의**: `agent_review_contract.py`의 `SPECIALIST_ROLES` 5개와 경계는 다음과 같다.
+
+| role 이름(코드) | 한글 명칭 | 판단 범위 | 판단하지 않는 것 |
+|---|---|---|---|
+| `grammar_fluency` | 문법·유창성 | 대상 언어 문장의 문법·자연스러움(관용구 직역, 연결/전치사/격/어미, 카피 리듬) | 원문 의미 보존 여부 |
+| `semantic_fidelity` | 원문 의미 충실도 | 번역이 원문의 의미·행위 주체를 보존하는지(능동/수동, 대상 관계 반전) | 문장의 매끄러움 |
+| `localization_tone` | 현지화·톤 | 과거 번역 관행·시장 톤과의 일치(RAG·BX 기준) | 문법 정오답, 의미 보존 여부 |
+| `style_and_hard_rule_exceptions` | 표기·스타일 / 하드룰 예외 | 하드룰 밖의 표기·스타일 일관성과 하드룰 결과에 대한 문맥상 예외 판단만 | 하드룰 재계산·결론 덮어쓰기 — 근거 패킷의 값을 전제로만 판단 |
+| `story_and_ui_coherence` | story·section·UI 기능 조건 | title→description→CTA→disclaimer 연결, source-confirmed UI 활성화 조건 유지 | (v1엔 대응하는 결정론적 체커가 없어 이 role이 유일한 판단 주체) |
+
+5개 role 밖에 두 존재가 있다. **리드 에이전트**는 평가자가 아니라 조정자로, 근거 패킷 생성·
+5명 병렬 배정·opinion 수집·`merge_subjective_opinions()` 실행·리포트 작성까지만 하며 자신의
+판단을 6번째 의견으로 얹거나 opinion 요약만으로 `changes[]`를 만들 수 없다. **app/API 검수**는
+`workbook_audit.py --pipeline`이 호출하는 기존 유료 파이프라인 결과로, 리포트에 포함하더라도
+"app/API 검수"로 별도 라벨하며 서브에이전트 판정으로 위장·대체하지 않는다.
+
+**제안(proposal) 생성 파이프라인**: 결정론적 하드룰 위반(glossary/casing/bracket/brand)은
+합의 게이트 없이 바로 제안이 된다(위 "하드룰 위반은 해당 체커 근거로 제안한다" 참고). 주관적
+발견만 아래 절차를 거친다.
+
+1. 근거 패킷 생성 — 결정론적 근거를 1회 계산해 5개 role에 공유 주입(역할별 재계산 없음).
+2. 리드가 5개 role subagent를 병렬 배정한다.
+3. 각 subagent가 서면 opinion을 남긴다: `role, sheet, cell, finding_id,
+   stance(support/oppose/review), reason, after, rule_ids, constraint_status`. 발견이 없어도
+   `no_findings` 완료 상태를 남긴다. `stance=review`는 지지·반대 어느 쪽도 아니며 합의 게이트의
+   지지자 수에 포함되지 않는다.
+4. 5개 opinion이 모두 모여야 다음 단계로 진행한다. 하나라도 없으면 즉시 `incomplete`로 종료하고
+   `changes[]`를 만들지 않는다(재시도 없음).
+5. `finding_id` 단위로 그룹핑해 판정한다: `constraint_status`가 `blocked`/`human_review`이면
+   `human_review_queue`, `support` 2명 이상·`oppose` 0명·`after` 값 있음이면 `proposals`로
+   승격(`supporting_roles` 기록), 그 외는 지지 부족/이견 사유로 `human_review_queue`.
+6. 결정론적 제안과 5의 `proposals`만 `build_review_artifacts()`에 전달한다 — 자유 형식
+   `proposals`는 받지 않는다(아래 "구현 확정 사항" 1번).
+7. workbook 실제 셀 값과 대조 검증 후 `changes[]`를 생성한다(`approval_status: pending_approval` 고정).
+8. `.md` 리포트와 `.json` manifest를 함께 생성한다. `human_review_queue` 항목도 사유·이견과
+   함께 리포트에 노출한다.
+9. 사람이 `.md`를 읽고 항목별 승인/거절을 정한다.
+10. 승인된 항목만 `/st-apply`가 원본이 아닌 새 복사본에 반영한다.
+
+**구현 시 확정해야 할 사항 (재량에 맡기지 말 것)**:
+
+1. `review_report_builder.build_review_artifacts()`의 `proposals` 인자를 자유 형식 리스트가
+   아니라 `merge_subjective_opinions()` 반환값(및 결정론적 제안)만 받도록 시그니처를 좁힌다.
+   검증 코드 추가가 아니라 타입/호출 경로로 우회를 원천 차단한다.
+2. `incomplete`는 새 필드가 아니라 `sheet_reviews[].status` 값으로 표현한다
+   (`review_report_builder._normalise_context`의 허용 필드 집합을 유지한다).
+3. `review_report_builder._change_block()`/`_markdown()`을 확장해 `supporting_roles`와 반대
+   의견이 `.md` 리포트에 실제로 렌더링되게 한다 — JSON manifest에만 남기고 끝내지 않는다.
+4. `agent_sheet_review.py`의 `build_packet()` 출력에 `packet_id`(또는 해시)를 추가하고, opinion이
+   이 값으로 근거 패킷과 연결됐는지 검증한다.
+5. "5명 병렬 배정"은 Agent 툴을 역할별 프롬프트로 5회 호출하는 것을 의미하며, 리드 1명이 5개
+   관점을 서술하는 것으로 대체할 수 없다.
+6. **role별 프롬프트를 만드는 전용 빌더가 없다.** 지금은 `PromptBuilder`가
+   `GlossaryChecker(PromptBuilder())` 형태로 결정론적 bracket 정책 계산에만 쓰이고, 5개 role
+   subagent에게 줄 지시문은 리드 에이전트가 `st-inspect.md`의 한 줄 설명을 보고 매번 즉석으로
+   구성한다. role별 프롬프트 템플릿을 근거 패킷과 함께 버전 관리되는 형태로 만든다.
+7. **한 role의 subagent가 다른 role의 opinion을 보고 판단하지 않게 한다.** ES_CO 파일럿의
+   `scripts/build_story_ui_review.py`에서 실제로 `story_and_ui_coherence` role의 opinion이
+   `semantic_fidelity` role의 `after` 값을 그대로 재사용하고 사유만 새로 붙여 만들어진 사례가
+   확인됐다(30-41행 `copied()`). 이러면 병합 게이트가 "2개 관점 지지"로 집계해도 실제로는
+   한쪽이 다른 쪽 결론에 앵커링된 것이라 독립성이 없다. subagent 프롬프트는 근거 패킷만
+   포함하고 다른 role의 진행 중이거나 완료된 opinion은 절대 포함하지 않는다.
+
+**1차 실측 계측**: 5-역할 경로를 처음 실측할 때, role뿐 아니라 **row-type(title/description/
+disclaimer/button)도 finding에 같이 태그**한다. `/st-story-review`의 "039 회귀 점검 기준"과
+최근 disclaimer/bracket 커밋을 보면 이 저장소의 실제 결함은 role(관점)보다 row-type(콘텐츠
+유형)로 더 뚜렷하게 뭉치는 경향이 있다. 태그를 남겨두면 "5-역할이 1명-2회독보다 나은가"와
+"찾아낸 문제가 role별로 흩어져 있나 row-type별로 뭉쳐 있나"를 같은 실험 한 번으로 같이 확인할
+수 있다. 후자가 뭉쳐 있다면 이후 role 분할축을 row-type 기준으로 재검토할 근거가 된다(단,
+story_and_ui_coherence처럼 title→description→disclaimer 연결을 보는 역할은 row-type을
+쪼개면 수행할 수 없으므로 축을 바꾸더라도 cross-cutting 역할로는 남겨야 한다).
+
+**검수 소요 시간 제약**: 5-역할 경로(escalation)가 반영되더라도 기본 경로(단일 에이전트
+2-pass)의 소요 시간은 그대로 유지한다.
+
+- escalation 전환 조건("반복 누락 패턴 확인" 또는 "명시적 비교 요청")은 리드 에이전트의 자체
+  판단에 맡기지 않는다. `--semantic-rag-budget N`과 같은 방식으로 **사용자가 시트 단위로 명시
+  승인해야만** 5-역할 경로가 켜지도록 한다 — 판단이 애매할 때 무거운 경로로 새는 것을 막는다.
+- 5-역할 경로를 쓸 때는 5개 subagent 호출을 반드시 병렬로 발행한다. 순차 실행 시 지연이
+  5배가 된다.
+- 결정론적 근거는 1회 계산 후 공유 주입(이미 구현됨, 역할별 재계산으로 퇴행시키지 않는다).
+- opinion 누락 시 자동 재시도를 두지 않는다. 누락 즉시 `incomplete` → `human_review_queue`로
+  종료한다.
+- semantic RAG 예산은 시트 단위 총합으로 유지한다(`SemanticRagBudget` 공유) — 역할별로
+  쪼개면 역할 수만큼 semantic 호출이 늘어난다.
+
+#### 4-B. 최종본 언어 재검수와 납품 서식 QA
+
+승인 manifest를 적용한 실제 텍스트는 새 문장이므로, 적용 전 후보 검수만으로 납품
+품질을 보장하지 않는다. 다음 네 게이트를 분리해 기록한다.
+
+1. **셀 후보 검수**: 후보의 문법·의미·현지화·하드룰 근거를 확인한다.
+2. **story/시트 일관성 검수**: 같은 story 안의 반복 제품명·기능명·표현을 비교한다.
+   셀별로 허용 가능하더라도 통일성 문제는 독립 finding으로 남긴다.
+3. **최종본 언어 재검수**: 승인 manifest 적용 후 실제 저장된 대상 언어 텍스트를
+   다시 읽어 문법, 중복, 부자연스러운 대체 표현과 새 일관성 문제를 찾는다. 이 단계의
+   finding도 자동 적용하지 않고 다시 `pending_approval`로 남긴다.
+4. **납품 서식 QA**: 적용 안전 검증과 별도로, 빈 피드백 열은 기본 글꼴색인지,
+   대상 본문에는 의도된 rich text 외의 빨간 글꼴이 없는지 검사한다. 이는 언어 판정
+   권위자가 아니라 명시적인 납품물 QA 계약이다.
+
+v1에는 일반적인 “서식·구조 규칙”을 판정하는 별도 결정론적 검수 체커가 없음을
+명시한다. 병합·수식·보호·숨김 시트 안전 검증은 계속 적용하지만 언어 검수의
+결정론적 권위자로 오인하지 않는다. 새 구조 체커는 함수·규칙·fixture를 별도 설계한
+뒤 추가한다.
+
 ### 5. 에이전트 명령 통합과 안전한 일반 Excel 수정
 
 - 사용자에게 노출하는 에이전트 명령은 다음 여섯 개로 통합한다.
   - `/st-start`: app 연결 상태, 사용 가능한 기능, 다음 단계 안내
   - `/st-ask`: 규칙, 용어집, RAG 사례 질의
-  - `/st-review`: 읽기 전용 통합 검수와 Markdown 리포트/수정 제안 manifest 생성
+  - `/st-inspect`: 읽기 전용 시트 검수와 Markdown 리포트/수정 제안 manifest 생성
+    (`--raw`는 기존 구조 덤프)
   - `/st-edit`: 일반적인 단일 또는 복수 Excel 셀 수정
   - `/st-apply`: 승인 manifest 기반의 감수본/납품본 생성
   - `/st-pipeline`: 사용자 승인 후 앱 LLM 번역 또는 검수 실행
 - 기존 세부 slash command는 즉시 삭제하지 않는다. 위 여섯 진입점의 내부 구현 도구로
   흡수한 뒤 사용 경로가 안정되면 deprecated 처리한다. 용어집 CRUD, RAG DB 빌드,
   텍스트 workbook 생성은 관리자/고급 작업으로 분리한다.
-- `/st-review`는 읽기 전용이며 `report_format_spec.md` 계약의 리포트와 제안 manifest까지만
-  생성한다. `/st-apply`는 승인된 제안을 최종 납품본에 반영하는 경로로 한정한다.
+- `/st-inspect`는 읽기 전용이며 `report_format_spec.md` 계약의 리포트와 제안 manifest까지만
+  생성한다. `/st-review`는 4주 전환 alias로만 유지한다. `/st-apply`는 승인된 제안을 최종
+  납품본에 반영하는 경로로 한정한다.
 - `/st-edit`는 검수 승인과 무관한 일상 수정의 빠른 경로다. 기본 동작은 dry-run이며,
   현재값·제안값·영향 범위·rich text/용어집 하이라이트 위험을 먼저 보여준다. 사용자 승인
   전에는 Excel 파일을 만들거나 수정하지 않는다.
@@ -186,10 +342,19 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
   보존 검증을 강제한다. 단순 `/st-edit`와 승인 기반 `/st-apply`는 모두 이 원본 불변·승인·
   diff 검증 원칙을 공유한다.
 
-### 6. ChatGPT for Excel 전용 레이어
+### 6. ChatGPT for Excel / Claude for Excel 전용 레이어
+
+**현황 (2026-08-07)**: `excel-chatgpt/`(ChatGPT for Excel)에 이어 같은 구조를 미러링한
+`excel-claude/`(Claude for Excel)를 추가했다. `scripts/excel_live_manifest.py`의
+`ALLOWED_SURFACES`에 `claude_excel`을 등록해 두 surface 모두 같은 검증기를 공유한다.
+Claude for Excel이 ChatGPT for Excel과 동일하게 임의 Office.js 코드 실행 경로를 제공하는지,
+아니면 고정된 read/write 도구만 노출하는지는 아직 실제 세션에서 검증하지 않았다 —
+`excel-claude/claude-excel-capabilities.md`에 이 불확실성을 capability-agnostic 정책으로
+명시해 두었고, 실제 PoC(§7)에서 어느 쪽이든 같은 안전 게이트(대상 모호 시 중단, stale
+`before` 검증, rich text 미검증 시 Delivery Python fallback)를 적용한다.
 
 - 기존 `smartthings-translation-agent`의 공통 규칙·RAG 우선순위·승인 정책은 유지하고,
-  ChatGPT for Excel에서 실행할 전용 레이어를 별도 패키지로 둔다. 제안 구조는 다음과 같다.
+  ChatGPT for Excel/Claude for Excel에서 실행할 전용 레이어를 별도 패키지로 둔다. 제안 구조는 다음과 같다.
 
   ```text
   smartthings-translation-agent/
@@ -200,6 +365,11 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
   │  ├─ edit-workflow.md          # preview → 승인 → 적용 → 검증
   │  ├─ officejs-capabilities.md  # 지원 API·requirement set·fallback
   │  └─ manifest-schema.md        # edit/review/apply 공통 계약 참조
+  ├─ excel-claude/                # 같은 구조, surface만 claude_excel
+  │  ├─ SKILL.md
+  │  ├─ edit-workflow.md
+  │  ├─ claude-excel-capabilities.md
+  │  └─ manifest-schema.md
   └─ scripts/                     # Codex/CLI·backend 전용 구현
   ```
 
@@ -251,7 +421,7 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
    무관하게 별도로 진행할 수 있으나 `checker_service.py`를 §1과 함께 건드리므로
    병합 순서를 조율한다(아래 "병렬 작업 리스크" 참고).
 5. `report_format_spec.md`와 `workbook_review_apply.py`의 manifest 변환/`final_value`
-   계약을 확정한다. 이후 `/st-review`와 `/st-apply`가 같은 계약으로 제안·승인·적용한다.
+   계약을 확정한다. 이후 `/st-inspect`와 `/st-apply`가 같은 계약으로 제안·승인·적용한다.
 6. 여섯 사용자 명령으로 진입점을 통합하고 `/st-edit`의 dry-run, before 검증,
    재하이라이트, workbook diff 검증을 구현한다.
 7. ChatGPT for Excel 전용 레이어(§6) PoC를 수행한다. 공통 규칙/manifest를 재사용하고,
@@ -259,6 +429,12 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
 8. glossary 하이라이팅 투트랙을 구현한다. `__ST_GLOSSARY` import/버전 관리와 Live Excel
    preview를 먼저 만들고, Delivery Python 산출물과 동일한 입력에서 매칭·텍스트 보존 결과를
    비교한다.
+9. 다중 에이전트 의견 수집 → 병합 → 리포트 연결을 구현한다. 모든 역할의 구조화된
+   의견이 없으면 `incomplete`가 되도록 하고, 같은 시트에서 단일 리드 2-pass와 5개 관점
+   합의 결과를 비교한다.
+10. 승인 manifest 적용 뒤 최종본 언어 재검수와 납품 서식 QA를 추가한다. 반복 용어
+    일관성, 중복 표현, 빈 피드백 열의 글꼴색, 의도되지 않은 본문 빨간 글꼴 fixture를
+    포함한다.
 
 위 순서 번호는 실행 순서이며 §번호와 다르다. §2가 최우선 목표라는 원칙은 유지하되,
 그 실현 경로는 "§3을 우회해 빠르게"가 아니라 "§3 위에 한 번에 제대로 짓기"다(목적
@@ -282,7 +458,7 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
   브랜치에서 독립적으로 "완료"를 선언할 수 있다 — 위 §4의 "미해결 간극"이 해소되지
   않은 채로. 이건 리뷰 없이는 드러나지 않는다. §4와 apply 확장은 같은 주체가 하거나,
   manifest 변환 방식을 먼저 확정한 뒤에만 각자 브랜치를 열 것을 권장한다.
-- **§5는 §4 뒤에 온다**: `/st-review`가 만드는 리포트·제안 manifest는 `report_format_spec.md`
+- **§5는 §4 뒤에 온다**: `/st-inspect`가 만드는 리포트·제안 manifest는 `report_format_spec.md`
   계약을 따르므로, §4가 그 형식을 확정하기 전에 §5를 구현하면 명령 인터페이스를 다시
   고쳐야 한다. 또 §5는 `commands/` 전체와 `SKILL.md`를 광범위하게 건드려 다른 에이전트
   브랜치의 문서 수정과 충돌하기 쉬우므로, 명령 통합 작업 중에는 `commands/` 편집을
@@ -306,7 +482,13 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
   집중한다. NotebookLM 등 사용 빈도가 낮은 기능은 이 워크플로 기여도와 운영 비용을 기준으로
   별도 정리한다.
 - 앱 AI 검수 대체는 즉시 수행하지 않는다. 언어별 골든셋과 사람 검수 결과를 기준으로 앱과
-  에이전트 검수를 병행하고, 검증된 단계부터 범위를 확장한다.
+  에이전트 검수를 병행하고, 검증된 단계부터 범위를 확장한다. 4주 shadow 동안에는 사용자가
+  승인한 경우에만 app/API 결과를 비교하며 자동 API 호출은 하지 않는다.
+- 다중 에이전트의 효율성은 설계만으로 확정하지 않는다. 단일 리드 2-pass와 5개 관점
+  서면 의견+합의 게이트를 같은 시트에서 비교해, 사람 확인 치명적 누락, 허위 수정 제안,
+  언어/콘텐츠 유형별 coverage, 승인·반려 결과, 소요 시간·비용을 기록한다. 다중 경로가
+  추가 비용만큼 반복 누락을 더 줄인다는 근거가 있을 때만 기본값 또는 escalation 조건으로
+  확대한다.
 
 ## 수용 기준
 
@@ -320,6 +502,12 @@ ES와 자동 격리된다. `es_CO` 사례를 우선하고 없으면 일반 Spani
 - 생성되는 검수 리포트의 확장자와 API MIME type이 Markdown이며, ZIP에도 `.md` 리포트와
   기계 판독 가능한 수정 manifest가 포함된다.
 - 각 수정 제안은 시트/셀·근거 규칙·적용 전후 값을 식별할 수 있고, 승인되지 않은 제안은 Excel에 반영되지 않는다.
+- 다중 에이전트 검수는 모든 역할의 `no_findings` 또는 finding 의견서를 남긴다. 누락 역할이
+  있으면 `incomplete`와 사람 검토 큐로 끝나며 수정 제안을 만들지 않는다. 수정 제안은
+  의견 병합 결과에만 기반하고, 리포트에서 지지·반대·누락 역할을 확인할 수 있다.
+- 승인 manifest 적용 뒤의 실제 텍스트는 별도 언어 재검수를 거치며, 새 finding은 다시
+  `pending_approval`로 남는다. 납품 서식 QA는 빈 피드백 열의 글꼴색과 의도되지 않은
+  본문 빨간 글꼴을 검사한다.
 - `/st-edit`는 승인 전 preview와 `before` 검증을 수행하고, 원본이 아닌 새 파일에만
   적용한다. `draft`와 재하이라이트·검증을 마친 `delivery` 산출물을 구분한다.
 - ChatGPT for Excel 레이어는 공통 규칙과 manifest 계약을 재사용하며, 지원하지 않는

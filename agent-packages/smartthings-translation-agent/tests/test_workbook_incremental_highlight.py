@@ -31,12 +31,18 @@ class IncrementalHighlightTests(unittest.TestCase):
         self.assertEqual(str(value), "Use SmartThings now")
         self.assertEqual(_runs(value), [("Use ", None), ("SmartThings", "000000FF"), (" now", None)])
 
+    def test_renderer_accepts_explicit_opaque_blue(self):
+        value = render_cell(
+            "Use SmartThings", base_font=None, red_spans=[], blue_spans=[[4, 15]], blue_color="FF0000FF",
+        )
+        self.assertEqual(_runs(value), [("Use ", None), ("SmartThings", "FF0000FF")])
+
     def test_non_overlapping_change_remains_red(self):
         value = render_cell(
             "Use SmartThings now", base_font=None,
             red_spans=[[16, 19]], blue_spans=[[4, 15]],
         )
-        self.assertEqual(_runs(value), [("Use ", None), ("SmartThings", "000000FF"), (" ", None), ("now", "00FF0000")])
+        self.assertEqual(_runs(value), [("Use ", None), ("SmartThings ", "000000FF"), ("now", "00FF0000")])
 
     def test_terms_are_case_insensitive_and_unmatched_are_reported(self):
         spans, missing = _term_spans("Use smartthings", ["SmartThings", "Galaxy"])
@@ -66,7 +72,7 @@ class IncrementalHighlightTests(unittest.TestCase):
             restored = openpyxl.load_workbook(path, rich_text=True)
             value = restored.active["C7"].value
             self.assertEqual(str(value), "Use SmartThings now")
-            self.assertEqual(_runs(value), [("Use ", None), ("SmartThings", "000000FF"), (" ", None), ("now", "00FF0000")])
+            self.assertEqual(_runs(value), [("Use ", None), ("SmartThings ", "000000FF"), ("now", "00FF0000")])
 
 
 if __name__ == "__main__":

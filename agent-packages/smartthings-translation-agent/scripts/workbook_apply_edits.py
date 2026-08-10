@@ -196,58 +196,63 @@ def apply_edits(src_path: Path, edits: list[dict], *, dry_run: bool = False,
     # rich-text run을 plain string으로 평탄화하지 않기 위한 것이다.
     baseline, baseline_path, _parent = resolve_ledger(src_path)
     wb = openpyxl.load_workbook(src_path, rich_text=True)  # 서식 유지 위해 data_only 미사용
-    planned, errors = _preflight_edits(
-        wb, edits,
-        allow_formula=allow_formula,
-        allow_merged=allow_merged,
-        allow_protected=allow_protected,
-        allow_hidden=allow_hidden,
-    )
+    try:
+        planned, errors = _preflight_edits(
+            wb, edits,
+            allow_formula=allow_formula,
+            allow_merged=allow_merged,
+            allow_protected=allow_protected,
+            allow_hidden=allow_hidden,
+        )
 
-    if errors:
-        # 하나라도 실패하면 파일을 쓰지 않고 중단 (부분 적용 방지)
-        return {"status": "aborted", "errors": errors, "applied": []}
-    if dry_run:
-        return {
-            "status": "preview", "source": str(src_path), "planned": planned,
-            "baseline_manifest": str(baseline_path), "workbook_id": baseline["workbook_id"],
-        }
+        if errors:
+            # 하나라도 실패하면 파일을 쓰지 않고 중단 (부분 적용 방지)
+            return {"status": "aborted", "errors": errors, "applied": []}
+        if dry_run:
+            return {
+                "status": "preview", "source": str(src_path), "planned": planned,
+                "baseline_manifest": str(baseline_path), "workbook_id": baseline["workbook_id"],
+            }
 
-    source_structure = _structure_snapshot(wb)
-    source_values = _value_snapshot(wb)
-    change_log = []
-    for item in planned:
-        ws = wb[item["sheet"]]
-        ws[item["cell"]].value = item["new_value"]
-        change_log.append({
-            **item,
-            "old_value": None if item["old_value"] is None else str(item["old_value"]),
-            "new_value": str(item["new_value"]),
-        })
+        source_structure = _structure_snapshot(wb)
+        source_values = _value_snapshot(wb)
+        change_log = []
+        for item in planned:
+            ws = wb[item["sheet"]]
+            ws[item["cell"]].value = item["new_value"]
+            change_log.append({
+                **item,
+                "old_value": None if item["old_value"] is None else str(item["old_value"]),
+                "new_value": str(item["new_value"]),
+            })
 
-    # 타임스탬프 복사본 경로 (원본은 그대로 둔다)
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    out_path = src_path.with_name(f"{src_path.stem}_revised_{ts}{src_path.suffix}")
+        # 타임스탬프 복사본 경로 (원본은 그대로 둔다)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        out_path = src_path.with_name(f"{src_path.stem}_revised_{ts}{src_path.suffix}")
 
-    # atomic write: .tmp 로 먼저 저장 후 os.replace()
-    tmp_path = out_path.with_suffix(out_path.suffix + ".tmp")
-    wb.save(tmp_path)
-    os.replace(tmp_path, out_path)
+        # atomic write: .tmp 로 먼저 저장 후 os.replace()
+        tmp_path = out_path.with_suffix(out_path.suffix + ".tmp")
+        wb.save(tmp_path)
+        os.replace(tmp_path, out_path)
+    finally:
+        wb.close()
 
     # 저장 결과 재검증: 허가된 대상 셀의 값이 실제로 반영됐는지 확인한다.
     # 구조/병합 범위까지 검증해야 하므로 read_only 모드를 쓰지 않는다.
     verify_wb = openpyxl.load_workbook(out_path, read_only=False, data_only=False, rich_text=True)
-    verification_structure = _structure_snapshot(verify_wb)
-    verification_values = _value_snapshot(verify_wb)
-    verification_errors = []
-    for item in planned:
-        actual = verify_wb[item["sheet"]][item["cell"]].value
-        if actual != item["new_value"]:
-            verification_errors.append({
-                "sheet": item["sheet"], "cell": item["cell"],
-                "expected": item["new_value"], "actual": actual,
-            })
-    verify_wb.close()
+    try:
+        verification_structure = _structure_snapshot(verify_wb)
+        verification_values = _value_snapshot(verify_wb)
+        verification_errors = []
+        for item in planned:
+            actual = verify_wb[item["sheet"]][item["cell"]].value
+            if actual != item["new_value"]:
+                verification_errors.append({
+                    "sheet": item["sheet"], "cell": item["cell"],
+                    "expected": item["new_value"], "actual": actual,
+                })
+    finally:
+        verify_wb.close()
     allowed = {(item["sheet"], item["cell"]) for item in planned}
     outside_changes = _outside_value_changes(source_values, verification_values, allowed)
     structure_changed = source_structure != verification_structure

@@ -144,6 +144,8 @@ def diff_spans(before: Any, after: Any) -> dict:
     from difflib import SequenceMatcher
 
     old, new = "" if before is None else str(before), "" if after is None else str(after)
+    if old == new:
+        return {"after_text_sha256": text_sha256(new), "red_spans": [], "deleted_text": []}
     red: list[tuple[int, int]] = []
     deleted: list[str] = []
     has_word_spaces = any(char.isspace() for char in old + new)
@@ -219,7 +221,8 @@ def create_edit_revision(source: str | Path, revised: str | Path, changes: list[
     revision_key = _hash_bytes((file_sha256(revised_path) + _utc_now()).encode("utf-8"))[:16]
     normalized = []
     for change in changes:
-        before, after = change.get("old_value"), change.get("new_value")
+        before = change.get("before", change.get("old_value"))
+        after = change.get("after", change.get("new_value"))
         normalized.append({
             "sheet": change["sheet"], "cell": change["cell"], "before": before,
             "after": after, "reason": change.get("reason"), "rule_ids": change.get("rule_ids", []),

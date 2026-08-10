@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""ChatGPT for Excel/Office.js draft manifest를 안전한 edits 계약으로 정규화한다."""
+"""ChatGPT for Excel/Claude for Excel/Office.js draft manifest를 안전한 edits 계약으로 정규화한다."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 CELL_RE = re.compile(r"^[A-Z]{1,3}[1-9][0-9]*$")
-ALLOWED_SURFACES = {"chatgpt_excel", "officejs_poc"}
+ALLOWED_SURFACES = {"chatgpt_excel", "claude_excel", "officejs_poc"}
 ALLOWED_MODES = {"preview", "draft", "delivery"}
 ALLOWED_VERIFICATION = {"verified", "blocked", "fallback_delivery"}
 FORBIDDEN_KEY_PARTS = ("path", "file", "secret", "token", "api_key", "apikey", "password")
@@ -140,7 +140,7 @@ def _atomic_json_write(path: Path, payload: dict) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="ChatGPT for Excel live manifest 검증/정규화")
+    parser = argparse.ArgumentParser(description="ChatGPT for Excel/Claude for Excel live manifest 검증/정규화")
     parser.add_argument("manifest", help="manifest JSON 파일 경로 또는 inline JSON")
     parser.add_argument("--require-approved", action="store_true", help="approved draft/delivery만 허용")
     parser.add_argument("--edits-only", action="store_true", help="workbook_apply_edits용 edits list만 출력")

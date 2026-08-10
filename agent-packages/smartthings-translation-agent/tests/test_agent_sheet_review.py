@@ -65,6 +65,19 @@ class AgentSheetReviewTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(json.loads(result.stdout)["sheets"]["CO(콜롬비아)"]["groups"][0]["fields"]["title"]["text"], "Hola")
             self.assertEqual(openpyxl.load_workbook(path)["CO(콜롬비아)"]["C7"].value, "Hola")
 
+    async def test_filters_english_first_candidate_overlay_to_the_current_story(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "Story_001.xlsx"
+            wb = openpyxl.Workbook(); wb.active.title = "US(미국)"; wb.create_sheet("CO(콜롬비아)"); wb.save(path)
+            overlay = Path(tmp) / "overlay.json"
+            overlay.write_text(json.dumps({"occurrences": [
+                {"story": "001", "sheet": "CO(콜롬비아)", "cell": "C7", "source_term": "Energy"},
+                {"story": "002", "sheet": "CO(콜롬비아)", "cell": "C7", "source_term": "Save"},
+            ]}), encoding="utf-8")
+            packet = await build_packet(path, "CO(콜롬비아)", candidate_overlay=overlay)
+            self.assertEqual([item["source_term"] for item in packet["candidate_overlay"]], ["Energy"])
+            self.assertEqual(packet["candidate_overlay_status"], "available")
+
 
 if __name__ == "__main__":
     unittest.main()

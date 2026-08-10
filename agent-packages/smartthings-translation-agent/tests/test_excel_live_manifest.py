@@ -31,6 +31,16 @@ class ExcelLiveManifestTests(unittest.TestCase):
             "sheet": "CO(콜롬비아)", "cell": "C10", "before": "Hola", "after": "Hola, ¿cómo estás?",
         }])
 
+    def test_accepts_claude_excel_surface(self):
+        result = approved_edits(self._manifest(surface="claude_excel"))
+        self.assertEqual(result, [{
+            "sheet": "CO(콜롬비아)", "cell": "C10", "before": "Hola", "after": "Hola, ¿cómo estás?",
+        }])
+
+    def test_rejects_unknown_surface(self):
+        with self.assertRaisesRegex(ValueError, "지원하지 않는 surface"):
+            normalize_manifest(self._manifest(surface="copilot_excel"))
+
     def test_preview_or_unverified_change_cannot_apply(self):
         with self.assertRaisesRegex(ValueError, "preview"):
             approved_edits(self._manifest(mode="preview"))
