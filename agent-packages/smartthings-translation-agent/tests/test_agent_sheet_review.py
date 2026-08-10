@@ -31,9 +31,29 @@ class AgentSheetReviewTests(unittest.IsolatedAsyncioTestCase):
             wb.save(path)
             packet = await build_packet(path, "CO(콜롬비아)", semantic_rag_budget=3)
             self.assertEqual(packet["source_sheet"], "US(미국)")
-            self.assertEqual(len(packet["subagent_roles"]), 5)
             self.assertEqual(packet["semantic_rag_budget"], 3)
             self.assertEqual(openpyxl.load_workbook(path)["CO(콜롬비아)"]["C7"].value, "Te damos la bienvenida")
+
+    async def test_five_role_escalation_is_off_unless_approved(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "story.xlsx"
+            wb = openpyxl.Workbook(); wb.active.title = "US(미국)"; wb.create_sheet("CO(콜롬비아)"); wb.save(path)
+            default = await build_packet(path, "CO(콜롬비아)")
+            self.assertEqual(default["review_mode"], "lead_2pass")
+            self.assertEqual(default["subagent_roles"], [])
+            approved = await build_packet(path, "CO(콜롬비아)", multi_agent=True)
+            self.assertEqual(approved["review_mode"], "multi_agent")
+            self.assertEqual(len(approved["subagent_roles"]), 5)
+
+    async def test_packet_id_is_stable_and_snapshots_reviewed_cells(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "story.xlsx"
+            wb = openpyxl.Workbook(); wb.active.title = "US(미국)"
+            co = wb.create_sheet("CO(콜롬비아)"); co["C7"] = "Hola"; wb.save(path)
+            first = await build_packet(path, "CO(콜롬비아)")
+            second = await build_packet(path, "CO(콜롬비아)")
+            self.assertEqual(first["packet_id"], second["packet_id"])
+            self.assertEqual(first["cell_snapshot"], {"C7": "Hola"})
 
     async def test_rejects_negative_semantic_budget(self):
         with tempfile.TemporaryDirectory() as tmp:
