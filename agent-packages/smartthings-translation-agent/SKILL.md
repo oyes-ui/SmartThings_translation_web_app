@@ -39,6 +39,7 @@ python scripts/bootstrap.py --app-root <경로> --save
 - **RAG 사례 조회**: "과거에 이 표현 어떻게 번역했어?", "기존 사례 기준 이 독일어 괜찮아?" → `scripts/rag_lookup.py` + `references/rag-workflow.md`
 - **NotebookLM 보조 분석**: "NotebookLM 링크 참고해서 분석해줘", "검수 txt를 NotebookLM에 넣어둔 노트 기준으로 요약해줘", "노트북LM 자료까지 반영해서 반복 오류 패턴 찾아줘" → `references/notebooklm-workflow.md` + MCP `notebooklm` 도구(설치된 경우)
 - **원어민/번역사 감수본 대조·요약**: "감수본 반영여부 확인", "AI 검수 대비 최종 summary", "번역사 수정 제안 몇 건이야?" → `scripts/review_summary.py` + `references/response-patterns.md`
+- **검수 결과 기록·정확도 측정**: "이번 승인 결과 기록해줘", "에이전트 제안이 얼마나 맞았어?" → `scripts/review_outcomes.py`(승인 완료 manifest → outcome ledger → golden/results) + `scripts/quality_scorecard.py`. 측정 전용이며 자동 승인은 하지 않는다.
 - **언어 시트 에이전트 검수**: "이 워크북 JA 시트 전체 검수해줘" → `/st-inspect`: 결정론적 glossary 근거 패킷(`agent_sheet_review.py`) + 역할별 프롬프트(`agent_role_prompts.py`)로 5개 관점 병렬 검수 + 병합(`agent_sheet_merge.py`) → pending approval 리포트. 한 관점이라도 의견서가 없으면 `incomplete`로 제안을 만들지 않는다.
 - **Excel 분석/수정**: "이 워크북 구조나 셀을 보여줘", "이 셀 이렇게 고쳐줘" → `scripts/workbook_inspect.py --raw`, `scripts/workbook_apply_edits.py` + `references/excel-workflow.md`
 - **Excel 용어집 하이라이트**: "용어집 용어만 글자색 하이라이트해줘", "highlight_only 실행" → `scripts/workbook_highlight_glossary.py` + `references/excel-workflow.md`
