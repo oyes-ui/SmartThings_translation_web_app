@@ -46,6 +46,24 @@ class AgentRolePromptsTests(unittest.TestCase):
         self.assertNotIn("복사된 제안", prompt)
         self.assertIn("다른 관점의 의견을 참고하지 않는다", prompt)
 
+    def test_hard_rule_internals_go_only_to_the_role_that_owns_them(self):
+        packet = {**PACKET, "deterministic_evidence": [
+            {"cell": "C7", "row_type": "title", "hard_rule_issues": ["[괄호 오류]"],
+             "constraint_card": {"resolver": "internal"}},
+        ]}
+        owner = build_role_prompt("style_and_hard_rule_exceptions", packet)
+        other = build_role_prompt("grammar_fluency", packet)
+        self.assertIn("constraint_card", owner)
+        self.assertNotIn("constraint_card", other)
+        # The other role still learns that a hard rule already fired.
+        self.assertIn("[괄호 오류]", other)
+
+    def test_every_role_is_told_it_is_read_only(self):
+        for role in SPECIALIST_ROLES:
+            prompt = build_role_prompt(role, PACKET)
+            self.assertIn("읽기 전용 검수자", prompt)
+            self.assertIn("금지:", prompt)
+
     def test_unknown_role_is_rejected(self):
         with self.assertRaises(ValueError):
             build_role_prompt("proofreader", PACKET)

@@ -15,18 +15,22 @@ from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from agent_review_contract import SPECIALIST_ROLES, merge_subjective_opinions  # noqa: E402
+from agent_review_contract import (  # noqa: E402
+    RUN_METADATA_FIELDS, SPECIALIST_ROLES, merge_subjective_opinions,
+)
 from review_report_builder import build_review_artifacts, write_artifacts  # noqa: E402
 
 
-def load_role_opinions(opinions_dir: Path, packet_id: str) -> tuple[list[dict[str, Any]], list[str]]:
-    """Read ``{role}.json`` per specialist.
+def load_role_opinions(opinions_dir: Path, packet_id: str) -> tuple[list[dict[str, Any]], list[str], dict[str, dict]]:
+    """Read ``{role}.json`` per specialist, with its execution metadata.
 
     A missing file is not an error here — merge_subjective_opinions turns it into
-    the ``incomplete`` sheet status, which is what §4-A asks for.
+    the ``incomplete`` sheet status, which is what §4-A asks for.  A file that
+    reports an error or a truncated stop_reason is treated the same way.
     """
     opinions: list[dict[str, Any]] = []
     found: list[str] = []
+    runs: dict[str, dict[str, Any]] = {}
     for role in SPECIALIST_ROLES:
         path = opinions_dir / f"{role}.json"
         if not path.is_file():
@@ -35,10 +39,11 @@ def load_role_opinions(opinions_dir: Path, packet_id: str) -> tuple[list[dict[st
         if payload.get("role") != role:
             raise ValueError(f"역할 불일치: {path} (role={payload.get('role')!r})")
         found.append(role)
+        runs[role] = {key: payload.get(key) for key in RUN_METADATA_FIELDS if key in payload}
         for opinion in payload.get("opinions", []):
             # The packet id may live on the payload rather than each opinion.
             opinions.append({**opinion, "packet_id": opinion.get("packet_id") or payload.get("packet_id") or packet_id})
-    return opinions, found
+    return opinions, found, runs
 
 
 def main() -> None:
@@ -61,7 +66,7 @@ def main() -> None:
                 "agent_sheet_review.py를 --multi-agent로 실행해 승인 패킷을 먼저 만드세요."
             )
         packet_id = str(packet.get("packet_id", ""))
-        opinions, found = load_role_opinions(
+        opinions, found, role_runs = load_role_opinions(
             Path(args.opinions_dir).expanduser(), "" if args.trust_opinion_packet_id else packet_id
         )
         deterministic = []
@@ -69,7 +74,8 @@ def main() -> None:
             deterministic = json.loads(Path(args.deterministic_proposals).expanduser().read_text(encoding="utf-8"))
             if not isinstance(deterministic, list):
                 raise ValueError("deterministic-proposals는 list여야 합니다.")
-        merged = merge_subjective_opinions(opinions, packet=packet, deterministic_proposals=deterministic)
+        merged = merge_subjective_opinions(opinions, packet=packet, deterministic_proposals=deterministic,
+                                           role_runs=role_runs)
         manifest, markdown = build_review_artifacts(
             Path(args.workbook).expanduser(), merged,
             report_id=args.report_id,

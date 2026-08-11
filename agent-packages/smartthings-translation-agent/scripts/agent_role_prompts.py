@@ -59,6 +59,27 @@ ROLE_BRIEFS: dict[str, dict[str, str]] = {
     },
 }
 
+# Evidence each role actually needs.  Sections and the cell snapshot go to
+# everyone — withholding the text under review would degrade the judgement — but
+# the heavy hard-rule internals go only to the role that owns them.
+ROLE_EVIDENCE_SLICES: dict[str, tuple[str, ...]] = {
+    "grammar_fluency": ("sections", "deterministic_summary"),
+    "semantic_fidelity": ("sections", "deterministic_summary"),
+    "localization_tone": ("sections", "deterministic_summary", "candidate_overlay"),
+    "style_and_hard_rule_exceptions": ("sections", "deterministic_full", "candidate_overlay"),
+    "story_and_ui_coherence": ("sections", "deterministic_summary"),
+}
+
+_CAPABILITY = """\
+## 허용된 행동 (이 밖의 것은 하지 않는다)
+
+- 허용: 아래 근거 패킷 읽기, offline RAG 조회, 승인된 예산 안에서의 semantic RAG 조회,
+  JSON 의견서 1개 출력.
+- 금지: Excel 파일 읽기·쓰기·적용, 납품/하이라이트 도구 실행, 워크북 경로 접근,
+  다른 역할의 의견서 파일 열기, 저장소 파일 수정, 외부 네트워크·MCP 호출.
+- 너는 읽기 전용 검수자다. 무엇도 적용하지 않으며 적용을 제안만 한다.
+"""
+
 _COMMON_RULES = """\
 ## 공통 규칙
 
@@ -84,6 +105,11 @@ _OUTPUT_CONTRACT = """\
   "packet_id": "<packet_id>",
   "target_sheet": "<sheet>",
   "status": "completed | no_findings",
+  "stop_reason": "complete",
+  "started_at": "<ISO8601>",
+  "finished_at": "<ISO8601>",
+  "confidence": "high | medium | low",
+  "rag_evidence_ids": [],
   "opinions": [
     {
       "role": "<role>",
@@ -103,7 +129,33 @@ _OUTPUT_CONTRACT = """\
 - `finding_id`는 같은 셀의 같은 쟁점이면 다른 관점과 자연히 겹치도록 `story_<번호>_<셀>_<쟁점>`
   형태로 짓는다.
 - `after`는 셀 전체의 최종 문자열이다. 부분 조각이 아니다.
+- 중간에 끊기거나 오류로 끝나면 `stop_reason`에 그 사유를 적고 `error`를 채운다. 정상 완료가
+  아닌 의견서는 검수에서 제외되며, 그 편이 불완전한 결과가 조용히 반영되는 것보다 안전하다.
 """
+
+
+def _evidence_slice(role: str, packet: dict[str, Any]) -> dict[str, Any]:
+    """Give a role the evidence it needs and nothing heavier."""
+    slices = ROLE_EVIDENCE_SLICES[role]
+    evidence: dict[str, Any] = {key: packet.get(key) for key in (
+        "workbook_name", "target_sheet", "source_sheet", "packet_id")}
+    if "sections" in slices:
+        evidence["target_sections"] = packet.get("target_sections")
+        evidence["source_sections"] = packet.get("source_sections")
+        evidence["cell_snapshot"] = packet.get("cell_snapshot")
+    deterministic = packet.get("deterministic_evidence") or []
+    if "deterministic_full" in slices:
+        evidence["deterministic_evidence"] = deterministic
+    elif "deterministic_summary" in slices:
+        # Enough to know a hard rule already fired, without the resolver internals
+        # this role must not re-litigate anyway.
+        evidence["deterministic_evidence"] = [
+            {key: item.get(key) for key in ("cell", "row_type", "hard_rule_issues")}
+            for item in deterministic if isinstance(item, dict)
+        ]
+    if "candidate_overlay" in slices:
+        evidence["candidate_overlay"] = packet.get("candidate_overlay")
+    return evidence
 
 
 def build_role_prompt(role: str, packet: dict[str, Any]) -> str:
@@ -120,10 +172,7 @@ def build_role_prompt(role: str, packet: dict[str, Any]) -> str:
         )
     brief = ROLE_BRIEFS[role]
     budget = packet.get("semantic_rag_budget", 0)
-    evidence = {key: packet.get(key) for key in (
-        "workbook_name", "target_sheet", "source_sheet", "packet_id",
-        "target_sections", "source_sections", "deterministic_evidence", "candidate_overlay",
-    )}
+    evidence = _evidence_slice(role, packet)
     return f"""\
 # /st-inspect 전문 검수 — {brief['title']} (`{role}`)
 
@@ -138,6 +187,7 @@ def build_role_prompt(role: str, packet: dict[str, Any]) -> str:
 
 {brief['excludes']}
 
+{_CAPABILITY}
 {_COMMON_RULES}
 - semantic RAG 예산: **{budget}회** (0이면 offline만 사용한다)
 

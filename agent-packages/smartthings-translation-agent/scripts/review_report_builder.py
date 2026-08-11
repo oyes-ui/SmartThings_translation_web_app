@@ -183,9 +183,11 @@ def _markdown(manifest: dict) -> str:
         lines.append("- 근거 ID: " + ", ".join(rag["semantic_evidence_ids"]))
     lines.extend(["", "## 관점별 검수", ""])
     for run in context["agent_runs"]:
-        mark = "❌" if run.get("status") in {"missing", "packet_mismatch"} else "✅"
+        mark = "✅" if run.get("status") == "completed" else "❌"
+        detail = ", ".join(f"{key}={run[key]}" for key in ("model", "stop_reason", "confidence", "error")
+                           if run.get(key))
         lines.append(f"- {mark} `{run.get('role', '-')}`: {run.get('status', 'completed')} "
-                     f"(의견 {run.get('opinions', 0)}건)")
+                     f"(의견 {run.get('opinions', 0)}건)" + (f" — {detail}" if detail else ""))
     if not context["agent_runs"]:
         lines.append("- 실행 기록 없음")
     if manifest.get("anchoring"):

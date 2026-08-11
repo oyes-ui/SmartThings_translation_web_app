@@ -29,6 +29,20 @@ python scripts/bootstrap.py --app-root <경로> --save
 
 저장된 `app_root` 는 이후 모든 스크립트가 자동 사용한다. 자동 탐색은 보조 기능이며, skill 실행 세션에서는 `--app-root` 명시 또는 저장 config 사용을 기본으로 한다.
 
+## 워크플로별 지침 (작업 시작 전에 해당 파일을 읽는다)
+
+작업 성격이 정해지면 아래 `references/` 문서를 먼저 읽는다. 이 문서 전체를 다시 훑지 않아도 된다.
+
+| 작업 | 지침 | 요약 |
+| --- | --- | --- |
+| 시트 검수·다중 에이전트 의견 병합 | `references/review-workflow.md` | 읽기 전용, `pending_approval`만 생성 |
+| 번역/검수 모드·크레딧·배치 | `references/self-vs-pipeline.md` | 셀프 기본, `--pipeline`은 승인 후 |
+| Excel 구조·분석·안전한 수정 | `references/excel-workflow.md` | 원본 불변, dry-run 기본 |
+| 과거 사례 조회 | `references/rag-workflow.md` | offline 크레딧 0, semantic은 예산 내 |
+| 규칙·용어집 출처 | `references/rules-sources.md` | 규칙 > 시장 기준 > RAG |
+| 답변 형식 | `references/response-patterns.md` | 근거 표기 필수 |
+| 승인 반영·납품·결과 기록 | `commands/st-apply.md` | Excel을 쓰는 유일한 경로 |
+
 ## 언제 이 skill을 쓰는가 (트리거)
 
 - **셋업/시작**: "SmartThings 번역 에이전트 시작해줘", "셋업해줘", "bootstrap" → `scripts/bootstrap.py` + `references/setup-workflow.md`
