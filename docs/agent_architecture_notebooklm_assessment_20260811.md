@@ -391,8 +391,10 @@ ES_CO 회귀 검증: 제안 21 → **18**, 큐 43 → 46. 차단된 3건은 사�
 
 ### §5 — 배치 제어 (반영)
 
-`batch_co_rollout.py --resume`을 추가했다. 이전 manifest에서 `ok`/`prepped`만 건너뛰고
-`error`/`skipped`는 다시 시도한다 — 일시적 실패를 영구 실패로 굳히지 않기 위해서다.
+`batch_co_rollout.py --resume`을 추가했다. 건너뛰는 범위는 실행 모드에 따라 다르다: 일반
+실행은 `ok`만, `--prep-only` 실행은 `ok`/`prepped`를 건너뛴다. `prepped`는 시트만 만들어졌고
+번역은 안 된 상태여서, 일반 실행이 이를 완료로 보면 파일이 번역되지 않은 채 누락된다.
+`error`/`skipped`는 어느 경우든 다시 시도한다 — 일시적 실패를 영구 실패로 굳히지 않기 위해서다.
 제공사 Batch API는 도입하지 않았고, 전제 조건을 `workflows/operations/AGENTS.md`에 남겼다.
 
 ### §7 — 지침 계층 (기존 구조로 반영)

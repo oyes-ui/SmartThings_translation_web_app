@@ -59,9 +59,17 @@
 
 ### 배치 재실행 (resume)
 
-`batch_co_rollout.py --resume`은 이전 manifest에서 `ok`/`prepped` 파일만 건너뛴다.
-`error`/`skipped`는 **항상 다시 시도한다** — 일시적 실패를 영구 실패로 굳히면 파일이 조용히
-누락되기 때문이다. 실행 전 `co_batch_cost_estimate.py`로 비용을 추정하고 승인받는다.
+`batch_co_rollout.py --resume`이 건너뛰는 범위는 **이번 실행이 무엇을 만드는지에 따라 다르다.**
+
+| 이번 실행 | 건너뛰는 상태 | 다시 처리하는 상태 |
+| --- | --- | --- |
+| 일반 실행(번역) | `ok` | `prepped`, `error`, `skipped` |
+| `--prep-only` | `ok`, `prepped` | `error`, `skipped` |
+
+`prepped`는 대상 시트만 만들어졌고 번역은 안 된 상태다. 일반 실행에서 이걸 완료로 보면 파일이
+**번역되지 않은 채 조용히 누락된다.** `error`/`skipped`는 어느 경우든 항상 다시 시도한다 —
+일시적 실패를 영구 실패로 굳히지 않기 위해서다. 실행 전 `co_batch_cost_estimate.py`로 비용을
+추정하고 승인받는다.
 
 배치 중에는 읽기 전용 분석과 번역 후보 생성까지만 한다. Excel 적용은 사람 승인 뒤 별도 순차
 작업으로 수행하며, 무제한 병렬화하지 않는다(`max_concurrency`로 제한).

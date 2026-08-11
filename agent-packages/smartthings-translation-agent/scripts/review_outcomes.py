@@ -23,6 +23,11 @@ from pathlib import Path
 from typing import Any
 
 APPROVED = "approved"
+REJECTED = "rejected"
+# Only these two are a human verdict.  Anything else — a typo, an empty value, a
+# status someone invented — must not be guessed at: this ledger is the reference
+# data for accuracy, so a misread state would be scored as an agent mistake.
+TERMINAL_STATUSES = (APPROVED, REJECTED)
 DECISIONS = ("approved", "edited", "rejected")
 
 
@@ -67,6 +72,12 @@ def outcomes_from_manifest(manifest: dict) -> list[dict[str, Any]]:
             raise ValueError(
                 f"changes[{index}] ({change.get('finding_id')})가 아직 pending_approval입니다. "
                 "사람이 승인/거절을 마친 manifest만 기록할 수 있습니다."
+            )
+        if status not in TERMINAL_STATUSES:
+            raise ValueError(
+                f"changes[{index}] ({change.get('finding_id')}): 알 수 없는 approval_status "
+                f"{status or '(빈 값)'!r}. {' 또는 '.join(TERMINAL_STATUSES)}여야 합니다. "
+                "오타를 거절로 기록하면 정확도 지표가 왜곡됩니다."
             )
         proposed = _text(change.get("proposed_after", change.get("after")))
         final = _text(change.get("after"))

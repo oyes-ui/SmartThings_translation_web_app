@@ -41,7 +41,16 @@ import workbook_add_target_sheet as wats  # noqa: E402
 
 # Statuses a resumed run may skip.  Errors and skips are always retried: they are
 # usually transient or fixable, and freezing them would silently drop files.
-RESUMABLE_STATUSES = {"ok", "prepped"}
+#
+# The set depends on what the current run is trying to produce.  ``prepped`` means
+# the target sheet exists but nothing was translated, so a full run must still
+# process it -- treating it as done would silently leave the file untranslated.
+RESUMABLE_STATUSES = {"ok"}
+PREP_RESUMABLE_STATUSES = {"ok", "prepped"}
+
+
+def resumable_statuses(prep_only: bool) -> set[str]:
+    return PREP_RESUMABLE_STATUSES if prep_only else RESUMABLE_STATUSES
 
 
 def discover_files(files: list[str] | None, input_dir: str | None) -> list[Path]:
@@ -267,8 +276,9 @@ def main() -> None:
         previous = json.loads(manifest_path.read_text(encoding="utf-8"))
         # Only successes are carried over.  Re-running must retry errors and
         # skips, otherwise a transient failure would be frozen into the batch.
+        allowed = resumable_statuses(args.prep_only)
         done = {stem: entry for stem, entry in (previous.get("files") or {}).items()
-                if entry.get("status") in RESUMABLE_STATUSES}
+                if entry.get("status") in allowed}
         manifest["files"].update(done)
         manifest["resumed_from"] = previous.get("created_at")
         print(f"↻ resume: 이미 완료된 {len(done)}개 파일은 건너뜁니다.")
