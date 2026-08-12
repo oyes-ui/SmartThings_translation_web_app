@@ -13,8 +13,10 @@ Skips automatically when the glossary is absent.
 
 import asyncio
 import os
+import re
 import unittest
 
+from translation_web_app.constraint_resolver import term_occurrence_pattern
 from translation_web_app.glossary_checks import GlossaryChecker
 from translation_web_app.prompt_builder import PromptBuilder
 
@@ -78,6 +80,80 @@ class AuditSuggestionGateTests(unittest.TestCase):
         result = self.checker.validate_audit_suggestion("Cualquier texto", {}, glossary_context={})
         self.assertFalse(result["blocked"])
         self.assertEqual(result["status"], "pass")
+
+
+class TermBoundaryTests(unittest.TestCase):
+    """A glossary target must match as a token, not as a substring.
+
+    Spanish pluralises by suffix, so `Rutina` occurs inside `Rutinas` and inside the
+    lowercase `rutinas`. Matching without a boundary reported the plural as a casing
+    violation of the singular — while the casing repair, which does use boundaries,
+    left it alone. ES_CO story_023 C21 was blocked by exactly that disagreement.
+    """
+
+    def test_the_singular_does_not_match_inside_the_plural(self):
+        pattern = term_occurrence_pattern("Rutina")
+        text = "Con [Rutina] y las [Rutinas automáticas], tus rutinas se activan solas."
+        hits = [match.group(0) for match in re.finditer(pattern, text, re.IGNORECASE)]
+        self.assertEqual(hits, ["Rutina"])
+
+    def test_a_term_ending_in_punctuation_keeps_matching(self):
+        """The guard is alphanumeric-only, so bracketed or symbol terms are unaffected."""
+        pattern = term_occurrence_pattern("BlueLink∙KIA Connect")
+        self.assertTrue(re.search(pattern, "usa BlueLink∙KIA Connect hoy", re.IGNORECASE))
+
+    def test_the_checker_and_its_repair_agree_on_what_counts_as_an_occurrence(self):
+        checker = GlossaryChecker(PromptBuilder())
+        restored = checker._restore_glossary_target_casing("tus rutinas y la Rutina", ["Rutina"])
+        self.assertEqual(restored, "tus rutinas y la Rutina")
+
+
+class OverlappingTermTests(unittest.TestCase):
+    """A short term inside a longer one belongs to the longer one.
+
+    The glossary holds both `Kia` and `BlueLink∙KIA Connect`. Applying `Kia` after
+    the longer term rewrote correct text into `BlueLink∙Kia Connect`, and the
+    validator then reported that self-inflicted damage as a casing violation — the
+    repair creating the defect the checker found. ES_CO story_051 C17.
+    """
+
+    SHORT, LONG = "Kia", "BlueLink∙KIA Connect"
+    TEXT = "Para Hyundai y Kia, requiere una suscripción a BlueLink∙KIA Connect."
+
+    def setUp(self):
+        self.checker = GlossaryChecker(PromptBuilder())
+        self.context = {self.LONG: self.LONG, self.SHORT: self.SHORT}
+
+    def test_repair_leaves_a_correct_longer_term_alone(self):
+        self.assertEqual(self.checker._restore_glossary_target_casing(self.TEXT, self.context), self.TEXT)
+
+    def test_repair_still_fixes_the_short_term_outside_the_longer_one(self):
+        broken = self.TEXT.replace("y Kia,", "y KIA,")
+        self.assertEqual(self.checker._restore_glossary_target_casing(broken, self.context), self.TEXT)
+
+    def test_validation_does_not_report_the_contained_use_as_a_violation(self):
+        card = _card(self.LONG, self.SHORT)
+        verdict = self.checker.validate_constraints(self.TEXT, card)
+        self.assertEqual(verdict["status"], "pass", verdict["blocked"])
+
+    def test_a_term_only_ever_contained_is_not_reported_missing(self):
+        """`Kia` appears solely inside the longer term, which already satisfies it."""
+        card = _card(self.LONG, self.SHORT)
+        verdict = self.checker.validate_constraints("Requiere BlueLink∙KIA Connect.", card)
+        self.assertEqual(verdict["status"], "pass", verdict["blocked"])
+
+    def test_a_genuinely_absent_term_is_still_reported_missing(self):
+        card = _card(self.LONG, self.SHORT)
+        verdict = self.checker.validate_constraints("Requiere una suscripción.", card)
+        self.assertEqual(verdict["status"], "blocked")
+        self.assertEqual({item["reason"] for item in verdict["blocked"]}, {"missing_glossary_target"})
+
+
+def _card(*targets: str) -> dict:
+    return {"terms": [{"source_term": target, "target": target, "active": True,
+                       "activation_source": "test", "rule_ids": ("glossary-target",),
+                       "bracket_policy": "no_bracket", "no_bracket_reasons": (),
+                       "blocked_reason": None} for target in targets]}
 
 
 if __name__ == "__main__":

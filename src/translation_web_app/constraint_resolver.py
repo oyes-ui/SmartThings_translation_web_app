@@ -18,6 +18,23 @@ def _normalise_term(value: str) -> str:
     return str(value or "").strip().casefold()
 
 
+def term_occurrence_pattern(term: str) -> str:
+    """Match a glossary target as a whole token, not as a substring.
+
+    ``Rutina`` must not match inside ``Rutinas`` — Spanish and Portuguese
+    pluralise by suffix, so a bare substring search reports the plural as a
+    casing violation of the singular.  The alphanumeric-only guard is what the
+    casing repair already uses; keeping the two identical is the point, because
+    a checker stricter than its own repair flags text nothing can fix.
+    """
+    pattern = re.escape(term)
+    if term[:1].isalnum():
+        pattern = r"(?<![a-zA-Z0-9])" + pattern
+    if term[-1:].isalnum():
+        pattern = pattern + r"(?![a-zA-Z0-9])"
+    return pattern
+
+
 @dataclass(frozen=True)
 class TermConstraint:
     source_term: str
@@ -152,14 +169,26 @@ class ConstraintResolver:
         """Return pass/blocked/human_review; never rewrite the proposed text."""
         blocked: list[dict[str, Any]] = []
         review: list[dict[str, Any]] = []
-        for item in constraints:
+        # Longest target first, so a term contained in a longer one is judged as part
+        # of it rather than on its own.  `Kia` occurs inside `BlueLink∙KIA Connect`;
+        # judged separately it reads as a casing violation of correct text.
+        ordered = sorted(constraints, key=lambda item: len(item.target or ""), reverse=True)
+        claimed: list[tuple[int, int]] = []
+        for item in ordered:
             if item.bracket_policy == "blocked_rule_conflict":
                 review.append({"source_term": item.source_term, "reason": item.blocked_reason, "rule_ids": item.rule_ids})
                 continue
             if not item.active:
                 continue
-            occurrences = list(re.finditer(re.escape(item.target), proposed_text, re.IGNORECASE))
+            found = list(re.finditer(term_occurrence_pattern(item.target), proposed_text, re.IGNORECASE))
+            occurrences = [match for match in found
+                           if not any(start <= match.start() and match.end() <= end for start, end in claimed)]
+            claimed.extend((match.start(), match.end()) for match in occurrences)
             if not occurrences:
+                if found:
+                    # Present, but only inside a longer glossary term that already
+                    # satisfies it — not a missing target.
+                    continue
                 blocked.append({"source_term": item.source_term, "reason": "missing_glossary_target", "expected": item.target, "rule_ids": item.rule_ids})
                 continue
             for occurrence in occurrences:

@@ -331,14 +331,28 @@ class GlossaryChecker:
         if not target_text:
             return target_text
 
+        from translation_web_app.constraint_resolver import term_occurrence_pattern
+
+        # Longest first, and a shorter term never rewrites inside a longer one that
+        # already claimed the span: the glossary holds both `Kia` and
+        # `BlueLink∙KIA Connect`, and applying `Kia` afterwards turned correct text
+        # into `BlueLink∙Kia Connect` — the repair itself introducing the violation
+        # the checker then reported.
         restored = target_text
+        claimed: list[tuple[int, int]] = []
         for term in self._extract_glossary_target_terms(glossary_context_or_terms):
-            pattern = re.escape(term)
-            if term[0].isalnum():
-                pattern = r'(?<![a-zA-Z0-9])' + pattern
-            if term[-1].isalnum():
-                pattern = pattern + r'(?![a-zA-Z0-9])'
-            restored = re.sub(pattern, term, restored, flags=re.IGNORECASE)
+            pieces, last, taken = [], 0, []
+            for match in re.finditer(term_occurrence_pattern(term), restored, re.IGNORECASE):
+                if any(start <= match.start() and match.end() <= end for start, end in claimed):
+                    continue
+                pieces.append(restored[last:match.start()])
+                pieces.append(term)
+                last = match.end()
+                taken.append((match.start(), match.end()))
+            pieces.append(restored[last:])
+            # Replacements are the same length as the match, so spans stay valid.
+            restored = "".join(pieces)
+            claimed.extend(taken)
         return restored
 
     def _compile_glossary_re(self):
