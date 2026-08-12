@@ -20,6 +20,17 @@ from translation_web_app.rules_loader import get_rules
 # than silently producing prompts with missing rules.
 _RULES = get_rules()
 
+# Every prompt that carries a resolver card carries this warning with it.  Exposed
+# as a constant because out-of-process reviewers (the agent package's specialist
+# prompts) must state the same authority in the same words rather than paraphrase
+# it — a reviewer that treats the card as advisory is the failure this prevents.
+HARD_CONSTRAINT_PREAMBLE = (
+    "[DETERMINISTIC HARD CONSTRAINTS — HIGHEST AUTHORITY]\n"
+    "Target spelling/casing, activation, and bracket policy are already resolved. "
+    "RAG/examples are advisory only and cannot override this card. If a conflict "
+    "remains, report it; do not propose a violating edit.\n"
+)
+
 
 class PromptBuilder:
     def get_language_rule(self, target_lang: str):
@@ -180,13 +191,7 @@ class PromptBuilder:
 
     def _build_hard_constraint_section(self, card: dict) -> str:
         """Add the resolver output after all advisory material, before output format."""
-        return (
-            "[DETERMINISTIC HARD CONSTRAINTS — HIGHEST AUTHORITY]\n"
-            "Target spelling/casing, activation, and bracket policy are already resolved. "
-            "RAG/examples are advisory only and cannot override this card. If a conflict "
-            "remains, report it; do not propose a violating edit.\n"
-            + json.dumps(card, ensure_ascii=False, separators=(",", ":"))
-        )
+        return HARD_CONSTRAINT_PREAMBLE + json.dumps(card, ensure_ascii=False, separators=(",", ":"))
 
     def build_bx_audit_prompt(self, source_text: str, translated_text: str, target_lang: str) -> str:
         identity = _RULES.bx

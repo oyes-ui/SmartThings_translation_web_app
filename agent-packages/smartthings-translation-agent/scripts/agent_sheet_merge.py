@@ -15,10 +15,47 @@ from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _app_pipeline as ap  # noqa: E402
 from agent_review_contract import (  # noqa: E402
-    RUN_METADATA_FIELDS, SPECIALIST_ROLES, merge_subjective_opinions,
+    RUN_METADATA_FIELDS, SPECIALIST_ROLES, apply_resolver_gate, merge_subjective_opinions,
 )
 from review_report_builder import build_review_artifacts, write_artifacts  # noqa: E402
+
+
+def resolver_validator(packet: dict[str, Any], glossary: Path, app_root: Path, sheet: str):
+    """Wire the app's own suggestion validator to the cells in this packet.
+
+    The card, glossary context and row_key all come from the packet, so the gate
+    judges a proposal against exactly the evidence the specialists were given — not
+    against a card recomputed later from a workbook that may have moved on.
+    """
+    import asyncio
+
+    ap.bootstrap_project(str(app_root))
+    from translation_web_app.glossary_checks import GlossaryChecker
+    from translation_web_app.prompt_builder import PromptBuilder
+
+    checker = GlossaryChecker(PromptBuilder())
+    source_code = ap.DEFAULT_SHEET_LANGS[ap.GROUP_B_SOURCE]["code"]
+    if sheet in ap.GROUP_A_TARGETS:
+        source_code = ap.DEFAULT_SHEET_LANGS[ap.GROUP_A_SOURCE]["code"]
+    loaded = asyncio.run(checker.load_glossary_from_file(str(glossary), source_code))
+    if not loaded.startswith("✓"):
+        raise RuntimeError(f"glossary 로드 실패: {loaded}")
+    by_cell = {item.get("cell"): item for item in packet.get("deterministic_evidence") or []
+               if isinstance(item, dict)}
+
+    def validate(cell: str, after: str) -> dict[str, Any] | None:
+        evidence = by_cell.get(cell)
+        if not evidence or not after:
+            return None
+        return checker.validate_audit_suggestion(
+            after, evidence.get("constraint_card") or {},
+            glossary_context=evidence.get("glossary_context"),
+            row_key=evidence.get("row_type", ""),
+        )
+
+    return validate
 
 
 def load_role_opinions(opinions_dir: Path, packet_id: str) -> tuple[list[dict[str, Any]], list[str], dict[str, dict]]:
@@ -57,6 +94,8 @@ def main() -> None:
     parser.add_argument("--deterministic-proposals", help="하드룰 위반 제안 JSON list (합의 게이트 면제)")
     parser.add_argument("--trust-opinion-packet-id", action="store_true",
                         help="의견서에 기록된 packet_id를 그대로 검증한다(기본은 누락 시 패킷 값으로 채움)")
+    parser.add_argument("--glossary", type=Path, help="제안문 resolver 재검증용 glossary CSV")
+    parser.add_argument("--app-root", type=Path, help="제안문 resolver 재검증용 app repo 경로")
     args = parser.parse_args()
     try:
         packet = json.loads(Path(args.packet).expanduser().read_text(encoding="utf-8"))
@@ -76,6 +115,18 @@ def main() -> None:
                 raise ValueError("deterministic-proposals는 list여야 합니다.")
         merged = merge_subjective_opinions(opinions, packet=packet, deterministic_proposals=deterministic,
                                            role_runs=role_runs)
+        # A packet built with a glossary carries resolved cards, so every proposal can
+        # and must be re-checked against them.  Shipping unvalidated text when the
+        # evidence to validate it exists is the gap that let ES_CO C18 through.
+        if packet.get("deterministic_evidence_status") == "available":
+            if not (args.glossary and args.app_root):
+                raise ValueError(
+                    "이 패킷은 결정론적 constraint card를 포함합니다. 제안문을 앱 resolver로 재검증할 수 "
+                    "있도록 --glossary와 --app-root를 지정하세요. 검증 없이 제안을 내보내지 않습니다."
+                )
+            merged = apply_resolver_gate(
+                merged, resolver_validator(packet, args.glossary.expanduser(),
+                                           args.app_root.expanduser(), merged.sheet))
         manifest, markdown = build_review_artifacts(
             Path(args.workbook).expanduser(), merged,
             report_id=args.report_id,
@@ -90,6 +141,7 @@ def main() -> None:
             "changes": len(manifest["changes"]),
             "human_review_queue": len(manifest["review_context"]["human_review_queue"]),
             "anchoring_warnings": len(merged.anchoring),
+            "resolver_gate": merged.resolver_gate,
         }, ensure_ascii=False, indent=2))
     except Exception as error:
         print(json.dumps({"status": "error", "error": str(error)}, ensure_ascii=False))

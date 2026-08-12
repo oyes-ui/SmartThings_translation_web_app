@@ -9,7 +9,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from agent_review_contract import (  # noqa: E402
-    SPECIALIST_ROLES, SemanticRagBudget, detect_role_anchoring, merge_subjective_opinions,
+    SPECIALIST_ROLES, SemanticRagBudget, apply_resolver_gate, detect_role_anchoring,
+    merge_subjective_opinions,
 )
 
 PACKET = {"packet_id": "pkt0000000000001", "target_sheet": "CO(콜롬비아)", "cell_snapshot": {"C10": "Hola"}}
@@ -81,6 +82,20 @@ class AgentReviewContractTests(unittest.TestCase):
         self.assertIn("semantic_fidelity", merged.missing_roles)
         self.assertTrue(any(item["reason"] == "sheet_incomplete_missing_role_opinion"
                             for item in merged.human_review_queue))
+
+    def test_clean_no_findings_run_counts_as_completed(self):
+        base = {"sheet": "CO(콜롬비아)", "cell": "C10", "finding_id": "f",
+                "stance": "review", "after": None, "constraint_status": "pass",
+                "packet_id": PACKET["packet_id"]}
+        opinions = [{**base, "role": role} for role in SPECIALIST_ROLES[:-1]]
+        role_runs = {
+            SPECIALIST_ROLES[-1]: {"stop_reason": "no_findings", "confidence": "high"},
+        }
+        merged = merge_subjective_opinions(opinions, packet=PACKET, role_runs=role_runs)
+        self.assertEqual(merged.sheet_status, "completed")
+        self.assertEqual(merged.missing_roles, [])
+        self.assertEqual(merged.agent_runs[-1]["status"], "completed")
+        self.assertEqual(merged.agent_runs[-1]["opinions"], 0)
 
     def test_opinion_answering_a_different_packet_is_not_counted(self):
         base = {"sheet": "CO(콜롬비아)", "cell": "C10", "finding_id": "co-c10", "after": "Buenas",
@@ -232,6 +247,70 @@ class AgentReviewContractTests(unittest.TestCase):
             {**common, "role": "story_and_ui_coherence", "cell": "C12", "finding_id": "b", "after": "Y"},
         ]
         self.assertEqual(detect_role_anchoring(opinions), [])
+
+
+class ResolverGateTests(unittest.TestCase):
+    """The consensus gate judges agreement; this gate judges the text itself."""
+
+    def _merged(self, after="Modo de película"):
+        base = {"sheet": "CO(콜롬비아)", "cell": "C18", "finding_id": "c18", "after": after,
+                "stance": "support", "constraint_status": "pass", "packet_id": PACKET["packet_id"]}
+        return merge_subjective_opinions([
+            {**base, "role": "semantic_fidelity"},
+            {**base, "role": "localization_tone"},
+            *_all_roles(base),
+        ], packet=PACKET)
+
+    def test_a_proposal_that_violates_the_card_never_reaches_changes(self):
+        """Two roles agreed and still cannot ship: the glossary outranks consensus."""
+        merged = self._merged()
+        self.assertEqual(len(merged.proposals), 1)
+        gated = apply_resolver_gate(merged, lambda cell, after: {
+            "status": "blocked", "blocked": True, "normalized": after,
+            "violations": [{"source_term": "Movie mode", "reason": "missing_glossary_target",
+                            "expected": "Modo de video"}],
+        })
+        self.assertEqual(gated.proposals, [])
+        blocked = [item for item in gated.human_review_queue
+                   if item["reason"] == "blocked_by_resolver_revalidation"]
+        self.assertEqual(len(blocked), 1)
+        self.assertEqual(blocked[0]["rejected_after"], "Modo de película")
+        self.assertEqual(blocked[0]["resolver_violations"][0]["expected"], "Modo de video")
+
+    def test_a_blocked_proposal_is_never_rewritten_into_the_resolved_term(self):
+        """Substituting silently would hide a real disagreement from the reviewer."""
+        gated = apply_resolver_gate(self._merged(), lambda cell, after: {
+            "status": "blocked", "blocked": True, "normalized": "Modo de video", "violations": [],
+        })
+        self.assertEqual(gated.proposals, [])
+        self.assertNotIn("Modo de video", [c.get("after") for c in gated.proposals])
+
+    def test_a_repairable_proposal_is_normalised_and_kept(self):
+        gated = apply_resolver_gate(self._merged("modo de video"), lambda cell, after: {
+            "status": "pass", "blocked": False, "normalized": "Modo de video", "violations": [],
+        })
+        self.assertEqual(len(gated.proposals), 1)
+        self.assertEqual(gated.proposals[0]["after"], "Modo de video")
+        self.assertTrue(gated.proposals[0]["resolver_repaired"])
+
+    def test_human_review_status_is_queued_rather_than_proposed(self):
+        gated = apply_resolver_gate(self._merged(), lambda cell, after: {
+            "status": "human_review", "blocked": False, "normalized": after,
+            "violations": [], "review": [{"reason": "missing_required_bracket"}],
+        })
+        self.assertEqual(gated.proposals, [])
+        self.assertEqual(gated.human_review_queue[-1]["resolver_status"], "human_review")
+
+    def test_a_cell_without_a_card_passes_through_untouched(self):
+        gated = apply_resolver_gate(self._merged(), lambda cell, after: None)
+        self.assertEqual(len(gated.proposals), 1)
+
+    def test_gate_status_is_recorded_so_a_report_can_state_it_ran(self):
+        self.assertEqual(self._merged().resolver_gate, "not_run")
+        gated = apply_resolver_gate(self._merged(), lambda cell, after: {
+            "status": "pass", "blocked": False, "normalized": after, "violations": [],
+        })
+        self.assertIn("1 passed", gated.resolver_gate)
 
 
 if __name__ == "__main__":

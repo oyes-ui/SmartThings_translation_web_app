@@ -46,6 +46,8 @@ async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: s
     from translation_web_app.prompt_builder import PromptBuilder
     import openpyxl
 
+    from translation_web_app.prompt_builder import HARD_CONSTRAINT_PREAMBLE
+
     checker = GlossaryChecker(PromptBuilder())
     source_code = ap.DEFAULT_SHEET_LANGS[source_sheet]["code"]
     target_info = ap.DEFAULT_SHEET_LANGS[target_sheet]
@@ -84,8 +86,14 @@ async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: s
                              "sentence_case_report": case_report or None,
                              "simple_case_fix": simple_fix or None,
                              "constraint_card": card,
-                             "constraint_validation": validation})
-        return evidence
+                             "constraint_validation": validation,
+                             # Only the merge-time resolver gate reads this; it is kept out
+                             # of every role slice so a specialist cannot re-derive the
+                             # bracket/casing policy the card already settled.
+                             "glossary_context": checker._get_glossary_context_as_dict(
+                                 target_info["code"], source_text=source,
+                                 skip_deactivated=True, row_key=_row_key(row))})
+        return evidence, HARD_CONSTRAINT_PREAMBLE
     finally:
         wb.close()
 
@@ -113,10 +121,15 @@ def _cell_snapshot(workbook: Path, sheet: str) -> dict[str, str]:
 
 
 def _packet_id(packet: dict[str, Any]) -> str:
-    """Hash only the evidence a specialist reasons over, not the packet envelope."""
+    """Hash the evidence the review is based on, not the packet envelope.
+
+    The hard-constraint preamble is included because it is the app's statement of
+    what outranks what: if that wording changes, the specialists were working under
+    different instructions and the opinions are not interchangeable.
+    """
     evidence = {key: packet[key] for key in (
         "workbook_name", "target_sheet", "source_sheet", "target_sections", "source_sections",
-        "deterministic_evidence", "candidate_overlay", "cell_snapshot",
+        "deterministic_evidence", "candidate_overlay", "cell_snapshot", "hard_constraint_preamble",
     )}
     canonical = json.dumps(evidence, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
@@ -135,9 +148,11 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
     source_sheet = _source_sheet_for(sheet, inspect["sheet_names"])
     source = inspect_workbook(workbook, source_sheet, None, with_sections=True)["sheets"][source_sheet]
     deterministic: list[dict[str, Any]] = []
+    preamble = ""
     if glossary and app_root:
-        deterministic = await _hard_rule_evidence(workbook, source_sheet, sheet, glossary, app_root,
-                                                   activation_manifest=activation_manifest)
+        deterministic, preamble = await _hard_rule_evidence(
+            workbook, source_sheet, sheet, glossary, app_root,
+            activation_manifest=activation_manifest)
     elif glossary or app_root:
         raise ValueError("결정론적 glossary 검사는 --glossary와 --app-root를 함께 지정해야 합니다.")
     overlay_entries: list[dict[str, Any]] = []
@@ -162,6 +177,10 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
         "cell_snapshot": _cell_snapshot(workbook, sheet),
         "deterministic_evidence": deterministic,
         "deterministic_evidence_status": "available" if deterministic else "not_loaded",
+        # The app's own wording for "this card outranks everything else", carried
+        # verbatim so every specialist reads the same authority the app's translate
+        # and audit prompts state.
+        "hard_constraint_preamble": preamble,
         "candidate_overlay": overlay_entries,
         "candidate_overlay_status": "available" if candidate_overlay else "not_loaded",
         "candidate_overlay_policy": (

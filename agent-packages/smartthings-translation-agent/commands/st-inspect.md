@@ -62,8 +62,13 @@ python agent-packages/smartthings-translation-agent/scripts/agent_role_prompts.p
 ```bash
 python agent-packages/smartthings-translation-agent/scripts/agent_sheet_merge.py \
   --packet packet.json --opinions-dir <dir> --workbook <workbook.xlsx> \
-  --report-id <id> --output-dir <out>
+  --report-id <id> --output-dir <out> \
+  --glossary <Glossary.csv> --app-root <app-root>
 ```
+
+`--glossary`/`--app-root`는 1단계에서 glossary를 준 경우 **필수다.** 합의를 통과한 제안문을
+앱 resolver에 다시 걸어 용어집·대소문자·bracket 정책을 재검증하기 위한 것이고, 검증할 근거가
+패킷에 있는데 검증 없이 제안을 내보내는 경로는 막혀 있다.
 
 승인된 `changes[]`만 `/st-apply`가 반영한다.
 
@@ -75,6 +80,11 @@ python agent-packages/smartthings-translation-agent/scripts/agent_sheet_merge.py
   `incomplete`다.** 이때는 제안을 하나도 만들지 않고 후보를 전부 `human_review_queue`로 보낸다.
   재시도하지 않는다.
 - 검수 시점 셀 값과 현재 값이 다르면 그 제안은 `source_drift`로 보류된다.
+- **합의를 통과해도 제안문 자체가 하드룰을 어기면 제안이 되지 않는다.** 병합 직전 모든 `after`가
+  앱 resolver에 다시 걸린다. 의견서의 `constraint_status`는 에이전트의 자기신고이므로 신뢰하지
+  않고 덮어쓴다. 대소문자·bracket처럼 resolver가 소유한 차이는 **교정**해서 제안에 반영하고
+  (`resolver_repaired`), 용어집 target 자체가 어긋나면 `blocked_by_resolver_revalidation`으로
+  큐에 보낸다 — 정답으로 조용히 치환하지 않는다. 그 불일치는 사람이 볼 문제다.
 - **한 역할의 지지가 다른 역할의 사본에 가까우면 그 지지는 독립으로 세지 않는다.** 남은 독립
   관점이 2개 미만이면 제안이 되지 않고 `anchored_support_needs_independent_role`로 큐에 간다 —
   기각이 아니라 제3의 독립 관점을 요구하는 것이다. 정당한 합의라면 다른 역할이 지지한다.

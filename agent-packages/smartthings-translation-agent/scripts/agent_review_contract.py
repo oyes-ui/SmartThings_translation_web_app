@@ -8,7 +8,7 @@ RAG allowance, and merges their structured opinions conservatively.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from itertools import combinations
 from threading import Lock
 from typing import Any
@@ -124,6 +124,7 @@ class ReviewMergeResult:
     sheet: str
     cell_snapshot: dict[str, str] = field(default_factory=dict)
     anchoring: list[dict[str, Any]] = field(default_factory=list)
+    resolver_gate: str = "not_run"
 
 
 # Only these mean the specialist finished on its own terms; a truncated or errored
@@ -160,8 +161,10 @@ def _agent_runs(opinions: list[dict[str, Any]], expected_roles: tuple[str, ...],
         elif stop_reason and stop_reason not in CLEAN_STOP_REASONS:
             status = "run_incomplete"
         elif not role_opinions:
-            # Metadata arrived without any opinion file: the run cannot be counted.
-            status = "run_incomplete"
+            # A clean no-findings run legitimately has no opinion rows.  It counts
+            # only when the role file supplied an explicit clean stop reason;
+            # metadata without that completion signal remains incomplete.
+            status = "completed" if stop_reason in CLEAN_STOP_REASONS else "run_incomplete"
         else:
             status = "completed"
         if status != "completed":
@@ -253,6 +256,49 @@ def merge_subjective_opinions(opinions: list[dict[str, Any]], *, packet: dict[st
         sheet=sheet, cell_snapshot=dict(packet.get("cell_snapshot", {})),
         anchoring=anchoring,
     )
+
+
+def apply_resolver_gate(merged: ReviewMergeResult, validate) -> ReviewMergeResult:
+    """Re-check every proposed text against the deterministic card before it ships.
+
+    The specialists reported their own ``constraint_status``; that is self-attestation,
+    not verification, and a fluent model is at its most convincing exactly when it has
+    quietly replaced a settled glossary target.  The app never trusts its own model
+    here either — checker_service repairs and re-validates model output before letting
+    it out — so the same floor applies to a proposal that reached consensus.
+
+    ``validate(cell, after) -> dict`` is supplied by the caller (wired to
+    GlossaryChecker.validate_audit_suggestion) so this module stays free of the app.
+    A repaired text replaces the proposal; anything the resolver still refuses goes to
+    the human queue rather than being rewritten into compliance.
+    """
+    kept, queued = [], list(merged.human_review_queue)
+    blocked_count = 0
+    for proposal in merged.proposals:
+        verdict = validate(proposal.get("cell", ""), proposal.get("after", ""))
+        if not verdict:
+            kept.append(proposal)
+            continue
+        if verdict.get("blocked") or verdict.get("status") not in {"pass", None}:
+            blocked_count += 1
+            queued.append({
+                "finding_id": proposal.get("finding_id", ""), "sheet": proposal.get("sheet", ""),
+                "cell": proposal.get("cell", ""), "row_type": proposal.get("row_type", ""),
+                "reason": "blocked_by_resolver_revalidation",
+                "resolver_status": verdict.get("status", ""),
+                "resolver_violations": verdict.get("violations") or verdict.get("review") or [],
+                "rejected_after": proposal.get("after", ""),
+                "opinions": [],
+            })
+            continue
+        normalized = verdict.get("normalized", proposal.get("after", ""))
+        if normalized != proposal.get("after"):
+            # A wrapper or letter case the resolver owns; repaired exactly as the app
+            # repairs its own model output, not treated as a disagreement.
+            proposal = {**proposal, "after": normalized, "resolver_repaired": True}
+        kept.append(proposal)
+    status = f"ran; {len(kept)} passed, {blocked_count} blocked"
+    return replace(merged, proposals=kept, human_review_queue=queued, resolver_gate=status)
 
 
 def detect_role_anchoring(opinions: list[dict[str, Any]], *, minimum: int = 2,

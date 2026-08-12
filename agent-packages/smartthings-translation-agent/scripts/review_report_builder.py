@@ -204,6 +204,12 @@ def _markdown(manifest: dict) -> str:
             if tally:
                 lines.append(f"- `{row_type or '(미분류)'}`: 제안 {tally['changes']}건 / "
                              f"검토 필요 {tally['queue']}건")
+    gate = manifest.get("resolver_gate", "not_run")
+    lines.extend(["", "## 하드룰 재검증", "",
+                  f"- 제안문 resolver 재검증: `{gate}`"])
+    if gate == "not_run":
+        lines.append("- ⚠ 이 리포트의 제안은 앱 resolver로 재검증되지 않았습니다. "
+                     "용어집 위반이 걸러지지 않았을 수 있습니다.")
     lines.extend(["", "## 사람 검토 필요", ""])
     if context["human_review_queue"]:
         for item in context["human_review_queue"]:
@@ -211,6 +217,12 @@ def _markdown(manifest: dict) -> str:
                          f"[{item.get('finding_id', '-')}]: {item.get('reason', '-')}")
             if item.get("detail"):
                 lines.append(f"  - {item['detail']}")
+            for violation in item.get("resolver_violations", []):
+                lines.append(f"  - resolver: `{violation.get('reason', '-')}` "
+                             f"term=`{violation.get('source_term', '-')}` "
+                             f"expected=`{violation.get('expected', '-')}`")
+            if item.get("rejected_after"):
+                lines.append(f"  - 차단된 제안: `{item['rejected_after']}`")
             for opinion in item.get("opinions", []):
                 lines.append(_opinion_line(opinion))
     else:
@@ -260,6 +272,7 @@ def build_review_artifacts(workbook, merged: ReviewMergeResult, *, report_id, so
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "packet_id": merged.packet_id,
         "sheet_status": merged.sheet_status,
+        "resolver_gate": merged.resolver_gate,
         "missing_roles": merged.missing_roles,
         "anchoring": merged.anchoring,
         "row_type_counts": row_type_counts,

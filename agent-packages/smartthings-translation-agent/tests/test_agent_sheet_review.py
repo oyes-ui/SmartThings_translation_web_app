@@ -67,9 +67,13 @@ class AgentSheetReviewTests(unittest.IsolatedAsyncioTestCase):
             path = Path(tmp) / "story.xlsx"
             wb = openpyxl.Workbook(); wb.active.title = "US(미국)"; wb.create_sheet("CO(콜롬비아)"); wb.save(path)
             evidence = [{"cell": "C7", "hard_rule_issues": ["[괄호 오류]"], "sentence_case_report": None, "simple_case_fix": None}]
-            with patch("agent_sheet_review._hard_rule_evidence", new=AsyncMock(return_value=evidence)):
+            with patch("agent_sheet_review._hard_rule_evidence",
+                       new=AsyncMock(return_value=(evidence, "[HARD CONSTRAINTS]\n"))):
                 packet = await build_packet(path, "CO(콜롬비아)", glossary=Path(tmp) / "g.csv", app_root=Path(tmp))
             self.assertEqual(packet["deterministic_evidence"], evidence)
+            # The app's own authority wording travels with the evidence rather than
+            # being paraphrased by the role prompts.
+            self.assertEqual(packet["hard_constraint_preamble"], "[HARD CONSTRAINTS]\n")
         self.assertEqual(packet["hard_rule_policy"], "resolver_card_required; proposals_must_be_validated_before_merge")
 
     async def test_raw_mode_keeps_legacy_inspection_available(self):

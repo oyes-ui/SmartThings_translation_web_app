@@ -113,6 +113,34 @@ class GlossaryChecker:
         nav_spans = self._get_navigation_path_spans(target_text)
         return self._constraint_resolver().validate_target(target_text, constraints, navigation_spans=nav_spans)
 
+    def validate_audit_suggestion(self, suggestion: str, constraint_card: dict, *,
+                                  glossary_context=None, row_key: str = "") -> dict:
+        """Put a model-proposed edit through the same deterministic floor a translation gets.
+
+        The translation path repairs model output before judging it — bracket policy
+        first, then glossary casing — and only then asks the resolver.  A reviewer
+        proposing an edit needs the identical treatment, otherwise a suggestion that
+        differs from the resolved target by nothing but a wrapper or letter case is
+        rejected as a conflict, while a genuine lexical conflict ships unchecked.
+
+        Returns the repaired text plus the resolver's verdict.  It never applies and
+        never overwrites a conflicting suggestion: what the resolver still blocks after
+        repair is a real disagreement with the glossary, and that belongs to a human.
+        """
+        normalized = self._strip_glossary_brackets_by_policy(suggestion, glossary_context, row_key)
+        normalized = self._restore_glossary_target_casing(normalized, glossary_context)
+        verdict = self.validate_constraints(normalized, constraint_card or {"terms": []})
+        status = verdict["status"]
+        return {
+            "normalized": normalized,
+            "repaired": normalized != suggestion,
+            "status": status,
+            "blocked": status == "blocked",
+            "violations": verdict["blocked"],
+            "review": verdict["review"],
+            "action": "propose" if status == "pass" else "human_queue",
+        }
+
     def is_term_active_for_occurrence(
         self, source_term: str, rule: str, story: str | None = None, cell: str | None = None
     ) -> bool:

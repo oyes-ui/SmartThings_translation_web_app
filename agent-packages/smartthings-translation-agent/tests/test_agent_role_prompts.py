@@ -46,17 +46,36 @@ class AgentRolePromptsTests(unittest.TestCase):
         self.assertNotIn("복사된 제안", prompt)
         self.assertIn("다른 관점의 의견을 참고하지 않는다", prompt)
 
-    def test_hard_rule_internals_go_only_to_the_role_that_owns_them(self):
+    def test_every_role_receives_the_resolved_constraint_card(self):
+        """C18: a role without the card cannot tell "already correct" from "unconstrained"."""
+        packet = {**PACKET, "deterministic_evidence": [
+            {"cell": "C18", "row_type": "description", "hard_rule_issues": [],
+             "constraint_card": {"terms": [{"source_term": "Movie mode", "target": "Modo de video"}]},
+             "constraint_validation": {"status": "pass"},
+             "sentence_case_report": "내부 케이스 분석", "glossary_context": {"Movie mode": "Modo de video"}},
+        ]}
+        for role in SPECIALIST_ROLES:
+            prompt = build_role_prompt(role, packet)
+            self.assertIn("Modo de video", prompt, role)
+            self.assertIn("constraint_validation", prompt, role)
+            # The merge gate's own input never reaches a reviewer.
+            self.assertNotIn("glossary_context", prompt, role)
+
+    def test_case_analysis_internals_go_only_to_the_role_that_owns_them(self):
         packet = {**PACKET, "deterministic_evidence": [
             {"cell": "C7", "row_type": "title", "hard_rule_issues": ["[괄호 오류]"],
-             "constraint_card": {"resolver": "internal"}},
+             "constraint_card": {"resolver": "internal"}, "sentence_case_report": "내부 케이스 분석"},
         ]}
-        owner = build_role_prompt("style_and_hard_rule_exceptions", packet)
+        self.assertIn("내부 케이스 분석", build_role_prompt("style_and_hard_rule_exceptions", packet))
         other = build_role_prompt("grammar_fluency", packet)
-        self.assertIn("constraint_card", owner)
-        self.assertNotIn("constraint_card", other)
+        self.assertNotIn("내부 케이스 분석", other)
         # The other role still learns that a hard rule already fired.
         self.assertIn("[괄호 오류]", other)
+
+    def test_role_is_told_an_empty_issue_list_means_already_passed(self):
+        prompt = build_role_prompt("semantic_fidelity", {**PACKET, "hard_constraint_preamble": "[AUTH]\n"})
+        self.assertIn("이미 통과했다", prompt)
+        self.assertIn("[AUTH]", prompt)
 
     def test_every_role_is_told_it_is_read_only(self):
         for role in SPECIALIST_ROLES:
