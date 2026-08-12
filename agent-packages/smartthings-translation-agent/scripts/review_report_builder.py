@@ -21,6 +21,7 @@ from typing import Any
 import openpyxl
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import agent_app_report  # noqa: E402
 from agent_review_contract import ReviewMergeResult, row_type_for_cell  # noqa: E402
 
 CELL = re.compile(r"^[A-Z]{1,3}[1-9][0-9]*$")
@@ -114,168 +115,72 @@ def _build_changes(workbook: Path, merged: ReviewMergeResult) -> tuple[list[dict
         wb.close()
 
 
-def _change_block(change: dict) -> str:
-    rules = "\n".join(f"  - {rule}" for rule in change["rule_ids"]) or "  - review-pending"
-    roles = change.get("supporting_roles") or []
-    roles_line = "\n".join(f"  - {role}" for role in roles) or "  - (해당 없음: 결정론적 하드룰)"
-    return f"""### {change['sheet']} · {change['cell']} {{#{change['finding_id'].lower()}}}
-
-```yaml
-finding_id: {change['finding_id']}
-status: needs_revision
-apply_status: pending_approval
-origin: {change.get('origin', 'subjective_consensus')}
-row_type: {change.get('row_type') or '(미분류)'}
-supporting_roles:
-{roles_line}
-rule_ids:
-{rules}
-```
-
-#### 현재 번역문
-
-```text
-{change['before']}
-```
-
-#### 제안 번역문
-
-```text
-{change['after']}
-```
-
-#### 변경 이유
-
-{change['reason'] or '- 규칙/RAG 검토 후 사람 승인 대기'}
-"""
+_GRADE_FOR_STATUS = {
+    "pass": "Pass", "warning": "Needs Revision", "needs_revision": "Needs Revision",
+    "blocked": "Needs Revision", "glossary_activation_review": "Needs Revision",
+}
 
 
-def _opinion_line(opinion: dict) -> str:
-    stance = opinion.get("stance", "-")
-    reason = str(opinion.get("reason", "")).strip().replace("\n", " ")
-    return f"  - `{opinion.get('role', '-')}` ({stance}): {reason or '사유 없음'}"
+def _cell_results(merged: ReviewMergeResult) -> list[dict]:
+    """Per-cell dicts in the shape the app's render_finding consumes.
 
+    Every packet cell appears, reviewed or not: the app's report is a full audit of
+    the sheet, and silently dropping cells the agent said nothing about would make
+    "no finding" indistinguishable from "never looked at".
+    """
+    stage_cells = {}
+    cell_review = (merged.stage_reviews or {}).get("cell_review") or {}
+    for row in cell_review.get("cells", []) or []:
+        stage_cells[str(row.get("cell", "")).upper()] = row
+    proposals = {str(item.get("cell", "")).upper(): item for item in merged.proposals}
+    queued = {str(item.get("cell", "")).upper(): item for item in merged.human_review_queue}
 
-def _markdown(manifest: dict) -> str:
-    context = manifest["review_context"]
-    status = manifest.get("sheet_status", "completed")
-    lines = [
-        "---", "report_schema_version: 2", f"report_id: {manifest['report_id']}",
-        "workflow: agent_sheet_review", "status: draft", f"source_file_id: {manifest['source_file_id']}",
-        f"sheet_status: {status}", f"generated_at: {manifest['generated_at']}", "---", "",
-        "# 번역 검수 리포트", "",
-    ]
-    if status == "incomplete":
-        missing = ", ".join(manifest.get("missing_roles", [])) or "알 수 없음"
-        lines.extend([
-            "> [!warning] 시트 검수 미완료 (`incomplete`)",
-            f"> 의견서가 없거나 근거 패킷과 연결되지 않은 관점: **{missing}**",
-            "> 이 리포트는 수정 제안을 만들지 않습니다. 후보는 모두 사람 검토 큐로 보냈습니다.", "",
-        ])
-    lines.extend(["## 시트 요약", ""])
-    if context["sheet_reviews"]:
-        for review in context["sheet_reviews"]:
-            lines.append(f"- `{review.get('sheet', '-')}`: {review.get('status', 'completed')}")
-    else:
-        lines.append("- 시트 판정 정보 없음")
-    lines.extend(["", "## 결정론적 검사", ""])
-    lines.extend([f"- {item}" for item in context["deterministic_checks"]] or ["- 별도 지적 사항 없음"])
-    rag = context["rag_usage"]
-    lines.extend(["", "## RAG 사용량", "", f"- semantic: {rag.get('semantic_used', 0)} / {rag.get('semantic_budget', 0)}"])
-    if rag.get("semantic_evidence_ids"):
-        lines.append("- 근거 ID: " + ", ".join(rag["semantic_evidence_ids"]))
-    lines.extend(["", "## 관점별 검수", ""])
-    for run in context["agent_runs"]:
-        mark = "✅" if run.get("status") == "completed" else "❌"
-        detail = ", ".join(f"{key}={run[key]}" for key in ("model", "stop_reason", "confidence", "error")
-                           if run.get(key))
-        lines.append(f"- {mark} `{run.get('role', '-')}`: {run.get('status', 'completed')} "
-                     f"(의견 {run.get('opinions', 0)}건)" + (f" — {detail}" if detail else ""))
-    if not context["agent_runs"]:
-        lines.append("- 실행 기록 없음")
-    if manifest.get("anchoring"):
-        lines.extend(["", "## ⚠ 관점 독립성 경고", ""])
-        for item in manifest["anchoring"]:
-            lines.append(f"- {item.get('detail', '-')}")
-        lines.append("")
-        lines.append("독립 근거가 아닐 수 있으므로 해당 관점이 지지한 제안은 사람이 별도 확인해야 합니다.")
-    counts = manifest.get("row_type_counts") or {}
-    if counts:
-        lines.extend(["", "## 콘텐츠 유형별 finding", ""])
-        for row_type in ("title", "description", "disclaimer", "button", ""):
-            tally = counts.get(row_type or "(미분류)")
-            if tally:
-                lines.append(f"- `{row_type or '(미분류)'}`: 제안 {tally['changes']}건 / "
-                             f"검토 필요 {tally['queue']}건")
-    gate = manifest.get("resolver_gate", "not_run")
-    lines.extend(["", "## 하드룰 재검증", "",
-                  f"- 제안문 resolver 재검증: `{gate}`"])
-    if gate == "not_run":
-        lines.append("- ⚠ 이 리포트의 제안은 앱 resolver로 재검증되지 않았습니다. "
-                     "용어집 위반이 걸러지지 않았을 수 있습니다.")
-    stages = context.get("stage_reviews") or {}
-    if stages:
-        metrics = context.get("anchoring_metrics") or {}
-        lines.extend(["", "## 셀 순차 검수 자기 참조", "",
-                      f"- 앞 셀 참조: {metrics.get('referenced_cells', 0)} / {metrics.get('reviewed_cells', 0)}",
-                      f"- 참조율: {metrics.get('reference_rate', 0):.1%}",
-                      "- 참조된 셀: " + (", ".join(metrics.get("prior_cell_refs", [])) or "없음"),
-                      "", "## 셀 검수", ""])
-        cell_rows = {str(row.get("cell", "")).upper(): row
-                     for row in stages.get("cell_review", {}).get("cells", [])}
-        lead_rows = {str(row.get("cell", "")).upper(): row
-                     for row in stages.get("lead_review", {}).get("decisions", [])}
-        sheet_issues = stages.get("sheet_consistency_review", {}).get("issues", [])
-        staged_sheet = context.get("sheet_reviews", [{}])[0].get("sheet", "-")
-        for cell, evidence in (context.get("cell_evidence") or {}).items():
-            cell_row, lead = cell_rows.get(cell, {}), lead_rows.get(cell, {})
-            related = [issue for issue in sheet_issues if cell in issue.get("affected_cells", [])]
-            lines.extend([
-                f"### {staged_sheet} · {cell}", "",
-                "> [!quote] 원문", "> ```text", *[f"> {line}" for line in str(evidence.get("source_text", "")).splitlines()], "> ```", "",
-                "> [!note] 현재 번역문", "> ```text", *[f"> {line}" for line in str(evidence.get("target_text", "")).splitlines()], "> ```", "",
-                f"> [!info] 셀 검수 — `{cell_row.get('status', 'missing')}`",
-                f"> {cell_row.get('reason', '결과 없음')}", "",
-                f"> [!example]- 시트 일관성 의견 ({len(related)}건)",
-            ])
-            if related:
-                for issue in related:
-                    lines.append(f"> - `{issue.get('finding_id', '-')}`: {issue.get('reason', '-')}")
-            else:
-                lines.append("> - 없음")
-            lines.extend(["", f"> [!tip] 리드 최종 판정 — `{lead.get('status', 'missing')}`",
-                          f"> {lead.get('reason', '결과 없음')}", ""])
-            if lead.get("after"):
-                lines.extend(["> [!tip] 제안 번역문", "> ```text",
-                              *[f"> {line}" for line in str(lead["after"]).splitlines()], "> ```", ""])
-            resolver_status = lead.get("resolver_status") or cell_row.get("resolver_status") or "not_applicable"
-            lines.extend([f"- resolver: `{resolver_status}`", ""])
-    lines.extend(["", "## 사람 검토 필요", ""])
-    if context["human_review_queue"]:
-        for item in context["human_review_queue"]:
-            lines.append(f"- `{item.get('sheet', '-')}` `{item.get('cell', '-')}` "
-                         f"[{item.get('finding_id', '-')}]: {item.get('reason', '-')}")
-            if item.get("detail"):
-                lines.append(f"  - {item['detail']}")
-            for violation in item.get("resolver_violations", []):
-                lines.append(f"  - resolver: `{violation.get('reason', '-')}` "
-                             f"term=`{violation.get('source_term', '-')}` "
-                             f"expected=`{violation.get('expected', '-')}`")
-            if item.get("rejected_after"):
-                lines.append(f"  - 차단된 제안: `{item['rejected_after']}`")
-            for opinion in item.get("opinions", []):
-                lines.append(_opinion_line(opinion))
-    else:
-        lines.append("- 없음")
-    lines.extend(["", "## 셀 수정 제안", "", f"- 수정 제안: {len(manifest['changes'])}건", "- 적용 상태: 모두 `pending_approval`", ""])
-    lines.extend(_change_block(change) for change in manifest["changes"])
-    if not manifest["changes"]:
-        lines.append("- 제안 없음. 원본 workbook은 변경되지 않았습니다.\n")
-    return "\n".join(lines)
+    evidence_by_cell = dict(merged.cell_evidence or {})
+    # A cell the merge has an opinion about must appear even when the packet carried
+    # no deterministic evidence for it; otherwise a proposal silently disappears from
+    # the report while still sitting in the manifest.
+    for cell in [*proposals, *queued, *stage_cells]:
+        evidence_by_cell.setdefault(cell, {"cell": cell, "target_text": merged.cell_snapshot.get(cell, "")})
+
+    results = []
+    for cell in sorted(evidence_by_cell, key=lambda value: (len(value), value)):
+        evidence = evidence_by_cell[cell]
+        row = stage_cells.get(cell, {})
+        status = str(row.get("status") or "")
+        proposal = proposals.get(cell)
+        # The applyable proposal wins over the cell agent's draft: it is what
+        # survived the resolver gate, and the report must not advertise text the
+        # manifest will not apply.
+        suggested = str((proposal or {}).get("after") or row.get("after") or "")
+        if not proposal and cell in queued:
+            suggested = ""
+        evaluation = [entry for entry in row.get("evaluation", []) if isinstance(entry, dict)]
+        if not evaluation and row.get("reason"):
+            evaluation = [{"category": "에이전트 검수", "comment": row["reason"]}]
+
+        # render_finding derives apply_status from constraint_validation, so it must
+        # describe the *proposal* — the packet's validation describes the text as it
+        # stands today. Feeding the latter made the report say not_applicable for
+        # changes the manifest was shipping as pending_approval.
+        queue_item = queued.get(cell)
+        if proposal:
+            validation = {"status": "pass"}
+        elif queue_item and queue_item.get("resolver_status"):
+            validation = {"status": queue_item["resolver_status"],
+                          "blocked": queue_item.get("resolver_violations") or []}
+        else:
+            validation = evidence.get("constraint_validation") or {}
+        grade = _GRADE_FOR_STATUS.get(status) or ("Needs Revision" if proposal or queue_item else "Pass")
+        results.append(agent_app_report.build_cell_result(
+            {**evidence, "constraint_validation": validation}, sheet=merged.sheet,
+            grade=grade, evaluation=evaluation, suggested_fix=suggested,
+            ai_text=str(row.get("reason") or ""),
+        ))
+    return results
 
 
 def build_review_artifacts(workbook, merged: ReviewMergeResult, *, report_id, source_file_id,
-                           deterministic_checks=None, rag_usage=None):
+                           deterministic_checks=None, rag_usage=None, app_root=None):
     """Build the v2 report and manifest from a merge result.
 
     ``merged`` must be a ReviewMergeResult — passing a list raises TypeError.
@@ -322,7 +227,24 @@ def build_review_artifacts(workbook, merged: ReviewMergeResult, *, report_id, so
         "changes": changes,
         "review_context": _normalise_context(review_context),
     }
-    return manifest, _markdown(manifest)
+    # Rendered by the app, never here: one workbook must not produce two differently
+    # shaped reports depending on which path reviewed it.
+    summary = [
+        f"검수 시트: `{merged.sheet}` (상태: `{merged.sheet_status}`)",
+        f"수정 제안: {len(changes)}건 — 모두 `pending_approval`",
+        f"사람 검토 필요: {len(queue)}건",
+        f"제안문 resolver 재검증: `{merged.resolver_gate}`",
+    ]
+    markdown = agent_app_report.render_through_app(
+        app_root,
+        title=f"에이전트 검수 리포트 — {merged.sheet}",
+        report_id=report_id, source_file_id=source_file_id,
+        results=_cell_results(merged), summary_lines=summary,
+        agent_notes=agent_app_report.notes_from_merge(merged, manifest),
+        extra_front_matter={"packet_id": merged.packet_id, "sheet_status": merged.sheet_status,
+                            "resolver_gate": merged.resolver_gate},
+    )
+    return manifest, markdown
 
 
 def write_artifacts(manifest: dict, markdown: str, output_dir, report_id) -> dict[str, str]:

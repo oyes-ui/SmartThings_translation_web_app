@@ -867,36 +867,12 @@ class TranslationChecker:
         # A deterministic lexical/bracket violation is never delegated to the LLM.
         skip_llm = (self.skip_llm_when_glossary_mismatch and bool(pre_mismatch)) or constraint_validation["status"] == "blocked"
         
-        relevant_terms_for_case = self._get_relevant_glossary_terms(source)
-        glossary_targets_for_case = []
-        for s_term in relevant_terms_for_case:
-            meta = self.glossary.get(s_term)
-            if not meta:
-                continue
-            target_val = self._get_target_val(meta["targets"], tgt_code)
-            if target_val:
-                glossary_targets_for_case.append(target_val)
-
-        case_report, simple_case_fix = self._analyze_sentence_case(target, tgt_lang, glossary_targets_for_case)
-        glossary_case_issues = self._check_glossary_casing(source, target, tgt_code)
-        glossary_bracket_issues = self._check_glossary_brackets(source, target, tgt_code, tgt_lang, row_key=row_key)
-        brand_concat_issues = self._check_brand_concatenation(source, target, tgt_code, tgt_lang)
-        disclaimer_linebreak_issues = self._check_disclaimer_linebreak(source, target, row_key)
-        nav_bracket_leak_issues = self._check_nav_path_bracket_leak(target, row_key)
-
-        # Construct Partial Report Sections
-        case_section = "대소문자 하드룰(문장형) 점검:\n" + case_report if case_report else "별도 지적 사항 없음."
-        if simple_case_fix:
-            case_section += f"\n\n[단순 규칙 기반 문장형 변환안]:\n{simple_case_fix}"
-
-        glossary_parts = []
-        if pre_mismatch: glossary_parts.append("용어집 사전 감지:\n- " + "\n- ".join(pre_mismatch))
-        if glossary_case_issues: glossary_parts.append("용어집 대소문자 표기 점검:\n" + "\n".join(f"- {msg}" for msg in glossary_case_issues))
-        if glossary_bracket_issues: glossary_parts.append("용어집 괄호 규정 점검:\n" + "\n".join(f"- {msg}" for msg in glossary_bracket_issues))
-        if brand_concat_issues: glossary_parts.append("브랜드 띄어쓰기 점검:\n" + "\n".join(f"- {msg}" for msg in brand_concat_issues))
-        if disclaimer_linebreak_issues: glossary_parts.append("디스클레이머 줄바꿈 서식 점검:\n" + "\n".join(f"- {msg}" for msg in disclaimer_linebreak_issues))
-        if nav_bracket_leak_issues: glossary_parts.append("Nav path 표기 변환 점검:\n" + "\n".join(f"- {msg}" for msg in nav_bracket_leak_issues))
-        glossary_section = "\n\n".join(glossary_parts) if glossary_parts else "별도 지적 사항 없음."
+        # Both this path and the agent package's packet builder render these strings
+        # into the same report, so they are composed in one place.
+        sections = self._glossary_checker.deterministic_sections(
+            source, target, tgt_code, tgt_lang, row_key=row_key)
+        case_section = sections["case_section"]
+        glossary_section = sections["glossary_section"]
 
         # RAG consistency check (Post-translation/audit, does not use LLM)
         rag_text = "별도 설정 없음."

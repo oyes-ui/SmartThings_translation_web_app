@@ -68,21 +68,19 @@ async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: s
             target = str(target_ws.cell(row, 3).value or "")
             if not source and not target:
                 continue
-            terms = checker._get_relevant_glossary_terms(source)
-            targets = [checker._get_target_val(checker.glossary[term]["targets"], target_info["code"])
-                       for term in terms if term in checker.glossary]
-            case_report, simple_fix = checker._analyze_sentence_case(target, target_info["lang"], [term for term in targets if term])
-            issues = [
-                *checker._precheck_glossary_mismatch(source, target, target_info["code"]),
-                *checker._check_glossary_casing(source, target, target_info["code"]),
-                *checker._check_glossary_brackets(source, target, target_info["code"], target_info["lang"], row_key=_row_key(row)),
-                *checker._check_brand_concatenation(source, target, target_info["code"], target_info["lang"]),
-            ]
+            sections = checker.deterministic_sections(
+                source, target, target_info["code"], target_info["lang"], row_key=_row_key(row))
+            case_report, simple_fix = sections["case_report"], sections["simple_case_fix"]
+            issues = sections["hard_rule_issues"]
             card = checker.resolve_constraints(source, target_info["code"], row_key=_row_key(row),
                                                story=story, cell=f"C{row}")
             validation = checker.validate_constraints(target, card)
             evidence.append({"cell": f"C{row}", "row_type": _row_key(row),
                              "source_text": source, "target_text": target,
+                             # Composed by the app so the agent report renders the
+                             # same section text the app's own report would.
+                             "case_section": sections["case_section"],
+                             "glossary_section": sections["glossary_section"],
                              "hard_rule_issues": issues,
                              "sentence_case_report": case_report or None,
                              "simple_case_fix": simple_fix or None,

@@ -29,7 +29,9 @@ class ReviewReportBuilderTests(unittest.TestCase):
    path=_workbook(tmp)
    manifest, report=build_review_artifacts(path,_complete(),report_id="review-1",source_file_id="story-1")
    self.assertEqual(manifest["changes"][0]["approval_status"],"pending_approval")
-   self.assertIn("#### 제안 번역문",report)
+   # Rendered by the app, so the cell section is the app's callout, not our own heading.
+   self.assertIn("> [!tip] 제안 번역문",report)
+   self.assertIn("apply_status: pending_approval",report)
    self.assertEqual(openpyxl.load_workbook(path)["CO(콜롬비아)"]["C10"].value,"Hola")
 
  def test_report_shows_supporting_roles(self):

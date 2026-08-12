@@ -113,6 +113,49 @@ class GlossaryChecker:
         nav_spans = self._get_navigation_path_spans(target_text)
         return self._constraint_resolver().validate_target(target_text, constraints, navigation_spans=nav_spans)
 
+    def deterministic_sections(self, source_text: str, target_text: str, target_lang_code: str,
+                               target_lang: str, *, row_key: str = "") -> dict:
+        """Build the case/glossary report sections for one cell.
+
+        These strings go straight into the review report, so an out-of-process
+        reviewer that renders through the app must produce them from here rather
+        than reassemble its own wording from a flattened issue list — the two
+        would drift, and the report would stop being comparable to the app's.
+        """
+        terms = self._get_relevant_glossary_terms(source_text)
+        targets = [value for value in
+                   (self._get_target_val(self.glossary[term]["targets"], target_lang_code)
+                    for term in terms if term in self.glossary) if value]
+        case_report, simple_case_fix = self._analyze_sentence_case(target_text, target_lang, targets)
+        case_section = ("대소문자 하드룰(문장형) 점검:\n" + case_report) if case_report else "별도 지적 사항 없음."
+        if simple_case_fix:
+            case_section += f"\n\n[단순 규칙 기반 문장형 변환안]:\n{simple_case_fix}"
+
+        groups = (
+            ("용어집 사전 감지", self._precheck_glossary_mismatch(source_text, target_text, target_lang_code), True),
+            ("용어집 대소문자 표기 점검", self._check_glossary_casing(source_text, target_text, target_lang_code), False),
+            ("용어집 괄호 규정 점검", self._check_glossary_brackets(source_text, target_text, target_lang_code, target_lang, row_key=row_key), False),
+            ("브랜드 띄어쓰기 점검", self._check_brand_concatenation(source_text, target_text, target_lang_code, target_lang), False),
+            ("디스클레이머 줄바꿈 서식 점검", self._check_disclaimer_linebreak(source_text, target_text, row_key), False),
+            ("Nav path 표기 변환 점검", self._check_nav_path_bracket_leak(target_text, row_key), False),
+        )
+        parts, issues = [], []
+        for label, messages, joined_head in groups:
+            if not messages:
+                continue
+            issues.extend(messages)
+            body = ("- " + "\n- ".join(messages) if joined_head
+                    else "\n".join(f"- {message}" for message in messages))
+            parts.append(f"{label}:\n{body}")
+        return {
+            "case_section": case_section,
+            "glossary_section": "\n\n".join(parts) if parts else "별도 지적 사항 없음.",
+            "case_report": case_report or None,
+            "simple_case_fix": simple_case_fix or None,
+            "hard_rule_issues": issues,
+            "precheck_mismatch": list(groups[0][1]),
+        }
+
     def validate_audit_suggestion(self, suggestion: str, constraint_card: dict, *,
                                   glossary_context=None, row_key: str = "") -> dict:
         """Put a model-proposed edit through the same deterministic floor a translation gets.
