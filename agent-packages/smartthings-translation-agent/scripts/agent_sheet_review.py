@@ -47,6 +47,7 @@ async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: s
     import openpyxl
 
     from translation_web_app.prompt_builder import HARD_CONSTRAINT_PREAMBLE
+    from translation_web_app.rules_loader import get_rules
 
     checker = GlossaryChecker(PromptBuilder())
     source_code = ap.DEFAULT_SHEET_LANGS[source_sheet]["code"]
@@ -96,7 +97,8 @@ async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: s
         checker._compile_glossary_re()
         activation_candidates = find_candidates(
             checker, workbook, source_sheet, target_sheet, target_info["code"])
-        return evidence, HARD_CONSTRAINT_PREAMBLE, activation_candidates
+        checklist = [category for category, _ in get_rules().doc("audit").labelled("checklist")]
+        return evidence, HARD_CONSTRAINT_PREAMBLE, activation_candidates, checklist
     finally:
         wb.close()
 
@@ -133,7 +135,7 @@ def _packet_id(packet: dict[str, Any]) -> str:
     evidence = {key: packet[key] for key in (
         "workbook_name", "target_sheet", "source_sheet", "target_sections", "source_sections",
         "deterministic_evidence", "activation_candidates", "candidate_overlay", "cell_snapshot",
-        "hard_constraint_preamble",
+        "hard_constraint_preamble", "audit_checklist",
     )}
     canonical = json.dumps(evidence, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
@@ -153,9 +155,10 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
     source = inspect_workbook(workbook, source_sheet, None, with_sections=True)["sheets"][source_sheet]
     deterministic: list[dict[str, Any]] = []
     activation_candidates: list[dict[str, Any]] = []
+    audit_checklist: list[str] = []
     preamble = ""
     if glossary and app_root:
-        deterministic, preamble, activation_candidates = await _hard_rule_evidence(
+        deterministic, preamble, activation_candidates, audit_checklist = await _hard_rule_evidence(
             workbook, source_sheet, sheet, glossary, app_root,
             activation_manifest=activation_manifest)
     elif glossary or app_root:
@@ -188,6 +191,9 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
         # verbatim so every specialist reads the same authority the app's translate
         # and audit prompts state.
         "hard_constraint_preamble": preamble,
+        # The app's own audit checklist, so a cell reviewer answers the same
+        # categories the app answers instead of one free-form line.
+        "audit_checklist": audit_checklist,
         "candidate_overlay": overlay_entries,
         "candidate_overlay_status": "available" if candidate_overlay else "not_loaded",
         "candidate_overlay_policy": (

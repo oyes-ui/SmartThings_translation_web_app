@@ -68,7 +68,7 @@ class AgentSheetReviewTests(unittest.IsolatedAsyncioTestCase):
             wb = openpyxl.Workbook(); wb.active.title = "US(미국)"; wb.create_sheet("CO(콜롬비아)"); wb.save(path)
             evidence = [{"cell": "C7", "hard_rule_issues": ["[괄호 오류]"], "sentence_case_report": None, "simple_case_fix": None}]
             with patch("agent_sheet_review._hard_rule_evidence",
-                       new=AsyncMock(return_value=(evidence, "[HARD CONSTRAINTS]\n", []))):
+                       new=AsyncMock(return_value=(evidence, "[HARD CONSTRAINTS]\n", [], ["문법/유창성"]))):
                 packet = await build_packet(path, "CO(콜롬비아)", glossary=Path(tmp) / "g.csv", app_root=Path(tmp))
             self.assertEqual(packet["deterministic_evidence"], evidence)
             # The app's own authority wording travels with the evidence rather than

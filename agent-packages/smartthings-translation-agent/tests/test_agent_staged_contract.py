@@ -34,8 +34,8 @@ def cell_payload():
     return {"kind": "cell_review", "packet_id": "pkt-stage-1", "status": "completed",
             "stop_reason": "complete", "model": "test-model", "run_id": "cell-run", "executed_at": "2026-08-12T00:00:00Z", "cells": [
                 {"cell": "C7", "status": "needs_revision", "after": "Modo película", "reason": "natural",
-                 "rule_ids": [], "used_prior_cell_context": False, "prior_cell_refs": [], "prior_cell_influence": ""},
-                {"cell": "C8", "status": "pass", "after": None, "reason": "ok", "rule_ids": [],
+                 "evaluation": [{"category": "문법/유창성", "comment": "확인함"}], "rule_ids": [], "used_prior_cell_context": False, "prior_cell_refs": [], "prior_cell_influence": ""},
+                {"cell": "C8", "status": "pass", "after": None, "reason": "ok", "evaluation": [{"category": "문법/유창성", "comment": "확인함"}], "rule_ids": [],
                  "used_prior_cell_context": True, "prior_cell_refs": ["C7"],
                  "prior_cell_influence": "CTA 길이만 비교"},
             ]}
@@ -110,6 +110,35 @@ class StagedContractTests(unittest.TestCase):
         self.assertEqual(gated["cells"][0]["status"], "blocked")
         self.assertEqual(gated["cells"][0]["resolver_disposition"], "invalidated_by_hard_constraint")
         self.assertEqual(gated["cells"][0]["resolver_violations"][0]["expected"], "Modo de video")
+
+    def test_a_cell_without_the_app_audit_categories_is_refused(self):
+        """Rendering through the app must not mean an app-shaped report with no content.
+
+        The app fills a category table per cell; a single summary line reproduces the
+        layout and none of the audit, so the checklist is required here.
+        """
+        packet = {**PACKET, "audit_checklist": ["문법/유창성", "용어집 준수"]}
+        payload = cell_payload()
+        payload["cells"][0]["evaluation"] = [{"category": "문법/유창성", "comment": "확인함"}]
+        with self.assertRaises(ValueError) as caught:
+            validate_cell_review(payload, packet)
+        self.assertIn("용어집 준수", str(caught.exception))
+
+    def test_an_empty_or_blank_evaluation_is_refused(self):
+        for bad in ([], [{"category": "문법/유창성", "comment": "   "}],
+                    [{"category": "", "comment": "확인함"}]):
+            payload = cell_payload()
+            payload["cells"][0]["evaluation"] = bad
+            with self.assertRaises(ValueError):
+                validate_cell_review(payload, PACKET)
+
+    def test_duplicate_categories_are_refused(self):
+        payload = cell_payload()
+        payload["cells"][0]["evaluation"] = [
+            {"category": "문법/유창성", "comment": "a"}, {"category": "문법/유창성", "comment": "b"}]
+        with self.assertRaises(ValueError) as caught:
+            validate_cell_review(payload, PACKET)
+        self.assertIn("중복", str(caught.exception))
 
     def test_final_merge_gates_the_lead_and_records_anchor_metrics(self):
         cell = gate_stage(cell_payload(), "cell_review", PACKET, lambda cell, after: {

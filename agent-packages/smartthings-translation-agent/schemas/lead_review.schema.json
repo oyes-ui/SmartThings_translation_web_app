@@ -1,13 +1,97 @@
 {
   "type": "object",
-  "required": ["kind", "packet_id", "status", "stop_reason", "model", "decisions"],
+  "required": [
+    "kind",
+    "packet_id",
+    "status",
+    "stop_reason",
+    "model",
+    "decisions",
+    "run_id",
+    "executed_at"
+  ],
   "additionalProperties": false,
   "properties": {
-    "kind": {"type": "string", "const": "lead_review"},
-    "packet_id": {"type": "string"},
-    "status": {"enum": ["completed", "no_findings"]},
-    "stop_reason": {"type": "string"},
-    "model": {"type": "string"},
-    "decisions": {"type": "array", "items": {"type": "object", "required": ["cell", "finding_id", "status", "after", "reason", "rule_ids", "basis_refs"], "additionalProperties": false, "properties": {"cell": {"type": "string"}, "finding_id": {"type": "string"}, "status": {"enum": ["pass", "warning", "needs_revision", "blocked", "glossary_activation_review"]}, "after": {"type": ["string", "null"]}, "reason": {"type": "string"}, "rule_ids": {"type": "array", "items": {"type": "string"}}, "basis_refs": {"type": "array", "items": {"type": "string"}}}}}
+    "kind": {
+      "type": "string",
+      "const": "lead_review"
+    },
+    "packet_id": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "completed",
+        "no_findings"
+      ]
+    },
+    "stop_reason": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "cell",
+          "finding_id",
+          "status",
+          "after",
+          "reason",
+          "rule_ids",
+          "basis_refs"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "cell": {
+            "type": "string"
+          },
+          "finding_id": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pass",
+              "warning",
+              "needs_revision",
+              "blocked",
+              "glossary_activation_review"
+            ]
+          },
+          "after": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "rule_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "basis_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "executed_at": {
+      "type": "string",
+      "minLength": 1
+    }
   }
 }

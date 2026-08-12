@@ -20,7 +20,10 @@ sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT.parents[1] / "src"))
 
 import agent_app_report  # noqa: E402
-from translation_web_app.report_builder import render_finding, render_report  # noqa: E402
+from review_report_builder import _GRADE_FOR_STATUS  # noqa: E402
+from translation_web_app.report_builder import (  # noqa: E402
+    render_finding, render_report, status_for_grade,
+)
 
 EVIDENCE = {
     "cell": "C18", "row_type": "button",
@@ -62,6 +65,36 @@ class CellSectionParityTests(unittest.TestCase):
     def test_a_missing_back_translation_says_so_rather_than_reading_as_clean(self):
         result = agent_app_report.build_cell_result(EVIDENCE, sheet="CO(콜롬비아)")
         self.assertIn("역번역 미수행", result["back_translation"])
+
+
+class GradeMappingTests(unittest.TestCase):
+    """Every stage status must land on a grade the app actually recognises.
+
+    status_for_grade reports an unknown grade as `blocked` — "the audit produced no
+    verdict" — so sending `Pass`, which is not one of the app's labels, rendered a
+    clean cell as blocked. Asserting only on Needs Revision hid that.
+    """
+
+    EXPECTED = {
+        "pass": "pass", "warning": "warning", "needs_revision": "needs_revision",
+        "blocked": "needs_revision", "glossary_activation_review": "needs_revision",
+    }
+
+    def test_each_stage_status_renders_as_its_own_status(self):
+        for stage_status, rendered in self.EXPECTED.items():
+            with self.subTest(stage_status):
+                self.assertEqual(status_for_grade(_GRADE_FOR_STATUS[stage_status]), rendered)
+
+    def test_no_mapping_falls_through_to_blocked(self):
+        """Catches any future grade label the app does not know."""
+        for stage_status, grade in _GRADE_FOR_STATUS.items():
+            with self.subTest(stage_status):
+                self.assertNotEqual(status_for_grade(grade), "blocked",
+                                    f"{stage_status} -> {grade!r} is not an app grade")
+
+    def test_every_stage_status_has_a_mapping(self):
+        from agent_staged_contract import FINAL_STATUSES
+        self.assertEqual(set(_GRADE_FOR_STATUS), set(FINAL_STATUSES))
 
 
 class AgentNotesTests(unittest.TestCase):

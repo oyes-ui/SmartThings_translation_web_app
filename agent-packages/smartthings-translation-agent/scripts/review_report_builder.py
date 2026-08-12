@@ -115,8 +115,11 @@ def _build_changes(workbook: Path, merged: ReviewMergeResult) -> tuple[list[dict
         wb.close()
 
 
+# Must be grades the app's status_for_grade actually knows: anything else is read as
+# "the audit produced no verdict" and rendered as blocked.  `Pass` is not one of
+# them, and sending it made a clean cell report as blocked.
 _GRADE_FOR_STATUS = {
-    "pass": "Pass", "warning": "Needs Revision", "needs_revision": "Needs Revision",
+    "pass": "Excellent", "warning": "Good", "needs_revision": "Needs Revision",
     "blocked": "Needs Revision", "glossary_activation_review": "Needs Revision",
 }
 
@@ -154,6 +157,8 @@ def _cell_results(merged: ReviewMergeResult) -> list[dict]:
         suggested = str((proposal or {}).get("after") or row.get("after") or "")
         if not proposal and cell in queued:
             suggested = ""
+        # The staged contract requires the app's per-category evaluation, so this
+        # only falls back for the legacy 5-role path, which has no cell stage.
         evaluation = [entry for entry in row.get("evaluation", []) if isinstance(entry, dict)]
         if not evaluation and row.get("reason"):
             evaluation = [{"category": "에이전트 검수", "comment": row["reason"]}]
