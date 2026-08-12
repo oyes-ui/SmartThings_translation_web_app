@@ -90,6 +90,23 @@ matter, 셀별 finding 블록, `changes[].sheet/cell/before/after/rule_ids/appro
   자동 승인 후보로 확대한다.
 - 의미·톤·시장 문화 판단이 필요한 항목은 사람 승인 경로를 유지한다.
 
+**골든셋은 별도로 만들지 않고 검수 과정에서 축적한다 (2026-08-10 구현).** 사람은 이미 매
+사이클마다 제안을 승인/거절하는데, 그 판단이 지금까지는 기록되지 않고 사라졌다 —
+`quality_scorecard.py`는 오래전부터 있었지만 입력이 없어 한 번도 실행되지 않았다.
+`scripts/review_outcomes.py`가 승인 완료된 manifest를 outcome ledger(JSONL)로 남기고,
+거기서 `quality_scorecard.py`가 그대로 먹는 golden/results 쌍을 만든다.
+
+- `changes[].proposed_after`는 에이전트 제안을 동결한 값이다. 사람이 `after`를 고쳐서 승인해도
+  원 제안이 남아 `approved`(그대로 채택) / `edited`(고쳐서 채택) / `rejected`(기각)를 구분할 수 있다.
+- 집계는 `origin`(위험 등급)과 `row_type`(콘텐츠 유형)별로 나온다. 자동화는
+  `deterministic_hard_rule` 층부터 검토하고 `subjective_consensus`는 그 뒤다.
+  `human_review_queue` 항목은 정의상 자동 적용 대상이 아니다.
+- 독립성 경고가 붙은 근거에 기댄 항목은 `independence: suspect`로 기본 제외한다. ES_CO에서 5개
+  역할 중 2개가 다른 역할의 결론을 그대로 옮겼던 사례처럼, 가짜 합의가 정확도를 부풀리면
+  자동화 판단 자체가 오염된다.
+- `review_outcomes.py`는 측정 전용이다. 임계값을 넘겨도 스스로 게이트를 열지 않는다.
+  자동 승인 범위 확대는 별도의 명시적 결정으로만 한다.
+
 ## Obsidian 및 스킬 활용
 
 `kepano/obsidian-skills`의 표준 Agent Skills를 채택 후보로 사용한다.

@@ -41,6 +41,28 @@ python scripts/workbook_story_apply.py story.xlsx approval-manifest.json \
 원어민 감수의 `accept`/`partial` 판정 manifest는 기존 `/st-review-apply`를 계속 사용한다. live
 manifest는 `before`/`after`가 확정된 일반 편집·콜롬비아 현지화 수정의 handoff 계약이다.
 
+## 검토 결과 기록 (자율화 근거 축적)
+
+승인/거절을 마친 manifest는 Excel에 반영하기 전후로 **반드시 outcome ledger에 기록한다.** 사람이
+이미 내린 판단을 그대로 남기는 것이며 추가 작업이 아니다. 이 기록이 없으면 에이전트 제안의
+정확도를 측정할 수 없고, 승인 게이트를 완화할 근거도 영원히 쌓이지 않는다.
+
+```bash
+python scripts/review_outcomes.py --ledger outputs/review/outcomes.jsonl \
+  --manifest approval-manifest.json \
+  --emit-golden outputs/review/golden.json --emit-results outputs/review/results.json
+
+python scripts/quality_scorecard.py outputs/review/golden.json outputs/review/results.json
+```
+
+- 거절한 항목은 `approval_status`를 `approved` 외의 값으로 두고 `rejection_reason`을 적는다.
+  거절도 승인만큼 중요한 근거다.
+- 문안을 고쳐서 승인한 경우 `after`만 바꾸고 `proposed_after`는 건드리지 않는다. 이 두 값의
+  차이가 "에이전트가 얼마나 근접했는지"를 재는 유일한 근거다.
+- 독립성 경고(`anchoring`)가 붙은 근거에 기댄 항목은 `independence: suspect`로 표시되어 기본적으로
+  점수 계산에서 제외된다. 가짜 합의로 정확도가 부풀려지는 것을 막기 위해서다.
+- `review_outcomes.py`는 측정만 한다. 어떤 항목도 자동 승인하거나 적용하지 않는다.
+
 ## Obsidian 상태 반영
 
 `/st-apply` 자체는 vault를 쓰지 않는다. 사용자가 명시적으로 요청한 경우에만 성공 result manifest를

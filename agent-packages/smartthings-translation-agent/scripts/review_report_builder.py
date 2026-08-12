@@ -96,6 +96,10 @@ def _build_changes(workbook: Path, merged: ReviewMergeResult) -> tuple[list[dict
             changes.append({
                 "finding_id": proposal.get("finding_id") or f"{sheet.split('(')[0]}-{cell}",
                 "sheet": sheet, "cell": cell, "before": before, "after": after,
+                # Frozen copy of what the agent proposed.  A reviewer edits `after`
+                # in place, so without this the original proposal — and with it any
+                # way to score accuracy — would be lost at the moment of approval.
+                "proposed_after": after,
                 "rule_ids": rules, "approval_status": "pending_approval",
                 "reason": str(proposal.get("reason", "")),
                 "origin": proposal.get("origin", "subjective_consensus"),
