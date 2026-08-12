@@ -40,8 +40,14 @@ argument-hint: <xlsx 경로> --sheet "JA(일본)" [--semantic-rag-budget N] [--r
 ```bash
 python agent-packages/smartthings-translation-agent/scripts/agent_sheet_review.py \
   <workbook.xlsx> --sheet "JA(일본)" --semantic-rag-budget 0 --multi-agent \
-  --glossary <Glossary.csv> --app-root <app-root> --json > packet.json
+  --glossary <Glossary.csv> --app-root <app-root> \
+  --activation-manifest <inactive_manifest.json> --json > packet.json
 ```
+
+`--activation-manifest`는 용어집 단어가 원문에서 **보통명사로 쓰인 occurrence**를 비활성으로 알려준다.
+이게 없으면 `a safe home`의 `safe`가 제품 용어 `Safe`로 계산되어, 맞는 번역이 하드룰 위반으로 차단된다
+(ES_CO 실측 5건). 매니페스트를 만드는 절차는 `references/glossary-report-workflow.md`의
+"미적용(비활성) 후보 자동 추출"에 있다.
 
 **2. 역할별 프롬프트를 만들어 5개 서브에이전트를 병렬 배정한다.** 프롬프트는 즉석에서 쓰지 않고
 빌더로 생성한다. 이 빌더는 패킷만 입력으로 받으므로 다른 역할의 의견이 섞일 수 없다.

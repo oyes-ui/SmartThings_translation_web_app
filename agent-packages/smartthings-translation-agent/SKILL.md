@@ -62,7 +62,7 @@ python scripts/bootstrap.py --app-root <경로> --save
 - **번역/검수 (셀프, 크레딧 0)**: "이 문구 독일어로 번역해줘", "이 번역 검수해줘" → `scripts/prompt_preview.py` 로 프롬프트 받아 직접 수행 + `references/self-vs-pipeline.md`
 - **번역/검수 (파이프라인, LLM)**: "워크북 전체 자동 번역/검수 돌려줘" → 승인 후 `scripts/workbook_translate.py`/`scripts/workbook_audit.py --pipeline`
 - **용어집 관리**: "용어집에 이 단어 있어?", "용어 추가/수정/CSV 가져오기" → `scripts/glossary_manage.py`
-- **용어집 필터/활성화 판단**: "이 파일에서 어떤 용어 활성화해야 해?" → target의 source group 문구 + 실제 glossary 매칭 확인 → `references/glossary-report-workflow.md`
+- **용어집 필터/활성화 판단**: "이 파일에서 어떤 용어 활성화해야 해?", "이 단어 여기선 일반명사 아냐?" → target의 source group 문구 + 실제 glossary 매칭 확인, 미적용 후보는 `scripts/glossary_activation_candidates.py` → `references/glossary-report-workflow.md`
 - **Obsidian 리포트 작성·검색**: "옵시디언용 리포트 만들어줘", "기존 vault 사례와 비교해줘" → workspace 초안 생성, 명시 요청 시 vault 검색·언어별 증분 갱신 → `scripts/obsidian_workflow.py` + `references/glossary-report-workflow.md`
 - **텍스트워크북 생성**: "이 텍스트로 source 워크북 만들어줘" → `scripts/text_workbook_create.py`
 - **RAG DB 관리**: "RAG DB 현황/재빌드" → `python -m translation_web_app.rag_db_builder` (→ `references/rag-workflow.md`)
