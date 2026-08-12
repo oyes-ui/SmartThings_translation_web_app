@@ -47,7 +47,15 @@ def sheet_prompt(packet: dict, cell_review: dict) -> str:
     return f"""# /st-inspect 시트 일관성 검수
 
 전체 시트와 resolver 검증을 마친 셀 검수 결과를 보고 CTA·제품명·호칭·문체·UI 명칭의 통일성을
-검토한다. 새 일관성 문제를 찾을 수 있지만 affected_cells 각각에 셀 전체 수정안을 제시해야 한다.
+검토한다. **용어집에 없는 반복 표기**도 반드시 별도 후보화한다. 특히 같은 기능·기기를 가리키는
+`TV / televisor`, `smartphone / celular`, `remote / control remoto`처럼 source/target 전반에 반복되는
+명사·UI 라벨·CTA를 대조해 하나의 canonical lexical pattern을 정한다. 단수/복수·관사·문장 안의
+정상적인 문법 변화는 오류가 아니며, 문체만 다른 경우에는 수정하지 않는다.
+
+같은 referent와 비교 가능한 문맥에서 표기가 갈리면, 용어집 항목이 없어도 일관성 issue로 기록하고
+affected_cells 각각에 셀 전체 수정안을 제시한다. 시트 안에 정답을 결정할 근거가 부족하면 임의로
+통일하지 말고 issue에 `human_review_required`를 rule_ids에 넣고, 각 proposal의 `after`에는 현재
+문자열을 그대로 넣는다. 이 no-op 후보는 변경안이 아니라 사람 검토 큐로 전환된다.
 resolver_status가 pass가 아닌 제안을 정답으로 취급하지 않는다. 문제가 없으면 issues를 비운다.
 
 출력 JSON:
