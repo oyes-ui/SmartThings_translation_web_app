@@ -82,6 +82,12 @@ def find_candidates(checker, workbook: Path, source_sheet: str, target_sheet: st
             for key, found in surfaces.items():
                 if not any(char.isupper() for char in key):
                     continue  # an all-lowercase glossary key says nothing about usage
+                if checker.prompt_builder.is_glossary_deactivated(
+                        str(checker.glossary[key].get("rule", "")).lower()):
+                    # The glossary already switched this term off everywhere, so the
+                    # resolver never demands it and there is nothing for a reviewer to
+                    # decide.  Listing it would bury the occurrences that do matter.
+                    continue
                 if not all(surface.islower() for surface in found):
                     continue  # the feature name appears capitalised somewhere in this cell
                 target_term = (checker._get_target_val(checker.glossary[key]["targets"], target_code)

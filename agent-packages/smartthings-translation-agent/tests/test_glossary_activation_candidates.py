@@ -17,12 +17,21 @@ from glossary_activation_candidates import (  # noqa: E402
 )
 
 
-class _Checker:
-    """The three GlossaryChecker members the scan uses, without loading the app."""
+class _PromptBuilder:
+    @staticmethod
+    def is_glossary_deactivated(rule: str) -> bool:
+        return "비활성화" in (rule or "")
 
-    def __init__(self, terms: dict[str, str]):
-        self.glossary = {key: {"targets": {"스페인어_콜롬비아": value}} for key, value in terms.items()}
+
+class _Checker:
+    """The GlossaryChecker members the scan uses, without loading the app."""
+
+    def __init__(self, terms: dict[str, str], rules: dict[str, str] | None = None):
+        self.glossary = {key: {"targets": {"스페인어_콜롬비아": value},
+                               "rule": (rules or {}).get(key, "")}
+                         for key, value in terms.items()}
         self.glossary_map = {key.lower(): key for key in terms}
+        self.prompt_builder = _PromptBuilder()
         pattern = "|".join(re.escape(key) for key in sorted(terms, key=len, reverse=True))
         self.glossary_re = re.compile(pattern, re.IGNORECASE)
 
@@ -43,8 +52,8 @@ def _workbook(tmp: Path, rows: dict[int, tuple[str, str]], name="Story_012_ES_co
     return path
 
 
-def _scan(tmp: Path, rows, terms=None):
-    checker = _Checker(terms or {"Safe": "Safe"})
+def _scan(tmp: Path, rows, terms=None, rules=None):
+    checker = _Checker(terms or {"Safe": "Safe"}, rules)
     return find_candidates(checker, _workbook(tmp, rows), "US(미국)", "CO(콜롬비아)", "스페인어_콜롬비아")
 
 
@@ -65,6 +74,18 @@ class ActivationCandidateTests(unittest.TestCase):
         """Activation is keyed by (story, cell, term), so one real use covers the cell."""
         with tempfile.TemporaryDirectory() as raw:
             found = _scan(Path(raw), {7: ("SmartThings Safe keeps a safe home", "SmartThings Safe")})
+            self.assertEqual(found, [])
+
+    def test_a_term_the_glossary_already_switched_off_is_not_a_candidate(self):
+        """Nothing to decide: the resolver never demands a globally deactivated term.
+
+        Ten of the seventeen terms the first ES_CO scan reported were already marked
+        `비활성화`, which is why 102 candidates shrank to the 25 that actually block
+        the delivered text.
+        """
+        with tempfile.TemporaryDirectory() as raw:
+            found = _scan(Path(raw), {7: ("a safe home", "un hogar seguro")},
+                          rules={"Safe": "대괄호 제외, 비활성화"})
             self.assertEqual(found, [])
 
     def test_an_all_lowercase_glossary_key_is_never_a_candidate(self):
