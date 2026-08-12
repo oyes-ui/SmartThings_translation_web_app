@@ -49,6 +49,8 @@ gemini.md
 agent-packages/smartthings-translation-agent/.codex/
 agent-packages/smartthings-translation-agent/node_modules
 agent-packages/smartthings-translation-agent/outputs/
+agent-packages/smartthings-translation-agent/dist/
+agent-packages/smartthings-translation-agent/reports/
 agent-packages/smartthings-translation-agent/story_*_approved_edits.json
 agent-packages/smartthings-translation-agent/cn_*_approved_edits.json
 agent-packages/smartthings-translation-agent/[0-9][0-9][0-9]_*.json
