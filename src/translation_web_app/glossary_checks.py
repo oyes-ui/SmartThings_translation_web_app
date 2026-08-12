@@ -141,6 +141,38 @@ class GlossaryChecker:
             "action": "propose" if status == "pass" else "human_queue",
         }
 
+    def pending_inactive_candidates(self, source_text: str, *, story: str = "", cell: str = "",
+                                    target_lang_code: str | None = None,
+                                    target_text: str = "") -> list[dict]:
+        """Return ordinary-word-looking occurrences; never change activation itself."""
+        if not self.glossary_re:
+            self._compile_glossary_re()
+        surfaces: dict[str, list[str]] = {}
+        for match in self.glossary_re.finditer(source_text or ""):
+            surface = match.group(0)
+            key = self.glossary_map.get(surface.lower())
+            if key:
+                surfaces.setdefault(key, []).append(surface)
+        entries = []
+        for key, found in surfaces.items():
+            meta = self.glossary.get(key, {})
+            decided = self.activation_manifest.lookup(story or None, cell or None, key)
+            if (not any(char.isupper() for char in key)
+                    or decided is not None
+                    or self.prompt_builder.is_glossary_deactivated(str(meta.get("rule", "")).lower())
+                    or not all(surface.islower() for surface in found)):
+                continue
+            target = self._get_target_val(meta.get("targets", {}), target_lang_code) if target_lang_code else ""
+            entries.append({
+                "story": str(story or ""), "cell": str(cell or "").upper(), "source_term": key,
+                "active": False, "activation_basis": "common_noun_lowercase_in_source",
+                "confirmed": False,
+                "evidence": {"source_text": source_text, "matched_surfaces": sorted(set(found)),
+                             "glossary_target": target or "", "target_text": target_text,
+                             "target_uses_glossary_term": bool(target and target.lower() in target_text.lower())},
+            })
+        return entries
+
     def is_term_active_for_occurrence(
         self, source_term: str, rule: str, story: str | None = None, cell: str | None = None
     ) -> bool:

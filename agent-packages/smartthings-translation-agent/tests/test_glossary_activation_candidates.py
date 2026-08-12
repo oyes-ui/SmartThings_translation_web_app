@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from glossary_activation_candidates import (  # noqa: E402
-    BASIS, find_candidates, markdown_review, to_activation_entries,
+    BASIS, apply_confirmations, find_candidates, markdown_review, to_activation_entries,
 )
 
 
@@ -37,6 +37,27 @@ class _Checker:
 
     def _get_target_val(self, targets, code):
         return targets.get(code)
+
+    def pending_inactive_candidates(self, source, *, story="", cell="", target_lang_code=None, target_text=""):
+        surfaces = {}
+        for match in self.glossary_re.finditer(source):
+            key = self.glossary_map.get(match.group(0).lower())
+            if key:
+                surfaces.setdefault(key, []).append(match.group(0))
+        rows = []
+        for key, found in surfaces.items():
+            meta = self.glossary[key]
+            if (not any(char.isupper() for char in key)
+                    or self.prompt_builder.is_glossary_deactivated(meta.get("rule", ""))
+                    or not all(value.islower() for value in found)):
+                continue
+            target = self._get_target_val(meta["targets"], target_lang_code) if target_lang_code else ""
+            rows.append({"story": story, "cell": cell, "source_term": key, "active": False,
+                         "activation_basis": "common_noun_lowercase_in_source", "confirmed": False,
+                         "evidence": {"source_text": source, "matched_surfaces": sorted(set(found)),
+                                      "glossary_target": target or "", "target_text": target_text,
+                                      "target_uses_glossary_term": bool(target and target.lower() in target_text.lower())}})
+        return rows
 
 
 def _workbook(tmp: Path, rows: dict[int, tuple[str, str]], name="Story_012_ES_co_v1.xlsx") -> Path:
@@ -124,6 +145,30 @@ class ActivationCandidateTests(unittest.TestCase):
             self.assertEqual(to_activation_entries(with_locale, confirmed_only=False),
                              to_activation_entries(without, confirmed_only=False))
             self.assertEqual(without[0]["evidence"]["glossary_target"], "")
+
+    def test_a_reviewer_confirms_by_term_without_touching_every_entry(self):
+        """The verdict is usually per term — 25 ES_CO candidates were 7 answers."""
+        candidates = [
+            {"story": "012", "cell": "C7", "source_term": "Safe", "confirmed": False},
+            {"story": "050", "cell": "C17", "source_term": "Safe", "confirmed": False},
+            {"story": "006", "cell": "C11", "source_term": "Settings", "confirmed": False},
+        ]
+        self.assertEqual(apply_confirmations(candidates, terms={"Safe"}), 2)
+        self.assertEqual([item["confirmed"] for item in candidates], [True, True, False])
+
+    def test_an_exception_is_addressed_by_cell(self):
+        candidates = [
+            {"story": "023", "cell": "C16", "source_term": "Food", "confirmed": False},
+            {"story": "047", "cell": "C15", "source_term": "Food", "confirmed": False},
+        ]
+        self.assertEqual(apply_confirmations(candidates, cells={"story_023:C16"}), 1)
+        self.assertEqual([item["confirmed"] for item in candidates], [True, False])
+
+    def test_naming_nothing_confirms_nothing(self):
+        """A partial answer must never widen into a blanket one."""
+        candidates = [{"story": "012", "cell": "C7", "source_term": "Safe", "confirmed": False}]
+        self.assertEqual(apply_confirmations(candidates, terms=set(), cells=set()), 0)
+        self.assertFalse(candidates[0]["confirmed"])
 
     def test_only_confirmed_candidates_become_activation_entries(self):
         """A candidate is a question. Deactivating a term nobody checked drops translations."""

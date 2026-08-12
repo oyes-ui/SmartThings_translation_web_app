@@ -72,44 +72,33 @@ def find_candidates(checker, workbook: Path, source_sheet: str, target_sheet: st
             source = str(source_ws.cell(row, 3).value or "")
             if not source.strip() or source.strip().lower() == "x":
                 continue
-            surfaces: dict[str, list[str]] = {}
-            for match in checker.glossary_re.finditer(source):
-                surface = match.group(0)
-                key = checker.glossary_map.get(surface.lower())
-                if key:
-                    surfaces.setdefault(key, []).append(surface)
             target_text = str(target_ws.cell(row, 3).value or "") if target_ws else ""
-            for key, found in surfaces.items():
-                if not any(char.isupper() for char in key):
-                    continue  # an all-lowercase glossary key says nothing about usage
-                if checker.prompt_builder.is_glossary_deactivated(
-                        str(checker.glossary[key].get("rule", "")).lower()):
-                    # The glossary already switched this term off everywhere, so the
-                    # resolver never demands it and there is nothing for a reviewer to
-                    # decide.  Listing it would bury the occurrences that do matter.
-                    continue
-                if not all(surface.islower() for surface in found):
-                    continue  # the feature name appears capitalised somewhere in this cell
-                target_term = (checker._get_target_val(checker.glossary[key]["targets"], target_code)
-                               if target_code else "")
-                entries.append({
-                    "story": story, "cell": f"C{row}", "source_term": key,
-                    "active": False, "activation_basis": BASIS,
-                    "confirmed": False,
-                    "evidence": {
-                        "source_text": source,
-                        "matched_surfaces": sorted(set(found)),
-                        "glossary_target": target_term or "",
-                        # Corroboration only: a delivered translation that never uses
-                        # the target is consistent with ordinary-word usage.
-                        "target_text": target_text,
-                        "target_uses_glossary_term": bool(
-                            target_term and target_term.lower() in target_text.lower()),
-                    },
-                })
+            entries.extend(checker.pending_inactive_candidates(
+                source, story=story, cell=f"C{row}", target_lang_code=target_code,
+                target_text=target_text))
         return entries
     finally:
         wb.close()
+
+
+def apply_confirmations(candidates: list[dict[str, Any]], *, terms: set[str] | None = None,
+                        cells: set[str] | None = None) -> int:
+    """Record a reviewer's verdict without hand-editing every entry.
+
+    Reviewers judge these per term far more often than per cell — the question is
+    whether an English word is ever the product name, and the answer rarely splits
+    within one term.  Cells are addressed as ``story_<nnn>:<cell>`` for the
+    exceptions that do split.  Anything not named stays unconfirmed, so a partial
+    answer never widens into a blanket one.
+    """
+    marked = 0
+    for item in candidates:
+        key = f"story_{item['story']}:{item['cell']}"
+        if (terms and item["source_term"] in terms) or (cells and key in cells):
+            if not item.get("confirmed"):
+                marked += 1
+            item["confirmed"] = True
+    return marked
 
 
 def to_activation_entries(candidates: list[dict[str, Any]], *, confirmed_only: bool = True) -> list[dict]:
@@ -177,6 +166,10 @@ def main() -> None:
                         help="confirmed: true 후보만 activation manifest 형식으로 내보낸다")
     parser.add_argument("--from-candidates", type=Path,
                         help="새로 스캔하지 않고 기존 후보 파일을 읽어 manifest만 만든다")
+    parser.add_argument("--confirm-terms",
+                        help="사람이 '일반명사'로 판정한 용어를 쉼표로 나열해 confirmed 처리한다")
+    parser.add_argument("--confirm-cells",
+                        help="용어 단위로 갈리지 않는 예외를 story_012:C7 형식으로 쉼표 나열한다")
     args = parser.parse_args()
     try:
         if args.from_candidates:
@@ -190,12 +183,17 @@ def main() -> None:
             candidates = asyncio.run(collect(
                 paths, args.glossary.expanduser(), args.app_root,
                 source_sheet=args.source_sheet, target_sheet=args.target_sheet))
+        confirmed_now = apply_confirmations(
+            candidates,
+            terms={value.strip() for value in (args.confirm_terms or "").split(",") if value.strip()},
+            cells={value.strip() for value in (args.confirm_cells or "").split(",") if value.strip()})
         payload = {"schema_version": SCHEMA_VERSION, "kind": KIND, "policy": POLICY,
                    "scope": {"source_sheet": args.source_sheet,
                              "applies_to": f"{args.source_sheet} source group의 모든 target 시트",
                              "evidence_target_sheet": args.target_sheet or None},
                    "summary": {"candidates": len(candidates),
                                "confirmed": sum(1 for item in candidates if item.get("confirmed")),
+                               "confirmed_this_run": confirmed_now,
                                "terms": len({item["source_term"] for item in candidates})},
                    "entries": candidates}
         if args.output:

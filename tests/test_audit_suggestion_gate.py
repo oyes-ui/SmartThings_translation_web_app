@@ -16,7 +16,7 @@ import os
 import re
 import unittest
 
-from translation_web_app.constraint_resolver import term_occurrence_pattern
+from translation_web_app.constraint_resolver import OccurrenceActivationManifest, term_occurrence_pattern
 from translation_web_app.glossary_checks import GlossaryChecker
 from translation_web_app.prompt_builder import PromptBuilder
 
@@ -26,6 +26,32 @@ GLOSSARY_CSV = os.path.join(_ROOT, "runtime", "glossary", "latest_glossary_26080
 CO_CODE = "스페인어_콜롬비아"
 SOURCE = "Watch in Movie mode."
 RESOLVED = "Modo de video"
+
+
+class FixedC18FixtureTests(unittest.TestCase):
+    """Always runs in CI; the runtime-glossary class below protects current data."""
+
+    def test_actual_shipped_regression_string_is_blocked(self):
+        checker = GlossaryChecker(PromptBuilder())
+        card = _card(RESOLVED)
+        card["terms"][0]["source_term"] = "Movie mode"
+        result = checker.validate_audit_suggestion(
+            "Modo película", card, glossary_context={"Movie mode": RESOLVED}, row_key="button")
+        self.assertTrue(result["blocked"])
+        self.assertEqual(result["violations"][0]["expected"], RESOLVED)
+
+    def test_confirmed_activation_decision_is_not_reopened_as_a_pending_candidate(self):
+        checker = GlossaryChecker(PromptBuilder())
+        checker.glossary = {"Safe": {"targets": {CO_CODE: "Safe"}, "rule": ""}}
+        checker.glossary_map = {"safe": "Safe"}
+        checker._compile_glossary_re()
+        self.assertEqual(len(checker.pending_inactive_candidates(
+            "a safe home", story="012", cell="C7", target_lang_code=CO_CODE)), 1)
+        checker.activation_manifest = OccurrenceActivationManifest([
+            {"story": "012", "cell": "C7", "source_term": "Safe", "active": False},
+        ])
+        self.assertEqual(checker.pending_inactive_candidates(
+            "a safe home", story="012", cell="C7", target_lang_code=CO_CODE), [])
 
 
 @unittest.skipUnless(os.path.exists(GLOSSARY_CSV), "shipped glossary not available")
