@@ -29,7 +29,7 @@ constraint card를 함께 판단한다. resolver card는 최고 권위이며 덮
 
 출력은 JSON 하나다:
 {{"kind":"cell_review","packet_id":"{packet.get('packet_id','')}","status":"completed",
-"stop_reason":"complete","model":"<model>","cells":[
+"stop_reason":"complete","model":"<model>","run_id":"<provider-run-id>","executed_at":"<ISO-8601>","cells":[
 {{"cell":"C7","status":"pass|warning|needs_revision|blocked|glossary_activation_review",
 "after":null,"reason":"...","rule_ids":[],"used_prior_cell_context":false,
 "prior_cell_refs":[],"prior_cell_influence":""}}]}}
@@ -60,7 +60,7 @@ resolver_status가 pass가 아닌 제안을 정답으로 취급하지 않는다.
 
 출력 JSON:
 {{"kind":"sheet_consistency_review","packet_id":"{packet.get('packet_id','')}",
-"status":"completed|no_findings","stop_reason":"complete","model":"<model>","issues":[
+"status":"completed|no_findings","stop_reason":"complete","model":"<model>","run_id":"<provider-run-id>","executed_at":"<ISO-8601>","issues":[
 {{"finding_id":"sheet_consistency_...","affected_cells":["C7"],"canonical_pattern":"...",
 "reason":"...","rule_ids":[],"proposals":[{{"cell":"C7","after":"셀 전체 문자열","rule_ids":[]}}]}}]}}
 
@@ -84,7 +84,7 @@ glossary_activation_review를 채택하지 않는다.
 
 출력 JSON:
 {{"kind":"lead_review","packet_id":"{packet.get('packet_id','')}","status":"completed",
-"stop_reason":"complete","model":"<model>","decisions":[
+"stop_reason":"complete","model":"<model>","run_id":"<provider-run-id>","executed_at":"<ISO-8601>","decisions":[
 {{"cell":"C7","finding_id":"lead-C7","status":"pass|warning|needs_revision|blocked|glossary_activation_review",
 "after":null,"reason":"...","rule_ids":[],"basis_refs":["cell:C7"]}}]}}
 

@@ -34,7 +34,7 @@ def packet(sheet: str, packet_id: str) -> dict:
 def cell_review(packet_id: str) -> dict:
     return {
         "kind": "cell_review", "packet_id": packet_id, "status": "completed",
-        "stop_reason": "complete", "cells": [{
+        "stop_reason": "complete", "model": "test-model", "run_id": "cell-run", "executed_at": "2026-08-12T00:00:00Z", "cells": [{
             "cell": "C7", "status": "pass", "after": None, "reason": "ok",
             "rule_ids": [], "used_prior_cell_context": False,
             "prior_cell_refs": [], "prior_cell_influence": "",

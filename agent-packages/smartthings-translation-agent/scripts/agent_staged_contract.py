@@ -27,6 +27,9 @@ def validate_envelope(payload: dict[str, Any], stage: str, packet: dict[str, Any
     stop = str(payload.get("stop_reason", "")).lower()
     if payload.get("status") not in {"completed", "no_findings"} or stop not in _CLEAN:
         raise ValueError(f"{stage}가 정상 완료되지 않았습니다.")
+    for field in ("model", "run_id", "executed_at"):
+        if not isinstance(payload.get(field), str) or not payload[field].strip():
+            raise ValueError(f"{stage}에 실행 메타데이터 {field}가 필요합니다.")
     return payload
 
 
@@ -190,7 +193,9 @@ def merge_staged_reviews(packet: dict[str, Any], cell_review: dict[str, Any],
     runs = []
     for stage, payload in zip(STAGES, (cell_review, sheet_review, lead_review)):
         runs.append({"role": stage, "status": "completed", "stop_reason": payload.get("stop_reason"),
-                     "model": payload.get("model"), "opinions": len(payload.get("cells", payload.get("issues", payload.get("decisions", []))))})
+                     "model": payload.get("model"), "run_id": payload.get("run_id"),
+                     "executed_at": payload.get("executed_at"),
+                     "opinions": len(payload.get("cells", payload.get("issues", payload.get("decisions", []))))})
     proposals, queue = [], []
     for decision in lead_review["decisions"]:
         cell, status = str(decision["cell"]).upper(), decision["status"]

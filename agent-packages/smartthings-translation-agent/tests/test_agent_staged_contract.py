@@ -32,7 +32,7 @@ PACKET = {
 
 def cell_payload():
     return {"kind": "cell_review", "packet_id": "pkt-stage-1", "status": "completed",
-            "stop_reason": "complete", "cells": [
+            "stop_reason": "complete", "model": "test-model", "run_id": "cell-run", "executed_at": "2026-08-12T00:00:00Z", "cells": [
                 {"cell": "C7", "status": "needs_revision", "after": "Modo película", "reason": "natural",
                  "rule_ids": [], "used_prior_cell_context": False, "prior_cell_refs": [], "prior_cell_influence": ""},
                 {"cell": "C8", "status": "pass", "after": None, "reason": "ok", "rule_ids": [],
@@ -43,7 +43,7 @@ def cell_payload():
 
 def sheet_payload():
     return {"kind": "sheet_consistency_review", "packet_id": "pkt-stage-1", "status": "completed",
-            "stop_reason": "complete", "issues": [
+            "stop_reason": "complete", "model": "test-model", "run_id": "sheet-run", "executed_at": "2026-08-12T00:00:01Z", "issues": [
                 {"finding_id": "sheet-cta", "affected_cells": ["C7"], "canonical_pattern": "간결한 CTA",
                  "reason": "통일", "rule_ids": [],
                  "proposals": [{"cell": "C7", "after": "Modo película", "rule_ids": []}]},
@@ -52,7 +52,7 @@ def sheet_payload():
 
 def lead_payload():
     return {"kind": "lead_review", "packet_id": "pkt-stage-1", "status": "completed",
-            "stop_reason": "complete", "decisions": [
+            "stop_reason": "complete", "model": "test-model", "run_id": "lead-run", "executed_at": "2026-08-12T00:00:02Z", "decisions": [
                 {"cell": "C7", "finding_id": "lead-c7", "status": "needs_revision", "after": "Modo película",
                  "reason": "두 근거 통합", "rule_ids": [], "basis_refs": ["cell:C7", "sheet:sheet-cta"]},
                 {"cell": "C8", "finding_id": "lead-c8", "status": "pass", "after": None,
@@ -135,8 +135,8 @@ class StagedContractTests(unittest.TestCase):
             manifest, markdown = build_review_artifacts(path, merged, report_id="staged", source_file_id="story")
         self.assertIn("## 셀 검수", markdown)
         self.assertIn("시트 일관성 의견", markdown)
-        self.assertIn("리드 최종 판정", markdown)
-        self.assertIn("참조율: 50.0%", markdown)
+        self.assertIn("관점별 실행", markdown)
+        self.assertIn("비율 0.50", markdown)
         self.assertEqual(manifest["review_context"]["anchoring_metrics"]["referenced_cells"], 1)
 
 
