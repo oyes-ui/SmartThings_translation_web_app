@@ -40,11 +40,13 @@ def _row_key(row: int) -> str:
 
 async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: str,
                               glossary: Path, app_root: Path,
-                              activation_manifest: Path | None = None) -> list[dict[str, Any]]:
+                              activation_manifest: Path | None = None):
     app_root = ap.bootstrap_project(str(app_root))
     from translation_web_app.glossary_checks import GlossaryChecker
     from translation_web_app.prompt_builder import PromptBuilder
     import openpyxl
+
+    from translation_web_app.prompt_builder import HARD_CONSTRAINT_PREAMBLE
 
     checker = GlossaryChecker(PromptBuilder())
     source_code = ap.DEFAULT_SHEET_LANGS[source_sheet]["code"]
@@ -66,26 +68,35 @@ async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: s
             target = str(target_ws.cell(row, 3).value or "")
             if not source and not target:
                 continue
-            terms = checker._get_relevant_glossary_terms(source)
-            targets = [checker._get_target_val(checker.glossary[term]["targets"], target_info["code"])
-                       for term in terms if term in checker.glossary]
-            case_report, simple_fix = checker._analyze_sentence_case(target, target_info["lang"], [term for term in targets if term])
-            issues = [
-                *checker._precheck_glossary_mismatch(source, target, target_info["code"]),
-                *checker._check_glossary_casing(source, target, target_info["code"]),
-                *checker._check_glossary_brackets(source, target, target_info["code"], target_info["lang"], row_key=_row_key(row)),
-                *checker._check_brand_concatenation(source, target, target_info["code"], target_info["lang"]),
-            ]
+            sections = checker.deterministic_sections(
+                source, target, target_info["code"], target_info["lang"], row_key=_row_key(row))
+            case_report, simple_fix = sections["case_report"], sections["simple_case_fix"]
+            issues = sections["hard_rule_issues"]
             card = checker.resolve_constraints(source, target_info["code"], row_key=_row_key(row),
                                                story=story, cell=f"C{row}")
             validation = checker.validate_constraints(target, card)
             evidence.append({"cell": f"C{row}", "row_type": _row_key(row),
+                             "source_text": source, "target_text": target,
+                             # Composed by the app so the agent report renders the
+                             # same section text the app's own report would.
+                             "case_section": sections["case_section"],
+                             "glossary_section": sections["glossary_section"],
                              "hard_rule_issues": issues,
                              "sentence_case_report": case_report or None,
                              "simple_case_fix": simple_fix or None,
                              "constraint_card": card,
-                             "constraint_validation": validation})
-        return evidence
+                             "constraint_validation": validation,
+                             # Only the merge-time resolver gate reads this; it is kept out
+                             # of every role slice so a specialist cannot re-derive the
+                             # bracket/casing policy the card already settled.
+                             "glossary_context": checker._get_glossary_context_as_dict(
+                                 target_info["code"], source_text=source,
+                                 skip_deactivated=True, row_key=_row_key(row))})
+        from glossary_activation_candidates import find_candidates
+        checker._compile_glossary_re()
+        activation_candidates = find_candidates(
+            checker, workbook, source_sheet, target_sheet, target_info["code"])
+        return evidence, HARD_CONSTRAINT_PREAMBLE, activation_candidates
     finally:
         wb.close()
 
@@ -113,10 +124,16 @@ def _cell_snapshot(workbook: Path, sheet: str) -> dict[str, str]:
 
 
 def _packet_id(packet: dict[str, Any]) -> str:
-    """Hash only the evidence a specialist reasons over, not the packet envelope."""
+    """Hash the evidence the review is based on, not the packet envelope.
+
+    The hard-constraint preamble is included because it is the app's statement of
+    what outranks what: if that wording changes, the specialists were working under
+    different instructions and the opinions are not interchangeable.
+    """
     evidence = {key: packet[key] for key in (
         "workbook_name", "target_sheet", "source_sheet", "target_sections", "source_sections",
-        "deterministic_evidence", "candidate_overlay", "cell_snapshot",
+        "deterministic_evidence", "activation_candidates", "candidate_overlay", "cell_snapshot",
+        "hard_constraint_preamble",
     )}
     canonical = json.dumps(evidence, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
@@ -135,9 +152,12 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
     source_sheet = _source_sheet_for(sheet, inspect["sheet_names"])
     source = inspect_workbook(workbook, source_sheet, None, with_sections=True)["sheets"][source_sheet]
     deterministic: list[dict[str, Any]] = []
+    activation_candidates: list[dict[str, Any]] = []
+    preamble = ""
     if glossary and app_root:
-        deterministic = await _hard_rule_evidence(workbook, source_sheet, sheet, glossary, app_root,
-                                                   activation_manifest=activation_manifest)
+        deterministic, preamble, activation_candidates = await _hard_rule_evidence(
+            workbook, source_sheet, sheet, glossary, app_root,
+            activation_manifest=activation_manifest)
     elif glossary or app_root:
         raise ValueError("결정론적 glossary 검사는 --glossary와 --app-root를 함께 지정해야 합니다.")
     overlay_entries: list[dict[str, Any]] = []
@@ -162,6 +182,12 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
         "cell_snapshot": _cell_snapshot(workbook, sheet),
         "deterministic_evidence": deterministic,
         "deterministic_evidence_status": "available" if deterministic else "not_loaded",
+        "activation_candidates": activation_candidates,
+        "activation_candidates_status": "available" if deterministic else "not_loaded",
+        # The app's own wording for "this card outranks everything else", carried
+        # verbatim so every specialist reads the same authority the app's translate
+        # and audit prompts state.
+        "hard_constraint_preamble": preamble,
         "candidate_overlay": overlay_entries,
         "candidate_overlay_status": "available" if candidate_overlay else "not_loaded",
         "candidate_overlay_policy": (
@@ -171,7 +197,7 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
         # The five-role split is an escalation, not the default: the roles appear
         # only when the user approved this sheet for it, so an unsure lead cannot
         # quietly pick the five-times-slower path.
-        "review_mode": "multi_agent" if multi_agent else "lead_2pass",
+        "review_mode": "multi_agent" if multi_agent else "staged_cell_sheet_lead",
         "subagent_roles": list(SPECIALIST_ROLES) if multi_agent else [],
         "semantic_rag_budget": semantic_rag_budget,
         "hard_rule_policy": "resolver_card_required; proposals_must_be_validated_before_merge",

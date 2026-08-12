@@ -113,6 +113,109 @@ class GlossaryChecker:
         nav_spans = self._get_navigation_path_spans(target_text)
         return self._constraint_resolver().validate_target(target_text, constraints, navigation_spans=nav_spans)
 
+    def deterministic_sections(self, source_text: str, target_text: str, target_lang_code: str,
+                               target_lang: str, *, row_key: str = "") -> dict:
+        """Build the case/glossary report sections for one cell.
+
+        These strings go straight into the review report, so an out-of-process
+        reviewer that renders through the app must produce them from here rather
+        than reassemble its own wording from a flattened issue list — the two
+        would drift, and the report would stop being comparable to the app's.
+        """
+        terms = self._get_relevant_glossary_terms(source_text)
+        targets = [value for value in
+                   (self._get_target_val(self.glossary[term]["targets"], target_lang_code)
+                    for term in terms if term in self.glossary) if value]
+        case_report, simple_case_fix = self._analyze_sentence_case(target_text, target_lang, targets)
+        case_section = ("대소문자 하드룰(문장형) 점검:\n" + case_report) if case_report else "별도 지적 사항 없음."
+        if simple_case_fix:
+            case_section += f"\n\n[단순 규칙 기반 문장형 변환안]:\n{simple_case_fix}"
+
+        groups = (
+            ("용어집 사전 감지", self._precheck_glossary_mismatch(source_text, target_text, target_lang_code), True),
+            ("용어집 대소문자 표기 점검", self._check_glossary_casing(source_text, target_text, target_lang_code), False),
+            ("용어집 괄호 규정 점검", self._check_glossary_brackets(source_text, target_text, target_lang_code, target_lang, row_key=row_key), False),
+            ("브랜드 띄어쓰기 점검", self._check_brand_concatenation(source_text, target_text, target_lang_code, target_lang), False),
+            ("디스클레이머 줄바꿈 서식 점검", self._check_disclaimer_linebreak(source_text, target_text, row_key), False),
+            ("Nav path 표기 변환 점검", self._check_nav_path_bracket_leak(target_text, row_key), False),
+        )
+        parts, issues = [], []
+        for label, messages, joined_head in groups:
+            if not messages:
+                continue
+            issues.extend(messages)
+            body = ("- " + "\n- ".join(messages) if joined_head
+                    else "\n".join(f"- {message}" for message in messages))
+            parts.append(f"{label}:\n{body}")
+        return {
+            "case_section": case_section,
+            "glossary_section": "\n\n".join(parts) if parts else "별도 지적 사항 없음.",
+            "case_report": case_report or None,
+            "simple_case_fix": simple_case_fix or None,
+            "hard_rule_issues": issues,
+            "precheck_mismatch": list(groups[0][1]),
+        }
+
+    def validate_audit_suggestion(self, suggestion: str, constraint_card: dict, *,
+                                  glossary_context=None, row_key: str = "") -> dict:
+        """Put a model-proposed edit through the same deterministic floor a translation gets.
+
+        The translation path repairs model output before judging it — bracket policy
+        first, then glossary casing — and only then asks the resolver.  A reviewer
+        proposing an edit needs the identical treatment, otherwise a suggestion that
+        differs from the resolved target by nothing but a wrapper or letter case is
+        rejected as a conflict, while a genuine lexical conflict ships unchecked.
+
+        Returns the repaired text plus the resolver's verdict.  It never applies and
+        never overwrites a conflicting suggestion: what the resolver still blocks after
+        repair is a real disagreement with the glossary, and that belongs to a human.
+        """
+        normalized = self._strip_glossary_brackets_by_policy(suggestion, glossary_context, row_key)
+        normalized = self._restore_glossary_target_casing(normalized, glossary_context)
+        verdict = self.validate_constraints(normalized, constraint_card or {"terms": []})
+        status = verdict["status"]
+        return {
+            "normalized": normalized,
+            "repaired": normalized != suggestion,
+            "status": status,
+            "blocked": status == "blocked",
+            "violations": verdict["blocked"],
+            "review": verdict["review"],
+            "action": "propose" if status == "pass" else "human_queue",
+        }
+
+    def pending_inactive_candidates(self, source_text: str, *, story: str = "", cell: str = "",
+                                    target_lang_code: str | None = None,
+                                    target_text: str = "") -> list[dict]:
+        """Return ordinary-word-looking occurrences; never change activation itself."""
+        if not self.glossary_re:
+            self._compile_glossary_re()
+        surfaces: dict[str, list[str]] = {}
+        for match in self.glossary_re.finditer(source_text or ""):
+            surface = match.group(0)
+            key = self.glossary_map.get(surface.lower())
+            if key:
+                surfaces.setdefault(key, []).append(surface)
+        entries = []
+        for key, found in surfaces.items():
+            meta = self.glossary.get(key, {})
+            decided = self.activation_manifest.lookup(story or None, cell or None, key)
+            if (not any(char.isupper() for char in key)
+                    or decided is not None
+                    or self.prompt_builder.is_glossary_deactivated(str(meta.get("rule", "")).lower())
+                    or not all(surface.islower() for surface in found)):
+                continue
+            target = self._get_target_val(meta.get("targets", {}), target_lang_code) if target_lang_code else ""
+            entries.append({
+                "story": str(story or ""), "cell": str(cell or "").upper(), "source_term": key,
+                "active": False, "activation_basis": "common_noun_lowercase_in_source",
+                "confirmed": False,
+                "evidence": {"source_text": source_text, "matched_surfaces": sorted(set(found)),
+                             "glossary_target": target or "", "target_text": target_text,
+                             "target_uses_glossary_term": bool(target and target.lower() in target_text.lower())},
+            })
+        return entries
+
     def is_term_active_for_occurrence(
         self, source_term: str, rule: str, story: str | None = None, cell: str | None = None
     ) -> bool:
@@ -303,14 +406,28 @@ class GlossaryChecker:
         if not target_text:
             return target_text
 
+        from translation_web_app.constraint_resolver import term_occurrence_pattern
+
+        # Longest first, and a shorter term never rewrites inside a longer one that
+        # already claimed the span: the glossary holds both `Kia` and
+        # `BlueLink∙KIA Connect`, and applying `Kia` afterwards turned correct text
+        # into `BlueLink∙Kia Connect` — the repair itself introducing the violation
+        # the checker then reported.
         restored = target_text
+        claimed: list[tuple[int, int]] = []
         for term in self._extract_glossary_target_terms(glossary_context_or_terms):
-            pattern = re.escape(term)
-            if term[0].isalnum():
-                pattern = r'(?<![a-zA-Z0-9])' + pattern
-            if term[-1].isalnum():
-                pattern = pattern + r'(?![a-zA-Z0-9])'
-            restored = re.sub(pattern, term, restored, flags=re.IGNORECASE)
+            pieces, last, taken = [], 0, []
+            for match in re.finditer(term_occurrence_pattern(term), restored, re.IGNORECASE):
+                if any(start <= match.start() and match.end() <= end for start, end in claimed):
+                    continue
+                pieces.append(restored[last:match.start()])
+                pieces.append(term)
+                last = match.end()
+                taken.append((match.start(), match.end()))
+            pieces.append(restored[last:])
+            # Replacements are the same length as the match, so spans stay valid.
+            restored = "".join(pieces)
+            claimed.extend(taken)
         return restored
 
     def _compile_glossary_re(self):

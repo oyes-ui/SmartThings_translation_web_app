@@ -59,9 +59,15 @@ ROLE_BRIEFS: dict[str, dict[str, str]] = {
     },
 }
 
-# Evidence each role actually needs.  Sections and the cell snapshot go to
-# everyone — withholding the text under review would degrade the judgement — but
-# the heavy hard-rule internals go only to the role that owns them.
+# Evidence each role actually needs.  Sections, the cell snapshot and the resolved
+# constraint card go to everyone; only the case-analysis internals are narrowed to
+# the role that owns them.
+#
+# The card is not optional per role.  An earlier split withheld it from four of the
+# five, leaving them a bare ``hard_rule_issues`` list — which is empty exactly when
+# a term resolved cleanly, so "this cell has a settled glossary target" and "this
+# cell has no constraints" arrived as the same signal.  Three roles then proposed
+# their own wording over an already-correct glossary term (ES_CO C18, Movie mode).
 ROLE_EVIDENCE_SLICES: dict[str, tuple[str, ...]] = {
     "grammar_fluency": ("sections", "deterministic_summary"),
     "semantic_fidelity": ("sections", "deterministic_summary"),
@@ -69,6 +75,13 @@ ROLE_EVIDENCE_SLICES: dict[str, tuple[str, ...]] = {
     "style_and_hard_rule_exceptions": ("sections", "deterministic_full", "candidate_overlay"),
     "story_and_ui_coherence": ("sections", "deterministic_summary"),
 }
+
+# Fields of a deterministic_evidence entry each slice level exposes.  ``glossary_context``
+# appears in neither: it is the merge-time gate's input, and a specialist handed it
+# could re-derive the bracket/casing policy the card has already settled.
+_SUMMARY_EVIDENCE_FIELDS = ("cell", "row_type", "hard_rule_issues",
+                            "constraint_card", "constraint_validation")
+_FULL_EVIDENCE_FIELDS = _SUMMARY_EVIDENCE_FIELDS + ("sentence_case_report", "simple_case_fix")
 
 _CAPABILITY = """\
 ## 허용된 행동 (이 밖의 것은 하지 않는다)
@@ -144,15 +157,11 @@ def _evidence_slice(role: str, packet: dict[str, Any]) -> dict[str, Any]:
         evidence["source_sections"] = packet.get("source_sections")
         evidence["cell_snapshot"] = packet.get("cell_snapshot")
     deterministic = packet.get("deterministic_evidence") or []
-    if "deterministic_full" in slices:
-        evidence["deterministic_evidence"] = deterministic
-    elif "deterministic_summary" in slices:
-        # Enough to know a hard rule already fired, without the resolver internals
-        # this role must not re-litigate anyway.
-        evidence["deterministic_evidence"] = [
-            {key: item.get(key) for key in ("cell", "row_type", "hard_rule_issues")}
-            for item in deterministic if isinstance(item, dict)
-        ]
+    fields = _FULL_EVIDENCE_FIELDS if "deterministic_full" in slices else _SUMMARY_EVIDENCE_FIELDS
+    evidence["deterministic_evidence"] = [
+        {key: item.get(key) for key in fields}
+        for item in deterministic if isinstance(item, dict)
+    ]
     if "candidate_overlay" in slices:
         evidence["candidate_overlay"] = packet.get("candidate_overlay")
     return evidence
@@ -164,15 +173,17 @@ def build_role_prompt(role: str, packet: dict[str, Any]) -> str:
         raise ValueError(f"알 수 없는 검수 관점: {role!r}")
     if not isinstance(packet, dict) or packet.get("kind") != "agent_sheet_review_packet":
         raise ValueError("packet은 agent_sheet_review.py가 만든 근거 패킷이어야 합니다.")
-    if packet.get("review_mode") == "lead_2pass":
+    if packet.get("review_mode") != "multi_agent":
         raise ValueError(
-            "이 시트는 5개 관점 병렬 검수로 승인되지 않았습니다(review_mode=lead_2pass). "
-            "기본 경로는 리드 에이전트 2-pass이며, escalation이 필요하면 "
+            "이 시트는 5개 관점 병렬 검수로 승인되지 않았습니다. "
+            "기본 경로는 cell→sheet→lead이며, legacy escalation이 필요하면 "
             "agent_sheet_review.py를 --multi-agent로 다시 실행해 승인 패킷을 만드세요."
         )
     brief = ROLE_BRIEFS[role]
     budget = packet.get("semantic_rag_budget", 0)
     evidence = _evidence_slice(role, packet)
+    preamble = packet.get("hard_constraint_preamble") or ""
+    authority = f"\n## 하드 제약의 권위\n\n```\n{preamble.strip()}\n```\n" if preamble else ""
     return f"""\
 # /st-inspect 전문 검수 — {brief['title']} (`{role}`)
 
@@ -190,6 +201,10 @@ def build_role_prompt(role: str, packet: dict[str, Any]) -> str:
 {_CAPABILITY}
 {_COMMON_RULES}
 - semantic RAG 예산: **{budget}회** (0이면 offline만 사용한다)
+{authority}
+각 셀의 `constraint_card`는 앱 resolver가 이미 확정한 값이다. 여기 적힌 target 표기·활성화·
+bracket 정책과 어긋나는 수정안은 병합 직전 같은 resolver에 다시 걸려 사람 검토로 넘어간다.
+`hard_rule_issues`가 비어 있다는 것은 "제약이 없다"가 아니라 **"이미 통과했다"**는 뜻이다.
 
 ## 근거 패킷 (packet_id: `{packet.get('packet_id', '')}`)
 

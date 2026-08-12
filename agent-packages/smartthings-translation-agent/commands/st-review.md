@@ -14,10 +14,8 @@ argument-hint: <xlsx 경로> [--sheet <시트>]
 sheet/cell, before/after, rule IDs, 지지 관점, RAG 근거 또는 보류 사유를 남긴다. 리포트와
 `pending_approval` manifest는 병합 단계에서 함께 만들어진다. 이 명령은 workbook을 수정하지 않는다.
 
-```bash
-python scripts/agent_sheet_merge.py --packet packet.json --opinions-dir <역할별 의견서 dir> \
-  --workbook story.xlsx --report-id review-YYYYMMDD-001 --output-dir outputs/review
-```
+실행 명령과 3단계 산출물 계약은 `commands/st-inspect.md`를 그대로 따른다. 기존
+`agent_sheet_merge.py --opinions-dir` 방식은 `--multi-agent`로 만든 legacy 패킷에만 허용한다.
 
 `review_report_builder.py`는 라이브러리이며 더 이상 CLI로 직접 호출하지 않는다. 자유 형식
 `proposals.json`을 받던 경로는 §4-A에 따라 제거됐다 — 리드 에이전트가 의견서를 요약해

@@ -414,6 +414,28 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertIn("Glossary", ai_text)
         self.assertIn('"grade": "Pass"', ai_json)
 
+    def test_audit_suggested_fix_is_resolver_gated_before_reporting(self):
+        checker = TranslationChecker(model_name="fake-audit-model")
+        checker.glossary = {
+            "Movie mode": {"targets": {"es_CO": "Modo de video"}, "rule": "대괄호 제외"},
+        }
+        checker._compile_glossary_re()
+
+        async def fake_generate_content(*args, **kwargs):
+            return {"evaluation": [{"category": "Localization", "comment": "cine"}],
+                    "grade": "Needs Revision", "suggested_fix": "Modo película"}
+
+        checker.model_handler.generate_content = fake_generate_content
+        card = checker.resolve_constraints("Movie mode", "es_CO", row_key="button", cell="C18")
+        ai_text, ai_json = asyncio.run(checker.check_with_llm_qa(
+            "Movie mode", "Modo de video", "English", "Spanish", "es_CO",
+            row_key="button", constraint_card=card))
+        payload = json.loads(ai_json)
+        self.assertEqual(payload["suggested_fix"], "")
+        self.assertEqual(payload["raw_suggested_fix"], "Modo película")
+        self.assertTrue(payload["suggestion_validation"]["blocked"])
+        self.assertIn("resolver 검토 필요", ai_text)
+
     def test_title_button_postprocess_removes_glossary_brackets_only_in_title_button_context(self):
         checker = TranslationChecker()
         glossary_context = {

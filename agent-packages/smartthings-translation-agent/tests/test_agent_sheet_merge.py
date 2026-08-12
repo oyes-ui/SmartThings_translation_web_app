@@ -55,6 +55,33 @@ def _run(tmp: Path, workbook, packet, opinions_dir, report_id="r"):
     return result, json.loads(result.stdout)
 
 
+class ResolverGateRequirementTests(unittest.TestCase):
+    def test_a_packet_with_cards_refuses_to_merge_without_the_resolver(self):
+        """Evidence to validate a proposal exists, so shipping unvalidated text is refused."""
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            workbook, packet, opinions_dir = _write_case(tmp)
+            payload = json.loads(packet.read_text(encoding="utf-8"))
+            payload["deterministic_evidence_status"] = "available"
+            payload["deterministic_evidence"] = [
+                {"cell": "C10", "row_type": "description", "constraint_card": {"terms": []}},
+            ]
+            packet.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            result, out = _run(tmp, workbook, packet, opinions_dir)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("--glossary", out["error"])
+
+    def test_a_packet_without_cards_reports_the_gate_did_not_run(self):
+        """Nothing to validate against is legitimate, but it must be visible in the report."""
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            result, payload = _run(tmp, *_write_case(tmp))
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(payload["resolver_gate"], "not_run")
+            markdown = Path(payload["report"]).read_text(encoding="utf-8")
+            self.assertIn("resolver로 재검증되지 않았습니다", markdown)
+
+
 class AgentSheetMergeTests(unittest.TestCase):
     def test_full_role_set_produces_applyable_changes(self):
         with tempfile.TemporaryDirectory() as raw:

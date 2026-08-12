@@ -197,6 +197,50 @@ PY
 
 `SmartThings`, `Galaxy`, `Samsung`처럼 `대괄호 제외` 규칙이 있는 항목은 유지한다. 이 항목들은 필터링 후보가 아니라 bracket 제외 준수 여부를 보는 대상이다.
 
+## 미적용(비활성) 후보 자동 추출
+
+위 "수동 예외"를 기계가 먼저 훑어서 후보 목록으로 뽑는다. 판단은 여전히 사람이 한다.
+
+```bash
+python scripts/glossary_activation_candidates.py <워크북 또는 폴더> \
+  --glossary <Glossary.csv> --app-root <app-root> --target-sheet "CO(콜롬비아)" \
+  --output candidates.json --review-markdown candidates.md
+```
+
+탐지 규칙은 하나다: **용어집 키에 대문자가 있는데, 그 셀 안의 모든 출현이 소문자**. `The comfort of a
+safe home`의 `safe`가 제품 용어 `Safe`로 매칭되던 경우가 이것이다. 한 번이라도 대문자로 쓰였으면
+후보가 아니다 — activation manifest 키가 `(story, cell, source_term)`이라 셀 단위로 활성/비활성이
+갈리기 때문이다.
+
+**후보는 결정이 아니다.** 사람이 `confirmed: true`로 바꾼 항목만 매니페스트가 된다.
+
+```bash
+python scripts/glossary_activation_candidates.py x --glossary <Glossary.csv> \
+  --target-sheet "CO(콜롬비아)" --from-candidates candidates.json \
+  --emit-manifest inactive_manifest.json
+```
+
+이 매니페스트를 `agent_sheet_review.py --activation-manifest`로 넘기면 resolver가 해당 occurrence를
+비활성으로 계산한다. 확인되지 않은 후보는 무시되므로, 검토 전에 실행해도 동작은 바뀌지 않는다.
+
+왜 확인을 강제하는가: 실제로 쓰인 용어를 잘못 비활성화하면 필요한 번역이 조용히 빠진다. 반대 방향
+(비활성 처리를 안 해서 사람 큐로 가는 것)보다 비싸다.
+
+ES_CO 33개 워크북 실측: 후보 102건 / 용어 17종. 이걸 적용했을 때 검수 제안 21건 중 **정답인데 하드룰로
+차단되던 5건이 0건**이 됐고, 납품 확정본이 모든 셀에서 게이트를 통과했다.
+
+### 로케일 재사용
+
+"이 원문 단어가 제품 용어냐 보통명사냐"는 **원문의 성질**이다. 번역이 대응하는 대상이 그 단어이므로,
+CO에서 보통명사면 BR·RU·DE에서도 보통명사다. 그래서 확정된 매니페스트에는 로케일이 들어가지 않는다
+(`story / cell / source_term / active`만 남는다). **같은 source group이면 한 번 확인해서 전부 쓴다.**
+
+`--target-sheet`는 검토 편의를 위해 번역문을 함께 보여줄 뿐이고 판정에 관여하지 않는다. 생략해도
+같은 결과가 나온다.
+
+**단, source group을 넘어가면 안 된다.** 탐지 신호가 대소문자라서 한국어 원문에는 존재하지 않는다.
+`KR(한국)` source 그룹(US·JA·CN·TW)은 별도로 판단해야 하고, 이 도구의 규칙은 그대로 쓸 수 없다.
+
 ## 응답 형식
 
 사용자에게 바로 답할 때는 아래 표를 우선 제공한다.

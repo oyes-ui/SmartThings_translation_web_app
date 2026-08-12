@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "required": ["kind", "model", "glossary_ledger", "consistency_ledger", "stories"],
+  "additionalProperties": false,
+  "properties": {
+    "kind": {"type": "string", "const": "es_co_session_batch_review"},
+    "model": {"type": "string"},
+    "glossary_ledger": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["term", "decision", "reason", "story_cells"], "properties": {"term": {"type": "string"}, "decision": {"enum": ["active", "inactive_contextual", "review"]}, "reason": {"type": "string"}, "story_cells": {"type": "array", "items": {"type": "string"}}}}},
+    "consistency_ledger": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["source", "canonical_target", "story_cells", "reason"], "properties": {"source": {"type": "string"}, "canonical_target": {"type": "string"}, "story_cells": {"type": "array", "items": {"type": "string"}}, "reason": {"type": "string"}}}},
+    "stories": {"type": "array", "minItems": 3, "items": {"type": "object", "additionalProperties": false, "required": ["story", "reviewed_cells", "proposals"], "properties": {"story": {"type": "string"}, "reviewed_cells": {"type": "array", "items": {"type": "string"}}, "proposals": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["cell", "status", "after", "reason", "rule_ids"], "properties": {"cell": {"type": "string"}, "status": {"enum": ["needs_revision", "glossary_activation_review"]}, "after": {"type": ["string", "null"]}, "reason": {"type": "string"}, "rule_ids": {"type": "array", "items": {"type": "string"}}}}}}}}
+  }
+}

@@ -3,94 +3,93 @@ description: 언어 시트 단위 에이전트 검수 (읽기 전용, 크레딧 
 argument-hint: <xlsx 경로> --sheet "JA(일본)" [--semantic-rag-budget N] [--raw]
 ---
 
-`/st-inspect`는 언어 시트 전체를 읽기 전용으로 검수한다. 원본 Excel은 수정하지 않으며,
-리드 에이전트가 공통 근거 패킷을 만든 뒤 **리드 에이전트가 직접 배정한 프론티어급 서브에이전트 5명**이
-각 관점(문법·의미·현지화·스타일 예외·story/UI 맥락)을 독립 검토하고, 리드 에이전트가 보수적으로 취합한다.
+# /st-inspect
 
-> 실행 주체 구분: API 모델을 역할별로 호출한 결과는 **app/API 검수**다. 이는 `/st-inspect`의
-> 서브에이전트 판정으로 표기하거나 이를 대체할 수 없다. API 결과는 필요한 경우 별도 섹션의 보조 근거로만
-> 병기한다.
+기본 구조는 **셀 순차 검수 1명 → 시트 일관성 검수 1명 → 리드 통합 1명**이다. 원본 Excel은
+수정하지 않고 resolver를 통과한 제안만 `pending_approval` manifest에 기록한다. 기존 5역할
+`--multi-agent` 경로는 deprecated 호환 경로다.
 
-- glossary/casing/bracket/brand/navigation path는 앱의 `GlossaryChecker` 결과를 근거 패킷으로
-  주입한다. 서브에이전트는 이를 재계산하거나 덮어쓰지 않는다.
-- 주관적 수정은 서로 다른 두 관점의 지지와 반대 의견 부재가 있어야 제안한다. 그 외는
-  `human_review_queue`로 보낸다.
-- offline RAG는 자율적으로 사용한다. semantic RAG는 사용자가 이 시트에 승인한
-  `--semantic-rag-budget N` 안에서만 사용하며, 생략하면 0회다.
-- v1에는 구조/서식 판정용 결정론적 체커가 없다. 병합·수식·보호·숨김 검증은 Excel 적용 단계의
-  안전장치이지 검수 판정 근거가 아니다.
-
-## 실행 순서
-
-기본 경로는 **리드 에이전트의 시트 전체 2-pass**다. 5개 관점 병렬 검수는 사용자가 그 시트에
-`--multi-agent`로 승인했을 때만 켜지는 escalation이며, 아래 2~4단계는 그 경우에만 수행한다.
-
-리드는 아래에 해당하면 escalation을 **제안**한다(스스로 켜지 않는다). 비용·지연이 5배로 늘어나므로
-사유를 밝히고 승인받는다.
-
-- UI 활성화 조건·면책 문구처럼 검토 축이 교차해 한 관점으로 판정하기 어려울 때
-- Pass 2에서 의미 충실도와 현지화 톤의 판단이 서로 충돌할 때
-- 같은 오류 유형이 여러 story·시트에서 반복 확인될 때
-- 고위험 locale이거나 납품 직전 최종 확인이 필요할 때
-
-**1. 근거 패킷 생성.** 출력에는 `packet_id`가 들어 있고, 모든 의견서가 이 값을 되돌려줘야 한다.
-`--multi-agent` 없이 만든 패킷은 `review_mode: lead_2pass`이며 역할 프롬프트 생성과 병합이
-거부된다.
+## 1. 근거 패킷
 
 ```bash
-python agent-packages/smartthings-translation-agent/scripts/agent_sheet_review.py \
-  <workbook.xlsx> --sheet "JA(일본)" --semantic-rag-budget 0 --multi-agent \
-  --glossary <Glossary.csv> --app-root <app-root> --json > packet.json
+python scripts/agent_sheet_review.py <workbook.xlsx> --sheet "JA(일본)" \
+  --semantic-rag-budget 0 --glossary <Glossary.csv> --app-root <app-root> \
+  --activation-manifest <inactive_manifest.json> --json > packet.json
 ```
 
-**2. 역할별 프롬프트를 만들어 5개 서브에이전트를 병렬 배정한다.** 프롬프트는 즉석에서 쓰지 않고
-빌더로 생성한다. 이 빌더는 패킷만 입력으로 받으므로 다른 역할의 의견이 섞일 수 없다.
+확인된 비활성 occurrence가 없으면 `--activation-manifest`를 생략한다. 패킷에는 미확인 비활성
+후보가 자동으로 들어가며, 후보와 일치하는 `missing_glossary_target`만
+`glossary_activation_review`로 보낸다. 후보 확인 절차는
+`references/glossary-report-workflow.md`의 "미적용(비활성) 후보 자동 추출"을 따른다.
+
+## 2. 셀 순차 검수와 게이트
 
 ```bash
-python agent-packages/smartthings-translation-agent/scripts/agent_role_prompts.py \
-  --role grammar_fluency --packet packet.json
+python scripts/agent_stage_prompts.py --stage cell --packet packet.json > cell_prompt.txt
+# 한 에이전트가 cell_prompt를 수행해 cell_review.json 저장
+python scripts/agent_stage_gate.py --stage cell_review --packet packet.json \
+  --input cell_review.json --output cell_review.validated.json \
+  --glossary <Glossary.csv> --app-root <app-root>
 ```
 
-5개 호출은 **한 번에 병렬로** 발행한다. 순차 실행하면 지연이 5배가 된다.
+각 셀은 앞 셀 참조 여부와 참조 셀을 반드시 기록한다.
 
-**3. 각 서브에이전트의 의견서를 `<dir>/{role}.json`으로 저장한다.** 발견이 없어도
-`status: "no_findings"`와 빈 `opinions`로 완료 의견서를 남긴다. 대화로만 말하고 파일을 남기지
-않으면 그 역할은 수행되지 않은 것으로 처리된다.
-
-**4. 병합해 v2 리포트와 manifest를 만든다.**
+## 3. 시트 일관성 검수와 게이트
 
 ```bash
-python agent-packages/smartthings-translation-agent/scripts/agent_sheet_merge.py \
-  --packet packet.json --opinions-dir <dir> --workbook <workbook.xlsx> \
-  --report-id <id> --output-dir <out>
+python scripts/agent_stage_prompts.py --stage sheet --packet packet.json \
+  --cell-review cell_review.validated.json > sheet_prompt.txt
+# 별도 에이전트가 sheet_prompt를 수행해 sheet_review.json 저장
+python scripts/agent_stage_gate.py --stage sheet_consistency_review --packet packet.json \
+  --input sheet_review.json --output sheet_review.validated.json \
+  --glossary <Glossary.csv> --app-root <app-root>
 ```
 
-승인된 `changes[]`만 `/st-apply`가 반영한다.
+시트 에이전트는 새 일관성 쟁점을 제시할 수 있지만, 영향받는 모든 셀의 전체 수정문과 통일 기준을
+남겨야 한다.
 
-## 판정 규칙
-
-- 리드 에이전트는 의견서를 요약해 `changes[]`를 만들 수 없다. `review_report_builder`는
-  merge 결과 객체만 받으므로 이 경로는 코드에서 막혀 있다.
-- **한 역할이라도 의견서가 없거나, `packet_id`가 다르거나, 실행이 오류·중단으로 끝나면 시트 상태는
-  `incomplete`다.** 이때는 제안을 하나도 만들지 않고 후보를 전부 `human_review_queue`로 보낸다.
-  재시도하지 않는다.
-- 검수 시점 셀 값과 현재 값이 다르면 그 제안은 `source_drift`로 보류된다.
-- **한 역할의 지지가 다른 역할의 사본에 가까우면 그 지지는 독립으로 세지 않는다.** 남은 독립
-  관점이 2개 미만이면 제안이 되지 않고 `anchored_support_needs_independent_role`로 큐에 간다 —
-  기각이 아니라 제3의 독립 관점을 요구하는 것이다. 정당한 합의라면 다른 역할이 지지한다.
-- 모든 finding에 `row_type`(title/description/disclaimer/button)이 붙고 리포트에 유형별로
-  집계된다. 관점(role) 축과 콘텐츠 유형 축 중 어디로 결함이 뭉치는지 판단할 근거다.
-
-리포트에는 아래 실행 주체를 구분해 기록한다.
-
-- `/st-inspect`: `실행 주체: 프론티어 서브에이전트 5명`
-- app 검수: `실행 주체: app API (모델명)`
-- RAG: `실행 주체: RAG 조회`
-- 최종 판정: `실행 주체: 리드 에이전트`
-
-기존 구조·셀 덤프만 필요하면 다음처럼 사용한다.
+## 4. 리드 통합과 리포트
 
 ```bash
-python agent-packages/smartthings-translation-agent/scripts/workbook_inspect.py \
-  <workbook.xlsx> --sheet "JA(일본)" --sections --json
+python scripts/agent_stage_prompts.py --stage lead --packet packet.json \
+  --cell-review cell_review.validated.json --sheet-review sheet_review.validated.json > lead_prompt.txt
+# 리드가 lead_prompt를 수행해 lead_review.json 저장
+python scripts/agent_staged_merge.py --packet packet.json \
+  --cell-review cell_review.validated.json --sheet-review sheet_review.validated.json \
+  --lead-review lead_review.json --workbook <workbook.xlsx> \
+  --report-id <id> --output-dir <out> --glossary <Glossary.csv> --app-root <app-root>
 ```
+
+리드는 `cell:<cell>` 또는 그 셀을 포함하는 `sheet:<finding_id>` 근거 안에서만 문구를 다듬을 수
+있다. 최종안은 저장 직전에 resolver로 다시 검증한다.
+
+## 강제 규칙
+
+- 세 단계 중 하나라도 누락·중단·packet 불일치면 `incomplete`이며 `changes[]`는 비운다.
+- 패킷에 constraint card가 있으면 `--glossary`와 `--app-root` 없이 게이트·병합할 수 없다.
+- evidence가 없는 셀은 fail-closed다.
+- resolver `blocked`는 어떤 에이전트도 뒤집을 수 없다.
+- `glossary_activation_review`는 사람에게 보이지만 적용 후보가 아니다.
+- 셀 값이 패킷 생성 후 바뀌었으면 `source_drift`로 보류한다.
+- Excel 반영은 사람이 승인한 뒤 `/st-apply`에서만 수행한다.
+
+구조만 확인하려면 `scripts/workbook_inspect.py --sections`를 사용한다.
+
+## 여러 언어를 병렬로 준비할 때
+
+```bash
+python scripts/agent_staged_batch.py prepare <workbook.xlsx> \
+  --sheets "DE(독일)" "FR(프랑스)" "JA(일본)" --work-dir <batch-dir> \
+  --glossary <Glossary.csv> --app-root <app-root> --max-concurrency 3
+```
+
+출력 manifest의 `ready_for_agent`에 있는 언어별 prompt를 병렬 배정한다. 각 언어 결과는 해당 job
+폴더의 `cell_review.json`, `sheet_review.json`, `lead_review.json`에 순서대로 저장하고 매 단계마다
+아래 명령을 실행한다.
+
+```bash
+python scripts/agent_staged_batch.py advance --manifest <batch-dir>/batch_manifest.json
+```
+
+언어 간에는 병렬이지만 한 언어 내부 단계는 순차다. 조정기는 에이전트/LLM을 직접 호출하지 않으며,
+semantic RAG 기본 예산도 시트별 0이다.

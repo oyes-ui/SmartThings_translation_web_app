@@ -527,7 +527,9 @@ class TranslationChecker:
 
 
     # ----------------- LLM Calls -----------------
-    async def check_with_llm_qa(self, source_text, target_text, source_lang, target_lang, target_lang_code, row_key: str = "", constraint_card: dict | None = None):
+    async def check_with_llm_qa(self, source_text, target_text, source_lang, target_lang, target_lang_code,
+                                row_key: str = "", constraint_card: dict | None = None,
+                                pending_activation_candidates: list[dict] | None = None):
         glossary_dict = self._get_glossary_context_as_dict(
             target_lang_code,
             source_text=source_text,
@@ -593,14 +595,44 @@ class TranslationChecker:
             if grade_label:
                 suffix = f" — {grade_desc}" if grade_desc else ""
                 eval_text += f"\n\n최종 평가: {grade_label}{suffix}"
-            if response.get("suggested_fix"):
-                eval_text += f"\n\n[수정안 제안]:\n{response['suggested_fix']}"
+            raw_suggested_fix = response.get("suggested_fix", "")
+            suggestion_validation = None
+            suggested_fix = raw_suggested_fix
+            if raw_suggested_fix and constraint_card is not None:
+                suggestion_validation = self._glossary_checker.validate_audit_suggestion(
+                    raw_suggested_fix, constraint_card,
+                    glossary_context=glossary_dict, row_key=row_key,
+                )
+                violations = suggestion_validation.get("violations") or []
+                pending_terms = {str(item.get("source_term", ""))
+                                 for item in (pending_activation_candidates or [])
+                                 if not item.get("confirmed")}
+                activation_hits = [item for item in violations
+                                   if item.get("reason") == "missing_glossary_target"
+                                   and str(item.get("source_term", "")) in pending_terms]
+                if activation_hits and len(activation_hits) == len(violations) and not suggestion_validation.get("review"):
+                    suggestion_validation["disposition"] = "glossary_activation_review"
+                    suggestion_validation["activation_candidates"] = activation_hits
+                elif suggestion_validation["status"] != "pass":
+                    suggestion_validation["disposition"] = "invalidated_by_hard_constraint"
+                if suggestion_validation["status"] == "pass":
+                    suggested_fix = suggestion_validation["normalized"]
+                    eval_text += f"\n\n[수정안 제안]:\n{suggested_fix}"
+                else:
+                    suggested_fix = ""
+                    reasons = suggestion_validation.get("violations") or suggestion_validation.get("review") or []
+                    eval_text += "\n\n[수정안 resolver 검토 필요]:\n" + json.dumps(
+                        reasons, ensure_ascii=False)
+            elif raw_suggested_fix:
+                eval_text += f"\n\n[수정안 제안]:\n{raw_suggested_fix}"
 
             # 2. Extract JSON payload
             eval_json = json.dumps({
                 "evaluation": eval_list,
                 "grade": grade or "Needs Revision",
-                "suggested_fix": response.get("suggested_fix", "")
+                "suggested_fix": suggested_fix,
+                "raw_suggested_fix": raw_suggested_fix,
+                "suggestion_validation": suggestion_validation,
             }, ensure_ascii=False)
             
             return (eval_text, eval_json)
@@ -828,41 +860,19 @@ class TranslationChecker:
         constraint_card = self.resolve_constraints(
             source, tgt_code, row_key=row_key, story=story, cell=cell_ref,
         )
+        pending_activation_candidates = self._glossary_checker.pending_inactive_candidates(
+            source, story=story or "", cell=cell_ref, target_lang_code=tgt_code, target_text=target)
         constraint_validation = self.validate_constraints(target, constraint_card)
         pre_mismatch = self._precheck_glossary_mismatch(source, target, tgt_code)
         # A deterministic lexical/bracket violation is never delegated to the LLM.
         skip_llm = (self.skip_llm_when_glossary_mismatch and bool(pre_mismatch)) or constraint_validation["status"] == "blocked"
         
-        relevant_terms_for_case = self._get_relevant_glossary_terms(source)
-        glossary_targets_for_case = []
-        for s_term in relevant_terms_for_case:
-            meta = self.glossary.get(s_term)
-            if not meta:
-                continue
-            target_val = self._get_target_val(meta["targets"], tgt_code)
-            if target_val:
-                glossary_targets_for_case.append(target_val)
-
-        case_report, simple_case_fix = self._analyze_sentence_case(target, tgt_lang, glossary_targets_for_case)
-        glossary_case_issues = self._check_glossary_casing(source, target, tgt_code)
-        glossary_bracket_issues = self._check_glossary_brackets(source, target, tgt_code, tgt_lang, row_key=row_key)
-        brand_concat_issues = self._check_brand_concatenation(source, target, tgt_code, tgt_lang)
-        disclaimer_linebreak_issues = self._check_disclaimer_linebreak(source, target, row_key)
-        nav_bracket_leak_issues = self._check_nav_path_bracket_leak(target, row_key)
-
-        # Construct Partial Report Sections
-        case_section = "대소문자 하드룰(문장형) 점검:\n" + case_report if case_report else "별도 지적 사항 없음."
-        if simple_case_fix:
-            case_section += f"\n\n[단순 규칙 기반 문장형 변환안]:\n{simple_case_fix}"
-
-        glossary_parts = []
-        if pre_mismatch: glossary_parts.append("용어집 사전 감지:\n- " + "\n- ".join(pre_mismatch))
-        if glossary_case_issues: glossary_parts.append("용어집 대소문자 표기 점검:\n" + "\n".join(f"- {msg}" for msg in glossary_case_issues))
-        if glossary_bracket_issues: glossary_parts.append("용어집 괄호 규정 점검:\n" + "\n".join(f"- {msg}" for msg in glossary_bracket_issues))
-        if brand_concat_issues: glossary_parts.append("브랜드 띄어쓰기 점검:\n" + "\n".join(f"- {msg}" for msg in brand_concat_issues))
-        if disclaimer_linebreak_issues: glossary_parts.append("디스클레이머 줄바꿈 서식 점검:\n" + "\n".join(f"- {msg}" for msg in disclaimer_linebreak_issues))
-        if nav_bracket_leak_issues: glossary_parts.append("Nav path 표기 변환 점검:\n" + "\n".join(f"- {msg}" for msg in nav_bracket_leak_issues))
-        glossary_section = "\n\n".join(glossary_parts) if glossary_parts else "별도 지적 사항 없음."
+        # Both this path and the agent package's packet builder render these strings
+        # into the same report, so they are composed in one place.
+        sections = self._glossary_checker.deterministic_sections(
+            source, target, tgt_code, tgt_lang, row_key=row_key)
+        case_section = sections["case_section"]
+        glossary_section = sections["glossary_section"]
 
         # RAG consistency check (Post-translation/audit, does not use LLM)
         rag_text = "별도 설정 없음."
@@ -936,7 +946,8 @@ class TranslationChecker:
             # LLM Calls
             qa_task = self._with_semaphore(
                 self.check_with_llm_qa(source, target, source_lang, tgt_lang, tgt_code, row_key=row_key,
-                                       constraint_card=constraint_card)
+                                       constraint_card=constraint_card,
+                                       pending_activation_candidates=pending_activation_candidates)
             )
             
             if self.no_backtranslation:

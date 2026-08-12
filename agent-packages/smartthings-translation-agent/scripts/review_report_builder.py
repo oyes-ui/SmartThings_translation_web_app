@@ -21,6 +21,7 @@ from typing import Any
 import openpyxl
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import agent_app_report  # noqa: E402
 from agent_review_contract import ReviewMergeResult, row_type_for_cell  # noqa: E402
 
 CELL = re.compile(r"^[A-Z]{1,3}[1-9][0-9]*$")
@@ -42,16 +43,19 @@ def _normalise_context(context: dict[str, Any] | None) -> dict[str, Any]:
     context = context or {}
     if not isinstance(context, dict):
         raise ValueError("review context는 객체여야 합니다.")
-    allowed = {"sheet_reviews", "agent_runs", "deterministic_checks", "rag_usage", "human_review_queue"}
+    allowed = {"sheet_reviews", "agent_runs", "deterministic_checks", "rag_usage", "human_review_queue",
+               "stage_reviews", "anchoring_metrics", "cell_evidence"}
     unknown = set(context) - allowed
     if unknown:
         raise ValueError("알 수 없는 review context 필드: " + ", ".join(sorted(unknown)))
-    normalised = {key: context.get(key, [] if key != "rag_usage" else {}) for key in allowed}
-    for key in allowed - {"rag_usage"}:
+    mappings = {"rag_usage", "stage_reviews", "anchoring_metrics", "cell_evidence"}
+    normalised = {key: context.get(key, {} if key in mappings else []) for key in allowed}
+    for key in allowed - mappings:
         if not isinstance(normalised[key], list):
             raise ValueError(f"review context.{key}는 list여야 합니다.")
-    if not isinstance(normalised["rag_usage"], dict):
-        raise ValueError("review context.rag_usage는 객체여야 합니다.")
+    for key in mappings:
+        if not isinstance(normalised[key], dict):
+            raise ValueError(f"review context.{key}는 객체여야 합니다.")
     return normalised
 
 
@@ -111,119 +115,72 @@ def _build_changes(workbook: Path, merged: ReviewMergeResult) -> tuple[list[dict
         wb.close()
 
 
-def _change_block(change: dict) -> str:
-    rules = "\n".join(f"  - {rule}" for rule in change["rule_ids"]) or "  - review-pending"
-    roles = change.get("supporting_roles") or []
-    roles_line = "\n".join(f"  - {role}" for role in roles) or "  - (해당 없음: 결정론적 하드룰)"
-    return f"""### {change['sheet']} · {change['cell']} {{#{change['finding_id'].lower()}}}
-
-```yaml
-finding_id: {change['finding_id']}
-status: needs_revision
-apply_status: pending_approval
-origin: {change.get('origin', 'subjective_consensus')}
-row_type: {change.get('row_type') or '(미분류)'}
-supporting_roles:
-{roles_line}
-rule_ids:
-{rules}
-```
-
-#### 현재 번역문
-
-```text
-{change['before']}
-```
-
-#### 제안 번역문
-
-```text
-{change['after']}
-```
-
-#### 변경 이유
-
-{change['reason'] or '- 규칙/RAG 검토 후 사람 승인 대기'}
-"""
+_GRADE_FOR_STATUS = {
+    "pass": "Pass", "warning": "Needs Revision", "needs_revision": "Needs Revision",
+    "blocked": "Needs Revision", "glossary_activation_review": "Needs Revision",
+}
 
 
-def _opinion_line(opinion: dict) -> str:
-    stance = opinion.get("stance", "-")
-    reason = str(opinion.get("reason", "")).strip().replace("\n", " ")
-    return f"  - `{opinion.get('role', '-')}` ({stance}): {reason or '사유 없음'}"
+def _cell_results(merged: ReviewMergeResult) -> list[dict]:
+    """Per-cell dicts in the shape the app's render_finding consumes.
 
+    Every packet cell appears, reviewed or not: the app's report is a full audit of
+    the sheet, and silently dropping cells the agent said nothing about would make
+    "no finding" indistinguishable from "never looked at".
+    """
+    stage_cells = {}
+    cell_review = (merged.stage_reviews or {}).get("cell_review") or {}
+    for row in cell_review.get("cells", []) or []:
+        stage_cells[str(row.get("cell", "")).upper()] = row
+    proposals = {str(item.get("cell", "")).upper(): item for item in merged.proposals}
+    queued = {str(item.get("cell", "")).upper(): item for item in merged.human_review_queue}
 
-def _markdown(manifest: dict) -> str:
-    context = manifest["review_context"]
-    status = manifest.get("sheet_status", "completed")
-    lines = [
-        "---", "report_schema_version: 2", f"report_id: {manifest['report_id']}",
-        "workflow: agent_sheet_review", "status: draft", f"source_file_id: {manifest['source_file_id']}",
-        f"sheet_status: {status}", f"generated_at: {manifest['generated_at']}", "---", "",
-        "# 번역 검수 리포트", "",
-    ]
-    if status == "incomplete":
-        missing = ", ".join(manifest.get("missing_roles", [])) or "알 수 없음"
-        lines.extend([
-            "> [!warning] 시트 검수 미완료 (`incomplete`)",
-            f"> 의견서가 없거나 근거 패킷과 연결되지 않은 관점: **{missing}**",
-            "> 이 리포트는 수정 제안을 만들지 않습니다. 후보는 모두 사람 검토 큐로 보냈습니다.", "",
-        ])
-    lines.extend(["## 시트 요약", ""])
-    if context["sheet_reviews"]:
-        for review in context["sheet_reviews"]:
-            lines.append(f"- `{review.get('sheet', '-')}`: {review.get('status', 'completed')}")
-    else:
-        lines.append("- 시트 판정 정보 없음")
-    lines.extend(["", "## 결정론적 검사", ""])
-    lines.extend([f"- {item}" for item in context["deterministic_checks"]] or ["- 별도 지적 사항 없음"])
-    rag = context["rag_usage"]
-    lines.extend(["", "## RAG 사용량", "", f"- semantic: {rag.get('semantic_used', 0)} / {rag.get('semantic_budget', 0)}"])
-    if rag.get("semantic_evidence_ids"):
-        lines.append("- 근거 ID: " + ", ".join(rag["semantic_evidence_ids"]))
-    lines.extend(["", "## 관점별 검수", ""])
-    for run in context["agent_runs"]:
-        mark = "✅" if run.get("status") == "completed" else "❌"
-        detail = ", ".join(f"{key}={run[key]}" for key in ("model", "stop_reason", "confidence", "error")
-                           if run.get(key))
-        lines.append(f"- {mark} `{run.get('role', '-')}`: {run.get('status', 'completed')} "
-                     f"(의견 {run.get('opinions', 0)}건)" + (f" — {detail}" if detail else ""))
-    if not context["agent_runs"]:
-        lines.append("- 실행 기록 없음")
-    if manifest.get("anchoring"):
-        lines.extend(["", "## ⚠ 관점 독립성 경고", ""])
-        for item in manifest["anchoring"]:
-            lines.append(f"- {item.get('detail', '-')}")
-        lines.append("")
-        lines.append("독립 근거가 아닐 수 있으므로 해당 관점이 지지한 제안은 사람이 별도 확인해야 합니다.")
-    counts = manifest.get("row_type_counts") or {}
-    if counts:
-        lines.extend(["", "## 콘텐츠 유형별 finding", ""])
-        for row_type in ("title", "description", "disclaimer", "button", ""):
-            tally = counts.get(row_type or "(미분류)")
-            if tally:
-                lines.append(f"- `{row_type or '(미분류)'}`: 제안 {tally['changes']}건 / "
-                             f"검토 필요 {tally['queue']}건")
-    lines.extend(["", "## 사람 검토 필요", ""])
-    if context["human_review_queue"]:
-        for item in context["human_review_queue"]:
-            lines.append(f"- `{item.get('sheet', '-')}` `{item.get('cell', '-')}` "
-                         f"[{item.get('finding_id', '-')}]: {item.get('reason', '-')}")
-            if item.get("detail"):
-                lines.append(f"  - {item['detail']}")
-            for opinion in item.get("opinions", []):
-                lines.append(_opinion_line(opinion))
-    else:
-        lines.append("- 없음")
-    lines.extend(["", "## 셀 수정 제안", "", f"- 수정 제안: {len(manifest['changes'])}건", "- 적용 상태: 모두 `pending_approval`", ""])
-    lines.extend(_change_block(change) for change in manifest["changes"])
-    if not manifest["changes"]:
-        lines.append("- 제안 없음. 원본 workbook은 변경되지 않았습니다.\n")
-    return "\n".join(lines)
+    evidence_by_cell = dict(merged.cell_evidence or {})
+    # A cell the merge has an opinion about must appear even when the packet carried
+    # no deterministic evidence for it; otherwise a proposal silently disappears from
+    # the report while still sitting in the manifest.
+    for cell in [*proposals, *queued, *stage_cells]:
+        evidence_by_cell.setdefault(cell, {"cell": cell, "target_text": merged.cell_snapshot.get(cell, "")})
+
+    results = []
+    for cell in sorted(evidence_by_cell, key=lambda value: (len(value), value)):
+        evidence = evidence_by_cell[cell]
+        row = stage_cells.get(cell, {})
+        status = str(row.get("status") or "")
+        proposal = proposals.get(cell)
+        # The applyable proposal wins over the cell agent's draft: it is what
+        # survived the resolver gate, and the report must not advertise text the
+        # manifest will not apply.
+        suggested = str((proposal or {}).get("after") or row.get("after") or "")
+        if not proposal and cell in queued:
+            suggested = ""
+        evaluation = [entry for entry in row.get("evaluation", []) if isinstance(entry, dict)]
+        if not evaluation and row.get("reason"):
+            evaluation = [{"category": "에이전트 검수", "comment": row["reason"]}]
+
+        # render_finding derives apply_status from constraint_validation, so it must
+        # describe the *proposal* — the packet's validation describes the text as it
+        # stands today. Feeding the latter made the report say not_applicable for
+        # changes the manifest was shipping as pending_approval.
+        queue_item = queued.get(cell)
+        if proposal:
+            validation = {"status": "pass"}
+        elif queue_item and queue_item.get("resolver_status"):
+            validation = {"status": queue_item["resolver_status"],
+                          "blocked": queue_item.get("resolver_violations") or []}
+        else:
+            validation = evidence.get("constraint_validation") or {}
+        grade = _GRADE_FOR_STATUS.get(status) or ("Needs Revision" if proposal or queue_item else "Pass")
+        results.append(agent_app_report.build_cell_result(
+            {**evidence, "constraint_validation": validation}, sheet=merged.sheet,
+            grade=grade, evaluation=evaluation, suggested_fix=suggested,
+            ai_text=str(row.get("reason") or ""),
+        ))
+    return results
 
 
 def build_review_artifacts(workbook, merged: ReviewMergeResult, *, report_id, source_file_id,
-                           deterministic_checks=None, rag_usage=None):
+                           deterministic_checks=None, rag_usage=None, app_root=None):
     """Build the v2 report and manifest from a merge result.
 
     ``merged`` must be a ReviewMergeResult — passing a list raises TypeError.
@@ -252,6 +209,9 @@ def build_review_artifacts(workbook, merged: ReviewMergeResult, *, report_id, so
         "deterministic_checks": list(deterministic_checks or []),
         "rag_usage": dict(rag_usage or {}),
         "human_review_queue": queue,
+        "stage_reviews": merged.stage_reviews,
+        "anchoring_metrics": merged.anchoring_metrics,
+        "cell_evidence": merged.cell_evidence,
     }
     manifest = {
         "manifest_schema_version": 2,
@@ -260,13 +220,31 @@ def build_review_artifacts(workbook, merged: ReviewMergeResult, *, report_id, so
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "packet_id": merged.packet_id,
         "sheet_status": merged.sheet_status,
+        "resolver_gate": merged.resolver_gate,
         "missing_roles": merged.missing_roles,
         "anchoring": merged.anchoring,
         "row_type_counts": row_type_counts,
         "changes": changes,
         "review_context": _normalise_context(review_context),
     }
-    return manifest, _markdown(manifest)
+    # Rendered by the app, never here: one workbook must not produce two differently
+    # shaped reports depending on which path reviewed it.
+    summary = [
+        f"검수 시트: `{merged.sheet}` (상태: `{merged.sheet_status}`)",
+        f"수정 제안: {len(changes)}건 — 모두 `pending_approval`",
+        f"사람 검토 필요: {len(queue)}건",
+        f"제안문 resolver 재검증: `{merged.resolver_gate}`",
+    ]
+    markdown = agent_app_report.render_through_app(
+        app_root,
+        title=f"에이전트 검수 리포트 — {merged.sheet}",
+        report_id=report_id, source_file_id=source_file_id,
+        results=_cell_results(merged), summary_lines=summary,
+        agent_notes=agent_app_report.notes_from_merge(merged, manifest),
+        extra_front_matter={"packet_id": merged.packet_id, "sheet_status": merged.sheet_status,
+                            "resolver_gate": merged.resolver_gate},
+    )
+    return manifest, markdown
 
 
 def write_artifacts(manifest: dict, markdown: str, output_dir, report_id) -> dict[str, str]:

@@ -47,6 +47,7 @@ gemini.md
 
 # 7. SmartThings 번역 에이전트 — 스토리별 1회성 실행 산출물/스크립트 (재사용 목적 아님)
 agent-packages/smartthings-translation-agent/.codex/
+agent-packages/smartthings-translation-agent/node_modules
 agent-packages/smartthings-translation-agent/outputs/
 agent-packages/smartthings-translation-agent/story_*_approved_edits.json
 agent-packages/smartthings-translation-agent/cn_*_approved_edits.json
