@@ -87,6 +87,23 @@ class ActivationCandidateTests(unittest.TestCase):
             unused = _scan(tmp, {8: ("a safe home", "un hogar seguro")})[0]
             self.assertFalse(unused["evidence"]["target_uses_glossary_term"])
 
+    def test_the_decision_does_not_depend_on_the_target_locale(self):
+        """Whether the source word is the product term is a fact about the source.
+
+        One confirmation therefore serves every target sheet in the source group;
+        the target sheet only ever supplies corroboration for the reviewer.
+        """
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            rows = {7: ("The comfort of a safe home", "La comodidad de un hogar seguro")}
+            checker = _Checker({"Safe": "Safe"})
+            workbook = _workbook(tmp, rows)
+            with_locale = find_candidates(checker, workbook, "US(미국)", "CO(콜롬비아)", "스페인어_콜롬비아")
+            without = find_candidates(checker, workbook, "US(미국)")
+            self.assertEqual(to_activation_entries(with_locale, confirmed_only=False),
+                             to_activation_entries(without, confirmed_only=False))
+            self.assertEqual(without[0]["evidence"]["glossary_target"], "")
+
     def test_only_confirmed_candidates_become_activation_entries(self):
         """A candidate is a question. Deactivating a term nobody checked drops translations."""
         candidates = [

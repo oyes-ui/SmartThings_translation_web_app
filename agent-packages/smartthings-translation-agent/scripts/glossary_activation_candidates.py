@@ -39,6 +39,8 @@ POLICY = [
     "A glossary key carrying an uppercase letter is a product/feature term.",
     "Every occurrence of that term in the cell must be lowercase to qualify — activation is keyed by (story, cell, term), so one capitalised use keeps the whole cell active.",
     "A candidate is not a decision. Only entries with confirmed: true become activation entries.",
+    "The decision is a property of the source wording, not of any target language: emitted entries carry no locale, and one confirmation serves every target sheet in the same source group.",
+    "It does not carry across source groups. Letter case is the signal, so a KR-source sheet (US/JA/CN/TW) needs its own pass against Korean source text.",
     "Excel and the master glossary are read-only inputs.",
 ]
 
@@ -48,9 +50,14 @@ def _story_of(name: str) -> str:
     return match.group(1) if match else ""
 
 
-def find_candidates(checker, workbook: Path, source_sheet: str, target_sheet: str,
-                    target_code: str) -> list[dict[str, Any]]:
-    """One candidate per (story, cell, term) whose source use is entirely lowercase."""
+def find_candidates(checker, workbook: Path, source_sheet: str, target_sheet: str | None = None,
+                    target_code: str | None = None) -> list[dict[str, Any]]:
+    """One candidate per (story, cell, term) whose source use is entirely lowercase.
+
+    The target sheet is optional and only ever supplies corroborating evidence for
+    the reviewer. Nothing that reaches an activation entry depends on it, which is
+    what lets one confirmation serve every locale in the source group.
+    """
     import openpyxl
 
     story = _story_of(workbook.name)
@@ -59,7 +66,7 @@ def find_candidates(checker, workbook: Path, source_sheet: str, target_sheet: st
         if source_sheet not in wb.sheetnames:
             return []
         source_ws = wb[source_sheet]
-        target_ws = wb[target_sheet] if target_sheet in wb.sheetnames else None
+        target_ws = wb[target_sheet] if target_sheet and target_sheet in wb.sheetnames else None
         entries = []
         for row in range(CONTENT_ROW_START, CONTENT_ROW_END + 1):
             source = str(source_ws.cell(row, 3).value or "")
@@ -77,7 +84,8 @@ def find_candidates(checker, workbook: Path, source_sheet: str, target_sheet: st
                     continue  # an all-lowercase glossary key says nothing about usage
                 if not all(surface.islower() for surface in found):
                     continue  # the feature name appears capitalised somewhere in this cell
-                target_term = checker._get_target_val(checker.glossary[key]["targets"], target_code)
+                target_term = (checker._get_target_val(checker.glossary[key]["targets"], target_code)
+                               if target_code else "")
                 entries.append({
                     "story": story, "cell": f"C{row}", "source_term": key,
                     "active": False, "activation_basis": BASIS,
@@ -130,7 +138,7 @@ def markdown_review(candidates: list[dict[str, Any]]) -> str:
 
 
 async def collect(workbooks: list[Path], glossary: Path, app_root: Path, *,
-                  source_sheet: str, target_sheet: str) -> list[dict[str, Any]]:
+                  source_sheet: str, target_sheet: str | None) -> list[dict[str, Any]]:
     ap.bootstrap_project(str(app_root))
     from translation_web_app.glossary_checks import GlossaryChecker
     from translation_web_app.prompt_builder import PromptBuilder
@@ -141,7 +149,7 @@ async def collect(workbooks: list[Path], glossary: Path, app_root: Path, *,
     if not loaded.startswith("✓"):
         raise RuntimeError(f"glossary 로드 실패: {loaded}")
     checker._compile_glossary_re()
-    target_code = ap.DEFAULT_SHEET_LANGS[target_sheet]["code"]
+    target_code = ap.DEFAULT_SHEET_LANGS[target_sheet]["code"] if target_sheet else None
     candidates: list[dict[str, Any]] = []
     for workbook in workbooks:
         candidates.extend(find_candidates(checker, workbook, source_sheet, target_sheet, target_code))
@@ -154,7 +162,9 @@ def main() -> None:
     parser.add_argument("--glossary", type=Path, required=True)
     parser.add_argument("--app-root", type=Path)
     parser.add_argument("--source-sheet", default="US(미국)")
-    parser.add_argument("--target-sheet", required=True, help="예: CO(콜롬비아)")
+    parser.add_argument("--target-sheet",
+                        help="검토 근거로 번역문을 함께 보여줄 시트(선택). 판정에는 쓰이지 않으며 "
+                             "결과는 같은 source group의 모든 로케일에 그대로 쓴다")
     parser.add_argument("--output", type=Path, help="후보 JSON 출력 경로")
     parser.add_argument("--review-markdown", type=Path, help="사람 검토용 Markdown 출력 경로")
     parser.add_argument("--emit-manifest", type=Path,
@@ -175,6 +185,9 @@ def main() -> None:
                 paths, args.glossary.expanduser(), args.app_root,
                 source_sheet=args.source_sheet, target_sheet=args.target_sheet))
         payload = {"schema_version": SCHEMA_VERSION, "kind": KIND, "policy": POLICY,
+                   "scope": {"source_sheet": args.source_sheet,
+                             "applies_to": f"{args.source_sheet} source group의 모든 target 시트",
+                             "evidence_target_sheet": args.target_sheet or None},
                    "summary": {"candidates": len(candidates),
                                "confirmed": sum(1 for item in candidates if item.get("confirmed")),
                                "terms": len({item["source_term"] for item in candidates})},
@@ -188,7 +201,8 @@ def main() -> None:
             entries = to_activation_entries(candidates)
             ap.write_text_atomic(args.emit_manifest.expanduser(), json.dumps(
                 {"schema_version": SCHEMA_VERSION, "kind": "occurrence_activation_manifest",
-                 "policy": POLICY, "entries": entries}, ensure_ascii=False, indent=2) + "\n")
+                 "policy": POLICY, "scope": payload["scope"], "entries": entries},
+                ensure_ascii=False, indent=2) + "\n")
             payload["summary"]["emitted_manifest_entries"] = len(entries)
         print(json.dumps({"status": "ok", **payload["summary"]}, ensure_ascii=False, indent=2))
     except Exception as error:
