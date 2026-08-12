@@ -32,6 +32,10 @@ def _res(**overrides):
             {"grade": "Needs Revision", "suggested_fix": "Mit SmartThings wird es einfacher."},
             ensure_ascii=False,
         ),
+        # A suggestion only counts as applyable once the resolver has cleared it
+        # (49a6a5c). Without this the cell renders `not_applicable`, which is the
+        # correct answer for "constraints were never checked here".
+        "constraint_validation": {"status": "pass"},
     }
     base.update(overrides)
     return base
@@ -130,14 +134,13 @@ class FindingTests(unittest.TestCase):
         self.assertIn("##### AI 검수 결과\n\n```text\n[Bypassed: Translate Only Mode]\n```", out)
 
     def test_payload_sections_collapse_by_default_in_raw_markdown(self):
-        """Folding must live in the .md itself (native <details>, no `open`
-        attribute) -- app.js's old client-side wrapping only ever affected the
-        web viewer, never a report opened directly in Obsidian."""
+        """Folding must live in the .md itself, so a report opened directly in
+        Obsidian is collapsed without any viewer-side scripting. The mechanism is
+        now the callout's own `-` fold marker rather than raw <details> (49a6a5c)."""
         out = render_finding(_res())
-        self.assertIn("#### 원본 검수 Payload\n\n<details>\n<summary>", out)
-        self.assertIn("#### RAG Payload\n\n<details>\n<summary>", out)
-        self.assertNotIn("<details open>", out)
-        self.assertNotIn('<details open="', out)
+        self.assertIn("#### 원본 검수 Payload\n\n> [!example]- ", out)
+        self.assertIn("#### RAG Payload\n\n> [!example]- ", out)
+        self.assertNotIn("[!example]+", out)  # `+` would render expanded
 
     def test_rag_cases_render_as_separate_fences_not_merged(self):
         """Two RAG matches must be two independent fenced blocks inside the
