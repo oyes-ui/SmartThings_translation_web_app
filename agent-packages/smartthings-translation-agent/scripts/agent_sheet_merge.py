@@ -9,6 +9,7 @@ The original workbook is never modified.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import sys
 from pathlib import Path
@@ -45,12 +46,27 @@ def resolver_validator(packet: dict[str, Any], glossary: Path, app_root: Path, s
     by_cell = {item.get("cell"): item for item in packet.get("deterministic_evidence") or []
                if isinstance(item, dict)}
 
+    def constraint_card_for_validation(evidence: dict[str, Any]) -> dict[str, Any]:
+        """Restore tuple-valued resolver fields after the packet's JSON round trip.
+
+        ``TermConstraint`` accepts the serialized list, but the current app resolver
+        concatenates ``no_bracket_reasons`` with a tuple.  The agent packet is a
+        durable JSON hand-off, so normalize only the adapter copy and never mutate
+        the packet evidence supplied to later stages.
+        """
+        card = copy.deepcopy(evidence.get("constraint_card") or {})
+        for term in card.get("terms") or []:
+            reasons = term.get("no_bracket_reasons")
+            if isinstance(reasons, list):
+                term["no_bracket_reasons"] = tuple(reasons)
+        return card
+
     def validate(cell: str, after: str) -> dict[str, Any] | None:
         evidence = by_cell.get(cell)
         if not evidence or not after:
             return None
         return checker.validate_audit_suggestion(
-            after, evidence.get("constraint_card") or {},
+            after, constraint_card_for_validation(evidence),
             glossary_context=evidence.get("glossary_context"),
             row_key=evidence.get("row_type", ""),
         )
@@ -99,9 +115,9 @@ def main() -> None:
     args = parser.parse_args()
     try:
         packet = json.loads(Path(args.packet).expanduser().read_text(encoding="utf-8"))
-        if packet.get("review_mode") == "lead_2pass":
+        if packet.get("review_mode") != "multi_agent":
             raise ValueError(
-                "이 시트는 5개 관점 병렬 검수로 승인되지 않았습니다(review_mode=lead_2pass). "
+                "이 시트는 legacy 5개 관점 병렬 검수 패킷이 아닙니다. "
                 "agent_sheet_review.py를 --multi-agent로 실행해 승인 패킷을 먼저 만드세요."
             )
         packet_id = str(packet.get("packet_id", ""))

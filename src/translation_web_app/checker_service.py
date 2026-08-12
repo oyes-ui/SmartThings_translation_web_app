@@ -527,7 +527,9 @@ class TranslationChecker:
 
 
     # ----------------- LLM Calls -----------------
-    async def check_with_llm_qa(self, source_text, target_text, source_lang, target_lang, target_lang_code, row_key: str = "", constraint_card: dict | None = None):
+    async def check_with_llm_qa(self, source_text, target_text, source_lang, target_lang, target_lang_code,
+                                row_key: str = "", constraint_card: dict | None = None,
+                                pending_activation_candidates: list[dict] | None = None):
         glossary_dict = self._get_glossary_context_as_dict(
             target_lang_code,
             source_text=source_text,
@@ -593,14 +595,44 @@ class TranslationChecker:
             if grade_label:
                 suffix = f" — {grade_desc}" if grade_desc else ""
                 eval_text += f"\n\n최종 평가: {grade_label}{suffix}"
-            if response.get("suggested_fix"):
-                eval_text += f"\n\n[수정안 제안]:\n{response['suggested_fix']}"
+            raw_suggested_fix = response.get("suggested_fix", "")
+            suggestion_validation = None
+            suggested_fix = raw_suggested_fix
+            if raw_suggested_fix and constraint_card is not None:
+                suggestion_validation = self._glossary_checker.validate_audit_suggestion(
+                    raw_suggested_fix, constraint_card,
+                    glossary_context=glossary_dict, row_key=row_key,
+                )
+                violations = suggestion_validation.get("violations") or []
+                pending_terms = {str(item.get("source_term", ""))
+                                 for item in (pending_activation_candidates or [])
+                                 if not item.get("confirmed")}
+                activation_hits = [item for item in violations
+                                   if item.get("reason") == "missing_glossary_target"
+                                   and str(item.get("source_term", "")) in pending_terms]
+                if activation_hits and len(activation_hits) == len(violations) and not suggestion_validation.get("review"):
+                    suggestion_validation["disposition"] = "glossary_activation_review"
+                    suggestion_validation["activation_candidates"] = activation_hits
+                elif suggestion_validation["status"] != "pass":
+                    suggestion_validation["disposition"] = "invalidated_by_hard_constraint"
+                if suggestion_validation["status"] == "pass":
+                    suggested_fix = suggestion_validation["normalized"]
+                    eval_text += f"\n\n[수정안 제안]:\n{suggested_fix}"
+                else:
+                    suggested_fix = ""
+                    reasons = suggestion_validation.get("violations") or suggestion_validation.get("review") or []
+                    eval_text += "\n\n[수정안 resolver 검토 필요]:\n" + json.dumps(
+                        reasons, ensure_ascii=False)
+            elif raw_suggested_fix:
+                eval_text += f"\n\n[수정안 제안]:\n{raw_suggested_fix}"
 
             # 2. Extract JSON payload
             eval_json = json.dumps({
                 "evaluation": eval_list,
                 "grade": grade or "Needs Revision",
-                "suggested_fix": response.get("suggested_fix", "")
+                "suggested_fix": suggested_fix,
+                "raw_suggested_fix": raw_suggested_fix,
+                "suggestion_validation": suggestion_validation,
             }, ensure_ascii=False)
             
             return (eval_text, eval_json)
@@ -828,6 +860,8 @@ class TranslationChecker:
         constraint_card = self.resolve_constraints(
             source, tgt_code, row_key=row_key, story=story, cell=cell_ref,
         )
+        pending_activation_candidates = self._glossary_checker.pending_inactive_candidates(
+            source, story=story or "", cell=cell_ref, target_lang_code=tgt_code, target_text=target)
         constraint_validation = self.validate_constraints(target, constraint_card)
         pre_mismatch = self._precheck_glossary_mismatch(source, target, tgt_code)
         # A deterministic lexical/bracket violation is never delegated to the LLM.
@@ -936,7 +970,8 @@ class TranslationChecker:
             # LLM Calls
             qa_task = self._with_semaphore(
                 self.check_with_llm_qa(source, target, source_lang, tgt_lang, tgt_code, row_key=row_key,
-                                       constraint_card=constraint_card)
+                                       constraint_card=constraint_card,
+                                       pending_activation_candidates=pending_activation_candidates)
             )
             
             if self.no_backtranslation:

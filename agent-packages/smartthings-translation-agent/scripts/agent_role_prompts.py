@@ -173,10 +173,10 @@ def build_role_prompt(role: str, packet: dict[str, Any]) -> str:
         raise ValueError(f"알 수 없는 검수 관점: {role!r}")
     if not isinstance(packet, dict) or packet.get("kind") != "agent_sheet_review_packet":
         raise ValueError("packet은 agent_sheet_review.py가 만든 근거 패킷이어야 합니다.")
-    if packet.get("review_mode") == "lead_2pass":
+    if packet.get("review_mode") != "multi_agent":
         raise ValueError(
-            "이 시트는 5개 관점 병렬 검수로 승인되지 않았습니다(review_mode=lead_2pass). "
-            "기본 경로는 리드 에이전트 2-pass이며, escalation이 필요하면 "
+            "이 시트는 5개 관점 병렬 검수로 승인되지 않았습니다. "
+            "기본 경로는 cell→sheet→lead이며, legacy escalation이 필요하면 "
             "agent_sheet_review.py를 --multi-agent로 다시 실행해 승인 패킷을 만드세요."
         )
     brief = ROLE_BRIEFS[role]

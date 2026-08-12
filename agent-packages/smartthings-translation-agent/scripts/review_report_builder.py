@@ -42,16 +42,19 @@ def _normalise_context(context: dict[str, Any] | None) -> dict[str, Any]:
     context = context or {}
     if not isinstance(context, dict):
         raise ValueError("review context는 객체여야 합니다.")
-    allowed = {"sheet_reviews", "agent_runs", "deterministic_checks", "rag_usage", "human_review_queue"}
+    allowed = {"sheet_reviews", "agent_runs", "deterministic_checks", "rag_usage", "human_review_queue",
+               "stage_reviews", "anchoring_metrics", "cell_evidence"}
     unknown = set(context) - allowed
     if unknown:
         raise ValueError("알 수 없는 review context 필드: " + ", ".join(sorted(unknown)))
-    normalised = {key: context.get(key, [] if key != "rag_usage" else {}) for key in allowed}
-    for key in allowed - {"rag_usage"}:
+    mappings = {"rag_usage", "stage_reviews", "anchoring_metrics", "cell_evidence"}
+    normalised = {key: context.get(key, {} if key in mappings else []) for key in allowed}
+    for key in allowed - mappings:
         if not isinstance(normalised[key], list):
             raise ValueError(f"review context.{key}는 list여야 합니다.")
-    if not isinstance(normalised["rag_usage"], dict):
-        raise ValueError("review context.rag_usage는 객체여야 합니다.")
+    for key in mappings:
+        if not isinstance(normalised[key], dict):
+            raise ValueError(f"review context.{key}는 객체여야 합니다.")
     return normalised
 
 
@@ -210,6 +213,43 @@ def _markdown(manifest: dict) -> str:
     if gate == "not_run":
         lines.append("- ⚠ 이 리포트의 제안은 앱 resolver로 재검증되지 않았습니다. "
                      "용어집 위반이 걸러지지 않았을 수 있습니다.")
+    stages = context.get("stage_reviews") or {}
+    if stages:
+        metrics = context.get("anchoring_metrics") or {}
+        lines.extend(["", "## 셀 순차 검수 자기 참조", "",
+                      f"- 앞 셀 참조: {metrics.get('referenced_cells', 0)} / {metrics.get('reviewed_cells', 0)}",
+                      f"- 참조율: {metrics.get('reference_rate', 0):.1%}",
+                      "- 참조된 셀: " + (", ".join(metrics.get("prior_cell_refs", [])) or "없음"),
+                      "", "## 셀 검수", ""])
+        cell_rows = {str(row.get("cell", "")).upper(): row
+                     for row in stages.get("cell_review", {}).get("cells", [])}
+        lead_rows = {str(row.get("cell", "")).upper(): row
+                     for row in stages.get("lead_review", {}).get("decisions", [])}
+        sheet_issues = stages.get("sheet_consistency_review", {}).get("issues", [])
+        staged_sheet = context.get("sheet_reviews", [{}])[0].get("sheet", "-")
+        for cell, evidence in (context.get("cell_evidence") or {}).items():
+            cell_row, lead = cell_rows.get(cell, {}), lead_rows.get(cell, {})
+            related = [issue for issue in sheet_issues if cell in issue.get("affected_cells", [])]
+            lines.extend([
+                f"### {staged_sheet} · {cell}", "",
+                "> [!quote] 원문", "> ```text", *[f"> {line}" for line in str(evidence.get("source_text", "")).splitlines()], "> ```", "",
+                "> [!note] 현재 번역문", "> ```text", *[f"> {line}" for line in str(evidence.get("target_text", "")).splitlines()], "> ```", "",
+                f"> [!info] 셀 검수 — `{cell_row.get('status', 'missing')}`",
+                f"> {cell_row.get('reason', '결과 없음')}", "",
+                f"> [!example]- 시트 일관성 의견 ({len(related)}건)",
+            ])
+            if related:
+                for issue in related:
+                    lines.append(f"> - `{issue.get('finding_id', '-')}`: {issue.get('reason', '-')}")
+            else:
+                lines.append("> - 없음")
+            lines.extend(["", f"> [!tip] 리드 최종 판정 — `{lead.get('status', 'missing')}`",
+                          f"> {lead.get('reason', '결과 없음')}", ""])
+            if lead.get("after"):
+                lines.extend(["> [!tip] 제안 번역문", "> ```text",
+                              *[f"> {line}" for line in str(lead["after"]).splitlines()], "> ```", ""])
+            resolver_status = lead.get("resolver_status") or cell_row.get("resolver_status") or "not_applicable"
+            lines.extend([f"- resolver: `{resolver_status}`", ""])
     lines.extend(["", "## 사람 검토 필요", ""])
     if context["human_review_queue"]:
         for item in context["human_review_queue"]:
@@ -264,6 +304,9 @@ def build_review_artifacts(workbook, merged: ReviewMergeResult, *, report_id, so
         "deterministic_checks": list(deterministic_checks or []),
         "rag_usage": dict(rag_usage or {}),
         "human_review_queue": queue,
+        "stage_reviews": merged.stage_reviews,
+        "anchoring_metrics": merged.anchoring_metrics,
+        "cell_evidence": merged.cell_evidence,
     }
     manifest = {
         "manifest_schema_version": 2,

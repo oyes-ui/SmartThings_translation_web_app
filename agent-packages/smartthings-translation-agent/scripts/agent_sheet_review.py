@@ -40,7 +40,7 @@ def _row_key(row: int) -> str:
 
 async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: str,
                               glossary: Path, app_root: Path,
-                              activation_manifest: Path | None = None) -> list[dict[str, Any]]:
+                              activation_manifest: Path | None = None):
     app_root = ap.bootstrap_project(str(app_root))
     from translation_web_app.glossary_checks import GlossaryChecker
     from translation_web_app.prompt_builder import PromptBuilder
@@ -82,6 +82,7 @@ async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: s
                                                story=story, cell=f"C{row}")
             validation = checker.validate_constraints(target, card)
             evidence.append({"cell": f"C{row}", "row_type": _row_key(row),
+                             "source_text": source, "target_text": target,
                              "hard_rule_issues": issues,
                              "sentence_case_report": case_report or None,
                              "simple_case_fix": simple_fix or None,
@@ -93,7 +94,11 @@ async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: s
                              "glossary_context": checker._get_glossary_context_as_dict(
                                  target_info["code"], source_text=source,
                                  skip_deactivated=True, row_key=_row_key(row))})
-        return evidence, HARD_CONSTRAINT_PREAMBLE
+        from glossary_activation_candidates import find_candidates
+        checker._compile_glossary_re()
+        activation_candidates = find_candidates(
+            checker, workbook, source_sheet, target_sheet, target_info["code"])
+        return evidence, HARD_CONSTRAINT_PREAMBLE, activation_candidates
     finally:
         wb.close()
 
@@ -129,7 +134,8 @@ def _packet_id(packet: dict[str, Any]) -> str:
     """
     evidence = {key: packet[key] for key in (
         "workbook_name", "target_sheet", "source_sheet", "target_sections", "source_sections",
-        "deterministic_evidence", "candidate_overlay", "cell_snapshot", "hard_constraint_preamble",
+        "deterministic_evidence", "activation_candidates", "candidate_overlay", "cell_snapshot",
+        "hard_constraint_preamble",
     )}
     canonical = json.dumps(evidence, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
@@ -148,9 +154,10 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
     source_sheet = _source_sheet_for(sheet, inspect["sheet_names"])
     source = inspect_workbook(workbook, source_sheet, None, with_sections=True)["sheets"][source_sheet]
     deterministic: list[dict[str, Any]] = []
+    activation_candidates: list[dict[str, Any]] = []
     preamble = ""
     if glossary and app_root:
-        deterministic, preamble = await _hard_rule_evidence(
+        deterministic, preamble, activation_candidates = await _hard_rule_evidence(
             workbook, source_sheet, sheet, glossary, app_root,
             activation_manifest=activation_manifest)
     elif glossary or app_root:
@@ -177,6 +184,8 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
         "cell_snapshot": _cell_snapshot(workbook, sheet),
         "deterministic_evidence": deterministic,
         "deterministic_evidence_status": "available" if deterministic else "not_loaded",
+        "activation_candidates": activation_candidates,
+        "activation_candidates_status": "available" if deterministic else "not_loaded",
         # The app's own wording for "this card outranks everything else", carried
         # verbatim so every specialist reads the same authority the app's translate
         # and audit prompts state.
@@ -190,7 +199,7 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
         # The five-role split is an escalation, not the default: the roles appear
         # only when the user approved this sheet for it, so an unsure lead cannot
         # quietly pick the five-times-slower path.
-        "review_mode": "multi_agent" if multi_agent else "lead_2pass",
+        "review_mode": "multi_agent" if multi_agent else "staged_cell_sheet_lead",
         "subagent_roles": list(SPECIALIST_ROLES) if multi_agent else [],
         "semantic_rag_budget": semantic_rag_budget,
         "hard_rule_policy": "resolver_card_required; proposals_must_be_validated_before_merge",

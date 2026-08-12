@@ -125,6 +125,9 @@ class ReviewMergeResult:
     cell_snapshot: dict[str, str] = field(default_factory=dict)
     anchoring: list[dict[str, Any]] = field(default_factory=list)
     resolver_gate: str = "not_run"
+    stage_reviews: dict[str, Any] = field(default_factory=dict)
+    anchoring_metrics: dict[str, Any] = field(default_factory=dict)
+    cell_evidence: dict[str, dict[str, Any]] = field(default_factory=dict)
 
 
 # Only these mean the specialist finished on its own terms; a truncated or errored
@@ -258,7 +261,8 @@ def merge_subjective_opinions(opinions: list[dict[str, Any]], *, packet: dict[st
     )
 
 
-def apply_resolver_gate(merged: ReviewMergeResult, validate) -> ReviewMergeResult:
+def apply_resolver_gate(merged: ReviewMergeResult, validate, *, activation_candidates=None,
+                        fail_closed: bool = False, strict_reasons: bool = False) -> ReviewMergeResult:
     """Re-check every proposed text against the deterministic card before it ships.
 
     The specialists reported their own ``constraint_status``; that is self-attestation,
@@ -272,21 +276,46 @@ def apply_resolver_gate(merged: ReviewMergeResult, validate) -> ReviewMergeResul
     A repaired text replaces the proposal; anything the resolver still refuses goes to
     the human queue rather than being rewritten into compliance.
     """
+    candidates = {(str(item.get("cell", "")).upper(), str(item.get("source_term", "")))
+                  for item in (activation_candidates or [])
+                  if isinstance(item, dict) and not item.get("confirmed")}
     kept, queued = [], list(merged.human_review_queue)
     blocked_count = 0
     for proposal in merged.proposals:
         verdict = validate(proposal.get("cell", ""), proposal.get("after", ""))
         if not verdict:
-            kept.append(proposal)
+            if fail_closed:
+                blocked_count += 1
+                queued.append({
+                    "finding_id": proposal.get("finding_id", ""), "sheet": proposal.get("sheet", ""),
+                    "cell": proposal.get("cell", ""), "row_type": proposal.get("row_type", ""),
+                    "reason": "missing_constraint_evidence", "rejected_after": proposal.get("after", ""),
+                    "resolver_status": "blocked", "resolver_violations": [], "opinions": [],
+                })
+            else:
+                kept.append(proposal)
             continue
         if verdict.get("blocked") or verdict.get("status") not in {"pass", None}:
             blocked_count += 1
+            violations = list(verdict.get("violations") or [])
+            review = list(verdict.get("review") or [])
+            cell = str(proposal.get("cell", "")).upper()
+            activation_hits = [item for item in violations
+                               if item.get("reason") == "missing_glossary_target"
+                               and (cell, str(item.get("source_term", ""))) in candidates]
+            activation_only = bool(activation_hits) and len(activation_hits) == len(violations) and not review
+            if activation_only:
+                reason, resolver_status = "glossary_activation_review", "human_review"
+            elif strict_reasons:
+                reason, resolver_status = "invalidated_by_hard_constraint", verdict.get("status", "blocked")
+            else:
+                reason, resolver_status = "blocked_by_resolver_revalidation", verdict.get("status", "")
             queued.append({
                 "finding_id": proposal.get("finding_id", ""), "sheet": proposal.get("sheet", ""),
                 "cell": proposal.get("cell", ""), "row_type": proposal.get("row_type", ""),
-                "reason": "blocked_by_resolver_revalidation",
-                "resolver_status": verdict.get("status", ""),
-                "resolver_violations": verdict.get("violations") or verdict.get("review") or [],
+                "reason": reason, "resolver_status": resolver_status,
+                "resolver_violations": violations or review,
+                "activation_candidates": activation_hits,
                 "rejected_after": proposal.get("after", ""),
                 "opinions": [],
             })
