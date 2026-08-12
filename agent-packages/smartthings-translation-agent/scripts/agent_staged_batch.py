@@ -206,7 +206,8 @@ def advance_job(job: dict[str, Any], manifest: dict[str, Any]) -> dict[str, Any]
         report_id = f"{Path(manifest['workbook']).stem}-{job['job_id']}"
         report_manifest, markdown = build_review_artifacts(
             Path(manifest["workbook"]), merged, report_id=report_id,
-            source_file_id=packet.get("workbook_name", ""))
+            source_file_id=packet.get("workbook_name", ""),
+            app_root=Path(manifest["app_root"]))
         outputs = write_artifacts(report_manifest, markdown, paths["output"], report_id)
         atomic_json(paths["summary"], {
             "status": "ok", "sheet_status": merged.sheet_status,

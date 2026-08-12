@@ -33,6 +33,31 @@ def validate_envelope(payload: dict[str, Any], stage: str, packet: dict[str, Any
     return payload
 
 
+def _validate_evaluation(evaluation: Any, cell: str, checklist: list[str]) -> None:
+    """Require the app's per-category audit, not a single free-form line.
+
+    Rendering through the app's renderer only makes the report *look* like the
+    app's. The app fills a category table per cell, and a reviewer that answers
+    one summary sentence produces the same layout with none of the content — so
+    the categories the app asks about are required here too.
+    """
+    if not isinstance(evaluation, list) or not evaluation:
+        raise ValueError(f"{cell}에 evaluation 배열이 필요합니다(앱 audit 항목별 결과).")
+    seen = []
+    for item in evaluation:
+        if not isinstance(item, dict):
+            raise ValueError(f"{cell}의 evaluation 항목은 객체여야 합니다.")
+        category = str(item.get("category", "")).strip()
+        if not category or not str(item.get("comment", "")).strip():
+            raise ValueError(f"{cell}의 evaluation 항목에는 category와 comment가 모두 필요합니다.")
+        if category in seen:
+            raise ValueError(f"{cell}의 evaluation에 중복 category: {category}")
+        seen.append(category)
+    missing = [category for category in checklist if category not in seen]
+    if missing:
+        raise ValueError(f"{cell}의 evaluation에 빠진 검수 항목: {', '.join(missing)}")
+
+
 def validate_cell_review(payload: dict[str, Any], packet: dict[str, Any]) -> dict[str, Any]:
     validate_envelope(payload, "cell_review", packet)
     rows = payload.get("cells")
@@ -53,6 +78,7 @@ def validate_cell_review(payload: dict[str, Any], packet: dict[str, Any]) -> dic
             raise ValueError(f"{cell}의 prior_cell_refs가 올바르지 않습니다.")
         if not isinstance(row.get("prior_cell_influence"), str):
             raise ValueError(f"{cell}에 prior_cell_influence 문자열이 필요합니다.")
+        _validate_evaluation(row.get("evaluation"), cell, packet.get("audit_checklist") or [])
         if row["used_prior_cell_context"] != bool(refs):
             raise ValueError(f"{cell}의 앞 셀 참조 여부와 prior_cell_refs가 일치하지 않습니다.")
         if bool(row["prior_cell_influence"].strip()) != row["used_prior_cell_context"]:

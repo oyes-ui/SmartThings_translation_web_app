@@ -27,10 +27,16 @@ constraint card를 함께 판단한다. resolver card는 최고 권위이며 덮
 `prior_cell_influence`에 정확히 기록한다. 참고하지 않았다면 false, [], 빈 문자열을 쓴다.
 각 셀을 빠짐없이 한 번씩 출력하고 `after`는 수정이 필요한 경우 셀 전체 문자열이다.
 
+각 셀마다 아래 항목을 **하나도 빠뜨리지 말고** 평가한다. 앱 audit이 채우는 항목과 동일하며,
+리포트의 항목별 검수 표가 이걸로 만들어진다. 지적할 것이 없으면 그렇게 적는다.
+
+{chr(10).join(f"- {category}" for category in packet.get("audit_checklist") or [])}
+
 출력은 JSON 하나다:
 {{"kind":"cell_review","packet_id":"{packet.get('packet_id','')}","status":"completed",
 "stop_reason":"complete","model":"<model>","run_id":"<provider-run-id>","executed_at":"<ISO-8601>","cells":[
 {{"cell":"C7","status":"pass|warning|needs_revision|blocked|glossary_activation_review",
+"evaluation":[{{"category":"<위 항목 그대로>","comment":"상세한 분석 결과"}}],
 "after":null,"reason":"...","rule_ids":[],"used_prior_cell_context":false,
 "prior_cell_refs":[],"prior_cell_influence":""}}]}}
 

@@ -147,6 +147,7 @@ def main() -> None:
             Path(args.workbook).expanduser(), merged,
             report_id=args.report_id,
             source_file_id=args.source_file_id or packet.get("workbook_name", ""),
+            app_root=args.app_root,
         )
         paths = write_artifacts(manifest, markdown, args.output_dir, args.report_id)
         print(json.dumps({

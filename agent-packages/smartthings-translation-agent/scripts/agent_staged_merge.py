@@ -43,7 +43,8 @@ def main() -> None:
             merged = merge_staged_reviews(packet, cell, sheet, lead, validate)
         manifest, markdown = build_review_artifacts(
             args.workbook.expanduser(), merged, report_id=args.report_id,
-            source_file_id=packet.get("workbook_name", args.workbook.name))
+            source_file_id=packet.get("workbook_name", args.workbook.name),
+            app_root=args.app_root)
         paths = write_artifacts(manifest, markdown, args.output_dir, args.report_id)
         print(json.dumps({"status": "ok", **paths, "sheet_status": merged.sheet_status,
                           "changes": len(manifest["changes"]),

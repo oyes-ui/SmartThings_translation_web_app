@@ -1,13 +1,107 @@
 {
   "type": "object",
-  "required": ["kind", "packet_id", "status", "stop_reason", "model", "issues"],
+  "required": [
+    "kind",
+    "packet_id",
+    "status",
+    "stop_reason",
+    "model",
+    "issues",
+    "run_id",
+    "executed_at"
+  ],
   "additionalProperties": false,
   "properties": {
-    "kind": {"type": "string", "const": "sheet_consistency_review"},
-    "packet_id": {"type": "string"},
-    "status": {"enum": ["completed", "no_findings"]},
-    "stop_reason": {"type": "string"},
-    "model": {"type": "string"},
-    "issues": {"type": "array", "items": {"type": "object", "required": ["finding_id", "affected_cells", "canonical_pattern", "reason", "rule_ids", "proposals"], "additionalProperties": false, "properties": {"finding_id": {"type": "string"}, "affected_cells": {"type": "array", "items": {"type": "string"}}, "canonical_pattern": {"type": "string"}, "reason": {"type": "string"}, "rule_ids": {"type": "array", "items": {"type": "string"}}, "proposals": {"type": "array", "items": {"type": "object", "required": ["cell", "after", "rule_ids"], "additionalProperties": false, "properties": {"cell": {"type": "string"}, "after": {"type": "string"}, "rule_ids": {"type": "array", "items": {"type": "string"}}}}}}}}
+    "kind": {
+      "type": "string",
+      "const": "sheet_consistency_review"
+    },
+    "packet_id": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "completed",
+        "no_findings"
+      ]
+    },
+    "stop_reason": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "finding_id",
+          "affected_cells",
+          "canonical_pattern",
+          "reason",
+          "rule_ids",
+          "proposals"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "finding_id": {
+            "type": "string"
+          },
+          "affected_cells": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "canonical_pattern": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "rule_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "proposals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "cell",
+                "after",
+                "rule_ids"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "cell": {
+                  "type": "string"
+                },
+                "after": {
+                  "type": "string"
+                },
+                "rule_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "executed_at": {
+      "type": "string",
+      "minLength": 1
+    }
   }
 }
