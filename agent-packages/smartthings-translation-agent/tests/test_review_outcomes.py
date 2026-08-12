@@ -54,6 +54,13 @@ class ReviewOutcomesTests(unittest.TestCase):
             outcomes_from_manifest(_manifest([_change(status="pending_approval")]))
         self.assertIn("pending_approval", str(caught.exception))
 
+    def test_a_mistyped_status_fails_instead_of_counting_as_a_rejection(self):
+        """A typo must not be scored as 'the agent proposed something wrong'."""
+        for bad in ("approvd", "", "hold", "accept"):
+            with self.assertRaises(ValueError) as caught:
+                outcomes_from_manifest(_manifest([_change(status=bad)]))
+            self.assertIn("approval_status", str(caught.exception))
+
     def test_support_from_an_echoing_role_is_marked_suspect(self):
         manifest = _manifest([_change()], anchoring=[
             {"role": "localization_tone", "echoes_role": "grammar_fluency", "direction": "subset"},

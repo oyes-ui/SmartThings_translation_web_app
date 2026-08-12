@@ -25,6 +25,14 @@ argument-hint: <xlsx 경로> --sheet "JA(일본)" [--semantic-rag-budget N] [--r
 기본 경로는 **리드 에이전트의 시트 전체 2-pass**다. 5개 관점 병렬 검수는 사용자가 그 시트에
 `--multi-agent`로 승인했을 때만 켜지는 escalation이며, 아래 2~4단계는 그 경우에만 수행한다.
 
+리드는 아래에 해당하면 escalation을 **제안**한다(스스로 켜지 않는다). 비용·지연이 5배로 늘어나므로
+사유를 밝히고 승인받는다.
+
+- UI 활성화 조건·면책 문구처럼 검토 축이 교차해 한 관점으로 판정하기 어려울 때
+- Pass 2에서 의미 충실도와 현지화 톤의 판단이 서로 충돌할 때
+- 같은 오류 유형이 여러 story·시트에서 반복 확인될 때
+- 고위험 locale이거나 납품 직전 최종 확인이 필요할 때
+
 **1. 근거 패킷 생성.** 출력에는 `packet_id`가 들어 있고, 모든 의견서가 이 값을 되돌려줘야 한다.
 `--multi-agent` 없이 만든 패킷은 `review_mode: lead_2pass`이며 역할 프롬프트 생성과 병합이
 거부된다.
@@ -63,11 +71,13 @@ python agent-packages/smartthings-translation-agent/scripts/agent_sheet_merge.py
 
 - 리드 에이전트는 의견서를 요약해 `changes[]`를 만들 수 없다. `review_report_builder`는
   merge 결과 객체만 받으므로 이 경로는 코드에서 막혀 있다.
-- **한 역할이라도 의견서가 없거나 `packet_id`가 다르면 시트 상태는 `incomplete`다.** 이때는
-  제안을 하나도 만들지 않고 후보를 전부 `human_review_queue`로 보낸다. 재시도하지 않는다.
+- **한 역할이라도 의견서가 없거나, `packet_id`가 다르거나, 실행이 오류·중단으로 끝나면 시트 상태는
+  `incomplete`다.** 이때는 제안을 하나도 만들지 않고 후보를 전부 `human_review_queue`로 보낸다.
+  재시도하지 않는다.
 - 검수 시점 셀 값과 현재 값이 다르면 그 제안은 `source_drift`로 보류된다.
-- 한 역할의 지지가 전부 다른 역할과 (finding_id, after)까지 같으면 독립 근거가 아닐 수 있으므로
-  리포트에 독립성 경고가 붙는다. 자동 차단은 하지 않는다.
+- **한 역할의 지지가 다른 역할의 사본에 가까우면 그 지지는 독립으로 세지 않는다.** 남은 독립
+  관점이 2개 미만이면 제안이 되지 않고 `anchored_support_needs_independent_role`로 큐에 간다 —
+  기각이 아니라 제3의 독립 관점을 요구하는 것이다. 정당한 합의라면 다른 역할이 지지한다.
 - 모든 finding에 `row_type`(title/description/disclaimer/button)이 붙고 리포트에 유형별로
   집계된다. 관점(role) 축과 콘텐츠 유형 축 중 어디로 결함이 뭉치는지 판단할 근거다.
 

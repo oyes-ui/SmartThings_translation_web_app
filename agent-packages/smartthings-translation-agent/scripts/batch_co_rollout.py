@@ -39,6 +39,19 @@ sys.path.insert(0, str(SCRIPT_DIR))
 import _app_pipeline as ap  # noqa: E402
 import workbook_add_target_sheet as wats  # noqa: E402
 
+# Statuses a resumed run may skip.  Errors and skips are always retried: they are
+# usually transient or fixable, and freezing them would silently drop files.
+#
+# The set depends on what the current run is trying to produce.  ``prepped`` means
+# the target sheet exists but nothing was translated, so a full run must still
+# process it -- treating it as done would silently leave the file untranslated.
+RESUMABLE_STATUSES = {"ok"}
+PREP_RESUMABLE_STATUSES = {"ok", "prepped"}
+
+
+def resumable_statuses(prep_only: bool) -> set[str]:
+    return PREP_RESUMABLE_STATUSES if prep_only else RESUMABLE_STATUSES
+
 
 def discover_files(files: list[str] | None, input_dir: str | None) -> list[Path]:
     if files:
@@ -236,6 +249,8 @@ def main() -> None:
     p.add_argument("--app-root", help="app repo 경로 명시")
     p.add_argument("--prep-only", action="store_true",
                     help="Step 0~1만 실행(시트 준비까지), LLM 호출 없음 — 크레딧 0")
+    p.add_argument("--resume", action="store_true",
+                    help="기존 manifest의 ok/prepped 파일은 건너뛴다. error/skipped는 다시 시도한다")
     args = p.parse_args()
 
     if args.backtranslation_lang and not args.backtranslation_sheet:
@@ -256,11 +271,25 @@ def main() -> None:
 
     manifest_path = out_dir / "manifest.json"
     manifest = {"created_at": now_iso(), "prep_only": args.prep_only, "files": {}}
+    done: dict[str, dict] = {}
+    if args.resume and manifest_path.is_file():
+        previous = json.loads(manifest_path.read_text(encoding="utf-8"))
+        # Only successes are carried over.  Re-running must retry errors and
+        # skips, otherwise a transient failure would be frozen into the batch.
+        allowed = resumable_statuses(args.prep_only)
+        done = {stem: entry for stem, entry in (previous.get("files") or {}).items()
+                if entry.get("status") in allowed}
+        manifest["files"].update(done)
+        manifest["resumed_from"] = previous.get("created_at")
+        print(f"↻ resume: 이미 완료된 {len(done)}개 파일은 건너뜁니다.")
 
     print(f"▶ {len(files)}개 파일 순차 처리 시작 (prep-only={args.prep_only})")
     for i, workbook in enumerate(files, 1):
         stem = workbook.stem
         print(f"  [{i}/{len(files)}] {workbook.name} ...", end=" ", flush=True)
+        if stem in done:
+            print(f"↷ 건너뜀 ({done[stem]['status']})")
+            continue
         if not workbook.is_file():
             manifest["files"][stem] = {
                 "source": str(workbook), "status": "error",
@@ -273,6 +302,7 @@ def main() -> None:
             print(entry["status"])
         write_manifest_atomic(manifest_path, manifest)
 
+    write_manifest_atomic(manifest_path, manifest)
     statuses = [f["status"] for f in manifest["files"].values()]
     print("─" * 40)
     print(f"완료: ok={statuses.count('ok')} prepped={statuses.count('prepped')} "

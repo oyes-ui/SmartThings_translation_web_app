@@ -16,7 +16,8 @@ from typing import Any
 __all__ = [
     "SPECIALIST_ROLES", "ROW_TYPES", "SemanticRagBudget", "ReviewMergeResult",
     "row_type_for_cell", "validate_opinion", "merge_subjective_opinions",
-    "detect_role_anchoring",
+    "detect_role_anchoring", "echo_map", "independent_supporters",
+    "CLEAN_STOP_REASONS", "RUN_METADATA_FIELDS",
 ]
 
 
@@ -125,30 +126,55 @@ class ReviewMergeResult:
     anchoring: list[dict[str, Any]] = field(default_factory=list)
 
 
-def _agent_runs(opinions: list[dict[str, Any]], expected_roles: tuple[str, ...],
-                packet_id: str) -> tuple[list[dict[str, Any]], list[str]]:
+# Only these mean the specialist finished on its own terms; a truncated or errored
+# run is as unusable as a missing one, so it is treated the same way.
+CLEAN_STOP_REASONS = {"complete", "completed", "end_turn", "stop", "no_findings"}
+RUN_METADATA_FIELDS = ("run_id", "agent", "model", "started_at", "finished_at",
+                       "stop_reason", "confidence", "rag_evidence_ids", "error")
+
+
+def _run_metadata(run: dict[str, Any] | None) -> dict[str, Any]:
+    """Keep provided execution facts only — never invent or default them."""
+    if not isinstance(run, dict):
+        return {}
+    return {key: run[key] for key in RUN_METADATA_FIELDS if run.get(key) not in (None, "", [])}
+
+
+def _agent_runs(opinions: list[dict[str, Any]], expected_roles: tuple[str, ...], packet_id: str,
+                role_runs: dict[str, dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
     """Derive agent_runs from collected opinions; never from a manual claim."""
     runs, missing = [], []
     for role in expected_roles:
         role_opinions = [item for item in opinions if item["role"] == role]
-        if not role_opinions:
+        metadata = _run_metadata(role_runs.get(role))
+        if not role_opinions and not metadata:
             missing.append(role)
             runs.append({"role": role, "status": "missing", "opinions": 0, "packet_id": packet_id})
             continue
         mismatched = [item for item in role_opinions if item["packet_id"] and item["packet_id"] != packet_id]
-        if mismatched or (packet_id and not any(item["packet_id"] for item in role_opinions)):
-            missing.append(role)
+        stop_reason = str(metadata.get("stop_reason", "")).lower()
+        if mismatched or (packet_id and role_opinions and not any(item["packet_id"] for item in role_opinions)):
             status = "packet_mismatch"
+        elif metadata.get("error"):
+            status = "run_error"
+        elif stop_reason and stop_reason not in CLEAN_STOP_REASONS:
+            status = "run_incomplete"
+        elif not role_opinions:
+            # Metadata arrived without any opinion file: the run cannot be counted.
+            status = "run_incomplete"
         else:
             status = "completed"
+        if status != "completed":
+            missing.append(role)
         runs.append({"role": role, "status": status, "opinions": len(role_opinions),
-                     "packet_id": packet_id})
+                     "packet_id": packet_id, **metadata})
     return runs, missing
 
 
 def merge_subjective_opinions(opinions: list[dict[str, Any]], *, packet: dict[str, Any] | None = None,
                               deterministic_proposals: list[dict[str, Any]] | None = None,
                               expected_roles: tuple[str, ...] = SPECIALIST_ROLES,
+                              role_runs: dict[str, dict[str, Any]] | None = None,
                               enforce_constraints: bool = True) -> ReviewMergeResult:
     """Apply the two-role/no-opposition gate and report sheet completeness.
 
@@ -160,6 +186,8 @@ def merge_subjective_opinions(opinions: list[dict[str, Any]], *, packet: dict[st
     packet_id = str(packet.get("packet_id", ""))
     sheet = str(packet.get("target_sheet", ""))
     validated = [validate_opinion(raw, require_constraint_verdict=enforce_constraints) for raw in opinions]
+    anchoring = detect_role_anchoring(validated)
+    echoes = echo_map(anchoring)
 
     groups: dict[tuple[str, str, str, str], list[dict]] = {}
     for item in validated:
@@ -180,20 +208,30 @@ def merge_subjective_opinions(opinions: list[dict[str, Any]], *, packet: dict[st
             continue
         supporters = {item["role"] for item in items if item["stance"] == "support"}
         opponents = [item for item in items if item["stance"] == "oppose"]
-        if len(supporters) >= 2 and not opponents and items[0]["after"]:
+        independent = independent_supporters(supporters, echoes)
+        if len(supporters) >= 2 and not opponents and items[0]["after"] and len(independent) < 2:
+            # Two roles agreed, but one of them only repeats the other, so this is a
+            # single opinion wearing two hats.  Ask for a genuinely independent
+            # third perspective instead of rejecting a possibly correct fix.
+            queue.append({**common, "reason": "anchored_support_needs_independent_role",
+                          "supporting_roles": sorted(supporters),
+                          "independent_supporting_roles": sorted(independent),
+                          "opinions": items})
+        elif len(independent) >= 2 and not opponents and items[0]["after"]:
             proposals.append({
                 **common,
                 "after": items[0]["after"],
                 "rule_ids": sorted({rule for item in items for rule in item["rule_ids"]}),
                 "reason": "\n".join(item["reason"] for item in items if item["reason"]),
                 "supporting_roles": sorted(supporters),
+                "independent_supporting_roles": sorted(independent),
                 "origin": "subjective_consensus",
             })
         else:
             queue.append({**common, "reason": "specialist_disagreement_or_insufficient_support",
                           "opinions": items})
 
-    runs, missing = _agent_runs(validated, expected_roles, packet_id)
+    runs, missing = _agent_runs(validated, expected_roles, packet_id, role_runs or {})
     sheet_status = "completed" if not missing else "incomplete"
     for proposal in deterministic_proposals or []:
         proposals.append({**proposal, "origin": "deterministic_hard_rule",
@@ -213,11 +251,12 @@ def merge_subjective_opinions(opinions: list[dict[str, Any]], *, packet: dict[st
         proposals=proposals, human_review_queue=queue, agent_runs=runs,
         sheet_status=sheet_status, missing_roles=missing, packet_id=packet_id,
         sheet=sheet, cell_snapshot=dict(packet.get("cell_snapshot", {})),
-        anchoring=detect_role_anchoring(validated),
+        anchoring=anchoring,
     )
 
 
-def detect_role_anchoring(opinions: list[dict[str, Any]], *, minimum: int = 2) -> list[dict[str, Any]]:
+def detect_role_anchoring(opinions: list[dict[str, Any]], *, minimum: int = 2,
+                          partial_threshold: float = 0.8) -> list[dict[str, Any]]:
     """Flag a role whose supporting opinions merely echo one other role.
 
     Per-finding text equality proves nothing here: the consensus gate groups by
@@ -235,24 +274,62 @@ def detect_role_anchoring(opinions: list[dict[str, Any]], *, minimum: int = 2) -
         if item["stance"] == "support" and item["after"] is not None:
             by_role.setdefault(item["role"], set()).add((item["finding_id"], str(item["after"])))
 
-    findings, reported = [], set()
+    def echoes(own: set, reference: set) -> bool:
+        """Does `own` add little beyond `reference`?
+
+        A strict subset adds nothing.  A near-copy adds almost nothing, and is
+        included so that withholding one finding cannot evade the check.
+        """
+        if len(own) < minimum:
+            return False
+        return not (own - reference) or len(own & reference) / len(own) >= partial_threshold
+
+    findings = []
+    # Every qualifying pair is reported: one role can lean on several others, and
+    # suppressing the second relation would let its support count as independent
+    # wherever the first role happens not to be supporting.
     for role, other in combinations(sorted(by_role), 2):
-        pairs, other_pairs = by_role[role], by_role[other]
-        if pairs == other_pairs and len(pairs) >= minimum:
-            findings.append({
-                "role": role, "echoes_role": other, "matched": len(pairs), "direction": "undetermined",
-                "detail": f"{role}와 {other}의 support {len(pairs)}건이 완전히 동일 — 어느 쪽이 "
-                          f"다른 쪽을 따랐는지 판별 불가, 독립 지지 0건",
-            })
-            reported |= {role, other}
+        own, reference = by_role[role], by_role[other]
+        forward, backward = echoes(own, reference), echoes(reference, own)
+        if not forward and not backward:
             continue
-        for echo, source in ((role, other), (other, role)):
-            if echo in reported or len(by_role[echo]) < minimum or not by_role[echo] < by_role[source]:
-                continue
+        matched = len(own & reference)
+        if forward and backward:
+            # Each is a near-copy of the other, so neither can be shown to be the
+            # original; both are discounted rather than picking a side.
             findings.append({
-                "role": echo, "echoes_role": source, "matched": len(by_role[echo]), "direction": "subset",
-                "detail": f"{echo}의 support {len(by_role[echo])}건이 모두 {source}와 "
-                          f"(finding_id, after) 일치 — 독립 지지 0건",
+                "role": role, "echoes_role": other, "matched": matched,
+                "independent_supports": len(own - reference), "direction": "undetermined",
+                "detail": f"{role}와 {other}의 support가 {matched}건 겹쳐 서로의 사본에 가깝다 — "
+                          f"어느 쪽이 먼저인지 판별 불가",
             })
-            reported.add(echo)
+            continue
+        echo, source = (role, other) if forward else (other, role)
+        independent = len(by_role[echo] - by_role[source])
+        findings.append({
+            "role": echo, "echoes_role": source, "matched": matched,
+            "independent_supports": independent,
+            "direction": "subset" if not independent else "partial",
+            "detail": f"{echo}의 support {len(by_role[echo])}건 중 {matched}건이 {source}와 "
+                      f"(finding_id, after) 일치 — 독립 지지 {independent}건",
+        })
     return findings
+
+
+def echo_map(anchoring: list[dict[str, Any]]) -> dict[str, set[str]]:
+    """role -> the roles it echoes, used to discount non-independent support."""
+    mapping: dict[str, set[str]] = {}
+    for flag in anchoring:
+        role, source = flag.get("role"), flag.get("echoes_role")
+        if not role or not source:
+            continue
+        mapping.setdefault(role, set()).add(source)
+        if flag.get("direction") == "undetermined":
+            # Neither side can be shown to be the original, so each discounts the other.
+            mapping.setdefault(source, set()).add(role)
+    return mapping
+
+
+def independent_supporters(supporters: set[str], echoes: dict[str, set[str]]) -> set[str]:
+    """Drop a supporter whose agreement merely repeats another supporter here."""
+    return {role for role in supporters if not (echoes.get(role, set()) & supporters)}
