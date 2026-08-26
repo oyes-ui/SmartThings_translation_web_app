@@ -37,9 +37,10 @@ python scripts/bootstrap.py --app-root <경로> --save
 | --- | --- | --- |
 | 시트 검수·다중 에이전트 의견 병합 | `references/review-workflow.md` | 읽기 전용, `pending_approval`만 생성 |
 | 번역/검수 모드·크레딧·배치 | `references/self-vs-pipeline.md` | 셀프 기본, `--pipeline`은 승인 후 |
-| Excel 구조·분석·안전한 수정 | `references/excel-workflow.md` | 원본 불변, dry-run 기본 |
+| Excel 구조·분석·안전한 수정 | `references/excel-workflow.md` | 값·구조·서식 정본 선언, staging 후 독립 검증 |
 | 과거 사례 조회 | `references/rag-workflow.md` | offline 크레딧 0, semantic은 예산 내 |
 | 규칙·용어집 출처 | `references/rules-sources.md` | 규칙 > 시장 기준 > RAG |
+| Google Sheets 용어집 관리·내장 반영 | `references/glossary-sheets-workflow.md` | 기준 탭 확인, 3행 `Lng` 매핑, diff·승인 후 CSV merge |
 | 답변 형식 | `references/response-patterns.md` | 근거 표기 필수 |
 | 승인 반영·납품·결과 기록 | `commands/st-apply.md` | Excel을 쓰는 유일한 경로 |
 
@@ -61,7 +62,7 @@ python scripts/bootstrap.py --app-root <경로> --save
 - **섹션·story 맥락 검토**: "타이틀이 디스크립션 맥락을 잘 반영했는지 봐줘", "조사나 어미가 story 안에서 일관적인지 봐줘" → `/st-sections` + `scripts/workbook_inspect.py --sections`
 - **번역/검수 (셀프, 크레딧 0)**: "이 문구 독일어로 번역해줘", "이 번역 검수해줘" → `scripts/prompt_preview.py` 로 프롬프트 받아 직접 수행 + `references/self-vs-pipeline.md`
 - **번역/검수 (파이프라인, LLM)**: "워크북 전체 자동 번역/검수 돌려줘" → 승인 후 `scripts/workbook_translate.py`/`scripts/workbook_audit.py --pipeline`
-- **용어집 관리**: "용어집에 이 단어 있어?", "용어 추가/수정/CSV 가져오기" → `scripts/glossary_manage.py`
+- **용어집 관리**: "용어집에 이 단어 있어?", "용어 추가/수정/CSV 가져오기", "시트 변경분을 내장 용어집에 반영해줘" → `references/glossary-sheets-workflow.md` + `scripts/glossary_manage.py`
 - **용어집 필터/활성화 판단**: "이 파일에서 어떤 용어 활성화해야 해?", "이 단어 여기선 일반명사 아냐?" → target의 source group 문구 + 실제 glossary 매칭 확인, 미적용 후보는 `scripts/glossary_activation_candidates.py` → `references/glossary-report-workflow.md`
 - **Obsidian 리포트 작성·검색**: "옵시디언용 리포트 만들어줘", "기존 vault 사례와 비교해줘" → workspace 초안 생성, 명시 요청 시 vault 검색·언어별 증분 갱신 → `scripts/obsidian_workflow.py` + `references/glossary-report-workflow.md`
 - **텍스트워크북 생성**: "이 텍스트로 source 워크북 만들어줘" → `scripts/text_workbook_create.py`
@@ -124,6 +125,7 @@ python scripts/bootstrap.py --app-root <경로> --save
 10. **감수본 수용 분리**: `/st-story-review`는 판단·리포트까지만 수행한다. 최종 수용본은 사람 승인 `accept`/`partial` manifest가 있을 때만 `/st-review-apply`로 생성한다. 현지화 수정은 원문 의미·기능 조건·UI 경로·glossary·문법 리스크가 없는 한 수용하며, RAG exact 사례는 참고이지 자동 거부 근거가 아니다.
 11. **규칙 합성은 모델보다 우선**: glossary는 target 문자열·대소문자·브랜드 표기를 항상 강제한다. 활성화는 story/cell/term manifest가 우선이고 기존 glossary 비활성화는 fallback이다. 대괄호는 `section_role`·quoted UI/navigation path·glossary exempt를 합성해 하나라도 `no_bracket`이면 제거한다. RAG/LLM/서브에이전트는 이 결과를 바꿀 수 없으며, 제안은 resolver 검증 후에만 병합한다.
 12. **리포트 renderer 계약**: `docs/report_format_spec.md`를 공통 계약으로 사용한다. `approval_review`는 Story별 Obsidian native collapsed callout, `full_audit`는 원본 앱 payload까지 보존한다. raw HTML `<details>`를 쓰지 않으며, 생성 후 callout/표/원본 payload가 보이는지 Markdown QA를 한다.
+13. **Excel 3축 변경 계약**: Excel을 쓰기 전에 문안·수식의 **값 정본**, 행/열/시트의 **구조 정본**, 높이·테두리·rich text의 **서식 정본**을 각각 선언한다. 구조 정본에서 사라진 section은 셀 값만 비우지 말고 실제 행을 삭제한다. 맞춤 스크립트도 예외가 아니며, 빈 서식 행·행 높이·숨김·병합·검토 메모를 포함한 구조/서식 diff와 독립 재개방 검증이 모두 통과하기 전에는 결과를 최종본으로 안내하지 않는다. 상세 게이트는 `references/excel-workflow.md`의 “0단계”를 따른다.
 
 ## 도구 선택 흐름
 
@@ -139,9 +141,10 @@ Excel 분석       → scripts/workbook_inspect.py (읽기 전용)
 검수 리포트 분석 → LM 판정 목록 추출(Good 코멘트 포함) → 실제 현재 셀·source group·용어집·RAG 재확인 → `수정 필요`/`유지`/`false positive`/`추가 확인`으로 재분류
 감수본 요약     → review_summary.py 로 감수본/F열 변경·AI 수정안 겹침·리포트 판단 카운트 산출 → response-patterns.md 템플릿으로 최종 summary 작성
 감수본 최종 수용 → 언어별 `현재→감수안→최종안→판정→근거` manifest 확정 → workbook_review_apply.py → (명시 시 E:H 삭제) → 전 시트 C7:C28 재하이라이트 → 값 diff·보호 언어·텍스트 보존 검증 → 유효 result manifest로 Obsidian 상태 sync
-Excel 수정       → 기준 manifest 생성 → 변경안 제시 → 사용자 승인 → scripts/workbook_apply_edits.py → 검수본은 revision red→glossary blue 증분 합성 → 납품 시 glossary-only 검증
+Excel 수정       → 값·구조·서식 정본 선언 → 기준 manifest 생성 → 변경안 제시 → 사용자 승인 → staging 적용 → 독립 값/구조/서식/rich-text 검증 → 전체 성공본만 납품 경로로 승격
 용어집 하이라이트 → 사용자 승인 → scripts/workbook_highlight_glossary.py --include-source-sheets (원본 불변, *_highlighted_*.xlsx 생성)
 용어집 필터 판단 → target source group 소스 시트 + latest_glossary.csv 실제 매칭 → bracket occurrence/비활성 용어 예외 판단 → 필요 시 Obsidian 리포트
+Google Sheets 용어집 반영 → `references/glossary-sheets-workflow.md`의 기준 탭·3행 `Lng`로 읽기 → 내장 용어집과 diff 제시 → 명시 승인 후 CSV `merge import` → 결과 검증
 ```
 
 ## 스크립트 사용법
@@ -205,6 +208,7 @@ highlight/translate/audit 가 공유한다.
 
 - `references/setup-workflow.md` — first-run 셋업·bootstrap 절차, 동작 레벨, 상태 점검
 - `references/rules-sources.md` — 규칙의 출처(canonical sources)와 우선순위
+- `references/glossary-sheets-workflow.md` — Google Sheets 기준 용어집과 내장 용어집 승인 반영 절차
 - `references/rag-workflow.md` — RAG 조회 흐름, **DB 데이터 품질 주의사항**, 언어키 매핑
 - `references/notebooklm-workflow.md` — NotebookLM MCP를 통한 긴 검수 리포트/공유 노트 보조 분석
 - `references/excel-workflow.md` — SmartThings 워크북 포맷과 편집 규약

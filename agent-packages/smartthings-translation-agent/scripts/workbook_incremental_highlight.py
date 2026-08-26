@@ -181,6 +181,79 @@ def _is_rich_text(value: Any) -> bool:
     return isinstance(value, CellRichText)
 
 
+def _workbook_text_snapshot(wb) -> dict[tuple[str, str], str]:
+    """Capture every non-empty cell's displayed character stream."""
+    return {
+        (ws.title, cell.coordinate): _cell_text(cell.value)
+        for ws in wb.worksheets
+        for row in ws.iter_rows()
+        for cell in row
+        if cell.value is not None
+    }
+
+
+def _harden_workbook_whitespace_runs(wb) -> list[str]:
+    """Fold unsafe whitespace-only runs throughout a workbook before saving.
+
+    ``openpyxl`` serializes every rich-text cell it loads, including cells this
+    renderer did not touch. Therefore folding only the newly rendered cells is
+    insufficient: an untouched cell can still lose a standalone space in
+    Excel after the workbook is saved.
+    """
+    hardened: list[str] = []
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for cell in row:
+                if not _is_rich_text(cell.value):
+                    continue
+                # A cell whose complete display value is whitespace has no
+                # neighbouring text to absorb the run. Excel may trim it, but
+                # there is no document text to protect and rewriting it cannot
+                # make the serialization safer.
+                if not _cell_text(cell.value).strip():
+                    continue
+                folded = _fold_bare_whitespace_runs(cell.value)
+                if folded is not cell.value:
+                    if _cell_text(folded) != _cell_text(cell.value):
+                        raise RuntimeError(f"공백 hardening이 문안을 변경했습니다: {ws.title}!{cell.coordinate}")
+                    cell.value = folded
+                    hardened.append(f"{ws.title}!{cell.coordinate}")
+    return hardened
+
+
+def _bare_whitespace_run_cells(wb) -> list[str]:
+    """Return cells that Excel may trim because they contain a bare space run."""
+    unsafe = []
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for cell in row:
+                if (
+                    _is_rich_text(cell.value)
+                    and _cell_text(cell.value).strip()
+                    and any(str(part).strip() == "" and str(part) for part in cell.value)
+                ):
+                    unsafe.append(f"{ws.title}!{cell.coordinate}")
+    return unsafe
+
+
+def _verify_saved_workbook(output: Path, expected_texts: dict[tuple[str, str], str]) -> None:
+    verify = openpyxl.load_workbook(output, rich_text=True, data_only=False)
+    try:
+        actual_texts = _workbook_text_snapshot(verify)
+        changed = [
+            f"{sheet}!{cell}"
+            for sheet, cell in sorted(set(expected_texts) | set(actual_texts))
+            if expected_texts.get((sheet, cell)) != actual_texts.get((sheet, cell))
+        ]
+        if changed:
+            raise RuntimeError("저장 후 텍스트 무결성 실패: " + ", ".join(changed[:20]))
+        unsafe = _bare_whitespace_run_cells(verify)
+        if unsafe:
+            raise RuntimeError("저장 후 공백-only rich-text run이 남았습니다: " + ", ".join(unsafe[:20]))
+    finally:
+        verify.close()
+
+
 def _next_output_path(workbook: Path, timestamp: str) -> Path:
     candidate = workbook.with_name(f"{workbook.stem}_review_highlighted_{timestamp}{workbook.suffix}")
     suffix = 2
@@ -255,19 +328,20 @@ async def run_incremental_highlight(args) -> dict:
                         unmatched[key] = missing
                     applied += 1
 
+        expected_texts = _workbook_text_snapshot(wb)
+        hardened_cell_coordinates = _harden_workbook_whitespace_runs(wb)
+        if _workbook_text_snapshot(wb) != expected_texts:
+            raise RuntimeError("공백 hardening 후 워크북 문안이 변경되었습니다.")
+        unsafe_before_save = _bare_whitespace_run_cells(wb)
+        if unsafe_before_save:
+            raise RuntimeError("저장 전 공백-only rich-text run이 남았습니다: " + ", ".join(unsafe_before_save[:20]))
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output = _next_output_path(workbook, timestamp)
         tmp = output.with_suffix(output.suffix + ".tmp")
         wb.save(tmp)
         os.replace(tmp, output)
-        verify = openpyxl.load_workbook(output, rich_text=True, data_only=False)
-        try:
-            for key, state in new_state.items():
-                sheet, cell = key.split("!", 1)
-                if text_sha256(_cell_text(verify[sheet][cell].value)) != state["text_sha256"]:
-                    raise RuntimeError(f"저장 후 텍스트 무결성 실패: {key}")
-        finally:
-            verify.close()
+        _verify_saved_workbook(output, expected_texts)
     finally:
         wb.close()
     state = {
@@ -276,7 +350,11 @@ async def run_incremental_highlight(args) -> dict:
         "cells": new_state,
         "last_output": output.name,
         "last_output_sha256": file_sha256(output),
-        "applied_cells": applied, "skipped_cells": skipped, "unmatched_terms": unmatched,
+        "applied_cells": applied,
+        "skipped_cells": skipped,
+        "hardened_whitespace_cells": len(hardened_cell_coordinates),
+        "hardened_whitespace_cell_coordinates": hardened_cell_coordinates,
+        "unmatched_terms": unmatched,
     }
     update_render_state(revision_path, state)
     return {"status": "ok", "output": str(output), "revision_manifest": str(revision_path), **state}

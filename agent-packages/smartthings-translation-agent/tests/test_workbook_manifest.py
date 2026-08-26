@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 import tempfile
@@ -11,7 +12,7 @@ import openpyxl
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from workbook_manifest import create_edit_revision, diff_spans, ensure_baseline  # noqa: E402
+from workbook_manifest import create_edit_revision, diff_spans, ensure_baseline, workbook_snapshot  # noqa: E402
 
 
 class WorkbookManifestTests(unittest.TestCase):
@@ -59,6 +60,18 @@ class WorkbookManifestTests(unittest.TestCase):
         self.assertEqual(middle["red_spans"], [[0, 4], [5, 8]])
         edge = diff_spans("Turn on", "on")
         self.assertEqual(edge["red_spans"], [[0, 2]])
+
+    def test_snapshot_records_independent_layout_style_and_rich_text_fingerprints(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            book = self._book(tmp)
+            snapshot = workbook_snapshot(book)
+            legacy_values = hashlib.sha256("CO(콜롬비아)\0C7\0Hola mundo".encode("utf-8")).hexdigest()
+            self.assertEqual(snapshot["values_sha256"], legacy_values)
+            self.assertNotEqual(snapshot["values_sha256"], snapshot["semantic_values_sha256"])
+            self.assertNotEqual(snapshot["structure_sha256"], snapshot["layout_sha256"])
+            self.assertIn("styles_sha256", snapshot)
+            self.assertIn("rich_text_sha256", snapshot)
+            self.assertIn("annotations_sha256", snapshot)
 
 
 if __name__ == "__main__":

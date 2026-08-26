@@ -7,11 +7,20 @@ from pathlib import Path
 
 import openpyxl
 from openpyxl.cell.rich_text import CellRichText, TextBlock
+from openpyxl.cell.text import InlineFont
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from workbook_incremental_highlight import _next_output_path, _term_spans, render_cell  # noqa: E402
+from workbook_incremental_highlight import (  # noqa: E402
+    _bare_whitespace_run_cells,
+    _harden_workbook_whitespace_runs,
+    _next_output_path,
+    _term_spans,
+    _verify_saved_workbook,
+    _workbook_text_snapshot,
+    render_cell,
+)
 
 
 def _runs(value):
@@ -73,6 +82,53 @@ class IncrementalHighlightTests(unittest.TestCase):
             value = restored.active["C7"].value
             self.assertEqual(str(value), "Use SmartThings now")
             self.assertEqual(_runs(value), [("Use ", None), ("SmartThings ", "000000FF"), ("now", "00FF0000")])
+
+    def test_workbook_wide_whitespace_hardening_protects_unmodified_rich_text(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "review.xlsx"
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "AE(아랍에메리트)"
+            base_font = InlineFont()
+            ws["C7"].value = CellRichText([
+                TextBlock(text="الانتقال", font=base_font),
+                TextBlock(text=" ", font=base_font),
+                TextBlock(text="إلى", font=base_font),
+                TextBlock(text=" ", font=base_font),
+                TextBlock(text="Settings", font=base_font),
+            ])
+            ws["C8"].value = render_cell(
+                "Use SmartThings now", base_font=ws["C8"].font,
+                red_spans=[[16, 19]], blue_spans=[[4, 15]],
+            )
+            expected = _workbook_text_snapshot(wb)
+
+            self.assertEqual(_bare_whitespace_run_cells(wb), ["AE(아랍에메리트)!C7"])
+            self.assertEqual(_harden_workbook_whitespace_runs(wb), ["AE(아랍에메리트)!C7"])
+            self.assertEqual(_workbook_text_snapshot(wb), expected)
+            self.assertEqual(_bare_whitespace_run_cells(wb), [])
+            self.assertEqual(_runs(ws["C8"].value), [("Use ", None), ("SmartThings ", "000000FF"), ("now", "00FF0000")])
+
+            wb.save(path)
+            _verify_saved_workbook(path, expected)
+            restored = openpyxl.load_workbook(path, rich_text=True)
+            self.assertEqual(str(restored["AE(아랍에메리트)"]["C7"].value), "الانتقال إلى Settings")
+            self.assertEqual(_bare_whitespace_run_cells(restored), [])
+
+    def test_whitespace_only_rich_text_cell_is_not_a_hard_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "space.xlsx"
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "Sheet"
+            ws["A1"].value = CellRichText([TextBlock(text=" ", font=InlineFont())])
+            expected = _workbook_text_snapshot(wb)
+
+            self.assertEqual(_harden_workbook_whitespace_runs(wb), [])
+            self.assertEqual(_bare_whitespace_run_cells(wb), [])
+            self.assertEqual(_workbook_text_snapshot(wb), expected)
+            wb.save(path)
+            _verify_saved_workbook(path, expected)
 
 
 if __name__ == "__main__":

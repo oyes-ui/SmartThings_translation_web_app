@@ -20,6 +20,8 @@ from typing import Any
 
 import openpyxl
 
+from workbook_mutation_guard import semantic_workbook_snapshot
+
 
 SCHEMA_VERSION = 1
 
@@ -60,7 +62,7 @@ def workbook_snapshot(workbook: str | Path) -> dict:
     path = Path(workbook)
     wb = openpyxl.load_workbook(path, read_only=False, data_only=False, rich_text=True)
     try:
-        structure = {
+        legacy_structure = {
             "sheetnames": list(wb.sheetnames),
             "sheets": {
                 ws.title: {
@@ -72,17 +74,25 @@ def workbook_snapshot(workbook: str | Path) -> dict:
                 for ws in wb.worksheets
             },
         }
-        values: list[str] = []
-        for ws in wb.worksheets:
-            for row in ws.iter_rows():
-                for cell in row:
-                    if cell.value is not None:
-                        values.append(f"{ws.title}\0{cell.coordinate}\0{str(cell.value)}")
+        legacy_values = [
+            f"{ws.title}\0{cell.coordinate}\0{str(cell.value)}"
+            for ws in wb.worksheets
+            for row in ws.iter_rows()
+            for cell in row
+            if cell.value is not None
+        ]
+        semantic = semantic_workbook_snapshot(wb)
+        semantic_values_sha256 = semantic.pop("values_sha256")
         return {
             "file_sha256": file_sha256(path),
-            "structure_sha256": _hash_bytes(json.dumps(structure, ensure_ascii=False, sort_keys=True).encode("utf-8")),
-            "values_sha256": _hash_bytes("\n".join(values).encode("utf-8")),
-            "sheet_count": len(wb.sheetnames),
+            # Preserve schema-v1 meanings so old and new ledgers remain
+            # comparable. The expanded fingerprints use distinct field names.
+            "structure_sha256": _hash_bytes(
+                json.dumps(legacy_structure, ensure_ascii=False, sort_keys=True).encode("utf-8")
+            ),
+            "values_sha256": _hash_bytes("\n".join(legacy_values).encode("utf-8")),
+            "semantic_values_sha256": semantic_values_sha256,
+            **semantic,
         }
     finally:
         wb.close()
