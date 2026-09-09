@@ -248,23 +248,23 @@ class DefaultModelTests(unittest.TestCase):
 
         self.assertEqual(
             inspect.signature(ModelHandler.call_gemini).parameters["model_name"].default,
-            "gemini-3.6-flash",
+            "gemini-3.8-flash",
         )
         self.assertEqual(
             inspect.signature(ModelHandler.count_tokens).parameters["model_name"].default,
-            "gemini-3.6-flash",
+            "gemini-3.8-flash",
         )
         self.assertEqual(main.StartRequest.model_fields["translation_model"].default,
-                         "gemini-3.6-flash")
+                         "gemini-3.8-flash")
         self.assertEqual(
             text_workbooks.TextWorkbookStartRequest.model_fields["translation_model"].default,
-            "gemini-3.6-flash",
+            "gemini-3.8-flash",
         )
         self.assertEqual(
             inspect.signature(
                 checker_service.TranslationChecker.run_integrated_pipeline_generator
             ).parameters["translation_model"].default,
-            "gemini-3.6-flash",
+            "gemini-3.8-flash",
         )
 
 

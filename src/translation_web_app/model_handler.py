@@ -103,7 +103,7 @@ class ModelHandler:
             print(f"JSON Parsing Error: {e}\nOriginal Text: {text}")
             return {"error": "parsing_failed", "original_text": text}
 
-    async def call_gemini(self, prompt, model_name="gemini-3.6-flash", system_instruction=None,
+    async def call_gemini(self, prompt, model_name="gemini-3.8-flash", system_instruction=None,
                            response_json=False, thinking_budget: int | None = None):
         if not self.gemini_client:
             return "Gemini API Key not configured."
@@ -194,7 +194,7 @@ class ModelHandler:
         except Exception as e:
             return f"GPT Error: {str(e)}"
 
-    async def generate_content(self, prompt, model_name="gemini-3.6-flash", system_instruction=None,
+    async def generate_content(self, prompt, model_name="gemini-3.8-flash", system_instruction=None,
                                 response_json=False, thinking_budget: int | None = None,
                                 reasoning_effort: str | None = None):
         """Unified method to call either Gemini or GPT based on model name."""
@@ -205,7 +205,7 @@ class ModelHandler:
             return await self.call_gemini(prompt, model_name=model_name, system_instruction=system_instruction,
                                            response_json=response_json, thinking_budget=thinking_budget)
 
-    async def count_tokens(self, text: str, model_name: str = "gemini-3.6-flash") -> tuple[int, str]:
+    async def count_tokens(self, text: str, model_name: str = "gemini-3.8-flash") -> tuple[int, str]:
         """
         Returns (token_count, method).
         method: 'gemini_api' | 'tiktoken' | 'estimated'

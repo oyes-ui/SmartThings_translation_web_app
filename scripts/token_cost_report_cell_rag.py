@@ -28,6 +28,7 @@ from translation_web_app.checker_service import TranslationChecker
 from translation_web_app.model_handler import ModelHandler
 from translation_web_app.prompt_builder import PromptBuilder
 from translation_web_app.paths import EXCEL_DATA_DIR, UPLOAD_DIR
+from translation_web_app.model_pricing import pricing_table
 
 
 EXCEL_DIR = str(EXCEL_DATA_DIR)
@@ -35,7 +36,7 @@ STORY_015 = os.path.join(EXCEL_DIR, "(CX Center) SmartThings_2.0_Story_Contents_
 STORY_006 = os.path.join(EXCEL_DIR, "(CX Center) SmartThings_2.0_Story_Contents_006_0319.xlsx")
 GLOSSARY_CSV = str(UPLOAD_DIR / "glossary_e2bc0367-f624-4d28-ab50-ce02e330b1e3.csv")
 
-TRANSLATION_MODEL = "gemini-3.5-flash"
+TRANSLATION_MODEL = "gemini-3.8-flash"
 AUDIT_MODEL = "gpt-5.4-mini"
 
 KR_TO_4 = [
@@ -68,10 +69,9 @@ EN_TO_20 = [
     ("ID(인도네시아)", "id_ID", "Indonesian", "English"),
 ]
 
-PRICING = {
-    "gemini-3.5-flash": {"input": 1.50 / 1_000_000, "output": 9.00 / 1_000_000},
-    "gpt-5.4-mini": {"input": 0.75 / 1_000_000, "output": 4.50 / 1_000_000},
-}
+# 단가는 translation_web_app.model_pricing 이 단일 출처 (공식 페이지 2026-09-09 확인).
+# 전체 테이블을 쓰므로 --translation-model / --audit-model 의 choices 도 함께 넓어진다.
+PRICING = pricing_table()
 
 
 def cost(tokens: int, model: str, direction: str) -> float:

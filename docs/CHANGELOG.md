@@ -1,5 +1,26 @@
 # Changelog - SmartThings Translation Checker
 
+## [Unreleased]
+
+### Added
+- **Gemini 3.8 지원**: 번역 모델·검수 모델 셀렉트에 `Gemini 3.8 Series`(Thinking On/Off) 추가. Vertex AI `publishers/google/models/gemini-3.8-flash` 로 확인된 모델 ID 사용.
+- **`model_pricing.py` (단가 단일 출처)**: 공식 페이지(2026-09-09 확인) 기준 Gemini/OpenAI standard tier 단가를 한 곳에 모음. Gemini 3.6~3.8 Flash 의 도입가(2026-12-31 만료)를 실행 날짜로 자동 전환해, 2027-01-01 이후 추정치가 조용히 절반으로 어긋나지 않게 함.
+
+### Removed
+- **Vertex 에 없는 죽은 옵션 제거**: `gemini-3-pro-preview`, `gemini-3.1-flash-lite-preview` 는 이 프로젝트 Vertex 모델 목록에 존재하지 않아 선택 시 호출 단계에서 실패하던 옵션이었음(목록에는 `-preview` 접미사 없는 `gemini-3.1-flash-lite` 만 존재).
+
+### Fixed
+- **비용 추정 단가 오류**: `co_batch_cost_estimate.py` 의 3rd-party aggregator 참고치를 공식값으로 교체. Gemini 3.6 Flash 는 도입가가 아닌 표준가(1.50/7.50)를 써서 현재 시점 기준 약 2배 과다 계상, `gpt-5.2` 는 standard(1.75/14.00) 대신 batch 단가(0.875/7.00)를 써서 약 절반 과소 계상되고 있었음.
+
+### Changed
+- **기본 번역 모델 `gemini-3.6-flash` → `gemini-3.8-flash`**: `ModelHandler.call_gemini`/`generate_content`/`count_tokens`, `TranslationChecker._run_llm_translation`/`run_integrated_pipeline_generator`, `main.StartRequest`, `/api/preview_prompt_blocks`, `TextWorkbookStartRequest` 기본값 일괄 갱신. UI 기본 선택도 Gemini 3.8 Flash (Thinking: On).
+- **Gemini 모델 셀렉트 정리**: Flash 는 3.8 하나만, Pro 는 최신(`gemini-3.1-pro-preview`) 하나만 남기고 3.6/3.5/3.1-flash-lite/3.0-preview/2.5 시리즈를 번역·검수 셀렉트 양쪽에서 제거. optgroup 도 버전 나열 대신 `Gemini Flash` / `Gemini Pro` 로 단순화. GPT 계열은 변경 없음.
+- **agent-package 기본 모델**: `workbook_translate.py`·`batch_co_rollout.py` 의 `--translation-model` 기본값과 `co_batch_cost_estimate.py` 의 `TRANSLATION_MODEL` 을 `gemini-3.8-flash` 로 상향.
+- `demo.html` 이 `/api/preview_prompt_blocks` 에 하드코딩하던 `gemini-2.5-flash` 를 제거하고 엔드포인트 기본값을 따르게 함(기본값 이중 관리 해소).
+- **비용 추정 스크립트 단가 참조 일원화**: `scripts/token_cost_report.py`(`gemini-3-flash-preview` → `gemini-3.8-flash`), `scripts/token_cost_report_cell_rag.py`(`gemini-3.5-flash` → `gemini-3.8-flash`), `agent-packages/.../co_batch_cost_estimate.py` 가 각자 들고 있던 PRICING 리터럴을 `model_pricing` 참조로 교체. `token_cost_report_cell_rag.py` 의 `--translation-model`/`--audit-model` 선택지도 전체 모델로 확대.
+
+---
+
 ## [1.7.0] - 2026-06-25
 
 ### Added (Agent Skill — `agent-packages/smartthings-translation-agent`)

@@ -243,7 +243,7 @@ def main() -> None:
     p.add_argument("--backtranslation-sheet",
                     help="역번역을 담을 별도 시트명. --backtranslation-lang만 주고 이 값을 "
                          "생략하면 '{new-sheet} 역번역'을 자동으로 사용한다.")
-    p.add_argument("--translation-model", default="gemini-3.6-flash")
+    p.add_argument("--translation-model", default="gemini-3.8-flash")
     p.add_argument("--audit-model", default="gpt-5.2")
     p.add_argument("--max-concurrency", type=int, default=5)
     p.add_argument("--app-root", help="app repo 경로 명시")

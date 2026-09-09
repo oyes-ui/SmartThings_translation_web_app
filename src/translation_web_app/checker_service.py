@@ -460,7 +460,7 @@ class TranslationChecker:
         )
         return rag_context_str, [f"[RAG] 유사 사례 {len(results)}건 적용됨 (시트: {sheet_title}, 셀: {coord})"]
 
-    async def _run_llm_translation(self, text, target_lang, model_name="gemini-3.6-flash", bx_style_on=False, glossary_context=None, rag_context=None, row_key="", source_lang="English", rag_identity_match=True, target_lang_code="", thinking_budget: int | None = None, constraint_card: dict | None = None):
+    async def _run_llm_translation(self, text, target_lang, model_name="gemini-3.8-flash", bx_style_on=False, glossary_context=None, rag_context=None, row_key="", source_lang="English", rag_identity_match=True, target_lang_code="", thinking_budget: int | None = None, constraint_card: dict | None = None):
         """
         내부 전용 번역 메서드: JSON 프롬프트 생성 및 LLM 호출을 담당합니다.
         """
@@ -1192,7 +1192,7 @@ class TranslationChecker:
         cell_range,
         bx_style_on,
         sheet_lang_map,
-        translation_model="gemini-3.6-flash",
+        translation_model="gemini-3.8-flash",
         audit_model="gpt-5.2",
         translation_thinking_budget: int | None = None,
         glossary_file_path=None,

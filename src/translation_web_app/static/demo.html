@@ -476,7 +476,7 @@ async function fetchAll() {
   form.append('bx_style_on', bxStyle.checked);
   form.append('row_key', rowKey.value);
   if (glossaryFile) form.append('glossary_file', glossaryFile);
-  form.append('model_name', 'gemini-2.5-flash');
+  // model_name 은 보내지 않는다 — /api/preview_prompt_blocks 의 기본값(앱 기본 번역 모델)을 따른다.
 
   try {
     const blockRes = await fetch('/api/preview_prompt_blocks', { method: 'POST', body: form });

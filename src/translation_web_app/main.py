@@ -68,7 +68,7 @@ class StartRequest(BaseModel):
     max_concurrency: int = 5
     cell_range: str = "C7:C28" # Default range
     model_name: str
-    translation_model: str = "gemini-3.6-flash"
+    translation_model: str = "gemini-3.8-flash"
     audit_model: str = "gpt-5.4-mini"
     translation_thinking_budget: int | None = None
     audit_reasoning_effort: str | None = None
@@ -529,7 +529,7 @@ async def preview_prompt_blocks(
     bx_style_on: bool = Form(False),
     row_key: str = Form("description"),
     glossary_file: UploadFile = File(None),
-    model_name: str = Form("gemini-3.6-flash"),
+    model_name: str = Form("gemini-3.8-flash"),
 ):
     """데모/디버깅용: 섹션별로 분리된 프롬프트 블록과 user message 반환"""
     glossary_dict = {}
