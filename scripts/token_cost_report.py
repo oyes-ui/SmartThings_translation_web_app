@@ -36,6 +36,7 @@ from translation_web_app.model_handler import ModelHandler
 from translation_web_app.prompt_builder import PromptBuilder
 from translation_web_app.checker_service import TranslationChecker
 from translation_web_app.paths import EXCEL_DATA_DIR, UPLOAD_DIR
+from translation_web_app.model_pricing import pricing_table, pricing_note
 
 # ---------------------------------------------------------------------------
 # Config
@@ -49,16 +50,12 @@ STORY_006 = os.path.join(EXCEL_DIR, "(CX Center) SmartThings_2.0_Story_Contents_
 # Most recent glossary (uploads/, May 19) — used in actual workflow
 GLOSSARY_CSV = str(UPLOAD_DIR / "glossary_e2bc0367-f624-4d28-ab50-ce02e330b1e3.csv")
 
-TRANSLATION_MODEL = "gemini-3-flash-preview"
+TRANSLATION_MODEL = "gemini-3.8-flash"
 AUDIT_MODEL       = "gpt-5.4-mini"
 
-# USD per 1M tokens (공식 가격 기준 2026-05-19)
-# Gemini 3 Flash Preview: ai.google.dev/pricing
-# gpt-5.4-mini: platform.openai.com/pricing (Short context 기준)
-PRICING = {
-    TRANSLATION_MODEL: {"input": 0.50 / 1_000_000, "output": 3.00 / 1_000_000},
-    AUDIT_MODEL:       {"input": 0.75 / 1_000_000, "output": 4.50 / 1_000_000},
-}
+# 단가는 translation_web_app.model_pricing 이 단일 출처 (공식 페이지 2026-09-09 확인).
+# Gemini 3.8 Flash 는 2026-12-31 까지 도입가라 실행 날짜에 따라 자동 전환된다.
+PRICING = pricing_table([TRANSLATION_MODEL, AUDIT_MODEL])
 
 # ---------------------------------------------------------------------------
 # Language target tables
@@ -482,6 +479,7 @@ def print_report(rows: list[dict], audit_provided: bool):
     print(f"\n  가격 기준:")
     for model, p in PRICING.items():
         print(f"    {model}: input ${p['input']*1e6:.3f}/M tok, output ${p['output']*1e6:.3f}/M tok")
+    print(f"  {pricing_note()}")
     print("  ※ 검수 output 포함 여부: --audit-txt-015/006 인수 제공 시 반영됨")
 
 

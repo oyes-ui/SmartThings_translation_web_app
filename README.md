@@ -18,7 +18,7 @@ pinned: false
 
 ## 🚀 주요 기능 (Key Features)
 
-- **AI 기반 정밀 검수**: Gemini 3.1/3.0 및 GPT-5.4 모델을 포함한 고성능 번역 검수 지원
+- **AI 기반 정밀 검수**: Gemini 3.8 Flash / 3.1 Pro 및 GPT-5.6/5.5/5.4 계열을 포함한 고성능 번역 검수 지원 (기본 번역 모델: `gemini-3.8-flash`)
 - **하이브리드 RAG (Retrieval-Augmented Generation)**: 100% 일치(Identity Match) 및 의미적 유사도 검색을 통한 번역 일관성 확보
 - **다국어 시트 자동 매핑**: 국가 코드(US, KR, DE 등)를 인식하여 시트별 언어 설정 자동화
 - **다중 소스 그룹 처리**: KR/US 등 여러 원문 시트를 각 타겟 시트 그룹에 매핑하여 검수, 번역+검수, 하이라이트 전용 작업을 한 번에 실행

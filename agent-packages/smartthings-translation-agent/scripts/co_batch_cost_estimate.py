@@ -15,7 +15,8 @@ PromptBuilder로 프롬프트를 만들고 ModelHandler.count_tokens 로 무료 
      - 검수(AI 평가) 출력 ≈ 셀당 고정 120 tok (짧은 판정문 가정)
      - 역번역 출력 ≈ 번역 출력과 동일 근사
 
-가격(PRICING)은 2026-08-03 시점 웹 검색 기준 참고치이며 공식 페이지로 재확인 후 신뢰할 것.
+가격(PRICING)은 app 의 translation_web_app.model_pricing 에서 가져온다 (공식 페이지 2026-09-09
+확인, standard tier). Gemini 3.6~3.8 Flash 는 2026-12-31 까지 도입가라 실행 날짜에 따라 자동 전환된다.
 
 사용 예:
   python co_batch_cost_estimate.py --input-dir "@translation_data/@excel" \\
@@ -34,7 +35,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 import _app_pipeline as ap  # noqa: E402
 import bootstrap as _bs  # noqa: E402
 
-TRANSLATION_MODEL = "gemini-3.6-flash"
+TRANSLATION_MODEL = "gemini-3.8-flash"
 AUDIT_MODEL = "gpt-5.2"
 SOURCE_SHEET = "US(미국)"
 TARGET_SHEET = "CO(콜롬비아)"
@@ -42,12 +43,9 @@ TARGET_LANG = "Spanish_Colombia"
 TARGET_LANG_CODE = "스페인어_콜롬비아"
 SOURCE_LANG = "English"
 
-# 참고치 — 공식 pricing 페이지로 재확인할 것 (2026-08-03 웹 검색 기준: OpenRouter/Requesty 등
-# 3rd-party aggregator 수치이며 공식 가격과 다를 수 있음)
-PRICING = {
-    TRANSLATION_MODEL: {"input": 1.50 / 1_000_000, "output": 7.50 / 1_000_000},
-    AUDIT_MODEL: {"input": 0.875 / 1_000_000, "output": 7.00 / 1_000_000},
-}
+# 단가는 app 의 translation_web_app.model_pricing 이 단일 출처다 (공식 페이지 2026-09-09 확인).
+# app src 는 main_async 가 sys.path 에 넣은 뒤에야 import 되므로 거기서 채운다.
+PRICING: dict[str, dict[str, float]] = {}
 AUDIT_OUTPUT_TOK_PER_CELL = 120  # 근사치
 
 
@@ -139,6 +137,10 @@ async def main_async(files: list[Path], glossary: str | None, app_root_arg: str 
     from translation_web_app.model_handler import ModelHandler
     from translation_web_app.prompt_builder import PromptBuilder
     from translation_web_app.checker_service import TranslationChecker
+    from translation_web_app.model_pricing import pricing_table, pricing_note
+
+    global PRICING
+    PRICING = pricing_table([TRANSLATION_MODEL, AUDIT_MODEL])
 
     pb = PromptBuilder()
     mh = ModelHandler()
@@ -173,7 +175,7 @@ async def main_async(files: list[Path], glossary: str | None, app_root_arg: str 
     print(f"예상 총 비용: ${total:.4f}  (파일당 평균 ${total/len(rows):.4f})")
     print(f"모델: 번역={TRANSLATION_MODEL}, 검수/역번역={AUDIT_MODEL}(역번역은 번역 모델 재사용)")
     print("※ 출력 토큰(번역문·검수 판정·역번역)은 근사치입니다. 정확한 값은 실제 실행 후에만 알 수 있습니다.")
-    print("※ PRICING은 2026-08-03 3rd-party 소스 기준 참고치 — 실행 전 공식 페이지로 재확인 권장.")
+    print(pricing_note())
 
 
 def main():
