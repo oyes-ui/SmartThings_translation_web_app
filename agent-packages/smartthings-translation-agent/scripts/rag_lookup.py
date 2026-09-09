@@ -90,7 +90,7 @@ FULLWORD_TO_CODE = {
     "korean": "KR", "english": "US", "english_us": "US", "english_uk": "UK",
     "english_au": "AU", "english_sg": "SG", "german": "DE", "japanese": "JA",
     "french": "FR", "french_belgium": "BE", "french_canada": "CA", "italian": "IT",
-    "spanish": "ES", "spanish_colombia": "CO",
+    "spanish": "ES", "spanish_colombia": "CO", "es_co": "CO",
     "dutch": "NL", "swedish": "SE", "arabic": "AE", "russian": "RU",
     "turkish": "TR", "polish": "PL", "vietnamese": "VN", "thai": "TH",
     "indonesian": "ID", "chinese": "CN", "chinese_simplified": "CN",
@@ -471,11 +471,16 @@ def lookup(args) -> dict:
                 result["notes"].append(
                     f"코드 '{code}'에 해당하는 target_lang 이 DB(source_group={sgroup})에 없습니다."
                 )
-            result["examples"] = offline_query(
-                conn, args.query, variants, sgroup, args.n,
-                keyword=args.keyword, story=args.story, section=args.section,
-                include_tone_flagged=args.include_tone_flagged,
-            )
+            # A requested target code with no matching DB variant must return no
+            # rows. Passing an empty variants list to offline_query intentionally
+            # means "all languages" for unfiltered lookups, so doing that here
+            # would leak examples from an unrelated locale.
+            if not code or variants:
+                result["examples"] = offline_query(
+                    conn, args.query, variants, sgroup, args.n,
+                    keyword=args.keyword, story=args.story, section=args.section,
+                    include_tone_flagged=args.include_tone_flagged,
+                )
     finally:
         conn.close()
 

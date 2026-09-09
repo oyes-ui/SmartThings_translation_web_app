@@ -11,6 +11,9 @@ rules:
 - rule_id: english-uk-002
   scope: [app_prompt]
   text: Avoid US-specific vocabulary and phrasing.
+- rule_id: english-uk-003
+  scope: [app_prompt]
+  text: Use straight ASCII apostrophes (') for contractions and possessives in user-facing copy. Do not mix them with typographic apostrophes within the same story; preserve official names and exact technical strings as styled.
 ---
 
 # English_UK

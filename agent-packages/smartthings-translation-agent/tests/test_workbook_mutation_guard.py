@@ -18,6 +18,8 @@ from workbook_mutation_guard import (  # noqa: E402
     copy_row_layout,
     delete_rows_with_manifest,
     save_verified_atomic,
+    rich_value_signature,
+    slice_rich_value,
     snapshot_axis_diff,
     snapshot_path,
 )
@@ -44,6 +46,18 @@ class WorkbookMutationGuardTests(unittest.TestCase):
         self.assertEqual(str(cloned[0].font.color.rgb), str(value[0].font.color.rgb))
         self.assertIsNot(cloned[0].font, value[0].font)
 
+    def test_slice_rich_value_keeps_overlapping_runs_and_fonts(self):
+        value = CellRichText(
+            TextBlock(InlineFont(color="0000FF"), "Prefix "),
+            TextBlock(InlineFont(b=True), "Button"),
+            " suffix",
+        )
+        sliced = slice_rich_value(value, 7, 13)
+        self.assertEqual(str(sliced), "Button")
+        self.assertEqual(len(sliced), 1)
+        self.assertTrue(sliced[0].font.b)
+        self.assertEqual(rich_value_signature(sliced)["kind"], "rich")
+
     def test_cross_workbook_row_layout_copies_semantics_not_style_ids(self):
         source = openpyxl.Workbook()
         target = openpyxl.Workbook()
@@ -54,6 +68,9 @@ class WorkbookMutationGuardTests(unittest.TestCase):
         self.assertEqual(target.active.row_dimensions[7].height, 41)
         self.assertTrue(target.active["C7"].font.bold)
         self.assertEqual(str(target.active["C7"].fill.fgColor.rgb), "0000FF00")
+        copy_row_layout(source.active, target.active, 7, target_row=12)
+        self.assertEqual(target.active.row_dimensions[12].height, 41)
+        self.assertTrue(target.active["C12"].font.bold)
         source.close()
         target.close()
 

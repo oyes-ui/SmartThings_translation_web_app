@@ -11,6 +11,9 @@ rules:
 - rule_id: english-us-002
   scope: [app_prompt]
   text: 'Follow the project-specific rule for disclaimers: place the sentence-ending period outside the closing quotation mark.'
+- rule_id: english-us-003
+  scope: [app_prompt]
+  text: Use straight ASCII apostrophes (') for contractions and possessives in user-facing copy. Do not mix them with typographic apostrophes within the same story; preserve official names and exact technical strings as styled.
 ---
 
 # English_US

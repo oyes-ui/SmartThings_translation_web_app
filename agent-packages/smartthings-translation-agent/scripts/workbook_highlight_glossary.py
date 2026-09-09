@@ -35,9 +35,11 @@ import sys
 from pathlib import Path
 
 import openpyxl
+from openpyxl.utils.cell import column_index_from_string, coordinate_from_string, range_boundaries
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _app_pipeline as ap
+from workbook_mutation_guard import clone_rich_value, rich_value_signature, save_verified_atomic
 
 
 def _cell_text(value) -> str:
@@ -67,6 +69,82 @@ def _verify_text_preservation(source: Path, highlighted: Path) -> dict:
     if differences:
         raise RuntimeError("하이라이트가 문안을 변경했습니다: " + ", ".join(differences))
     return {"text_preserved": True, "changed_cells": 0}
+
+
+def _coordinate_in_ranges(coordinate: str, range_arg: str) -> bool:
+    column_letter, row = coordinate_from_string(coordinate)
+    column = column_index_from_string(column_letter)
+    for value in (item.strip() for item in range_arg.split(",")):
+        if not value:
+            continue
+        min_col, min_row, max_col, max_row = range_boundaries(value)
+        if (
+            (min_col is None or min_col <= column)
+            and (max_col is None or column <= max_col)
+            and (min_row is None or min_row <= row)
+            and (max_row is None or row <= max_row)
+        ):
+            return True
+    return False
+
+
+def _verify_out_of_scope_rich_text(
+    source: Path, candidate: Path, cell_range: str, processed_sheets: set[str]
+) -> None:
+    before = openpyxl.load_workbook(source, data_only=False, rich_text=True)
+    after = openpyxl.load_workbook(candidate, data_only=False, rich_text=True)
+    try:
+        differences: list[str] = []
+        for sheet_name in before.sheetnames:
+            ws_before, ws_after = before[sheet_name], after[sheet_name]
+            for (_row, _column), cell in ws_before._cells.items():
+                if sheet_name in processed_sheets and _coordinate_in_ranges(cell.coordinate, cell_range):
+                    continue
+                if rich_value_signature(cell.value) != rich_value_signature(ws_after[cell.coordinate].value):
+                    differences.append(f"{sheet_name}!{cell.coordinate}")
+        if differences:
+            raise RuntimeError(
+                "처리 범위 밖 rich text가 변경되었습니다: " + ", ".join(differences[:20])
+            )
+    finally:
+        before.close()
+        after.close()
+
+
+def _restore_out_of_scope_rich_text(
+    source: Path, highlighted: Path, cell_range: str, processed_sheets: set[str]
+) -> dict:
+    """Undo workbook-wide rich-run normalization outside the requested highlight scope."""
+    before = openpyxl.load_workbook(source, data_only=False, rich_text=True)
+    after = openpyxl.load_workbook(highlighted, data_only=False, rich_text=True)
+    restored: list[str] = []
+    try:
+        for sheet_name in before.sheetnames:
+            ws_before, ws_after = before[sheet_name], after[sheet_name]
+            for (_row, _column), cell in ws_before._cells.items():
+                if sheet_name in processed_sheets and _coordinate_in_ranges(cell.coordinate, cell_range):
+                    continue
+                target = ws_after[cell.coordinate]
+                if rich_value_signature(cell.value) != rich_value_signature(target.value):
+                    target.value = clone_rich_value(cell.value)
+                    restored.append(f"{sheet_name}!{cell.coordinate}")
+
+        save_verified_atomic(
+            after,
+            highlighted,
+            lambda candidate: _verify_out_of_scope_rich_text(
+                source, candidate, cell_range, processed_sheets
+            ),
+            overwrite=True,
+        )
+    finally:
+        before.close()
+        after.close()
+    return {
+        "out_of_scope_rich_text_preserved": True,
+        "restored_cell_count": len(restored),
+        "restored_cells": restored,
+    }
 
 
 async def run_highlight(args) -> dict:
@@ -146,6 +224,31 @@ async def run_highlight(args) -> dict:
 
     summary = ap.event_summary(events)
     if summary["status"] == "ok" and summary.get("excel_path"):
+        if source_groups:
+            processed_sheets = {
+                sheet
+                for group in source_groups
+                for sheet in group.get("target_sheets", [])
+                if sheet in workbook_sheets
+            }
+        elif selected_sheets:
+            processed_sheets = {
+                sheet
+                for sheet in selected_sheets
+                if sheet in workbook_sheets and (args.include_source_sheets or sheet != source_sheet)
+            }
+        else:
+            processed_sheets = {
+                sheet
+                for sheet in workbook_sheets
+                if sheet in sheet_langs and (args.include_source_sheets or sheet != source_sheet)
+            }
+        summary["rich_text_preservation"] = _restore_out_of_scope_rich_text(
+            workbook,
+            Path(summary["excel_path"]),
+            args.cell_range,
+            processed_sheets,
+        )
         summary["text_validation"] = _verify_text_preservation(
             workbook, Path(summary["excel_path"])
         )

@@ -11,6 +11,9 @@ rules:
 - rule_id: turkish-002
   scope: [app_prompt]
   text: Maintain concise imperative or descriptive forms suitable for UI copy.
+- rule_id: turkish-003
+  scope: [app_prompt]
+  text: Use typographic apostrophes (’) when separating suffixes from proper names, abbreviations, and numerals, and in other orthographically required uses. Do not mix them with straight ASCII apostrophes within the same story; preserve official names and exact technical strings as styled.
 ---
 
 # Turkish

@@ -14,6 +14,9 @@ rules:
 - rule_id: french-canada-003
   scope: [app_prompt]
   text: Follow Canadian French standards; prioritize phrasing natural to North American French over mainland France idioms.
+- rule_id: french-canada-004
+  scope: [app_prompt]
+  text: Use typographic apostrophes (’) for elision and other apostrophe uses in user-facing copy. Do not mix them with straight ASCII apostrophes within the same story; preserve official names and exact technical strings as styled.
 ---
 
 # French_Canada

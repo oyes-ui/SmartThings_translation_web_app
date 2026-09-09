@@ -42,6 +42,10 @@ class PromptBuilderTests(unittest.TestCase):
 
     def test_english_market_variant_rules(self):
         us_prompt = self.builder.build_translation_prompt(target_lang="English", source_lang="Korean")
+        us_specific_prompt = self.builder.build_translation_prompt(
+            target_lang="English_US",
+            source_lang="Korean",
+        )
         uk_prompt = self.builder.build_translation_prompt(target_lang="English_UK", source_lang="Korean")
         au_prompt = self.builder.build_translation_prompt(target_lang="English_AU", source_lang="Korean")
         sg_prompt = self.builder.build_translation_prompt(target_lang="English_SG", source_lang="Korean")
@@ -51,6 +55,34 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertIn("Use Australian English with British-style spelling", au_prompt)
         self.assertIn("Singapore English with British-style spelling where appropriate", sg_prompt)
         self.assertIn("Singlish", sg_prompt)
+
+        for prompt in (us_prompt, us_specific_prompt, uk_prompt, au_prompt, sg_prompt):
+            self.assertIn("Use straight ASCII apostrophes (')", prompt)
+
+    def test_market_specific_apostrophe_rules(self):
+        for language in ("French", "French_Belgium", "French_Canada"):
+            with self.subTest(language=language):
+                prompt = self.builder.build_translation_prompt(
+                    target_lang=language,
+                    source_lang="Korean",
+                )
+                self.assertIn("Use typographic apostrophes (’)", prompt)
+                self.assertIn("elision", prompt)
+
+        for language in ("Italian", "German", "Dutch"):
+            with self.subTest(language=language):
+                prompt = self.builder.build_translation_prompt(
+                    target_lang=language,
+                    source_lang="Korean",
+                )
+                self.assertIn("Use typographic apostrophes (’)", prompt)
+
+        turkish_prompt = self.builder.build_translation_prompt(
+            target_lang="Turkish",
+            source_lang="Korean",
+        )
+        self.assertIn("Use typographic apostrophes (’)", turkish_prompt)
+        self.assertIn("separating suffixes from proper names", turkish_prompt)
 
     def test_simplified_chinese_tone_rules_scoped_to_cn_only(self):
         cn_prompt = self.builder.build_translation_prompt(target_lang="Simplified Chinese", source_lang="Korean")

@@ -25,28 +25,34 @@ LANGUAGE_LOCALIZATION_RULES = {
     "English_US": [
         "Use US English spelling and wording (e.g., 'color', 'personalize').",
         "Follow the project-specific rule for disclaimers: place the sentence-ending period outside the closing quotation mark.",
+        "Use straight ASCII apostrophes (') for contractions and possessives in user-facing copy. Do not mix them with typographic apostrophes within the same story; preserve official names and exact technical strings as styled.",
     ],
     "English_UK": [
         "Use British English spelling (e.g., 'colour', 'personalise', 'optimise').",
         "Avoid US-specific vocabulary and phrasing.",
+        "Use straight ASCII apostrophes (') for contractions and possessives in user-facing copy. Do not mix them with typographic apostrophes within the same story; preserve official names and exact technical strings as styled.",
     ],
     "English_AU": [
         "Use Australian English with British-style spelling.",
         "Avoid overly aggressive US-style marketing tones; keep it helpful and clear.",
+        "Use straight ASCII apostrophes (') for contractions and possessives in user-facing copy. Do not mix them with typographic apostrophes within the same story; preserve official names and exact technical strings as styled.",
     ],
     "English_SG": [
         "Use concise, international Singapore English with British-style spelling where appropriate.",
         "Do NOT use Singlish, local slang, or overly US-specific wording.",
+        "Use straight ASCII apostrophes (') for contractions and possessives in user-facing copy. Do not mix them with typographic apostrophes within the same story; preserve official names and exact technical strings as styled.",
     ],
     "English": [
         "Use US English spelling and wording (e.g., 'color', 'personalize') unless a more specific English market variant is specified.",
         "Follow the project-specific rule for disclaimers: place the sentence-ending period outside the closing quotation mark.",
+        "Use straight ASCII apostrophes (') for contractions and possessives in user-facing copy. Do not mix them with typographic apostrophes within the same story; preserve official names and exact technical strings as styled.",
     ],
     "German": [
         "Use Du-form consistently unless the locale or project explicitly requires Sie-form.",
         "Ensure natural capitalization of nouns and maintain natural compound word structures.",
         "Avoid overly formal or technical wording in short UI copy.",
         "Use „...“ (German quotation marks) for quoted text and navigation paths; do not use English straight quotation marks.",
+        "Use typographic apostrophes (’) where German requires an apostrophe in user-facing copy. Do not mix them with straight ASCII apostrophes within the same story; preserve official names and exact technical strings as styled.",
     ],
     "Japanese": [
         "Use consistent ます-form unless project guidance specifies otherwise.",
@@ -59,20 +65,24 @@ LANGUAGE_LOCALIZATION_RULES = {
         "Use «...» (guillemets) for quoted text and navigation paths.",
         "Avoid unnecessary capitalization in UI copy.",
         "Use natural French phrasing and avoid English-influenced structures.",
+        "Use typographic apostrophes (’) for elision and other apostrophe uses in user-facing copy. Do not mix them with straight ASCII apostrophes within the same story; preserve official names and exact technical strings as styled.",
     ],
     "French_Belgium": [
         "Use Vous-form consistently; do not use Tu-form.",
         "Use «...» (guillemets) for quoted text and navigation paths.",
         "Use neutral French and avoid overly idiomatic expressions specific to mainland France.",
         "Ensure consistent tone for the Belgian market.",
+        "Use typographic apostrophes (’) for elision and other apostrophe uses in user-facing copy. Do not mix them with straight ASCII apostrophes within the same story; preserve official names and exact technical strings as styled.",
     ],
     "French_Canada": [
         "Use Vous-form consistently; do not use Tu-form.",
         "Use «...» (guillemets) for quoted text and navigation paths.",
         "Follow Canadian French standards; prioritize phrasing natural to North American French over mainland France idioms.",
+        "Use typographic apostrophes (’) for elision and other apostrophe uses in user-facing copy. Do not mix them with straight ASCII apostrophes within the same story; preserve official names and exact technical strings as styled.",
     ],
     "Italian": [
         "Use natural Italian UI sentence structures; avoid English-style noun-chaining.",
+        "Use typographic apostrophes (’) for elision and other apostrophe uses in user-facing copy. Do not mix them with straight ASCII apostrophes within the same story; preserve official names and exact technical strings as styled.",
     ],
     "Spanish": [
         "Use tú (informal address) consistently; do not use Usted unless the source or project explicitly requires formal register.",
@@ -82,6 +92,7 @@ LANGUAGE_LOCALIZATION_RULES = {
         "Use 'u/uw' (formal address) consistently; do not use je/jij.",
         "Keep Dutch copy direct and concise.",
         "Avoid literal translation of English word order or noun-phrase structures.",
+        "Use typographic apostrophes (’) where Dutch requires an apostrophe in user-facing copy. Do not mix them with straight ASCII apostrophes within the same story; preserve official names and exact technical strings as styled.",
     ],
     "Swedish": [
         "Keep Swedish UI copy concise and natural.",
@@ -106,6 +117,7 @@ LANGUAGE_LOCALIZATION_RULES = {
     "Turkish": [
         "Use natural Turkish word order and avoid structural calques from English.",
         "Maintain concise imperative or descriptive forms suitable for UI copy.",
+        "Use typographic apostrophes (’) when separating suffixes from proper names, abbreviations, and numerals, and in other orthographically required uses. Do not mix them with straight ASCII apostrophes within the same story; preserve official names and exact technical strings as styled.",
     ],
     "Simplified Chinese": [
         "Use natural Mainland Chinese wording and Simplified Chinese characters.",

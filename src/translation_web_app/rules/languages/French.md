@@ -17,6 +17,9 @@ rules:
 - rule_id: french-004
   scope: [app_prompt]
   text: Use natural French phrasing and avoid English-influenced structures.
+- rule_id: french-005
+  scope: [app_prompt]
+  text: Use typographic apostrophes (’) for elision and other apostrophe uses in user-facing copy. Do not mix them with straight ASCII apostrophes within the same story; preserve official names and exact technical strings as styled.
 ---
 
 # French

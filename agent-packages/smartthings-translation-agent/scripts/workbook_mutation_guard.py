@@ -43,6 +43,43 @@ def clone_rich_value(value: Any) -> Any:
     return copy.copy(value)
 
 
+def slice_rich_value(value: Any, start: int = 0, end: int | None = None) -> Any:
+    """Slice a cell value by displayed-character offsets without flattening runs."""
+    displayed = text(value)
+    limit = len(displayed)
+    normalized_start, normalized_end, _step = slice(start, end).indices(limit)
+    if normalized_start >= normalized_end:
+        return ""
+    if not isinstance(value, CellRichText):
+        return displayed[normalized_start:normalized_end]
+
+    result = CellRichText()
+    cursor = 0
+    for part in value:
+        segment = part.text or "" if isinstance(part, TextBlock) else str(part)
+        segment_end = cursor + len(segment)
+        overlap_start = max(normalized_start, cursor)
+        overlap_end = min(normalized_end, segment_end)
+        if overlap_start < overlap_end:
+            fragment = segment[overlap_start - cursor:overlap_end - cursor]
+            if isinstance(part, TextBlock):
+                result.append(TextBlock(text=fragment, font=copy.copy(part.font)))
+            else:
+                result.append(fragment)
+        cursor = segment_end
+    return result
+
+
+def rich_value_signature(value: Any) -> dict[str, Any]:
+    """Return a stable signature for displayed text and rich-text run formatting."""
+    displayed = text(value)
+    return {
+        "kind": "rich" if isinstance(value, CellRichText) else "plain",
+        "text_sha256": hashlib.sha256(displayed.encode("utf-8")).hexdigest(),
+        "runs": _rich_signature(value),
+    }
+
+
 def copy_cell_style(source, target) -> None:
     """Copy semantic style components safely across different workbooks."""
     target.font = copy.copy(source.font)
@@ -59,21 +96,23 @@ def copy_row_layout(
     row: int,
     *,
     columns: Iterable[int] | None = None,
+    target_row: int | None = None,
 ) -> None:
     """Copy row geometry and cell styles without copying cell values."""
+    destination_row = row if target_row is None else target_row
     source_dimension = source_sheet.row_dimensions.get(row)
     if source_dimension is None:
-        if row in target_sheet.row_dimensions:
-            del target_sheet.row_dimensions[row]
+        if destination_row in target_sheet.row_dimensions:
+            del target_sheet.row_dimensions[destination_row]
     else:
-        target_dimension = target_sheet.row_dimensions[row]
+        target_dimension = target_sheet.row_dimensions[destination_row]
         for attribute in (
             "height", "hidden", "outlineLevel", "collapsed", "thickTop", "thickBot",
         ):
             setattr(target_dimension, attribute, copy.copy(getattr(source_dimension, attribute)))
     selected = columns if columns is not None else range(1, source_sheet.max_column + 1)
     for column in selected:
-        copy_cell_style(source_sheet.cell(row, column), target_sheet.cell(row, column))
+        copy_cell_style(source_sheet.cell(row, column), target_sheet.cell(destination_row, column))
 
 
 def delete_rows_with_manifest(sheet, start: int, amount: int) -> dict[str, Any]:

@@ -8,6 +8,9 @@ rules:
 - rule_id: italian-001
   scope: [app_prompt]
   text: Use natural Italian UI sentence structures; avoid English-style noun-chaining.
+- rule_id: italian-002
+  scope: [app_prompt]
+  text: Use typographic apostrophes (’) for elision and other apostrophe uses in user-facing copy. Do not mix them with straight ASCII apostrophes within the same story; preserve official names and exact technical strings as styled.
 ---
 
 # Italian

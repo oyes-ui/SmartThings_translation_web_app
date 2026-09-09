@@ -17,6 +17,9 @@ rules:
 - rule_id: german-004
   scope: [app_prompt]
   text: Use „...“ (German quotation marks) for quoted text and navigation paths; do not use English straight quotation marks.
+- rule_id: german-005
+  scope: [app_prompt]
+  text: Use typographic apostrophes (’) where German requires an apostrophe in user-facing copy. Do not mix them with straight ASCII apostrophes within the same story; preserve official names and exact technical strings as styled.
 ---
 
 # German

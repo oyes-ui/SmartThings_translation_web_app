@@ -14,6 +14,9 @@ rules:
 - rule_id: dutch-003
   scope: [app_prompt]
   text: Avoid literal translation of English word order or noun-phrase structures.
+- rule_id: dutch-004
+  scope: [app_prompt]
+  text: Use typographic apostrophes (’) where Dutch requires an apostrophe in user-facing copy. Do not mix them with straight ASCII apostrophes within the same story; preserve official names and exact technical strings as styled.
 ---
 
 # Dutch
