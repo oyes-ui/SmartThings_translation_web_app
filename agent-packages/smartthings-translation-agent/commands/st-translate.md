@@ -22,3 +22,7 @@ python scripts/workbook_translate.py <workbook.xlsx> --sheets "<대상>" --pipel
 ## 업무 전체를 이어갈 때
 
 `references/workflow-guide.md`와 `references/workbook-batch.md`를 읽는다. 파일별 용어집 적용안을 확정한 뒤 `workbook_batch.py`로 기존 기능을 연결한다. 기본 API는 초벌·Excel 기입·하이라이트만이며 API 검수·역번역은 명시 요청 때만 실행한다. 초벌 뒤 활성 에이전트가 `ready_for_agent`의 셀→시트→리드 prompt를 수행하고 `advance`를 반복해 상세 MD·통합 승인검토표까지 생성한다. 준비 명령만 실행하고 검수가 완료됐다고 보고하지 않는다. 성공 작업은 계속하며 유료 실패는 자동 재시도하지 않는다.
+
+## 1차 수정본까지 요청한 경우
+
+“초벌부터 검수하고 1차 수정본까지”, “번역·검수 후 수정본과 재게이트 문서를 만들어줘”, “1차 개선 모드”는 [업무 가이드의 1차 개선 모드](../references/workflow-guide.md#1차-개선-모드)를 읽고 연결한다. 단순 “번역해줘”·“검수해줘”는 이 모드를 켜지 않는다. 실행 범위·승인·현재 지원 경계는 가이드 한 곳에서 관리하며 존재하지 않는 CLI 옵션이나 자동 완료 상태를 만들지 않는다.

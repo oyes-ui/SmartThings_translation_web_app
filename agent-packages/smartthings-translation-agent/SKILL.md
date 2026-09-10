@@ -69,6 +69,8 @@ python scripts/bootstrap.py --app-root <경로> --save
 - **텍스트워크북 생성**: "이 텍스트로 source 워크북 만들어줘" → `scripts/text_workbook_create.py`
 - **RAG DB 관리**: "RAG DB 현황/재빌드" → `python -m translation_web_app.rag_db_builder` (→ `references/rag-workflow.md`)
 
+“초벌부터 검수하고 1차 수정본까지” 또는 “1차 개선 모드” 요청은 `commands/st-translate.md`와 `references/workflow-guide.md`의 **1차 개선 모드**로 연결한다.
+
 ## 사용자 진입 명령
 
 기본 목록·한 줄 설명의 정본은 `commands/README.md`다.
