@@ -1,11 +1,10 @@
 ---
-description: 앱 번역(+검수) 파이프라인 실행 [LLM 크레딧]
-argument-hint: <xlsx 경로> --sheets <대상> [--translate-only]
+description: 번역하기 — 소량은 직접 번역, 대량 API 실행은 승인 후
+argument-hint: <문구 또는 파일> <대상 언어와 요청>
 ---
 
-⚠️ **LLM 크레딧 소모.** 소량·단건이면 먼저 `/st-prompt`(셀프, 크레딧 0)를 권하라. 사용자가 대량/자동화를 원하고 **명시적으로 승인**했을 때만 `--pipeline` 을 붙여 실행:
+먼저 `agent-packages/smartthings-translation-agent/commands/st-translate.md`를 읽고 그 절차를 따른다.
+기본 명령 목록의 정본은 `agent-packages/smartthings-translation-agent/commands/README.md`다.
+사용자 인자는 자연어로 해석하며, 대화에서 이미 승인한 범위와 파일을 활용한다.
 
-```bash
-python agent-packages/smartthings-translation-agent/scripts/workbook_translate.py $ARGUMENTS --pipeline --json
-```
-`--pipeline` 없으면 스크립트가 거부하고 셀프 모드를 안내한다. 참조: `agent-packages/smartthings-translation-agent/references/self-vs-pipeline.md`
+$ARGUMENTS

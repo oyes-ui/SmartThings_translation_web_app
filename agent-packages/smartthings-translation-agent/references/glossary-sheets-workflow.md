@@ -25,3 +25,7 @@
 4. `status`/`list` 또는 export 재읽기로 반영 수와 주요 항목을 검증한다. 실패하거나 불일치하면 중단하고 상태를 보고한다.
 
 현재 앱의 내장 용어집은 SQLite/CSV 기반이며 Google Sheets를 실시간으로 읽지 않는다. Google Sheets는 관리 원본이고, 내장 용어집 반영은 위 승인 기반 import를 통해서만 수행한다.
+
+## 기본 CSV 동기화와 진행 중 작업
+
+`glossary_manage.py`의 승인된 add/update/delete/import는 앱 DB 변경 뒤 `runtime/glossary/latest_glossary.csv`를 두 번의 DB export로 대조하고 atomic 교체한다. DB와 파일 교체는 하나의 분산 트랜잭션이 아니므로 CSV 실패 시 `status: partial`, `db_updated`, `next_action`을 확인한다. 이때 import를 반복하지 말고 `glossary_manage.py sync-default --apply --json`으로 CSV만 복구한다. `latest_glossary.sync.json`이 실패/진행 중이면 범용 새 작업은 시작하지 않는다. 기존 작업은 캡처한 용어집을 유지한다. Google Sheets 편집·승인은 별도 Drive/Sheets 스킬 범위이며 실제 원격 변경 없이 로컬 동기화만 성공했다고 보고하지 않는다.

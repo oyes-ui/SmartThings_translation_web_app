@@ -42,7 +42,8 @@ python scripts/bootstrap.py --app-root <경로> --save
 | 규칙·용어집 출처 | `references/rules-sources.md` | 규칙 > 시장 기준 > RAG |
 | Google Sheets 용어집 관리·내장 반영 | `references/glossary-sheets-workflow.md` | 기준 탭 확인, 3행 `Lng` 매핑, diff·승인 후 CSV merge |
 | 답변 형식 | `references/response-patterns.md` | 근거 표기 필수 |
-| 승인 반영·납품·결과 기록 | `commands/st-apply.md` | Excel을 쓰는 유일한 경로 |
+| 승인 반영·납품·결과 기록 | `commands/st-apply.md` | 납품본 생성 경로 (일반 draft 수정은 st-edit) |
+| 명령 실행·상태·재개 | `references/command-execution.md` | 기존 승인과 계약 실행기 연결 |
 
 ## 언제 이 skill을 쓰는가 (트리거)
 
@@ -68,20 +69,16 @@ python scripts/bootstrap.py --app-root <경로> --save
 - **텍스트워크북 생성**: "이 텍스트로 source 워크북 만들어줘" → `scripts/text_workbook_create.py`
 - **RAG DB 관리**: "RAG DB 현황/재빌드" → `python -m translation_web_app.rag_db_builder` (→ `references/rag-workflow.md`)
 
+“초벌부터 검수하고 1차 수정본까지” 또는 “1차 개선 모드” 요청은 `commands/st-translate.md`와 `references/workflow-guide.md`의 **1차 개선 모드**로 연결한다.
+
 ## 사용자 진입 명령
 
-초심자에게는 다음 여섯 명령을 우선 안내한다. 기존 세부 명령은 아래 표의 내부 구현 또는
-고급/관리 경로로 유지한다.
-
-| 명령 | 목적 | 크레딧 |
-|---|---|---|
-| `/st-start` | app 연결 상태·다음 단계 안내 | 0 |
-| `/st-ask` | 규칙·용어집·RAG 사례 질의 | 0~ |
-| `/st-inspect` | 언어 시트 에이전트 검수·리포트·수정 제안 | 0 |
-| `/st-review` | `/st-inspect` 호환 alias (4주 shadow 전환 기간) | 0 |
-| `/st-edit` | 일반 Excel 수정 preview·승인·복사본 적용 | 0 |
-| `/st-apply` | 승인 manifest 기반 감수본·납품본 생성 | 0 |
-| `/st-pipeline` | 승인 후 앱 LLM 번역 또는 검수 | LLM |
+기본 목록·한 줄 설명의 정본은 `commands/README.md`다.
+`/st-start` 시작·상태, `/st-ask` 질의, `/st-translate` 번역, `/st-inspect` 검수,
+`/st-edit` 지정 수정본, `/st-apply` 승인한 내용으로 납품본 만들기의 여섯 명령을 안내한다.
+`/st-review`·`/st-help`·`/st-pipeline`은 호환 경로로 유지하며 기본 목록에는 중복 표시하지 않는다.
+입력은 자연어를 받고 에이전트가 내부 manifest/계약을 준비한다. 현재 상태 확인과 기존 승인
+범위의 재개는 `references/command-execution.md`를 따르며 새 사용자 명령은 만들지 않는다.
 
 ## 세부 슬래시 명령어
 
@@ -104,7 +101,7 @@ python scripts/bootstrap.py --app-root <경로> --save
 | `/st-highlight` | 용어집 rich text 하이라이트(원본 불변) | 0 |
 | `/st-edit` | 승인된 셀 편집 적용(복사본) | 0 |
 | `/st-textbook` | 구조화 텍스트 → source 워크북 생성 | 0 |
-| `/st-translate` | 앱 번역(+검수) 파이프라인 실행 | LLM |
+| `/st-translate` | 소량 직접 번역·승인된 대량 API 번역 | 0~ |
 | `/st-audit` | 앱 검수(inspection) 파이프라인 실행 | LLM |
 | `/st-audit-explain` | 기존 검수 등급/피드백 근거 설명 | 0 |
 | `/st-review-summary` | 감수본·AI 검수 txt·리포트 요약 수치 산출 | 0 |
@@ -113,7 +110,7 @@ python scripts/bootstrap.py --app-root <경로> --save
 
 ## 안전 규칙 (반드시 준수)
 
-1. **Excel 원본 불변**: 워크북은 절대 덮어쓰지 않는다. `workbook_apply_edits.py`는 타임스탬프 복사본을 만든다.
+1. **Excel 원본 불변**: 워크북은 절대 덮어쓰지 않는다. `workbook_apply_edits.py`는 검증된 버전 폴더에 복사본을 만든다.
 2. **수정 전 명시적 승인**: 셀을 고치기 전에 사용자에게 변경 내역을 보여주고 승인받는다. 승인 없이 `workbook_apply_edits.py`를 실행하지 않는다.
 3. **API 크레딧 사전 확인**: RAG DB 재구축, LLM 검수 재실행 등 크레딧이 드는 작업은 실행 전 사용자에게 확인한다. (`rag_lookup.py`의 offline 조회는 크레딧 0; semantic 조회만 임베딩 1회 수준)
 4. **시크릿 미노출**: API 키·`.env` 내용을 출력하거나 로그에 남기지 않는다.

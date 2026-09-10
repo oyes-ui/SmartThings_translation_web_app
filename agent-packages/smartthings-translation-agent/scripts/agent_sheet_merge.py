@@ -40,6 +40,8 @@ def resolver_validator(packet: dict[str, Any], glossary: Path, app_root: Path, s
     source_code = ap.DEFAULT_SHEET_LANGS[ap.GROUP_B_SOURCE]["code"]
     if sheet in ap.GROUP_A_TARGETS:
         source_code = ap.DEFAULT_SHEET_LANGS[ap.GROUP_A_SOURCE]["code"]
+    if packet.get("source_sheet"):
+        source_code = (packet.get("sheet_langs") or ap.DEFAULT_SHEET_LANGS)[packet["source_sheet"]]["code"]
     loaded = asyncio.run(checker.load_glossary_from_file(str(glossary), source_code))
     if not loaded.startswith("✓"):
         raise RuntimeError(f"glossary 로드 실패: {loaded}")

@@ -3,6 +3,10 @@ description: 승인된 story 수정안을 납품용 하이라이트 복사본으
 argument-hint: <xlsx> <edits.json> --delivery-sheets "VN(베트남),TH(태국)" --glossary <Glossary.csv>
 ---
 
+이 고급 명령은 `/st-apply`의 기존 실행 경로다. 사용자 기본 안내는 `commands/README.md`,
+계약 실행·preview·재개와 실제 출력 경로는 `references/command-execution.md`를 따른다.
+사용자 입력은 자연어로 받아 내부 manifest를 준비한다.
+
 `/st-story-review`에서 확정·승인된 수정안만 반영한다. 원본은 수정하지 않으며, **이번 납품 범위 전체**를 재하이라이트한 파일만 최종본으로 안내한다.
 
 ```bash
@@ -15,7 +19,7 @@ python agent-packages/smartthings-translation-agent/scripts/workbook_story_apply
 
 ## 완료 조건
 
-1. 원본에서 `_revised_...xlsx` 복사본을 생성한다.
+1. staging에서 수정본을 만들고 최종본까지 검증한 뒤 버전 배치로 공개한다.
 2. 승인된 셀만 바꾼다.
 3. `--delivery-sheets`와 필요한 KR/US source 시트의 `C7:C28` rich text 하이라이트를 glossary 기준으로 재생성한다.
 4. 원본 대비 값 변경이 승인된 셀과 정확히 일치하고, highlight report에 delivery scope의 모든 시트가 실제 처리됐는지 검증한다.

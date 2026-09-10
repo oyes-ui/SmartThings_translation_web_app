@@ -122,7 +122,17 @@ def _find_parent_revision(workbook: str | Path) -> tuple[dict, Path] | None:
     """Find a prior revision whose output is the supplied input workbook."""
     path = Path(workbook)
     current_sha = file_sha256(path)
-    for candidate in _history_root(path).glob("*/revisions/*.json"):
+    candidates = list(_history_root(path).glob("*/revisions/*.json"))
+    # Versioned publication directories carry the existing change-log pointer.
+    sidecar = path.with_suffix(".changes.json")
+    if sidecar.is_file():
+        try:
+            pointer = json.loads(sidecar.read_text()).get("revision_manifest")
+            if pointer:
+                candidates.insert(0, Path(pointer))
+        except (OSError, ValueError):
+            pass
+    for candidate in candidates:
         try:
             payload = load_revision(candidate)
         except (OSError, ValueError, json.JSONDecodeError):

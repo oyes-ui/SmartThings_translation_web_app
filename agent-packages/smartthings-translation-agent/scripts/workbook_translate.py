@@ -34,6 +34,9 @@ import _app_pipeline as ap
 
 
 async def run_translate(args) -> dict:
+    wants_backtranslation = bool(getattr(args, "with_backtranslation", False) or args.backtranslation_lang or args.backtranslation_sheet)
+    if wants_backtranslation and args.translate_only:
+        raise ValueError("역번역에는 --with-api-audit를 명시하세요")
     app_root = ap.bootstrap_project(args.app_root)
     ap.maybe_reexec_with_app_venv(app_root)
 
@@ -75,6 +78,7 @@ async def run_translate(args) -> dict:
     with redirect:
         checker = TranslationChecker(
             max_concurrency=max(1, args.max_concurrency),
+            no_backtranslation=not wants_backtranslation,
             backtranslation_lang=args.backtranslation_lang,
             backtranslation_sheet=args.backtranslation_sheet,
             # NOTE: run_integrated_pipeline_generator(audit_model=...)의 audit_model 인자는
@@ -83,6 +87,8 @@ async def run_translate(args) -> dict:
             # 감수·역번역 모델을 바꾸게 하려면 여기서 명시적으로 넘겨야 한다.
             model_name=args.audit_model,
         )
+        if getattr(args, "activation_manifest", None):
+            checker.load_activation_manifest(str(args.activation_manifest))
         async for event in checker.run_integrated_pipeline_generator(
             source_file_path=str(workbook),
             cell_range=args.cell_range,
@@ -114,6 +120,8 @@ async def run_translate(args) -> dict:
 
     summary = ap.event_summary(events)
     summary.update({
+        "artifact_status": "draft",
+        "activation_manifest": getattr(args, "activation_manifest", None),
         "source": str(workbook),
         "glossary": glossary_path,
         "cell_range": args.cell_range,
@@ -133,7 +141,9 @@ def main() -> None:
     parser.add_argument("workbook", help="원본 .xlsx 경로 (수정되지 않음)")
     parser.add_argument("--pipeline", action="store_true",
                         help="유료 LLM 파이프라인 실행 확인 플래그 (없으면 거부)")
-    parser.add_argument("--translate-only", action="store_true", help="검수 생략(번역만)")
+    parser.add_argument("--translate-only", action="store_true", default=True, help="기본: API 검수·역번역 생략")
+    parser.add_argument("--with-api-audit", action="store_false", dest="translate_only", help="명시 요청한 API 검수·역번역 실행")
+    parser.add_argument("--activation-manifest", help="사용자가 확정한 용어집 활성화 설정")
     parser.add_argument("--cell-range", default="C7:C28")
     parser.add_argument("--sheets", help="대상 시트 CSV")
     parser.add_argument("--glossary", help="용어집 CSV 경로(기본: runtime/glossary/latest_glossary.csv)")
@@ -144,6 +154,7 @@ def main() -> None:
     parser.add_argument("--translation-model", default="gemini-3.8-flash")
     parser.add_argument("--audit-model", default="gpt-5.2")
     parser.add_argument("--max-concurrency", type=int, default=5)
+    parser.add_argument("--with-backtranslation", action="store_true", help="명시 요청한 역번역 활성화 (--with-api-audit 필요)")
     parser.add_argument("--backtranslation-lang",
                         help="역번역 참조 언어 강제 지정(예: 'Korean'). 미지정 시 기존 동작"
                              "(=번역 source_lang으로 역번역) 그대로.")

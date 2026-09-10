@@ -4,7 +4,7 @@
 workbook_add_target_sheet.py — 워크북에 새 언어 타겟 시트(+선택적 역번역 시트)를
 추가한 사본을 생성한다 (크레딧 0).
 
-원본은 절대 수정하지 않는다. 같은 워크북 안의 기존 시트(--template-sheet, 기본 "ES(스페인)")를
+원본은 절대 수정하지 않는다. 같은 워크북 안의 기존 시트(--template-sheet로 명시)를
 복제해 새 시트(--new-sheet, 예: "CO(콜롬비아)")를 만든다 — 스토리마다 section 개수가 달라 행
 구조가 파일마다 다르므로, 반드시 같은 파일 안의 시트를 복제해야 B열 라벨 수식과 행 구조가
 그 스토리와 정확히 일치한다.
@@ -24,12 +24,13 @@ workbook_add_target_sheet.py — 워크북에 새 언어 타겟 시트(+선택�
      TranslationChecker(backtranslation_sheet=...) 참고).
 
 사용 예:
-  python workbook_add_target_sheet.py story.xlsx --new-sheet "CO(콜롬비아)" --lang-code es_CO \
+  python workbook_add_target_sheet.py story.xlsx --template-sheet "ES(스페인)" --new-sheet "CO(콜롬비아)" --lang-code es_CO \
       --backtranslation-sheet "CO(콜롬비아) 역번역" --out story_co_prep.xlsx
 """
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
 import json
 import os
 import sys
@@ -65,7 +66,9 @@ LANGUAGE_ROW = 3      # "//language" 라벨 행
 def _clear_content(ws) -> list[str]:
     cleared = []
     for row in range(CONTENT_ROW_START, CONTENT_ROW_END + 1):
-        cell = ws.cell(row=row, column=CONTENT_COL)
+        cell = ws._cells.get((row, CONTENT_COL))
+        if cell is None:
+            continue
         val = str(cell.value).strip() if cell.value is not None else ""
         if val and val.lower() != "x":
             cell.value = None
@@ -74,7 +77,11 @@ def _clear_content(ws) -> list[str]:
 
 
 def _clone_sheet(wb, template_sheet: str, title: str, insert_after: str):
+    _check_copyable(wb[template_sheet])
     new_ws = wb.copy_worksheet(wb[template_sheet])
+    # copy_worksheet omits views; retain zoom and selection explicitly.
+    new_ws.views = deepcopy(wb[template_sheet].views)
+    new_ws.sheet_state = wb[template_sheet].sheet_state
     new_ws.title = title
     after_idx = wb.sheetnames.index(insert_after)
     wb.move_sheet(new_ws, offset=(after_idx + 1) - wb.sheetnames.index(title))
@@ -126,10 +133,95 @@ def add_target_sheet(
     return result
 
 
+def _check_copyable(ws):
+    """Reject objects copy_worksheet cannot preserve before performing a copy."""
+    from openpyxl.worksheet.worksheet import Worksheet
+    from openpyxl.xml.functions import tostring
+    blank = Worksheet(ws.parent)
+    unsupported = ("protection", "auto_filter", "HeaderFooter", "row_breaks", "col_breaks")
+    if (ws._charts or ws._images or ws.tables or ws.data_validations.count
+            or ws.conditional_formatting or ws.freeze_panes or ws.defined_names
+            or ws.print_area or ws.print_title_rows or ws.print_title_cols
+            or any(c.comment for c in ws._cells.values())
+            or any(tostring(getattr(ws, k).to_tree()) != tostring(getattr(blank, k).to_tree())
+                   for k in unsupported)):
+        raise ValueError("Template contains objects copy_worksheet cannot preserve; use an explicit layout plan")
+
+
+def save_prepared(workbook: Path, output: Path, template_sheet: str, new_sheet: str,
+                  lang_code: str, backtranslation_sheet: str | None = None) -> dict:
+    """All preparation callers use the same source-derived five-axis contract."""
+    import copy
+    from workbook_contract import atomic_json, canonical, capture_authority, digest, file_sha256, save_contract
+    from workbook_run import execute_run
+    from workbook_verifier import facts, diff_facts
+    # Import the shared writer explicitly; execute_run owns its invocation.
+    from workbook_mutation_guard import save_verified_atomic
+    workbook, output = workbook.resolve(), output.resolve()
+    if workbook == output:
+        raise ValueError("Preparation output must differ from source")
+    before = facts(workbook)
+    expected = copy.deepcopy(before)
+    names = expected["layout"][canonical(["sheetnames"])]
+    additions = [(new_sheet, lang_code, template_sheet)]
+    if backtranslation_sheet:
+        additions.append((backtranslation_sheet, f"{lang_code} 역번역 참고용 (배포 대상 아님)", new_sheet))
+    for title, code, after in additions:
+        if title in names:
+            continue
+        names.insert(names.index(after) + 1, title)
+        for axis, entries in before.items():
+            for key, value in entries.items():
+                path = json.loads(key)
+                if path[:2] == ["sheets", template_sheet]:
+                    expected[axis][canonical(["sheets", title, *path[2:]])] = copy.deepcopy(value)
+        for row in range(CONTENT_ROW_START, CONTENT_ROW_END + 1):
+            key = canonical(["sheets", title, "cells", f"C{row}"])
+            value = expected["values"].get(key)
+            if value and value["text"].strip() and value["text"].strip().lower() != "x":
+                expected["values"].pop(key)
+                expected["rich_text"].pop(key, None)
+        key = canonical(["sheets", title, "cells", "C3"])
+        expected["values"][key] = {"text": code, "data_type": "s"}
+        expected["rich_text"].pop(key, None)
+        for dim, minimum in (("max_row", 3), ("max_column", 3)):
+            key = canonical(["sheets", title, dim])
+            expected["layout"][key] = max(expected["layout"][key], minimum)
+    result = add_target_sheet(workbook, template_sheet, new_sheet, lang_code, backtranslation_sheet)
+    if result["status"] != "ok":
+        result["wb"].close()
+        raise ValueError(result["reason"])
+    changes = diff_facts(before, expected)
+    work_id = "prepare-" + digest([str(workbook), file_sha256(workbook), str(output), additions])[:24]
+    root = output.parent / ".st-runs" / work_id
+    ref = {"authority": "source", "file": "."}
+    writer = {"id": "workbook_prepare", "version": file_sha256(__file__), "cost": "local"}
+    contract = {"schema_version": 1, "work_id": work_id, "work_root": str(root),
+        "staging_root": str(root / "staging"), "delivery_root": str(output.parent / "verified"),
+        "authorities": {"source": capture_authority(workbook)}, "writer": writer,
+        "artifacts": [{"id": "prepared", "output": output.name,
+            "authorities": {role: dict(ref) for role in ("values", "structure", "formatting")},
+            "allowed_diffs": changes}], "no_op_files": [] if changes else ["prepared"],
+        "recovery": {"max_attempts": 1, "same_failure_limit": 1}}
+    path, approval = root / "contract.json", root / "approval.json"
+    if not path.exists():
+        sha = save_contract(path, contract)
+        atomic_json(approval, {"approved": True, "approved_by": "authorized_workbook_preparation",
+                              "contract_sha256": sha})
+    try:
+        state = execute_run(path, lambda *_: result["wb"], writer=writer, approval_path=approval)
+        if state["status"] != "completed":
+            raise ValueError(f"Workbook preparation failed verification: {root / 'state.json'}")
+        return {**{k: v for k, v in result.items() if k != "wb"},
+                "output": state["result"]["outputs"]["prepared"], "contract": str(path)}
+    finally:
+        result["wb"].close()
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("workbook", help="원본 .xlsx 경로 (수정되지 않음)")
-    p.add_argument("--template-sheet", default="ES(스페인)", help="복제할 기존 시트명")
+    p.add_argument("--template-sheet", required=True, help="복제할 기존 시트명")
     p.add_argument("--new-sheet", required=True, help="새로 만들 시트명 (예: 'CO(콜롬비아)')")
     p.add_argument("--lang-code", required=True, help="//language 셀에 넣을 값 (예: 'es_CO')")
     p.add_argument("--backtranslation-sheet",
@@ -145,23 +237,9 @@ def main() -> None:
         print(json.dumps(msg, ensure_ascii=False) if args.json else f"❌ {msg['error']}")
         sys.exit(2)
 
-    result = add_target_sheet(
-        workbook, args.template_sheet, args.new_sheet, args.lang_code,
-        backtranslation_sheet=args.backtranslation_sheet,
-    )
-
-    if result["status"] == "error":
-        msg = {"status": "error", "error": result["reason"]}
-        print(json.dumps(msg, ensure_ascii=False) if args.json else f"❌ {result['reason']}")
-        sys.exit(1)
-
-    out_path = Path(args.out).expanduser()
-    tmp = out_path.with_suffix(out_path.suffix + ".tmp")
-    result["wb"].save(tmp)
-    os.replace(tmp, out_path)
-
-    summary = {k: v for k, v in result.items() if k != "wb"}
-    summary["output"] = str(out_path)
+    summary = save_prepared(workbook, Path(args.out).expanduser(), args.template_sheet,
+                            args.new_sheet, args.lang_code, args.backtranslation_sheet)
+    out_path = Path(summary["output"])
     if args.json:
         print(json.dumps(summary, ensure_ascii=False, indent=2))
     else:

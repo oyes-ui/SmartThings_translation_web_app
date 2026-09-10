@@ -16,15 +16,12 @@ import json
 import os
 import re
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
 
 import openpyxl
 from openpyxl.utils.cell import column_index_from_string, coordinate_from_string
 
 import _app_pipeline as ap
-from workbook_highlight_glossary import _report_path_for, run_highlight
-from workbook_manifest import create_edit_revision, resolve_ledger
 
 
 DECISIONS = {"accept", "partial", "hold"}
@@ -131,6 +128,7 @@ def _validate_decisions(
     decisions: list[dict],
     protected: set[str],
     cell_range: str,
+    source_sheet: str | None = None,
 ) -> list[dict]:
     start, end = _parse_c_range(cell_range)
     seen: set[tuple[str, str]] = set()
@@ -159,12 +157,13 @@ def _validate_decisions(
         if decision in {"accept", "partial"} and sheet in protected:
             raise ValueError(f"보호 언어는 수용/부분 수용할 수 없습니다: {sheet}!{cell}")
         declared_source = raw.get("source_sheet")
-        if declared_source and declared_source != _source_for_sheet(sheet):
+        if declared_source and declared_source != (source_sheet or _source_for_sheet(sheet)):
             raise ValueError(
                 f"{sheet}!{cell}: source_sheet={declared_source!r}가 표준 source group "
                 f"{_source_for_sheet(sheet)!r}과 다릅니다."
             )
-        normalized.append({**raw, "sheet": sheet, "cell": cell, "decision": decision})
+        normalized.append({**raw, "sheet": sheet, "cell": cell, "decision": decision,
+                           "source_sheet": source_sheet or _source_for_sheet(sheet)})
     return normalized
 
 
@@ -294,77 +293,8 @@ def _verify_expected_c_diff(source: Path, acceptance: Path, expected: set[tuple[
 
 
 async def run_apply(args) -> dict:
-    source = Path(args.workbook).expanduser()
-    approval_path = Path(args.approval_manifest).expanduser()
-    output = Path(args.output).expanduser()
-    glossary = Path(args.glossary).expanduser()
-    if not source.is_file() or not approval_path.is_file() or not glossary.is_file():
-        raise FileNotFoundError("workbook, approval manifest, glossary 경로를 모두 확인하세요.")
-    baseline, baseline_path, _parent = resolve_ledger(source)
-    # Validate/re-exec into the app runtime before creating any acceptance copy.
-    app_root = ap.bootstrap_project(args.app_root)
-    ap.maybe_reexec_with_app_venv(app_root)
-    manifest = _load_manifest(approval_path)
-    protected = set(manifest.get("protected_sheets", args.protected_sheets.split(",")))
-    wb = openpyxl.load_workbook(source, data_only=False)
-    missing_protected = sorted(protected - set(wb.sheetnames))
-    if missing_protected:
-        raise ValueError("워크북에 없는 보호 시트: " + ", ".join(missing_protected))
-    decisions = _validate_decisions(wb, manifest["decisions"], protected, args.cell_range)
-    deleted = _parse_columns(args.drop_review_columns) if args.drop_review_columns else None
-    protected_before = _snapshot_protected(wb, protected, deleted)
-    decision_records, changes = _apply_decisions(wb, decisions)
-
-    if deleted:
-        start, end = deleted
-        for ws in wb.worksheets:
-            ws.delete_cols(start, end - start + 1)
-
-    protected_after = _snapshot_protected(wb, protected)
-    protected_validation = _verify_protected(protected_before, protected_after)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    temp = output.with_suffix(output.suffix + ".tmp")
-    wb.save(temp)
-    os.replace(temp, output)
-    expected = {(change["sheet"], change["cell"]) for change in changes}
-    diff_validation = _verify_expected_c_diff(source, output, expected)
-    revision_changes = [
-        {"sheet": change["sheet"], "cell": change["cell"], "old_value": change["current"],
-         "new_value": change["final"], "reason": change.get("reason"), "rule_ids": change.get("rule_ids", [])}
-        for change in changes
-    ]
-    revision, revision_path = create_edit_revision(source, output, revision_changes)
-
-    highlight_args = SimpleNamespace(
-        app_root=str(app_root), workbook=str(output), glossary=str(glossary), sheets=None,
-        cell_range=args.cell_range, sheet_langs=None, single_source=False, source_sheet="US(미국)",
-        include_source_sheets=True, max_concurrency=args.max_concurrency, json=True, verbose=False,
-    )
-    highlighted = await run_highlight(highlight_args)
-    if highlighted.get("status") != "ok" or not highlighted.get("excel_path"):
-        raise RuntimeError(f"전체 glossary 하이라이트 실패: {highlighted.get('errors') or highlighted.get('error')}")
-    final = Path(highlighted["excel_path"])
-    if _verify_expected_c_diff(output, final, set())["actual"] != 0:
-        raise RuntimeError("하이라이트가 C열 문안을 변경했습니다.")
-    report_path = _report_path_for(highlighted)
-    result = {
-        "status": "ok", "source": str(source), "approval_manifest": str(approval_path),
-        "workbook_id": baseline["workbook_id"], "baseline_manifest": str(baseline_path),
-        "revision_manifest": str(revision_path), "revision_id": revision["revision_id"],
-        "acceptance_copy": str(output), "final": str(final), "glossary": str(glossary),
-        "cell_range": args.cell_range, "review_columns_removed": args.drop_review_columns or None,
-        "decisions": decision_records, "changes": changes, "decision_counts": {
-            "accept": sum(d["decision"] == "accept" for d in decisions),
-            "partial": sum(d["decision"] == "partial" for d in decisions),
-            "hold": sum(d["decision"] == "hold" for d in decisions),
-        },
-        "value_diff_validation": diff_validation, "protected_validation": protected_validation,
-        "highlight_validation": highlighted.get("text_validation"), "highlight_report": report_path,
-    }
-    result_path = Path(args.result_manifest).expanduser() if args.result_manifest else final.with_suffix(".review_apply.json")
-    result["result_manifest"] = str(result_path)
-    _atomic_json(result_path, result)
-    return result
+    from workbook_delivery import run_delivery
+    return await run_delivery(args, "review")
 
 
 def main() -> None:
@@ -379,6 +309,11 @@ def main() -> None:
     parser.add_argument("--result-manifest", help="생성 결과 manifest 경로")
     parser.add_argument("--app-root", help="SmartThings app repo")
     parser.add_argument("--max-concurrency", type=int, default=10)
+    parser.add_argument("--dry-run", action="store_true", help="계약 preview만 저장; Excel은 쓰지 않음")
+    parser.add_argument("--workflow-settings", help="이 작업의 고정 settings.json; 용어집·원문·활성화 설정 재사용")
+    parser.add_argument("--source-sheet", help="작업별 기준 원문 예외")
+    parser.add_argument("--sheet-langs", help="작업별 언어 매핑 JSON")
+    parser.add_argument("--activation-manifest", help="승인된 story/cell/term 활성화 manifest")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
     try:
@@ -386,7 +321,7 @@ def main() -> None:
     except Exception as exc:
         result = {"status": "error", "error": str(exc)}
     print(json.dumps(result, ensure_ascii=False, indent=2) if args.json else result)
-    if result["status"] != "ok":
+    if result["status"] not in {"ok", "preview"}:
         raise SystemExit(1)
 
 

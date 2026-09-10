@@ -1,12 +1,9 @@
 ---
-description: 승인 후 앱 LLM 번역 또는 검수 파이프라인 실행
-argument-hint: translate|audit <xlsx 경로> --sheets <시트>
+description: 승인된 API 번역·검수의 고급 호환 명령
+argument-hint: translate|audit <대상과 요청>
 ---
 
-`/st-pipeline`은 비용이 드는 고급 경로다. 사용자가 명시적으로 승인한 경우에만 기존
-`st-translate` 또는 `st-audit`를 `--pipeline`으로 호출한다.
-
-- `translate`: 앱 번역(+선택적 검수) 파이프라인
-- `audit`: 앱 inspection 파이프라인
-
-실행 전 대상 workbook·sheet·예상 비용/영향을 확인하고, 원본 파일은 수정하지 않는다.
+`translate`는 `commands/st-translate.md`의 API 경로,
+`audit`는 `commands/st-inspect.md`의 API 검수 경로에 위임한다.
+실행 방식에 대한 기존 승인을 확인하고 비용이 드는 재시도에는 기존 크레딧 규칙을 적용한다.
+API 실행을 local Excel 복구 루프에 넣지 않는다.

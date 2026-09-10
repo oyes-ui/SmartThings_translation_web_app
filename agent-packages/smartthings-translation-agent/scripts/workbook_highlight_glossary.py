@@ -195,6 +195,8 @@ async def run_highlight(args) -> dict:
     events: list[dict] = []
     with redirect:
         checker = TranslationChecker(max_concurrency=max(1, args.max_concurrency), no_backtranslation=True)
+        if getattr(args, "activation_manifest", None):
+            checker.load_activation_manifest(str(args.activation_manifest))
         async for event in checker.run_highlight_only_pipeline_generator(
             source_file_path=str(workbook),
             cell_range=args.cell_range,
@@ -286,6 +288,7 @@ def main() -> None:
     parser.add_argument("workbook", help="원본 .xlsx 경로 (수정되지 않음)")
     parser.add_argument("--cell-range", default="C7:C28", help="처리할 소스 셀 범위")
     parser.add_argument("--sheets", help="대상 시트 CSV. 예: 'BR(브라질),DE(독일)'")
+    parser.add_argument("--activation-manifest", help="확정된 활성화 설정")
     parser.add_argument("--glossary", help="용어집 CSV 경로. 기본값: runtime/glossary/latest_glossary.csv")
     parser.add_argument("--sheet-langs", help="sheet_langs JSON 파일 경로. 기본값: 앱 표준 매핑")
     parser.add_argument("--single-source", action="store_true", help="복수 source group 대신 --source-sheet 하나만 사용")
@@ -328,6 +331,70 @@ def main() -> None:
             for err in res.get("errors", []):
                 print(f"   - {err.get('message')}")
             sys.exit(1)
+
+
+
+
+
+async def highlight_in_memory(wb, *, glossary: Path, sheets: list[str], cell_range: str,
+                              activation_manifest: str | None = None, source_sheet: str | None = None,
+                              sheet_langs: dict | None = None) -> dict:
+    """Local delivery pass; no model/RAG clients and no workbook writes.
+
+    Bootstrap the app before calling. Reuse its glossary and occurrence resolver
+    and the existing rich-text renderer; inspect only existing cells.
+    """
+    from translation_web_app.glossary_checks import GlossaryChecker
+    from translation_web_app.prompt_builder import PromptBuilder
+    from workbook_incremental_highlight import _relevant_target_terms, _term_spans, render_cell
+    from workbook_review_apply import _parse_c_range
+    start, end = _parse_c_range(cell_range)
+    mapping = sheet_langs or ap.DEFAULT_SHEET_LANGS
+    required = {source_sheet} if source_sheet else {"KR(한국)", "US(미국)"}
+    scope = set(sheets) | required
+    if scope - set(wb.sheetnames) or scope - set(mapping):
+        raise ValueError("납품 시트와 KR/US source sheet의 표준 매핑이 필요합니다.")
+    groups = ([{"source_sheet": source_sheet, "target_sheets": sorted(scope)}] if source_sheet
+              else ap.default_source_groups(sorted(scope), wb.sheetnames, True))
+    completed, cells = {}, {}
+    for group in groups:
+        checker = GlossaryChecker(PromptBuilder())
+        checker.load_activation_manifest(activation_manifest)
+        source = group["source_sheet"]
+        await checker.load_glossary_from_file(str(glossary), mapping[source]["code"])
+        if not checker.glossary:
+            raise ValueError(f"비어 있거나 읽을 수 없는 glossary: {source}")
+        source_ws = wb[source]
+        story_cell = source_ws._cells.get((5, 3))
+        import re
+        digits = re.findall(r"\d+", str(story_cell.value or "")) if story_cell else []
+        story = digits[-1][-3:].zfill(3) if digits else None
+        for target in group["target_sheets"]:
+            if target in completed:
+                continue
+            completed[target] = 0
+            for row in range(start, end + 1):
+                source_cell = source_ws._cells.get((row, 3))
+                cell = wb[target]._cells.get((row, 3))
+                if cell is None or cell.value is None:
+                    continue
+                if cell.data_type == "f" or (source_cell is not None and source_cell.data_type == "f"):
+                    raise ValueError(f"Formula in glossary scope requires a separate plan: {target}!C{row}")
+                text = str(cell.value)
+                if not text or text.lower() == "x":
+                    continue
+                source_text = str(source_cell.value or "") if source_cell else ""
+                terms, excluded = _relevant_target_terms(checker, source_text,
+                    mapping[target]["code"], story=story, cell=cell.coordinate)
+                spans, missing = _term_spans(text, terms)
+                cell.value = render_cell(text, base_font=cell.font, red_spans=[], blue_spans=spans)
+                if str(cell.value) != text:
+                    raise ValueError("Glossary renderer changed text")
+                cells[f"{target}!{cell.coordinate}"] = {"blue_spans": spans, "missing": missing, "excluded": excluded}
+                completed[target] += 1
+    if set(completed) != scope:
+        raise ValueError("Incomplete source-group highlight scope")
+    return {"completed_delivery_sheets": completed, "source_groups": groups, "cells": cells}
 
 
 if __name__ == "__main__":

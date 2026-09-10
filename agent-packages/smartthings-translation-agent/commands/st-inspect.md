@@ -1,9 +1,15 @@
 ---
-description: 언어 시트 단위 에이전트 검수 (읽기 전용, 크레딧 0)
+description: 번역 검수하기 — 보고서와 수정 제안 (Excel 원본 불변)
 argument-hint: <xlsx 경로> --sheet "JA(일본)" [--semantic-rag-budget N] [--raw]
 ---
 
 # /st-inspect
+
+파일·언어·검수 요청은 자연어로 받는다. 기본은 아래 단계별 에이전트 검수다.
+기존 앱 API 검수를 명시적으로 승인한 경우에만 `scripts/workbook_audit.py <xlsx>
+--sheets "<대상>" --pipeline --json`을 사용한다. API 크레딧 확인·재시도 규칙은
+`references/self-vs-pipeline.md`를 따른다. `/st-audit`도 기존 고급 경로로 유지한다.
+검수 결과의 Excel 반영은 `/st-apply`에 연결한다.
 
 기본 구조는 **셀 순차 검수 1명 → 시트 일관성 검수 1명 → 리드 통합 1명**이다. 원본 Excel은
 수정하지 않고 resolver를 통과한 제안만 `pending_approval` manifest에 기록한다. 기존 5역할
@@ -93,3 +99,7 @@ python scripts/agent_staged_batch.py advance --manifest <batch-dir>/batch_manife
 
 언어 간에는 병렬이지만 한 언어 내부 단계는 순차다. 조정기는 에이전트/LLM을 직접 호출하지 않으며,
 semantic RAG 기본 예산도 시트별 0이다.
+
+## 업무 전체를 이어갈 때
+
+`references/workflow-guide.md`와 `references/workbook-batch.md`를 읽는다. 파일별 용어집 적용안을 확정한 뒤 `workbook_batch.py`로 기존 기능을 연결한다. 기본 API는 초벌·Excel 기입·하이라이트만이며 API 검수·역번역은 명시 요청 때만 실행한다. 초벌 뒤 활성 에이전트가 `ready_for_agent`의 셀→시트→리드 prompt를 수행하고 `advance`를 반복해 상세 MD·통합 승인검토표까지 생성한다. 준비 명령만 실행하고 검수가 완료됐다고 보고하지 않는다. 성공 작업은 계속하며 유료 실패는 자동 재시도하지 않는다.

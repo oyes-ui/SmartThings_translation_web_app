@@ -26,6 +26,7 @@ from openpyxl.cell.text import InlineFont
 
 import _app_pipeline as ap
 from workbook_manifest import file_sha256, load_revision, text_sha256, update_render_state
+from workbook_mutation_guard import detailed_workbook_snapshot
 
 
 RED = "FF0000"
@@ -135,7 +136,7 @@ def render_cell(
     return _fold_bare_whitespace_runs(result)
 
 
-def _relevant_target_terms(checker, source_text: str, target_code: str) -> tuple[list[str], list[dict]]:
+def _relevant_target_terms(checker, source_text: str, target_code: str, *, story=None, cell=None) -> tuple[list[str], list[dict]]:
     terms: list[str] = []
     excluded: list[dict] = []
     for source_term in checker._get_relevant_glossary_terms(source_text) or []:  # app canonical resolver
@@ -143,7 +144,10 @@ def _relevant_target_terms(checker, source_text: str, target_code: str) -> tuple
         if not metadata:
             excluded.append({"term": source_term, "reason": "missing_glossary_metadata"})
             continue
-        if checker.prompt_builder.is_glossary_deactivated(metadata.get("rule", "")):
+        active = (checker.is_term_active_for_occurrence(source_term, metadata.get("rule", ""), story, cell)
+                  if story is not None or cell is not None else
+                  not checker.prompt_builder.is_glossary_deactivated(metadata.get("rule", "")))
+        if not active:
             excluded.append({"term": source_term, "reason": "deactivated_glossary_rule"})
             continue
         target_value = checker._get_target_val(metadata["targets"], target_code)
@@ -158,16 +162,14 @@ def _relevant_target_terms(checker, source_text: str, target_code: str) -> tuple
 
 
 def _range_cells(ws, range_arg: str):
-    seen: set[str] = set()
-    for current_range in [value.strip() for value in range_arg.split(",") if value.strip()]:
-        rows = ws[current_range]
-        if not isinstance(rows, (tuple, list)):
-            rows = ((rows,),)
-        for row in rows:
-            for cell in row:
-                if cell.coordinate not in seen:
-                    seen.add(cell.coordinate)
-                    yield cell
+    from openpyxl.utils.cell import range_boundaries
+    seen = set()
+    for area in (x.strip() for x in range_arg.split(",") if x.strip()):
+        left, top, right, bottom = range_boundaries(area)
+        for (row, col), cell in sorted(ws._cells.items()):
+            if left <= col <= right and top <= row <= bottom and cell.coordinate not in seen:
+                seen.add(cell.coordinate)
+                yield cell
 
 
 def _red_by_cell(revision: dict) -> dict[tuple[str, str], list[list[int]]]:
@@ -257,12 +259,58 @@ def _verify_saved_workbook(output: Path, expected_texts: dict[tuple[str, str], s
 def _next_output_path(workbook: Path, timestamp: str) -> Path:
     candidate = workbook.with_name(f"{workbook.stem}_review_highlighted_{timestamp}{workbook.suffix}")
     suffix = 2
-    while candidate.exists():
+    from workbook_contract import digest
+    while candidate.exists() or (workbook.parent / ".st-runs" / ("highlight-" + digest(candidate.name)[:24])).exists():
         candidate = workbook.with_name(
             f"{workbook.stem}_review_highlighted_{timestamp}_{suffix}{workbook.suffix}"
         )
         suffix += 1
     return candidate
+
+
+def _save_highlight_verified(wb, workbook, output, authorities, allowed_cells):
+    """One artifact through the shared runner; only scoped rich-text diffs allowed.
+
+    Values, structure and formatting authorities are the supplied workbook.
+    The approved render plan declares exact runs, disk verification is independent.
+    """
+    from workbook_contract import atomic_json, canonical, digest, save_contract
+    from workbook_run import execute_run
+    from workbook_verifier import facts, diff_facts
+    source = Path(workbook).resolve()
+    baseline = facts(source)
+    planned = detailed_workbook_snapshot(wb)
+    planned["layout"].update({key: value for key, value in baseline["layout"].items()
+                              if json.loads(key)[0] == "package"})
+    differences = diff_facts(baseline, planned)
+    for change in differences:
+        path = change["path"]
+        if (change["axis"] != "rich_text" or len(path) != 4 or path[0] != "sheets"
+                or path[2] != "cells" or (path[1], path[3]) not in allowed_cells):
+            raise ValueError(f"Highlight plan exceeds authorized rich-text scope: {path}")
+    work_id = "highlight-" + digest(output.name)[:24]
+    root = output.parent / ".st-runs" / work_id
+    ref = {"authority": "source", "file": "."}
+    writer = {"id": "incremental_highlight", "version": file_sha256(__file__), "cost": "local"}
+    contract = {"schema_version": 1, "work_id": work_id, "work_root": str(root.resolve()),
+        "staging_root": str((root / "staging").resolve()),
+        "delivery_root": str((output.parent / "verified").resolve()),
+        "authorities": authorities, "writer": writer,
+        "artifacts": [{"id": "highlight", "output": output.name,
+            "authorities": {role: dict(ref) for role in ("values", "structure", "formatting")},
+            "allowed_diffs": differences}], "no_op_files": [] if differences else ["highlight"],
+        "recovery": {"max_attempts": 1, "same_failure_limit": 1}}
+    path = root / "contract.json"
+    sha = save_contract(path, contract)
+    approval = root / "approval.json"
+    atomic_json(approval, {"approved": True, "approved_by": "authorized_review_highlight_call",
+                          "contract_sha256": sha})
+    def build(*_):
+        return wb
+    result = execute_run(path, build, writer=writer, approval_path=approval)
+    if result["status"] != "completed":
+        raise ValueError(f"Highlight verification failed; no output published: {root / 'state.json'}")
+    return Path(result["result"]["outputs"]["highlight"])
 
 
 async def run_incremental_highlight(args) -> dict:
@@ -276,6 +324,10 @@ async def run_incremental_highlight(args) -> dict:
     revision_path = Path(args.revision_manifest).expanduser()
     if not workbook.is_file() or not glossary.is_file() or not revision_path.is_file():
         raise FileNotFoundError("workbook, glossary, revision manifest 경로를 모두 확인하세요.")
+    from workbook_contract import capture_authority, check_inputs
+    authorities = {"source": capture_authority(workbook.resolve()),
+                   "glossary": capture_authority(glossary.resolve()),
+                   "revision": capture_authority(revision_path.resolve())}
     revision = load_revision(revision_path)
     wb = openpyxl.load_workbook(workbook, rich_text=True, data_only=False)
     try:
@@ -285,6 +337,9 @@ async def run_incremental_highlight(args) -> dict:
             raise ValueError("유효한 source group이 없습니다. --sheets 또는 --include-source-sheets를 확인하세요.")
         load_dotenv(app_root / ".env")
         checker = TranslationChecker(max_concurrency=1, no_backtranslation=True)
+        if getattr(args, "activation_manifest", None):
+            checker.load_activation_manifest(str(args.activation_manifest))
+            authorities["activation"] = capture_authority(Path(args.activation_manifest).resolve())
         red_by_cell = _red_by_cell(revision)
         old_state = revision.get("render_state", {}).get("cells", {})
         new_state: dict[str, dict] = {}
@@ -296,17 +351,25 @@ async def run_incremental_highlight(args) -> dict:
             source_info = sheet_langs[source_sheet]
             await checker.load_glossary_from_file(str(glossary), source_info["code"])
             source_ws = wb[source_sheet]
+            import re
+            digits = re.findall(r"\d+", str(source_ws["C5"].value or ""))
+            story = digits[-1][-3:].zfill(3) if digits else None
             source_cells = list(_range_cells(source_ws, args.cell_range))
             for target_sheet in group["target_sheets"]:
                 target_info = sheet_langs[target_sheet]
                 target_ws = wb[target_sheet]
                 for source_cell in source_cells:
-                    target_cell = target_ws[source_cell.coordinate]
+                    target_cell = target_ws._cells.get((source_cell.row, source_cell.column))
+                    if target_cell is None:
+                        continue
+                    if target_cell.data_type == "f":
+                        raise ValueError("Formula cells cannot be rendered as rich text")
                     text = _cell_text(target_cell.value)
                     if not text or text.lower() == "x":
                         continue
                     key = f"{target_sheet}!{target_cell.coordinate}"
-                    terms, excluded = _relevant_target_terms(checker, _cell_text(source_cell.value), target_info["code"])
+                    terms, excluded = _relevant_target_terms(checker, _cell_text(source_cell.value), target_info["code"],
+                                                             story=story, cell=source_cell.coordinate)
                     blue, missing = _term_spans(text, terms)
                     red = red_by_cell.get((target_sheet, target_cell.coordinate), [])
                     highlighted_terms = [term for term in terms if term not in missing]
@@ -338,10 +401,10 @@ async def run_incremental_highlight(args) -> dict:
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output = _next_output_path(workbook, timestamp)
-        tmp = output.with_suffix(output.suffix + ".tmp")
-        wb.save(tmp)
-        os.replace(tmp, output)
-        _verify_saved_workbook(output, expected_texts)
+        allowed_cells = {(sheet, cell) for key in new_state for sheet, cell in [key.rsplit("!", 1)]}
+        allowed_cells.update(tuple(key.rsplit("!", 1)) for key in hardened_cell_coordinates)
+        check_inputs({"authorities": authorities})
+        output = _save_highlight_verified(wb, workbook, output, authorities, allowed_cells)
     finally:
         wb.close()
     state = {
@@ -367,6 +430,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="revision manifest 기반 증분 red→blue Excel rich-text 하이라이트")
     parser.add_argument("workbook")
     parser.add_argument("--revision-manifest", required=True)
+    parser.add_argument("--activation-manifest", help="확정된 활성화 설정")
     parser.add_argument("--glossary", required=True)
     parser.add_argument("--sheets", help="대상 시트 CSV")
     parser.add_argument("--cell-range", default="C7:C28")

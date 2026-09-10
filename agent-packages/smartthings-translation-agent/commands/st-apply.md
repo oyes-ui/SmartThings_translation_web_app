@@ -1,7 +1,11 @@
 ---
-description: 승인 manifest 기반으로 감수본·납품본을 새 Excel 사본에 반영
-argument-hint: <review-workbook.xlsx> <approval-manifest.json>
+description: 승인한 내용으로 납품본 만들기 — 반영·하이라이트·검증
+argument-hint: <파일과 승인한 내용 또는 자연어 요청>
 ---
+
+`references/excel-workflow.md`와 `references/command-execution.md`를 먼저 읽는다.
+대화에서 승인한 수정과 파일을 이용해 에이전트가 내부 manifest를 준비한다. 사용자에게
+JSON 작성을 요구하거나 동일한 승인을 다시 받지 않는다. 미승인 행은 적용하지 않는다.
 
 `/st-apply`는 최종 납품 경로다. 기존 `st-review-apply`, `st-story-apply`, `st-highlight`의
 검증 책임을 통합한다.
@@ -10,6 +14,11 @@ argument-hint: <review-workbook.xlsx> <approval-manifest.json>
 - 원본은 절대 덮어쓰지 않는다.
 - delivery scope와 필요한 KR/US source sheet를 glossary 기준으로 재하이라이트한다.
 - 실제 diff, 보호 시트, 텍스트 보존, highlight report를 검증한다.
+
+기본 실행은 `계획 → 기존 승인 연결 → staging → 독립 5축 검증 → 배치 공개`다.
+수정본과 최종 하이라이트본 중 하나라도 실패하면 배치를 공개하지 않는다. `--dry-run`으로
+Excel 저장 없는 preview를 만들 수 있다. `--output` 파일은 `verified/<work_id>/` 아래에
+생기므로 반환된 `final` 경로를 안내한다. 동일 요청은 기존 작업을 재개한다.
 
 ## 실행 경로
 
@@ -43,7 +52,8 @@ manifest는 `before`/`after`가 확정된 일반 편집·콜롬비아 현지화 
 
 ## 검토 결과 기록 (자율화 근거 축적)
 
-승인/거절을 마친 manifest는 Excel에 반영하기 전후로 **반드시 outcome ledger에 기록한다.** 사람이
+report manifest의 승인/거절 완료 행은 실행 결과의 `outcome_ledger`에 자동 기록한다.
+미결정 행은 제외하고 pending 상태를 거절로 간주하지 않는다. 누적 측정은 기존 도구로 수행한다. 사람이
 이미 내린 판단을 그대로 남기는 것이며 추가 작업이 아니다. 이 기록이 없으면 에이전트 제안의
 정확도를 측정할 수 없고, 승인 게이트를 완화할 근거도 영원히 쌓이지 않는다.
 
@@ -55,7 +65,7 @@ python scripts/review_outcomes.py --ledger outputs/review/outcomes.jsonl \
 python scripts/quality_scorecard.py outputs/review/golden.json outputs/review/results.json
 ```
 
-- 거절한 항목은 `approval_status`를 `approved` 외의 값으로 두고 `rejection_reason`을 적는다.
+- 거절한 항목은 `approval_status: rejected`로 두고 `rejection_reason`을 적는다.
   거절도 승인만큼 중요한 근거다.
 - 문안을 고쳐서 승인한 경우 `after`만 바꾸고 `proposed_after`는 건드리지 않는다. 이 두 값의
   차이가 "에이전트가 얼마나 근접했는지"를 재는 유일한 근거다.
@@ -72,3 +82,5 @@ python scripts/quality_scorecard.py outputs/review/golden.json outputs/review/re
 python scripts/obsidian_workflow.py sync-status outputs/obsidian/review-001.md \
   story_final.review_apply.json --output outputs/obsidian/review-001-applied.md
 ```
+
+범용 작업에서 나온 후보는 승인표 색인의 `source_manifest`를 찾아 승인 상태를 반영한다. 해당 job의 `--workflow-settings <settings.json>`과 고정 `--glossary`를 전달하여 번역·검수와 같은 원문·언어·활성화 설정으로 반영한다. 기술 규약은 `references/workbook-batch.md`를 따른다.
