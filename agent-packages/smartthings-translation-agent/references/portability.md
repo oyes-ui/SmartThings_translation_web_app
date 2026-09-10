@@ -118,3 +118,12 @@ repo 밖에 설치할 경우 저장된 `app_root` 또는 매 호출의 `--app-ro
 ## Translation Agent Skill
 번역·검수 보조 에이전트 패키지는 `agent-packages/smartthings-translation-agent/SKILL.md` 참조.
 ```
+
+## Codex 기본 명령 검색 등록
+
+`adapters/codex/commands/`의 여섯 진입 스킬(`st-start`, `st-ask`, `st-translate`,
+`st-inspect`, `st-edit`, `st-apply`)을 `$CODEX_HOME/skills/`(기본 `~/.codex/skills/`)에
+각각 같은 이름의 심볼릭 링크로 연결하면 검색 가능한 진입점으로 사용한다.
+기존 설치가 있으면 덮어쓰지 않고 대상을 확인한다. 본체와 진입 스킬은 같은 저장소를 참조한다.
+각 진입점은 실제 링크 경로를 기준으로 공통 `commands/` 문서를 읽으며 절차를 복제하지 않는다.
+기존 `source-command-st-help` 등 호환 스킬은 유지한다.
