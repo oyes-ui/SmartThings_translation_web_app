@@ -46,7 +46,9 @@
 
 대량 셀을 일괄 처리하거나, 앱과 동일한 자동 산출물(번역+검수 Excel/리포트)이 필요할 때만.
 
-- 번역(+검수): `scripts/workbook_translate.py <xlsx> --pipeline [--translate-only] --sheets "<대상>"`
+- 초벌 번역·기입·하이라이트: `scripts/workbook_translate.py <xlsx> --pipeline --sheets "<대상>"` (기본 translate-only)
+- 명시 요청한 API 검수는 `--with-api-audit`, 역번역도 요청했다면 `--with-backtranslation`을 추가한다.
+- 초벌 이후 에이전트 검수·승인표 연결은 [범용 작업 흐름](workbook-batch.md)을 따른다.
 - 검수 전용: `scripts/workbook_audit.py <xlsx> --pipeline --sheets "<대상>"`
 
 안전 장치:

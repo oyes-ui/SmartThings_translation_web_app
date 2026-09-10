@@ -85,7 +85,8 @@ def derive_state(job: dict[str, Any]) -> str:
     paths = _paths(job)
     if paths["summary"].is_file():
         summary = read_json(paths["summary"])
-        return "completed" if summary.get("status") == "ok" else "error"
+        return ("completed" if summary.get("sheet_status") in {None, "completed", "complete"}
+                else "incomplete") if summary.get("status") == "ok" else "error"
     if paths["lead_raw"].is_file():
         return "lead_review_ready"
     if paths["lead_prompt"].is_file():
@@ -127,7 +128,8 @@ async def prepare_batch(workbook: Path, sheets: list[str], work_dir: Path, gloss
                         app_root: Path, *, max_concurrency: int,
                         semantic_rag_budget: int = 0,
                         activation_manifest: Path | None = None,
-                        candidate_overlay: Path | None = None) -> dict[str, Any]:
+                        candidate_overlay: Path | None = None,
+                        source_sheet: str | None = None, sheet_langs: dict | None = None) -> dict[str, Any]:
     if not sheets or len(sheets) != len(set(sheets)):
         raise ValueError("--sheets에는 중복 없는 시트를 하나 이상 지정하세요.")
     if max_concurrency < 1:
@@ -146,7 +148,7 @@ async def prepare_batch(workbook: Path, sheets: list[str], work_dir: Path, gloss
                 workbook, sheet, glossary=glossary, app_root=app_root,
                 semantic_rag_budget=semantic_rag_budget,
                 activation_manifest=activation_manifest,
-                candidate_overlay=candidate_overlay)
+                candidate_overlay=candidate_overlay, source_sheet=source_sheet, sheet_langs=sheet_langs)
         atomic_json(root / "packet.json", packet)
         atomic_text(root / "cell_prompt.txt", cell_prompt(packet))
         return {"job_id": key, "sheet": sheet, "packet_id": packet["packet_id"],
@@ -265,6 +267,8 @@ def main() -> None:
     prepare.add_argument("--work-dir", required=True, type=Path)
     prepare.add_argument("--glossary", required=True, type=Path)
     prepare.add_argument("--app-root", required=True, type=Path)
+    prepare.add_argument("--source-sheet")
+    prepare.add_argument("--sheet-langs", type=Path)
     prepare.add_argument("--activation-manifest", type=Path)
     prepare.add_argument("--candidate-overlay", type=Path)
     prepare.add_argument("--semantic-rag-budget", type=int, default=0)
@@ -283,7 +287,8 @@ def main() -> None:
                 max_concurrency=args.max_concurrency,
                 semantic_rag_budget=args.semantic_rag_budget,
                 activation_manifest=args.activation_manifest,
-                candidate_overlay=args.candidate_overlay))
+                candidate_overlay=args.candidate_overlay, source_sheet=args.source_sheet,
+                sheet_langs=read_json(args.sheet_langs) if args.sheet_langs else None))
         elif args.command == "advance":
             manifest_path = args.manifest.expanduser().resolve()
             manifest = advance_batch(manifest_path, args.max_concurrency)

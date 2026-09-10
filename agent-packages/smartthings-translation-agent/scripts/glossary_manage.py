@@ -53,7 +53,7 @@ def _parse_translations(raw: str | None) -> dict:
     return {str(k): str(v) for k, v in data.items()}
 
 
-WRITE_COMMANDS = {"add", "update", "delete", "import"}
+WRITE_COMMANDS = {"add", "update", "delete", "import", "sync-default"}
 
 
 def _refusal_message(cmd: str, args) -> str:
@@ -92,6 +92,16 @@ def run(args) -> dict:
 
     load_dotenv(app_root / ".env")
     store = _store()
+    def updated(result):
+        from glossary_sync import sync_default
+        try:
+            sync = sync_default(store, app_root / "runtime/glossary/latest_glossary.csv")
+        except Exception as error:
+            return {"status": "partial", "command": cmd, "db_updated": cmd != "sync-default",
+                    "result": result, "error": str(error), "next_action": "sync-default --apply"}
+        return {"status": "ok", "command": cmd, "result": result, "default_csv": sync}
+    if cmd == "sync-default":
+        return updated({})
     if cmd == "status":
         return {"status": "ok", "command": cmd, "result": store.status()}
     if cmd == "locales":
@@ -108,22 +118,22 @@ def run(args) -> dict:
             "rule_text": args.rule or "",
             "translations": _parse_translations(args.translations),
         }
-        return {"status": "ok", "command": cmd, "result": store.create_term(payload)}
+        return updated(store.create_term(payload))
     if cmd == "update":
         payload = {
             "source_key": args.source_key,
             "rule_text": args.rule or "",
             "translations": _parse_translations(args.translations),
         }
-        return {"status": "ok", "command": cmd, "result": store.update_term(int(args.id), payload)}
+        return updated(store.update_term(int(args.id), payload))
     if cmd == "delete":
         store.delete_term(int(args.id))
-        return {"status": "ok", "command": cmd, "result": {"deleted": int(args.id)}}
+        return updated({"deleted": int(args.id)})
     if cmd == "import":
         csv_path = Path(args.csv).expanduser()
         if not csv_path.is_file():
             raise FileNotFoundError(f"CSV를 찾을 수 없습니다: {csv_path}")
-        return {"status": "ok", "command": cmd, "result": store.import_csv(csv_path, mode=args.mode)}
+        return updated(store.import_csv(csv_path, mode=args.mode))
     if cmd == "export":
         out = store.export_csv(Path(args.out).expanduser())
         return {"status": "ok", "command": cmd, "result": {"export_path": str(out)}}
@@ -151,6 +161,9 @@ def main() -> None:
     p_list.add_argument("--offset", type=int, default=0)
 
     apply_help = "DB 쓰기 확인 플래그 (없으면 거부, 승인 후 추가)"
+
+    p_sync = sub.add_parser("sync-default", help="DB에서 기본 CSV 검증·재동기화", parents=[common])
+    p_sync.add_argument("--apply", action="store_true", help=apply_help)
 
     p_add = sub.add_parser("add", help="용어 추가", parents=[common])
     p_add.add_argument("--source-key", required=True)
@@ -199,8 +212,10 @@ def main() -> None:
     if args.json:
         print(json.dumps(res, ensure_ascii=False, indent=2))
     else:
-        print(f"✅ {res['command']}")
-        print(json.dumps(res["result"], ensure_ascii=False, indent=2))
+        print(f"{res['status']}: {res['command']}")
+        print(json.dumps(res, ensure_ascii=False, indent=2))
+    if res.get("status") != "ok":
+        sys.exit(1)
 
 
 if __name__ == "__main__":

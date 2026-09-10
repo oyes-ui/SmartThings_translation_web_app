@@ -12,6 +12,157 @@
 범위: `agent-packages/smartthings-translation-agent`의 `.xlsx` 변경·검증·납품 경로
 참고 자료: 외부 제안 "루프 엔지니어링 / 그래프 엔지니어링으로 스킬 감싸기"
 
+
+## 2026-09-09 후속 코드 리뷰 반영
+
+증분 하이라이트의 검증 전 공개 문제를 확인하고 공용 계약 실행기로 전환했다.
+이미 발행된 배치는 당시 계약·완전한 통과 기록·파일 해시로 재조정하며, 현재 verifier/
+입력의 유효성 요구는 staging·새 발행에 유지한다. 신규 save 증가를 막는 AST 검사를
+전체 pytest에 연결했고 contract 없는 guard 호출에는 DeprecationWarning을 추가했다.
+
+33개 합성 산출물/약 33 MiB 정본 배치에서 inventory 200회, 누적 해시 입력 약 6.45 GiB,
+해시 3.352초/전체 4.498초를 측정했다. warm-cache 로컬 1회 측정이며 큰 실배치의 보장값은
+아니다. 검증 게이트는 유지하고, 필요하면 배치 경계에서 중복 해시를 줄인다.
+
+최신 검증은 **269 passed, 22 subtests passed**, 기존 회귀 자산 56개 해시는 그대로다.
+리뷰의 “하나를 고치면 모든 사용자 경로가 닫힌다”는 결론은 채택하지 않는다. 고급 단독
+writer 전면 이전은 남아 있다. 근거와 범위는 패키지
+`docs/excel_post_step5_review_20260909.md`에 기록했다.
+
+## 2026-09-09 후속 구현 — 5단계 완료: 기존 명령 연결
+
+사용자 승인에 따라 기본 진입점을 `st-start`(시작·상태), `st-ask`(질의),
+`st-translate`(번역), `st-inspect`(검수), `st-edit`(수정본), `st-apply`(납품본)의
+6개로 정리했다. `st-review`/`st-help`/`st-pipeline`은 호환 alias이며 자연어로 요청한다.
+정본은 패키지 `commands/README.md`, 실행·재개 지침은 `references/command-execution.md`다.
+
+`workbook_apply_edits.py` 기본 경로와 story/review apply를 기존 contract runner에 연결했다.
+수정본과 최종 하이라이트본은 독립 5축 검증이 모두 통과한 뒤 버전 배치로 공개한다.
+기존 사용자 승인 경계에서 내부 승인 파일을 결합하고 JSON·work_id 입력이나 중복 승인을
+사용자에게 요구하지 않는다. 상태 조회는 읽기만 하며 같은 요청은 journal로 재개한다.
+
+과도한 하네스를 피하려고 추가한 실행 코드는 story/review가 공유하는 납품 어댑터 하나다.
+기존 preflight·승인 manifest·glossary resolver·rich-text renderer·revision/outcome 형식을
+재사용했다. 새 프레임워크·DB·daemon·role·writer registry·상태 명령은 추가하지 않았다.
+API 파이프라인은 로컬 복구 루프 밖에 둔다. 납품 경로가 모델/RAG client를 생성하지 않는다.
+
+검증: 패키지 전체 **260 passed, 22 subtests passed**. 기본 CLI 납품, 동일 작업 재개,
+preview 이후 glossary drift 차단, pending 항목 제외, KR/US와 대상 언어 하이라이트,
+최종 실패 시 수정본까지 미공개, 열 삭제 뒤 치수·병합·범위 밖 서식 보존을 확인했다.
+기존 inventory 56개 파일의 SHA-256은 모두 그대로다. 외부 라이브러리 deprecation warning
+2건이 있으며, 실제 납품 워크북 생성과 유료 API 호출은 수행하지 않았다.
+
+제약: `--output`은 파일명/기준 폴더이며 실제 산출물은 `verified/<work_id>/`에 위치한다.
+메모 상자의 삭제·이동(VML), 수식·차트 등 복잡한 열 삭제 의존성은 별도 계획이 필요하다.
+과거 일회용 writer 전면 이전·단독 고급 writer·전역 lint 강제는 이번 완료 범위가 아니다.
+이 절이 아래 1~4단계의 opt-in/다음 단계 설명보다 최신이다.
+
+## 2026-09-09 후속 구현 — 최신 계획의 2~4단계
+
+앞선 1단계에 이어 **실행 contract·독립 verifier → 대표 writer 연결 → 상태·이벤트·재개·제한
+복구**를 구현했다. 구현 상세와 실행 명령, 지원 범위는
+`agent-packages/smartthings-translation-agent/docs/excel_contract_run_20260909.md`를 따른다.
+이 절이 아래 과거 구현 현황보다 최신이다. 역사적 33개 writer 전면 이전이나 과거 파일럿 A/B
+전체 완료를 뜻하지 않는다.
+
+- `workbook_contract.py`: 3축 정본, 위치·속성별 정확한 allowed_diffs, no_op_files,
+  디렉터리 inventory와 해시, 작업별 경로, local writer 버전·복구 한도.
+- `workbook_verifier.py`: 원본 정본을 독립 재개방하여 기대 기준을 계산하고, 관측 변경과
+  선언 변경의 정확한 일치 여부를 검증한다. 산출물·계약·입력·verifier 버전에 결합된 레코드.
+- `workbook_mutation_guard.py`: 기존 save 함수에 contract 옵션을 연결했다. 공용 상세
+  5축 snapshot과 열 삭제 audit를 추가했다. 그림/차트 anchor·payload와 유효성 조건까지
+  상세 검증하며, 지원하지 못하는 OOXML 객체와 열 삭제 의존성은 변경 전에 거부한다.
+- `workbook_run.py`: 승인된 local writer 실행, journal과 state cache, 프로세스 잠금,
+  재개 시 독립 재검증, 실패별 최대 시도·동일 실패 한도, 버전별 배치 전체 공개.
+- 대표 writer는 추적되는 `workbook_apply_edits.py`다. 기존 preflight와 revision 형식을
+  재사용하는 opt-in `--prepare-run` / `--run-contract` 경로를 연결했다.
+  기존 기본 명령을 전환하지 않았고 일반 편집 결과는 여전히 draft다.
+
+### 과도한 하네스에 대한 결정
+
+사용자 지적에 따라 JSON 계약·세 모듈·기존 CLI 옵션으로 범위를 제한했다. 새 프레임워크,
+DSL, DB, daemon, dashboard, agent role, writer registry는 만들지 않았다. 상태 저장은
+중단 후 재개에 필요한 것만 담당하고 번역 판단이나 모델 호출을 하지 않는다. guard 없는
+legacy 경로의 호환을 유지하되 그 경로까지 새 보장을 적용했다고 주장하지 않는다.
+
+### 확인한 동작과 남은 단계
+
+합성 회귀 테스트로 정상 실행·원본 불변·누락/미허용 변경·정본 drift·반복 실패 중단·실제
+별도 프로세스 강제 종료 후 재개·동시 실행 잠금·배치 일부 실패/공개 중단을 검증했다.
+최종 테스트 수와 명령은 위 구현 문서의 종료 기록을 정본으로 삼는다.
+
+다음 5단계는 `/st-edit`·`/st-apply` 전체 진입점 연결과 운영 writer 순차 이전이다.
+기존 writer allowlist/lint 강제, 전체 시트 복사 및 복잡한 구조 변경 planner도 후속 범위다.
+사용자 실제 워크북으로 납품본을 생성하거나 API 비용을 쓰는 작업은 수행하지 않았다.
+
+## 2026-09-09 업데이트 — 실행 그래프·복구 루프와 1단계 진행
+
+이 절은 현재 코드 재확인과 사용자 승인에 따른 후속 작업이다. 아래 기존 본문의 수치와
+착수 체크리스트 테스트 수는 **2026-08-27 당시 기록**이며 현재 수치로 해석하지 않는다.
+
+### 현재 코드와 기존 진단의 차이
+
+- `save_verified_atomic` 비테스트 호출 위치는 4곳이다: regional build, Korean review build,
+  Korean review draft, glossary highlight. 호출 위치 증가는 각 writer 전체의 5축 검증이나
+  납품 안전성이 완성됐다는 뜻은 아니다.
+- 공용 guard에는 아직 contract 인자·검증 레코드 해시 결합·`promote_verified`가 없다.
+- `agent_staged_batch.py`에는 cell → sheet → lead 검수 단계와 게이트가 이미 있다.
+  신규 그래프는 이를 재사용하되 파일 존재를 넘어 입력·규칙·계약 버전의 유효성을 확인해야 한다.
+- `review_outcomes.py`와 `quality_scorecard.py`는 감수 결과와 품질 평가 기반이다.
+  실행 이벤트 원장과 감수 결과 원장은 목적이 다르므로 별도로 유지하고 work_id로 연결한다.
+- 2026-09-09 변경 전 로컬 기준 테스트는 **190 passed, 16 subtests passed**였다.
+  시스템 Python에 pytest가 없어 app repo의 `venv/bin/python`으로 실행했다.
+  ignored 테스트도 포함한 수치이며 fresh clone 재현 결과로 주장하지 않는다.
+
+### 그래프와 루프의 구체적인 개발 목표
+
+공통 실행기는 `입력·정본 고정 → 계획 → 승인 → staging → 독립 검증 → 납품`의
+입력·출력·전이 조건을 코드로 표현한다. 기존 명령과 Python 도구를 연결하는 작은 실행기로
+시작한다. 프레임워크·지식 그래프 도입은 현재 착수 범위가 아니다.
+
+실패 시 무조건 전체 재실행하지 않는다. 실패 유형에 따라 생성 단계 복귀, snapshot·계획
+재생성, 사용자 판단 대기를 구분한다. 최대 재시도 횟수, 같은 실패 반복, 개선 없음 등의
+종료 조건을 둔다. 검증을 통과하려고 allowed_diffs를 자동 확장하지 않는다. 승인 내용이
+바뀌면 승인을 재사용하지 않으며 API 비용이 드는 재시도는 기존 승인 규칙을 따른다.
+
+입력·용어집·구조 매핑 등 의존 항목이 바뀌면 영향을 받는 후속 결과를 무효화하고,
+동일한 입력·계약·버전의 검증된 결과만 재사용한다. 실패·감수 결과는 원인 분류 후
+최소 합성 입력과 불변 주장으로 남기고, 공용 코드 개선 뒤 별도 평가 사례에도 적용한다.
+
+### 기존 문서의 보장 범위 보완
+
+1. **5축이 모든 속성을 덮는 것은 아니다.** 현재 snapshot의 그림·차트는 개수,
+   데이터 유효성은 sqref 범위 중심이다. anchor·유효성 조건 등 지원 객체별 속성 검증은
+   후속 contract/verifier 구현 범위로 명시해야 한다.
+2. **파일 atomic replace는 배치 트랜잭션이 아니다.** 전 파일 검증 후에도 승격 중
+   중단되면 신·구 파일이 섞일 수 있다. 버전별 배치 디렉터리와 완료 manifest를 만들고
+   소비자가 완료된 배치만 선택하는 설계가 필요하다. 현재 guard가 이를 보장한다고 보지 않는다.
+3. **import lint는 완전한 통제가 아니다.** guard를 import하고 직접 save하는 코드도
+   가능하다. 검증 레코드를 요구하는 실제 납품 경로와 함께 적용해야 한다.
+4. **재개에는 해시와 버전이 필요하다.** 산출물 존재만으로 완료·재사용을 판정하지 않는다.
+
+### 첫 번째 단계 — 사고 회귀 자산 보존·분리
+
+사용자 요청에 따라 첫 단계는 재사용 불변식 보존으로 한정한다. contract/verifier/run 구현,
+legacy writer 전면 이전, 실제 납품 워크북 생성은 다음 단계다.
+
+- `agent-packages/smartthings-translation-agent/docs/excel_regression_inventory_20260909.json`:
+  변경 전 `es_co_*.py` 52개와 `test_es_co_*.py` 4개의 상대경로·크기·SHA-256·ignore 여부.
+  해시 목록은 식별 증적이지 원본 코드 복구용 백업은 아니다. 기존 파일은 그대로 유지한다.
+- `agent-packages/smartthings-translation-agent/tests/test_workbook_regression_invariants.py`:
+  ignored writer를 import하지 않는 합성 입력과 8개 회귀 테스트. 공용 guard만 사용한다.
+  rich-text run·공백 보존, run 경계를 걸친 편집, no-op 5축·수식·013 보존,
+  잘못된 서식 정본 감지, 실제 행 삭제와 마지막 구분 행 보존, 워크북 간 셀 스타일 보존,
+  사고 축별 변형 탐지, 검증 실패 시 신규 납품 파일 미생성을 포함한다.
+- `agent-packages/smartthings-translation-agent/docs/excel_regression_step1_20260909.md`:
+  사고 테스트와 신규 불변식 대응, 범위 한계, 실행·검증 결과.
+
+여기서 no-op 테스트는 공용 snapshot의 보존·탐지 능력을 검증한다. 아직 없는 실행 contract의
+정본 선택 정책까지 구현한 것은 아니다. 워크북 간 셀 스타일 테스트 또한 전체 시트·열 dimension
+복사 API의 이전 완료를 뜻하지 않는다. 기존 제품명 치환, glossary activation·seed 정책,
+국가·story별 업무 테스트는 ignored 원본에 유지한다. 재사용 불변식 테스트 파일은 ignore 대상이
+아니며 커밋 가능한 신규 파일로 준비한다. Git staging/commit 자체는 이번 작업에 포함하지 않는다.
+
 ## 목적
 
 Excel 변경 스킬을 상태 그래프 실행기(`Contract → Inventory → Snapshot → Plan → Apply
@@ -136,8 +287,9 @@ os.replace(temporary, destination)  # 통과해야 승격
 ```
 
 따라서 사고 스크립트에서는 검증이 예외를 던져도 **불량 파일이 이미 최종 출력 경로에 놓인
-상태**다. 제안이 제시한 "전체 배치가 통과하기 전에는 최종 폴더로 승격하지 않음" 규칙은
-guard에 이미 구현돼 있었고, 우회가 그것을 무력화했다.
+상태**다. 현재 guard는 단일 파일의 검증 후 교체를 제공한다. 전체 배치 통과 게이트나 배치
+승격의 원자성까지 구현한 것은 아니다. 또한 guard는 사고 다음 날 추가됐으므로 사고 당시
+이미 존재하던 guard를 우회했다고 해석해서는 안 된다.
 
 ### 결함 3 — guard에 실제로 없는 기능이 하나 있다
 

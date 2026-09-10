@@ -40,7 +40,7 @@ def _row_key(row: int) -> str:
 
 async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: str,
                               glossary: Path, app_root: Path,
-                              activation_manifest: Path | None = None):
+                              activation_manifest: Path | None = None, sheet_langs: dict | None = None):
     app_root = ap.bootstrap_project(str(app_root))
     from translation_web_app.glossary_checks import GlossaryChecker
     from translation_web_app.prompt_builder import PromptBuilder
@@ -50,8 +50,9 @@ async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: s
     from translation_web_app.rules_loader import get_rules
 
     checker = GlossaryChecker(PromptBuilder())
-    source_code = ap.DEFAULT_SHEET_LANGS[source_sheet]["code"]
-    target_info = ap.DEFAULT_SHEET_LANGS[target_sheet]
+    mapping = sheet_langs or ap.DEFAULT_SHEET_LANGS
+    source_code = mapping[source_sheet]["code"]
+    target_info = mapping[target_sheet]
     loaded = await checker.load_glossary_from_file(str(glossary), source_code)
     if not loaded.startswith("✓"):
         raise RuntimeError(f"glossary 로드 실패: {loaded}")
@@ -63,6 +64,8 @@ async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: s
     wb = openpyxl.load_workbook(workbook, read_only=True, data_only=False)
     try:
         source_ws, target_ws = wb[source_sheet], wb[target_sheet]
+        digits = re.findall(r"\d+", str(source_ws["C5"].value or ""))
+        story = digits[-1][-3:].zfill(3) if digits else None
         evidence = []
         for row in range(CONTENT_ROW_START, CONTENT_ROW_END + 1):
             source = str(source_ws.cell(row, 3).value or "")
@@ -137,6 +140,7 @@ def _packet_id(packet: dict[str, Any]) -> str:
         "deterministic_evidence", "activation_candidates", "candidate_overlay", "cell_snapshot",
         "hard_constraint_preamble", "audit_checklist",
     )}
+    evidence["sheet_langs"] = packet.get("sheet_langs")
     canonical = json.dumps(evidence, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
 
@@ -145,13 +149,16 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
                        app_root: Path | None = None, semantic_rag_budget: int = 0,
                        activation_manifest: Path | None = None,
                        candidate_overlay: Path | None = None,
-                       multi_agent: bool = False) -> dict[str, Any]:
+                       multi_agent: bool = False, source_sheet: str | None = None,
+                       sheet_langs: dict | None = None) -> dict[str, Any]:
     if semantic_rag_budget < 0:
         raise ValueError("semantic RAG budget은 0 이상이어야 합니다.")
     inspect = inspect_workbook(workbook, sheet, None, with_sections=True)
     if sheet not in inspect["sheets"] or "error" in inspect["sheets"][sheet]:
         raise ValueError(f"검수할 시트를 찾을 수 없습니다: {sheet}")
-    source_sheet = _source_sheet_for(sheet, inspect["sheet_names"])
+    source_sheet = source_sheet or _source_sheet_for(sheet, inspect["sheet_names"])
+    if source_sheet not in inspect["sheet_names"]:
+        raise ValueError(f"기준 원문 시트 없음: {source_sheet}")
     source = inspect_workbook(workbook, source_sheet, None, with_sections=True)["sheets"][source_sheet]
     deterministic: list[dict[str, Any]] = []
     activation_candidates: list[dict[str, Any]] = []
@@ -160,7 +167,7 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
     if glossary and app_root:
         deterministic, preamble, activation_candidates, audit_checklist = await _hard_rule_evidence(
             workbook, source_sheet, sheet, glossary, app_root,
-            activation_manifest=activation_manifest)
+            activation_manifest=activation_manifest, sheet_langs=sheet_langs)
     elif glossary or app_root:
         raise ValueError("결정론적 glossary 검사는 --glossary와 --app-root를 함께 지정해야 합니다.")
     overlay_entries: list[dict[str, Any]] = []
@@ -180,6 +187,7 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
         "workbook_name": workbook.name,
         "target_sheet": sheet,
         "source_sheet": source_sheet,
+        "sheet_langs": sheet_langs or ap.DEFAULT_SHEET_LANGS,
         "target_sections": inspect["sheets"][sheet].get("groups", []),
         "source_sections": source.get("groups", []),
         "cell_snapshot": _cell_snapshot(workbook, sheet),

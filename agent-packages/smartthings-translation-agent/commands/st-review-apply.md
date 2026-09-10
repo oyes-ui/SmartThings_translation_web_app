@@ -3,6 +3,10 @@ description: 승인된 원어민 감수 판정을 반영해 최종 하이라이�
 argument-hint: <감수본.xlsx> <approval.json> --output <1차수용.xlsx> --glossary <Glossary.csv>
 ---
 
+이 고급 명령은 `/st-apply`의 기존 실행 경로다. 사용자 기본 안내는 `commands/README.md`,
+계약 실행·preview·재개와 실제 출력 경로는 `references/command-execution.md`를 따른다.
+사용자 입력은 자연어로 받아 내부 manifest를 준비한다.
+
 `/st-story-review`와 감수 의견 검토가 끝난 뒤에만 사용한다. 이 명령은 감수안을 새로 판단하지 않고, **사람이 승인한 manifest**의 `accept`·`partial`만 C열에 적용한다. 원본 감수본은 수정하지 않는다.
 
 ```bash
