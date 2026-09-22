@@ -4,6 +4,7 @@ import asyncio
 import types as py_types
 import unittest
 
+from translation_web_app.checker_service import TranslationChecker
 from translation_web_app.model_handler import ModelHandler
 
 
@@ -198,6 +199,90 @@ class ModelHandlerUsageTests(unittest.TestCase):
         asyncio.run(handler.generate_content("p", model_name="gemini-2.5-pro", thinking_budget=777, reasoning_effort="low"))
         self.assertEqual(gemini_calls["thinking_budget"], 777)
         self.assertEqual(set(gpt_calls.keys()) - {"reasoning_effort"}, set())
+
+
+class GeminiRetryTests(unittest.TestCase):
+    def test_retryable_429_is_retried_with_backoff(self):
+        calls = {"n": 0}
+
+        async def fake_generate_content(model, contents, config):
+            calls["n"] += 1
+            if calls["n"] < 3:
+                raise RuntimeError("429 RESOURCE_EXHAUSTED")
+            return FakeGeminiResponse(text="ok")
+
+        handler = _handler_with_fake_gemini(fake_generate_content)
+        handler.gemini_retry_base_seconds = 0
+        result = asyncio.run(handler.call_gemini("prompt"))
+        self.assertEqual(result, "ok")
+        self.assertEqual(calls["n"], 3)
+
+    def test_permanent_400_is_not_retried(self):
+        calls = {"n": 0}
+
+        async def fake_generate_content(model, contents, config):
+            calls["n"] += 1
+            raise RuntimeError("400 INVALID_ARGUMENT")
+
+        handler = _handler_with_fake_gemini(fake_generate_content)
+        handler.gemini_retry_base_seconds = 0
+        result = asyncio.run(handler.call_gemini("prompt"))
+        self.assertIn("Gemini Error", result)
+        self.assertEqual(calls["n"], 1)
+
+    def test_retry_exhaustion_keeps_original_status(self):
+        async def fake_generate_content(model, contents, config):
+            raise RuntimeError("500 INTERNAL")
+
+        handler = _handler_with_fake_gemini(fake_generate_content)
+        handler.gemini_retry_base_seconds = 0
+        result = asyncio.run(handler.call_gemini("prompt"))
+        self.assertIn("500 INTERNAL", result)
+        self.assertIn("after 3 attempts", result)
+
+
+class TranslationCallSafetyTests(unittest.TestCase):
+    def test_api_error_is_not_reclassified_as_a_glossary_failure(self):
+        checker = TranslationChecker(max_concurrency=1)
+
+        async def fake_generate_content(*args, **kwargs):
+            return "Gemini Error: 429 RESOURCE_EXHAUSTED"
+
+        checker.model_handler.generate_content = fake_generate_content
+        result = asyncio.run(checker._run_llm_translation(
+            "SmartThings Now", "German", constraint_card={"terms": [{
+                "source_term": "SmartThings Now", "target": "SmartThings Now",
+                "active": True, "rule_ids": ("glossary-target",),
+                "bracket_policy": "no_bracket", "no_bracket_reasons": (),
+                "blocked_reason": None,
+            }]},
+        ))
+        self.assertIn("429 RESOURCE_EXHAUSTED", result)
+        self.assertNotIn("resolver가 번역 결과를 차단", result)
+
+    def test_translation_concurrency_uses_configured_limit(self):
+        checker = TranslationChecker(max_concurrency=2)
+        active = 0
+        maximum = 0
+
+        async def fake_translation(*args, **kwargs):
+            nonlocal active, maximum
+            active += 1
+            maximum = max(maximum, active)
+            await asyncio.sleep(0)
+            active -= 1
+            return "ok"
+
+        checker._run_llm_translation = fake_translation
+
+        async def run_all():
+            return await asyncio.gather(*(
+                checker._run_llm_translation_limited(str(i), "German")
+                for i in range(12)
+            ))
+
+        self.assertEqual(asyncio.run(run_all()), ["ok"] * 12)
+        self.assertEqual(maximum, 2)
 
 
 class GeminiRequestConfigTests(unittest.TestCase):

@@ -416,6 +416,15 @@ class TranslationChecker:
         async with self._sem:
             return await coro
 
+    async def _run_llm_translation_limited(self, *args, **kwargs):
+        """Apply the configured concurrency limit to translation calls too.
+
+        Audit calls already use ``_with_semaphore``. Translation workers used to
+        bypass it and could submit every workbook cell to Gemini at once.
+        """
+        async with self._sem:
+            return await self._run_llm_translation(*args, **kwargs)
+
     async def _rag_lookup(self, source_text, sheet_title, source_lang, rag_identity_match=True, n_results=2):
         """RAG retrieve() 의 가용성 체크·동기 호출 오프로드·예외 처리를 한 곳에 모은다.
 
@@ -510,6 +519,15 @@ class TranslationChecker:
                 response_json=True,
                 thinking_budget=thinking_budget,
             )
+
+            if isinstance(response_data, str) and response_data.startswith((
+                "Gemini Error", "GPT Error", "Gemini API Key not configured",
+                "OpenAI API Key not configured",
+            )):
+                raise RuntimeError(response_data)
+            if isinstance(response_data, dict) and response_data.get("error"):
+                detail = response_data.get("original_text") or response_data.get("error")
+                raise RuntimeError(f"Model response error: {detail}")
 
             if isinstance(response_data, dict):
                 translation = response_data.get("translation", str(response_data))
@@ -1293,7 +1311,7 @@ class TranslationChecker:
                         source_text, ws.title, captured_src_lang, coord, rag_identity_match=rag_identity_match
                     )
 
-                    translation = await self._run_llm_translation(
+                    translation = await self._run_llm_translation_limited(
                         source_text, tgt_lang, model_name=translation_model, bx_style_on=bx_style_on,
                         glossary_context=glossary_dict, rag_context=rag_context_str, row_key=row_key,
                         source_lang=captured_src_lang, rag_identity_match=rag_identity_match, target_lang_code=tgt_lang_code,
@@ -1489,7 +1507,7 @@ class TranslationChecker:
                 source_text, ws.title, source_lang, coord, rag_identity_match=rag_identity_match
             )
 
-            translation = await self._run_llm_translation(
+            translation = await self._run_llm_translation_limited(
                 source_text,
                 target_lang,
                 model_name=translation_model,

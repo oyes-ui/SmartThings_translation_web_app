@@ -1,3 +1,4 @@
+import asyncio
 import os
 import json
 import re
@@ -11,7 +12,11 @@ from translation_web_app.gemini_auth import build_gemini_client
 load_dotenv()
 
 class ModelHandler:
-    def __init__(self, gemini_api_key: str = None, openai_api_key: str = None):
+    _GEMINI_RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
+
+    def __init__(self, gemini_api_key: str = None, openai_api_key: str = None,
+                 gemini_max_attempts: int = 3,
+                 gemini_retry_base_seconds: float = 1.0):
         # OpenAI config — runtime key takes priority over .env
         self.openai_api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
         self.openai_client = None
@@ -30,6 +35,26 @@ class ModelHandler:
 
         # 모델별 호출/토큰 사용량 누적 (Thinking/Reasoning 토큰 포함)
         self.usage_stats: dict[str, dict] = {}
+        # A short bounded retry absorbs transient Vertex/Gemini throttling and
+        # server failures. Permanent 4xx responses still fail immediately.
+        self.gemini_max_attempts = max(1, int(gemini_max_attempts))
+        self.gemini_retry_base_seconds = max(0.0, float(gemini_retry_base_seconds))
+
+    @staticmethod
+    def _gemini_error_status_code(error: Exception) -> int | None:
+        """Extract the HTTP/gRPC-style status code without depending on one SDK error type."""
+        for candidate in (
+            getattr(error, "code", None),
+            getattr(getattr(error, "response", None), "status_code", None),
+            getattr(getattr(error, "response", None), "status", None),
+        ):
+            try:
+                if candidate is not None:
+                    return int(candidate)
+            except (TypeError, ValueError):
+                pass
+        match = re.search(r"(?<!\d)(429|500|502|503|504)(?!\d)", str(error))
+        return int(match.group(1)) if match else None
 
     def _record_usage(self, model_name: str, provider: str, input_tokens: int = 0,
                        output_tokens: int = 0, thinking_tokens: int = 0, cached_tokens: int = 0):
@@ -108,44 +133,55 @@ class ModelHandler:
         if not self.gemini_client:
             return "Gemini API Key not configured."
 
-        try:
-            actual_model_name = model_name
-            if not self.is_vertex_ai:
-                if not actual_model_name.startswith("models/"):
-                    actual_model_name = f"models/{actual_model_name}"
+        actual_model_name = model_name
+        if not self.is_vertex_ai:
+            if not actual_model_name.startswith("models/"):
+                actual_model_name = f"models/{actual_model_name}"
 
-            config_kwargs = {}
-            if system_instruction:
-                config_kwargs["system_instruction"] = system_instruction
-            if response_json:
-                config_kwargs["response_mime_type"] = "application/json"
-            if thinking_budget is not None:
-                config_kwargs["thinking_config"] = types.ThinkingConfig(thinking_budget=thinking_budget)
-            config = types.GenerateContentConfig(**config_kwargs) if config_kwargs else None
+        config_kwargs = {}
+        if system_instruction:
+            config_kwargs["system_instruction"] = system_instruction
+        if response_json:
+            config_kwargs["response_mime_type"] = "application/json"
+        if thinking_budget is not None:
+            config_kwargs["thinking_config"] = types.ThinkingConfig(thinking_budget=thinking_budget)
+        config = types.GenerateContentConfig(**config_kwargs) if config_kwargs else None
 
-            response = await self.gemini_client.aio.models.generate_content(
-                model=actual_model_name,
-                contents=prompt,
-                config=config
-            )
-
-            usage = getattr(response, "usage_metadata", None)
-            if usage is not None:
-                self._record_usage(
-                    model_name,
-                    provider="gemini",
-                    input_tokens=getattr(usage, "prompt_token_count", 0) or 0,
-                    output_tokens=getattr(usage, "candidates_token_count", 0) or 0,
-                    thinking_tokens=getattr(usage, "thoughts_token_count", 0) or 0,
-                    cached_tokens=getattr(usage, "cached_content_token_count", 0) or 0,
+        for attempt in range(1, self.gemini_max_attempts + 1):
+            try:
+                response = await self.gemini_client.aio.models.generate_content(
+                    model=actual_model_name,
+                    contents=prompt,
+                    config=config
                 )
 
-            res_text = response.text.strip()
-            if response_json:
-                return self._safe_parse_json(res_text)
-            return res_text
-        except Exception as e:
-            return f"Gemini Error: {str(e)}"
+                usage = getattr(response, "usage_metadata", None)
+                if usage is not None:
+                    self._record_usage(
+                        model_name,
+                        provider="gemini",
+                        input_tokens=getattr(usage, "prompt_token_count", 0) or 0,
+                        output_tokens=getattr(usage, "candidates_token_count", 0) or 0,
+                        thinking_tokens=getattr(usage, "thoughts_token_count", 0) or 0,
+                        cached_tokens=getattr(usage, "cached_content_token_count", 0) or 0,
+                    )
+
+                res_text = response.text.strip()
+                if response_json:
+                    return self._safe_parse_json(res_text)
+                return res_text
+            except Exception as e:
+                status_code = self._gemini_error_status_code(e)
+                should_retry = (
+                    status_code in self._GEMINI_RETRYABLE_STATUS_CODES
+                    and attempt < self.gemini_max_attempts
+                )
+                if should_retry:
+                    delay = self.gemini_retry_base_seconds * (2 ** (attempt - 1))
+                    await asyncio.sleep(delay)
+                    continue
+                attempts = f" after {attempt} attempts" if attempt > 1 else ""
+                return f"Gemini Error{attempts}: {str(e)}"
 
     async def call_gpt(self, prompt, model_name="gpt-5.4-mini", system_instruction=None,
                         response_json=False, reasoning_effort: str | None = None):
