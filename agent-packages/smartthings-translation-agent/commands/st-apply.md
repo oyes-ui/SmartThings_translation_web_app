@@ -50,12 +50,16 @@ python scripts/workbook_story_apply.py story.xlsx approval-manifest.json \
 원어민 감수의 `accept`/`partial` 판정 manifest는 기존 `/st-review-apply`를 계속 사용한다. live
 manifest는 `before`/`after`가 확정된 일반 편집·콜롬비아 현지화 수정의 handoff 계약이다.
 
-## 검토 결과 기록 (자율화 근거 축적)
+## 검토 결과 기록과 업무 종료
 
-report manifest의 승인/거절 완료 행은 실행 결과의 `outcome_ledger`에 자동 기록한다.
-미결정 행은 제외하고 pending 상태를 거절로 간주하지 않는다. 누적 측정은 기존 도구로 수행한다. 사람이
-이미 내린 판단을 그대로 남기는 것이며 추가 작업이 아니다. 이 기록이 없으면 에이전트 제안의
-정확도를 측정할 수 없고, 승인 게이트를 완화할 근거도 영원히 쌓이지 않는다.
+`references/improvement-loop.md`의 종료 기본 절차를 따른다. 표준 report `changes[]` manifest를
+사용한 납품 경로는 승인/거절 완료 행을 결과의 `outcome_ledger`에 자동 기록한다. 미결정 행은
+제외하고 pending을 거절로 간주하지 않는다. native `decisions` 등 다른 입력 경로에 동일한
+기록이 생긴다고 가정하지 않는다.
+
+납품 검증과 확정 판단·기록 경로를 짧게 보고한다. 누적 분석·개선안·정본 변경·효과 평가는
+요청 범위에서만 수행한다. 수용률은 검토된 제안의 측정값이며 전체 정확도나 승인 완화 근거로
+단독 사용하지 않는다. 아래 누적 기록·평가 명령은 요청 시 사용하는 예시이며 매 종료 시 실행하지 않는다.
 
 ```bash
 python scripts/review_outcomes.py --ledger outputs/review/outcomes.jsonl \

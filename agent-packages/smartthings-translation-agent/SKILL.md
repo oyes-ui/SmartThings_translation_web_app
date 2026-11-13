@@ -44,6 +44,7 @@ python scripts/bootstrap.py --app-root <경로> --save
 | 답변 형식 | `references/response-patterns.md` | 근거 표기 필수 |
 | 승인 반영·납품·결과 기록 | `commands/st-apply.md` | 납품본 생성 경로 (일반 draft 수정은 st-edit) |
 | 명령 실행·상태·재개 | `references/command-execution.md` | 기존 승인과 계약 실행기 연결 |
+| 업무 종료 기록·요청 기반 개선 | `references/improvement-loop.md` | 종료 시 사실 확인, 요청 시 분석·변경·효과 검증 |
 
 ## 언제 이 skill을 쓰는가 (트리거)
 
@@ -55,7 +56,9 @@ python scripts/bootstrap.py --app-root <경로> --save
 - **RAG 사례 조회**: "과거에 이 표현 어떻게 번역했어?", "기존 사례 기준 이 독일어 괜찮아?" → `scripts/rag_lookup.py` + `references/rag-workflow.md`
 - **NotebookLM 보조 분석**: "NotebookLM 링크 참고해서 분석해줘", "검수 txt를 NotebookLM에 넣어둔 노트 기준으로 요약해줘", "노트북LM 자료까지 반영해서 반복 오류 패턴 찾아줘" → `references/notebooklm-workflow.md` + MCP `notebooklm` 도구(설치된 경우)
 - **원어민/번역사 감수본 대조·요약**: "감수본 반영여부 확인", "AI 검수 대비 최종 summary", "번역사 수정 제안 몇 건이야?" → `scripts/review_summary.py` + `references/response-patterns.md`
-- **검수 결과 기록·정확도 측정**: "이번 승인 결과 기록해줘", "에이전트 제안이 얼마나 맞았어?" → `scripts/review_outcomes.py`(승인 완료 manifest → outcome ledger → golden/results) + `scripts/quality_scorecard.py`. 측정 전용이며 자동 승인은 하지 않는다.
+- **검수 결과 기록·정확도 측정**: "이번 승인 결과 기록해줘", "에이전트 제안이 얼마나 맞았어?" → `scripts/review_outcomes.py`(승인 완료 manifest → outcome ledger → golden/results) + `scripts/quality_scorecard.py`. 측정 범위·한계는 `references/improvement-loop.md`를 따른다.
+- **업무 중 작은 오류·사용자 지적**: 번역 표기·도구 인자·경로·보고·진행 오류도 `references/improvement-loop.md`에 따라 현재 승인 범위에서 교정·확인하고 짧게 기록한다. 재사용할 변경은 요청 범위를 따른다.
+- **업무 후 개선 분석**: "이번 작업에서 개선할 점 찾아줘", "최근 승인 결과로 반복 문제를 봐줘" → `/st-ask` + `references/improvement-loop.md`. 분석·변경·후속 확인의 요청 범위를 구분한다.
 - **언어 시트 에이전트 검수**: "이 워크북 JA 시트 전체 검수해줘" → `/st-inspect`: 결정론적 glossary 근거 패킷 → 셀 순차 검수 → 시트 일관성 검수 → 리드 통합 → pending approval 리포트. 한 단계라도 없으면 `incomplete`로 제안을 만들지 않는다. 여러 언어는 `agent_staged_batch.py`로 언어 간에만 제한 병렬화한다. 기존 5역할 경로는 deprecated 호환 옵션이다.
 - **Excel 분석/수정**: "이 워크북 구조나 셀을 보여줘", "이 셀 이렇게 고쳐줘" → `scripts/workbook_inspect.py --raw`, `scripts/workbook_apply_edits.py` + `references/excel-workflow.md`
 - **Excel 용어집 하이라이트**: "용어집 용어만 글자색 하이라이트해줘", "highlight_only 실행" → `scripts/workbook_highlight_glossary.py` + `references/excel-workflow.md`
@@ -79,6 +82,14 @@ python scripts/bootstrap.py --app-root <경로> --save
 `/st-review`·`/st-help`·`/st-pipeline`은 호환 경로로 유지하며 기본 목록에는 중복 표시하지 않는다.
 입력은 자연어를 받고 에이전트가 내부 manifest/계약을 준비한다. 현재 상태 확인과 기존 승인
 범위의 재개는 `references/command-execution.md`를 따르며 새 사용자 명령은 만들지 않는다.
+
+## 업무 종료 기본 동작
+
+맡긴 업무의 단계 종료 시 `references/improvement-loop.md`에 따라 현재 작업의 확정 판단·실행
+검증·기록 경로를 확인해 짧게 보고한다. 지원 경로의 기존 outcome을 재사용하며 기록 대상이 없으면
+그대로 안내한다. 작은 번역·진행 오류와 사용자 지적도 기존 작업 리포트 또는 완료 답변에
+근거·조치·적용 범위를 남긴다. 과거 작업 비교·개선안 작성·정본 변경·효과 평가는 요청 범위에서만 수행한다.
+이것은 활성 에이전트의 종료 절차이며 새 명령이나 백그라운드 자동화가 아니다.
 
 ## 세부 슬래시 명령어
 
@@ -213,6 +224,7 @@ highlight/translate/audit 가 공유한다.
 - `references/glossary-report-workflow.md` — source group 확정문구 기반 용어집 필터/활성화 판단, Obsidian 리포트 작성 규약
 - `docs/obsidian-skill-dependencies.md` — 선택 설치 Obsidian skills, MIT 출처, stage/search/publish/Base 운영
 - `references/response-patterns.md` — 한국어 응답 템플릿
+- `references/improvement-loop.md` — 업무 종료 기본 기록과 요청 기반 개선·효과 확인
 - `references/portability.md` — 다른 에이전트 도구(Codex/Claude/Antigravity)로 설치하는 법
 
 ## 응답 언어
