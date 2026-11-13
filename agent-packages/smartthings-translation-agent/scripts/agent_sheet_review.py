@@ -22,6 +22,29 @@ from agent_review_contract import ROW_TYPES, SPECIALIST_ROLES
 from workbook_inspect import CONTENT_ROW_END, CONTENT_ROW_START, inspect_workbook
 
 
+DEFAULT_CELL_RANGE = "C7:C28"
+
+
+def review_cells(cell_range: str = DEFAULT_CELL_RANGE) -> list[str]:
+    """Validate the review boundary before reading or preparing any packet."""
+    match = re.fullmatch(r"C(\d+):C(\d+)", cell_range)
+    if not match:
+        raise ValueError("--cell-range must be a C-column range within C7:C28")
+    first, last = map(int, match.groups())
+    if not CONTENT_ROW_START <= first <= last <= CONTENT_ROW_END:
+        raise ValueError("--cell-range must be an ordered range within C7:C28")
+    return [f"C{row}" for row in range(first, last + 1)]
+
+
+def _scoped_groups(groups: list[dict], cells: set[str]) -> list[dict]:
+    result = []
+    for group in groups:
+        fields = {key: field for key, field in group["fields"].items() if field["cell"] in cells}
+        if fields:
+            result.append({**group, "fields": fields})
+    return result
+
+
 def _source_sheet_for(target_sheet: str, sheet_names: list[str]) -> str:
     if target_sheet in ap.GROUP_A_TARGETS:
         source = ap.GROUP_A_SOURCE
@@ -40,7 +63,8 @@ def _row_key(row: int) -> str:
 
 async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: str,
                               glossary: Path, app_root: Path,
-                              activation_manifest: Path | None = None, sheet_langs: dict | None = None):
+                              activation_manifest: Path | None = None, sheet_langs: dict | None = None,
+                              cell_range: str = DEFAULT_CELL_RANGE):
     app_root = ap.bootstrap_project(str(app_root))
     from translation_web_app.glossary_checks import GlossaryChecker
     from translation_web_app.prompt_builder import PromptBuilder
@@ -67,7 +91,8 @@ async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: s
         digits = re.findall(r"\d+", str(source_ws["C5"].value or ""))
         story = digits[-1][-3:].zfill(3) if digits else None
         evidence = []
-        for row in range(CONTENT_ROW_START, CONTENT_ROW_END + 1):
+        for cell in review_cells(cell_range):
+            row = int(cell[1:])
             source = str(source_ws.cell(row, 3).value or "")
             target = str(target_ws.cell(row, 3).value or "")
             if not source and not target:
@@ -100,13 +125,15 @@ async def _hard_rule_evidence(workbook: Path, source_sheet: str, target_sheet: s
         checker._compile_glossary_re()
         activation_candidates = find_candidates(
             checker, workbook, source_sheet, target_sheet, target_info["code"])
+        activation_candidates = [item for item in activation_candidates
+                                 if item.get("cell") in review_cells(cell_range)]
         checklist = [category for category, _ in get_rules().doc("audit").labelled("checklist")]
         return evidence, HARD_CONSTRAINT_PREAMBLE, activation_candidates, checklist
     finally:
         wb.close()
 
 
-def _cell_snapshot(workbook: Path, sheet: str) -> dict[str, str]:
+def _cell_snapshot(workbook: Path, sheet: str, cell_range: str = DEFAULT_CELL_RANGE) -> dict[str, str]:
     """Record the target cell values the specialists actually reviewed.
 
     build_review_artifacts compares this against the workbook at report time, so a
@@ -119,7 +146,8 @@ def _cell_snapshot(workbook: Path, sheet: str) -> dict[str, str]:
     try:
         ws = wb[sheet]
         snapshot = {}
-        for row in range(CONTENT_ROW_START, CONTENT_ROW_END + 1):
+        for cell in review_cells(cell_range):
+            row = int(cell[1:])
             value = ws.cell(row, 3).value
             if value is not None:
                 snapshot[f"C{row}"] = str(value)
@@ -141,6 +169,7 @@ def _packet_id(packet: dict[str, Any]) -> str:
         "hard_constraint_preamble", "audit_checklist",
     )}
     evidence["sheet_langs"] = packet.get("sheet_langs")
+    evidence["cell_range"] = packet.get("cell_range", DEFAULT_CELL_RANGE)
     canonical = json.dumps(evidence, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
 
@@ -150,7 +179,9 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
                        activation_manifest: Path | None = None,
                        candidate_overlay: Path | None = None,
                        multi_agent: bool = False, source_sheet: str | None = None,
-                       sheet_langs: dict | None = None) -> dict[str, Any]:
+                       sheet_langs: dict | None = None,
+                       cell_range: str = DEFAULT_CELL_RANGE) -> dict[str, Any]:
+    cells = set(review_cells(cell_range))
     if semantic_rag_budget < 0:
         raise ValueError("semantic RAG budget은 0 이상이어야 합니다.")
     inspect = inspect_workbook(workbook, sheet, None, with_sections=True)
@@ -167,7 +198,7 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
     if glossary and app_root:
         deterministic, preamble, activation_candidates, audit_checklist = await _hard_rule_evidence(
             workbook, source_sheet, sheet, glossary, app_root,
-            activation_manifest=activation_manifest, sheet_langs=sheet_langs)
+            activation_manifest=activation_manifest, sheet_langs=sheet_langs, cell_range=cell_range)
     elif glossary or app_root:
         raise ValueError("결정론적 glossary 검사는 --glossary와 --app-root를 함께 지정해야 합니다.")
     overlay_entries: list[dict[str, Any]] = []
@@ -180,7 +211,8 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
         story = story_match.group(1) if story_match else None
         overlay_entries = [row for row in rows if isinstance(row, dict)
                            and (story is None or str(row.get("story", "")).zfill(3) == story)
-                           and str(row.get("sheet", sheet)) == sheet]
+                           and str(row.get("sheet", sheet)) == sheet
+                           and row.get("cell") in cells]
     packet = {
         "schema_version": 2,
         "kind": "agent_sheet_review_packet",
@@ -188,9 +220,10 @@ async def build_packet(workbook: Path, sheet: str, *, glossary: Path | None = No
         "target_sheet": sheet,
         "source_sheet": source_sheet,
         "sheet_langs": sheet_langs or ap.DEFAULT_SHEET_LANGS,
-        "target_sections": inspect["sheets"][sheet].get("groups", []),
-        "source_sections": source.get("groups", []),
-        "cell_snapshot": _cell_snapshot(workbook, sheet),
+        "cell_range": cell_range,
+        "target_sections": _scoped_groups(inspect["sheets"][sheet].get("groups", []), cells),
+        "source_sections": _scoped_groups(source.get("groups", []), cells),
+        "cell_snapshot": _cell_snapshot(workbook, sheet, cell_range),
         "deterministic_evidence": deterministic,
         "deterministic_evidence_status": "available" if deterministic else "not_loaded",
         "activation_candidates": activation_candidates,
@@ -225,6 +258,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("workbook")
     parser.add_argument("--sheet", required=True, help="검수할 언어 시트")
+    parser.add_argument("--cell-range", default=DEFAULT_CELL_RANGE, help="검수 범위 (기본 C7:C28)")
     parser.add_argument("--raw", action="store_true", help="기존 구조/section 읽기 전용 출력만 수행")
     parser.add_argument("--multi-agent", action="store_true",
                         help="5개 관점 병렬 검수(escalation)를 이 시트에 승인한다. 기본은 리드 2-pass")
@@ -238,8 +272,11 @@ def main() -> None:
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
     try:
+        review_cells(args.cell_range)
         if args.raw:
-            raw = inspect_workbook(Path(args.workbook).expanduser(), args.sheet, None, with_sections=True)
+            raw = inspect_workbook(Path(args.workbook).expanduser(), args.sheet,
+                                   None if args.cell_range == DEFAULT_CELL_RANGE else args.cell_range,
+                                   with_sections=True)
             print(json.dumps(raw, ensure_ascii=False, indent=2))
             return
         packet = asyncio.run(build_packet(Path(args.workbook).expanduser(), args.sheet,
@@ -247,7 +284,7 @@ def main() -> None:
                                           semantic_rag_budget=args.semantic_rag_budget,
                                           activation_manifest=args.activation_manifest,
                                           candidate_overlay=args.candidate_overlay,
-                                          multi_agent=args.multi_agent))
+                                          multi_agent=args.multi_agent, cell_range=args.cell_range))
         print(json.dumps(packet, ensure_ascii=False, indent=2))
     except Exception as error:
         print(json.dumps({"status": "error", "error": str(error)}, ensure_ascii=False))

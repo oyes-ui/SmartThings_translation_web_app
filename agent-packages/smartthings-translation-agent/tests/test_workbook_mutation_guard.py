@@ -17,8 +17,13 @@ from workbook_mutation_guard import (  # noqa: E402
     clone_rich_value,
     copy_row_layout,
     delete_rows_with_manifest,
+    insert_text_with_red,
+    prune_right_columns_with_manifest,
+    replace_characters_with_red,
+    replace_span_with_red,
     save_verified_atomic,
     rich_value_signature,
+    rewrite_rich_with_blue_spans,
     slice_rich_value,
     snapshot_axis_diff,
     snapshot_path,
@@ -57,6 +62,114 @@ class WorkbookMutationGuardTests(unittest.TestCase):
         self.assertEqual(len(sliced), 1)
         self.assertTrue(sliced[0].font.b)
         self.assertEqual(rich_value_signature(sliced)["kind"], "rich")
+
+    def test_replace_span_with_red_removes_wrappers_and_preserves_other_runs(self):
+        value = CellRichText(
+            TextBlock(InlineFont(i=True), "Start "),
+            TextBlock(InlineFont(color="0000FF", b=True), "[Pet Care]"),
+            " today",
+        )
+        start = str(value).index("[Pet Care]")
+        result = replace_span_with_red(value, start, start + len("[Pet Care]"), "Pet Care", Font(name="Arial"))
+        self.assertEqual(str(result), "Start Pet Care today")
+        self.assertEqual(result[0].font, value[0].font)
+        self.assertEqual(str(result[-1]), " today")
+        self.assertTrue(str(result[1].font.color.rgb).endswith("FF0000"))
+        self.assertTrue(result[1].font.b)
+
+    def test_replace_span_with_red_can_insert_or_delete(self):
+        inserted = replace_span_with_red("Start Care", 6, 6, "Pet ", Font(name="Arial"))
+        self.assertEqual(str(inserted), "Start Pet Care")
+        self.assertTrue(str(inserted[1].font.color.rgb).endswith("FF0000"))
+        deleted = replace_span_with_red("vc一张照片", 0, 2, "", Font(name="Arial"))
+        self.assertEqual(str(deleted), "一张照片")
+
+    def test_replace_characters_with_red_preserves_other_inline_fonts(self):
+        value = CellRichText(
+            TextBlock(InlineFont(color="0000FF", b=True), "SmartThings"),
+            TextBlock(InlineFont(i=True, color="000000"), " don't stop"),
+        )
+        position = str(value).index("'")
+        result = replace_characters_with_red(value, {position: "’"}, Font(name="Arial"))
+        self.assertEqual(str(result), "SmartThings don’t stop")
+        self.assertEqual(result[0].text, "SmartThings")
+        self.assertEqual(result[0].font, value[0].font)
+        self.assertEqual(result[1].text, " don")
+        self.assertEqual(result[1].font, value[1].font)
+        self.assertEqual(result[2].text, "’")
+        self.assertTrue(str(result[2].font.color.rgb).endswith("FF0000"))
+        self.assertTrue(result[2].font.i)
+        self.assertEqual(result[3].font, value[1].font)
+
+    def test_replace_characters_with_red_handles_plain_text(self):
+        result = replace_characters_with_red("L'expérience", {1: "’"}, Font(name="Arial"))
+        self.assertEqual(str(result), "L’expérience")
+        self.assertTrue(str(result[1].font.color.rgb).endswith("FF0000"))
+
+    def test_insert_text_with_red_preserves_existing_rich_fonts(self):
+        value = CellRichText(
+            TextBlock(InlineFont(color="0000FF", b=True), "First"),
+            "\nSecond",
+        )
+        result = insert_text_with_red(
+            value, {0: "* ", 6: "* ", len(str(value)): "\n* Final"}, Font(name="Arial")
+        )
+        self.assertEqual(str(result), "* First\n* Second\n* Final")
+        first = next(part for part in result if isinstance(part, TextBlock) and part.text == "First")
+        self.assertEqual(first.font, value[0].font)
+        for part in result:
+            if isinstance(part, TextBlock) and part.text.startswith("* "):
+                self.assertEqual(str(part.font.color.rgb).upper(), "FFFF0000")
+
+    def test_insert_text_with_red_rejects_invalid_offsets(self):
+        with self.assertRaises(ValueError):
+            insert_text_with_red("abc", {4: "x"}, Font())
+
+    def test_rewrite_rich_keeps_noncolor_run_style_and_replaces_broad_blue(self):
+        value = CellRichText(
+            TextBlock(InlineFont(b=True, family=2, color="0432FF"), "Galaxy phone"),
+            TextBlock(InlineFont(family=3, color="000000"), " or phone"),
+        )
+        result = rewrite_rich_with_blue_spans(
+            value, "Galaxy phone or [Ring]", Font(name="Arial", color="000000"),
+            [(0, 6), (17, 21)],
+        )
+        self.assertEqual(str(result), "Galaxy phone or [Ring]")
+        chars = [(character, part.font) for part in result for character in part.text]
+        self.assertTrue(chars[0][1].b)
+        self.assertEqual(chars[0][1].family, 2)
+        self.assertEqual(chars[7][1].family, 2)
+        self.assertEqual(chars[13][1].family, 3)
+        self.assertTrue(str(chars[0][1].color.rgb).endswith("0432FF"))
+        self.assertFalse(str(chars[7][1].color.rgb).endswith("0432FF"))
+        self.assertTrue(str(chars[17][1].color.rgb).endswith("0432FF"))
+
+    def test_rewrite_rich_inserts_disclaimer_prefix_without_bracketing_noun(self):
+        value = CellRichText(
+            TextBlock(InlineFont(color="0432FF"), "Notify when left behind"),
+            TextBlock(InlineFont(color="000000"), " uses a smartphone."),
+        )
+        target = "* Notify when left behind uses a smartphone."
+        result = rewrite_rich_with_blue_spans(value, target, Font(color="000000"), [(2, 25)])
+        self.assertEqual(str(result), target)
+        self.assertIn("smartphone", str(result))
+        self.assertNotIn("[smartphone]", str(result))
+
+    def test_scoped_blue_highlight_preserves_existing_blue_and_red(self):
+        value = CellRichText(
+            TextBlock(InlineFont(color="0432FF", b=True), "Pet Care"),
+            TextBlock(InlineFont(color="000000"), " > "),
+            TextBlock(InlineFont(color="FF0000", i=True), "Life"),
+        )
+        result = rewrite_rich_with_blue_spans(
+            value, str(value), Font(color="000000"), [(11, 15)],
+            reset_existing_blue=False,
+        )
+        chars = [part.font for part in result for _ in part.text]
+        self.assertTrue(str(chars[0].color.rgb).endswith("0432FF"))
+        self.assertTrue(chars[0].b)
+        self.assertTrue(str(chars[11].color.rgb).endswith("0432FF"))
+        self.assertTrue(chars[11].i)
 
     def test_cross_workbook_row_layout_copies_semantics_not_style_ids(self):
         source = openpyxl.Workbook()
@@ -146,6 +259,37 @@ class WorkbookMutationGuardTests(unittest.TestCase):
             verified = openpyxl.load_workbook(output)
             self.assertEqual(verified.active["C7"].value, "new")
             verified.close()
+
+    def test_prune_review_suffix_discards_only_right_columns(self):
+        book = openpyxl.Workbook()
+        sheet = book.active
+        sheet["B7"] = '=RIGHT($C$5, 3)'
+        sheet["C5"] = "story_001"
+        sheet["C7"] = CellRichText(TextBlock(InlineFont(color="0000FF"), "SmartThings"))
+        sheet["E7"] = '=RIGHT($C$5, 3)'
+        sheet["F7"] = "review"
+        sheet.column_dimensions["D"].min = 4
+        sheet.column_dimensions["D"].max = 7
+        sheet.column_dimensions["H"].min = 8
+        sheet.column_dimensions["H"].max = 16384
+        deleted = prune_right_columns_with_manifest(sheet, 4)
+        self.assertEqual(deleted["removed_values"]["F7"], "review")
+        self.assertEqual(sheet.max_column, 3)
+        self.assertEqual(sheet["B7"].value, '=RIGHT($C$5, 3)')
+        self.assertEqual(str(sheet["C7"].value), "SmartThings")
+        self.assertEqual(sheet.column_dimensions["D"].max, 4)
+        self.assertNotIn("H", sheet.column_dimensions)
+        book.close()
+
+    def test_prune_review_suffix_rejects_retained_formula_dependency(self):
+        book = openpyxl.Workbook()
+        sheet = book.active
+        sheet["B7"] = '=E7'
+        sheet["E7"] = "review"
+        with self.assertRaisesRegex(ValueError, "references removed column"):
+            prune_right_columns_with_manifest(sheet, 4)
+        self.assertEqual(sheet["E7"].value, "review")
+        book.close()
 
 
 if __name__ == "__main__":

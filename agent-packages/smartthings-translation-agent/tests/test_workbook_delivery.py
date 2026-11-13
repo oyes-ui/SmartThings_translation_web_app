@@ -15,7 +15,7 @@ import pytest
 from openpyxl.cell.rich_text import CellRichText, TextBlock
 from openpyxl.cell.text import InlineFont
 from openpyxl.comments import Comment
-from openpyxl.styles import Border, Side
+from openpyxl.styles import Border, Font, Side
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import workbook_delivery as delivery
@@ -107,6 +107,50 @@ def test_review_column_removal_preserves_unrelated_formatting(job):
             assert ws.row_dimensions[12].height == 21
             assert ws["A12"].border.bottom.style == "thin"
             assert ws["D10"].comment.text == "retain"
+    finally:
+        book.close()
+
+
+def test_review_suffix_pruning_discards_review_formulas(job):
+    book = openpyxl.load_workbook(job.workbook, rich_text=True)
+    for ws in book:
+        ws["D10"].comment = None
+        ws["B7"] = '="//story_"&RIGHT($C$5, 3)&"_title"'
+        ws["E11"] = '="//section_"&RIGHT($C$5, 3)&"_description"'
+    book.save(job.workbook)
+    book.close()
+    job.drop_review_columns = "D:Z"
+
+    result = run(job, "review")
+    assert result["status"] == "ok", result
+    book = openpyxl.load_workbook(result["final"], rich_text=True)
+    try:
+        for ws in book:
+            assert ws.max_column == 3
+            assert ws["B7"].data_type == "f"
+            assert ws["C5"].value == "story_test"
+            assert ws["E11"].value is None
+    finally:
+        book.close()
+
+
+def test_delivery_clears_red_placeholder_markup(job):
+    book = openpyxl.load_workbook(job.workbook, rich_text=True)
+    for ws in book:
+        ws["C12"] = CellRichText(TextBlock(InlineFont(color="FFFF0000"), "x"))
+        ws["C8"].font = Font(color="FF0000FF")
+    book.save(job.workbook)
+    book.close()
+
+    result = run(job, "review")
+    assert result["status"] == "ok", result
+    book = openpyxl.load_workbook(result["final"], rich_text=True)
+    try:
+        for ws in book:
+            assert ws["C12"].value == "x"
+            assert not isinstance(ws["C12"].value, CellRichText)
+            assert isinstance(ws["C8"].value, CellRichText)
+            assert all(part.font.color.rgb[-6:] == "000000" for part in ws["C8"].value)
     finally:
         book.close()
 

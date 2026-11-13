@@ -34,6 +34,43 @@ class AgentSheetReviewTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(packet["semantic_rag_budget"], 3)
             self.assertEqual(openpyxl.load_workbook(path)["CO(콜롬비아)"]["C7"].value, "Te damos la bienvenida")
 
+    async def test_scope_excludes_existing_sections_from_all_review_inputs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "Story_001.xlsx"
+            wb = openpyxl.Workbook(); wb.active.title = "US(미국)"
+            wb.create_sheet("CO(콜롬비아)")
+            for ws in wb:
+                for row in (7, 10, 15, 20, 21, 22, 23, 25, 26):
+                    ws[f"C{row}"] = f"text-{row}"
+            wb.save(path)
+            before = path.read_bytes()
+            overlay = Path(tmp) / "overlay.json"
+            overlay.write_text(json.dumps({"occurrences": [
+                {"story": "001", "cell": "C7"}, {"story": "001", "cell": "C21"},
+            ]}))
+            packet = await build_packet(path, "CO(콜롬비아)", cell_range="C20:C23", candidate_overlay=overlay)
+            self.assertEqual(packet["cell_range"], "C20:C23")
+            self.assertEqual(set(packet["cell_snapshot"]), {"C20", "C21", "C22", "C23"})
+            for key in ("source_sections", "target_sections"):
+                self.assertEqual([g["group_id"] for g in packet[key]], ["section_3"])
+                self.assertEqual({f["cell"] for g in packet[key] for f in g["fields"].values()},
+                                 {"C20", "C21", "C22", "C23"})
+            self.assertEqual([r["cell"] for r in packet["candidate_overlay"]], ["C21"])
+            default = await build_packet(path, "CO(콜롬비아)")
+            self.assertIn("C7", default["cell_snapshot"])
+            self.assertNotEqual(packet["packet_id"], default["packet_id"])
+            with patch("agent_sheet_review._hard_rule_evidence", new=AsyncMock(return_value=([], "", [], []))) as hard:
+                await build_packet(path, "CO(콜롬비아)", cell_range="C20:C23",
+                                   glossary=Path(tmp)/"g.csv", app_root=Path(tmp))
+                self.assertEqual(hard.call_args.kwargs["cell_range"], "C20:C23")
+            self.assertEqual(before, path.read_bytes())
+
+    async def test_rejects_invalid_scope_before_reading_workbook(self):
+        for invalid in ("B20:C23", "C6:C23", "C20:C29", "C23:C20", "C20", "C20:C23,C25:C28"):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                await build_packet(Path("missing.xlsx"), "CO(콜롬비아)", cell_range=invalid)
+
+
     async def test_five_role_escalation_is_off_unless_approved(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "story.xlsx"

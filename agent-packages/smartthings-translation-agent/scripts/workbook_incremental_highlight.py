@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 import re
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -26,7 +27,7 @@ from openpyxl.cell.text import InlineFont
 
 import _app_pipeline as ap
 from workbook_manifest import file_sha256, load_revision, text_sha256, update_render_state
-from workbook_mutation_guard import detailed_workbook_snapshot
+from workbook_mutation_guard import detailed_workbook_snapshot, rich_value_signature
 
 
 RED = "FF0000"
@@ -77,6 +78,12 @@ def _term_spans(text: str, terms: list[str]) -> tuple[list[list[int]], list[str]
     return _merge_spans(found), unmatched
 
 
+def _combine_group_terms(terms: list[str], previous: dict | None) -> list[str]:
+    """A source sheet may be targeted twice; later groups must not erase matches."""
+    carried = previous.get("highlighted_terms", []) if previous else []
+    return sorted(set(terms) | set(carried), key=lambda value: (-len(value), value.casefold()))
+
+
 def _fold_bare_whitespace_runs(rt: CellRichText) -> CellRichText:
     """Fold whitespace-only rich-text runs into a neighbour.
 
@@ -111,13 +118,30 @@ def _fold_bare_whitespace_runs(rt: CellRichText) -> CellRichText:
     return out
 
 
+def _expand_combining_spans(text: str, spans: list[list[int]]) -> list[list[int]]:
+    """Do not split a base character from its combining marks at a font boundary."""
+    expanded = []
+    for left, right in spans:
+        left, right = max(0, left), min(len(text), right)
+        while 0 < left < len(text) and unicodedata.category(text[left]).startswith("M"):
+            left -= 1
+        while right < len(text) and unicodedata.category(text[right]).startswith("M"):
+            right += 1
+        expanded.append((left, right))
+    return _merge_spans(expanded)
+
+
 def render_cell(
     text: str, *, base_font: Font | None, red_spans: list[list[int]], blue_spans: list[list[int]],
-    blue_color: str = BLUE,
+    blue_color: str = BLUE, color_priority: str = "glossary",
 ) -> CellRichText | str:
-    """Compose a cell in one pass. Blue is intentionally evaluated after red."""
+    """Compose in one pass; retain glossary priority unless explicitly overridden."""
+    if color_priority not in {"glossary", "changes"}:
+        raise ValueError("color_priority must be glossary or changes")
     if not text or not (red_spans or blue_spans):
         return text
+    red_spans = _expand_combining_spans(text, red_spans)
+    blue_spans = _expand_combining_spans(text, blue_spans)
     boundaries = {0, len(text)}
     for start, end in [*red_spans, *blue_spans]:
         boundaries.add(max(0, min(len(text), start)))
@@ -128,9 +152,10 @@ def render_cell(
         segment = text[start:end]
         if not segment:
             continue
-        # Glossary wins intentionally: red is calculated first, then blue overlays it.
-        color = blue_color if any(left <= start and end <= right for left, right in blue_spans) else (
-            RED if any(left <= start and end <= right for left, right in red_spans) else None
+        is_blue = any(left <= start and end <= right for left, right in blue_spans)
+        is_red = any(left <= start and end <= right for left, right in red_spans)
+        color = RED if is_red and (color_priority == "changes" or not is_blue) else (
+            blue_color if is_blue else None
         )
         result.append(TextBlock(text=segment, font=_font(base_font, color)))
     return _fold_bare_whitespace_runs(result)
@@ -370,20 +395,27 @@ async def run_incremental_highlight(args) -> dict:
                     key = f"{target_sheet}!{target_cell.coordinate}"
                     terms, excluded = _relevant_target_terms(checker, _cell_text(source_cell.value), target_info["code"],
                                                              story=story, cell=source_cell.coordinate)
+                    terms = _combine_group_terms(terms, new_state.get(key))
                     blue, missing = _term_spans(text, terms)
                     red = red_by_cell.get((target_sheet, target_cell.coordinate), [])
+                    red = _expand_combining_spans(text, red)
+                    blue = _expand_combining_spans(text, blue)
                     highlighted_terms = [term for term in terms if term not in missing]
                     desired = {
                         "text_sha256": text_sha256(text), "terms_sha256": _sha(terms),
                         "red_spans": red, "blue_spans": blue, "highlighted_terms": highlighted_terms,
                         "excluded_terms": excluded, "unmatched_terms": missing,
+                        "color_priority": getattr(args, "color_priority", "glossary"),
                     }
-                    # Skip only when this workbook retained the prior rich-text rendering.
-                    if old_state.get(key) == desired and _is_rich_text(target_cell.value):
+                    rendered = render_cell(text, base_font=target_cell.font, red_spans=red, blue_spans=blue,
+                                           color_priority=getattr(args, "color_priority", "glossary"))
+                    # Manifest equality alone does not prove this input retained the colours.
+                    if (old_state.get(key) == desired and _is_rich_text(target_cell.value)
+                            and rich_value_signature(target_cell.value) == rich_value_signature(rendered)):
                         new_state[key] = desired
                         skipped += 1
                         continue
-                    target_cell.value = render_cell(text, base_font=target_cell.font, red_spans=red, blue_spans=blue)
+                    target_cell.value = rendered
                     if _cell_text(target_cell.value) != text:
                         raise RuntimeError(f"rich-text renderer가 문안을 변경했습니다: {key}")
                     new_state[key] = desired
@@ -409,6 +441,7 @@ async def run_incremental_highlight(args) -> dict:
         wb.close()
     state = {
         "renderer": "incremental_red_then_glossary_blue_v1",
+        "color_priority": getattr(args, "color_priority", "glossary"),
         "glossary": {"file": glossary.name, "sha256": file_sha256(glossary)},
         "cells": new_state,
         "last_output": output.name,
@@ -431,6 +464,8 @@ def main() -> None:
     parser.add_argument("workbook")
     parser.add_argument("--revision-manifest", required=True)
     parser.add_argument("--activation-manifest", help="확정된 활성화 설정")
+    parser.add_argument("--color-priority", choices=["glossary", "changes"], default="glossary",
+                        help="겹치는 구간의 우선 색상: glossary=파랑(기본), changes=빨강")
     parser.add_argument("--glossary", required=True)
     parser.add_argument("--sheets", help="대상 시트 CSV")
     parser.add_argument("--cell-range", default="C7:C28")

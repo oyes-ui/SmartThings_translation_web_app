@@ -12,14 +12,15 @@ from xml.etree.ElementTree import canonicalize
 import openpyxl
 from workbook_contract import (AXES, ROLES, ContractError, authority_file, canonical,
     check_inputs, digest, file_sha256, load_contract)
-from workbook_mutation_guard import detailed_workbook_snapshot
+from workbook_mutation_guard import detailed_workbook_snapshot, assert_serialized_text_safety
 
 
 def verifier_version() -> str:
     # Code identity invalidates records after changing serializer or verification rules.
     here = Path(__file__).parent
     return digest({"openpyxl": openpyxl.__version__, "code": {name: file_sha256(here / name) for name in
-                   ("workbook_verifier.py", "workbook_contract.py", "workbook_mutation_guard.py")}})
+                   ("workbook_verifier.py", "workbook_contract.py", "workbook_mutation_guard.py",
+                    "workbook_incremental_highlight.py")}})
 
 
 class VerificationError(ValueError):
@@ -92,6 +93,9 @@ def verify_artifact(contract_path: Path | str, artifact_id: str, staged: Path | 
     inputs = check_inputs(contract)
     artifact = next(a for a in contract["artifacts"] if a["id"] == artifact_id)
     staged_hash = file_sha256(staged)
+    # Never trust a caller's "passed" callback or a normalized snapshot alone.
+    # Raw OOXML must be safe for Excel before comparing contract authorities.
+    text_safety = assert_serialized_text_safety(staged)
     baseline = expected_baseline(contract, artifact)
     actual = facts(staged)
     observed = diff_facts(baseline, actual)
@@ -120,6 +124,8 @@ def verify_artifact(contract_path: Path | str, artifact_id: str, staged: Path | 
         "checks": checks, "unexpected": unexpected, "missing": missing,
         "observed_diff_count": len(observed),
         "axis_sha256": {axis: digest(actual[axis]) for axis in AXES},
+        "text_safety": {**text_safety, "checks": {key: "passed" for key in
+                         ("whitespace", "linebreaks", "character_fonts")}},
     }
     if report["status"] != "passed":
         raise VerificationError(report)
@@ -137,6 +143,14 @@ def validate_record(contract_path: Path | str, artifact_id: str, path: Path | st
             or record.get("unexpected") != [] or record.get("missing") != []
             or record.get("input_authority_sha256") != check_inputs(contract)):
         raise ContractError("Stale, incomplete or mismatched verification record")
+    if (record.get("text_safety", {}).get("version") != 1
+            or record.get("text_safety", {}).get("status") != "passed"):
+        raise ContractError("Missing mandatory text-safety verification record")
+    # Promotion/restart are separate gates. Reverify independently even if a
+    # record's hashes were fabricated by a legacy/custom writer.
+    fresh = verify_artifact(contract_path, artifact_id, path)
+    if any(record.get(key) != fresh[key] for key in ("axis_sha256", "text_safety")):
+        raise ContractError("Mismatched independent verification record")
 
 
 def validate_published_record(contract_path, artifact_id, path, record):
@@ -146,6 +160,7 @@ def validate_published_record(contract_path, artifact_id, path, record):
     Staging/promotion must still use validate_record with current dependencies.
     """
     contract = load_contract(contract_path)
+    assert_serialized_text_safety(path)
     if (record.get("status") != "passed" or record.get("artifact_id") != artifact_id
             or record.get("contract_sha256") != file_sha256(contract_path)
             or record.get("contract_content_sha256") != digest(contract)

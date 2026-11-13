@@ -61,7 +61,8 @@ class WorkbookRegressionInvariants(unittest.TestCase):
             self.assertEqual(len(value), 3)
             self.assertEqual(value[0].font.color.rgb, "000000FF")
             self.assertTrue(value[1].font.b)
-            self.assertEqual(value[2], " suffix ")
+            self.assertEqual(str(value[2]), " suffix ")
+            self.assertEqual(value[2].font.sz, actual.active["C9"].font.sz)
         self.roundtrip(book, check)
 
     def test_cross_run_edit_keeps_surviving_character_fonts(self):
@@ -79,7 +80,8 @@ class WorkbookRegressionInvariants(unittest.TestCase):
             self.assertEqual(value[0].font.color.rgb, "000000FF")
             self.assertEqual(value[1].text, "7")
             self.assertTrue(value[1].font.b)
-            self.assertEqual(value[2], " suffix ")
+            self.assertEqual(str(value[2]), " suffix ")
+            self.assertEqual(value[2].font.sz, actual.active["C9"].font.sz)
         self.roundtrip(book, check)
         self.assertEqual(str(original), "Device 7 suffix ")
 

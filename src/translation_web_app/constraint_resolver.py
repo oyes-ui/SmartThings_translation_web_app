@@ -157,16 +157,21 @@ class ConstraintResolver:
                 result.append(TermConstraint(term, target, True, activation_source, tuple(rule_ids), policy, tuple(no_bracket_reasons)))
         return result
 
-    def card(self, constraints: list[TermConstraint]) -> dict[str, Any]:
+    def card(self, constraints: list[TermConstraint], *, brackets: str = "[]") -> dict[str, Any]:
         return {
             "authority": "deterministic_hard_constraints",
             "rag_policy": "advisory_only_cannot_override_constraints",
+            "brackets": brackets,
             "terms": [item.as_dict() for item in constraints],
         }
 
     def validate_target(self, proposed_text: str, constraints: list[TermConstraint], *,
-                        navigation_spans: list[tuple[int, int]] | None = None) -> dict[str, Any]:
+                        navigation_spans: list[tuple[int, int]] | None = None,
+                        brackets: str = "[]") -> dict[str, Any]:
         """Return pass/blocked/human_review; never rewrite the proposed text."""
+        if len(brackets) != 2:
+            raise ValueError(f"Expected one opening and closing bracket: {brackets!r}")
+        open_bracket, close_bracket = brackets
         blocked: list[dict[str, Any]] = []
         review: list[dict[str, Any]] = []
         # Longest target first, so a term contained in a longer one is judged as part
@@ -195,13 +200,21 @@ class ConstraintResolver:
                 actual = proposed_text[occurrence.start():occurrence.end()]
                 if actual != item.target:
                     blocked.append({"source_term": item.source_term, "reason": "glossary_casing_mismatch", "expected": item.target, "actual": actual, "rule_ids": item.rule_ids})
-                wrapped = occurrence.start() > 0 and occurrence.end() < len(proposed_text) and proposed_text[occurrence.start() - 1] == "[" and proposed_text[occurrence.end()] == "]"
+                wrapped = (occurrence.start() > 0 and occurrence.end() < len(proposed_text)
+                           and proposed_text[occurrence.start() - 1] == open_bracket
+                           and proposed_text[occurrence.end()] == close_bracket)
+                wrong_brackets = ("「", "」") if brackets == "[]" else ("[", "]")
+                wrongly_wrapped = (occurrence.start() > 0 and occurrence.end() < len(proposed_text)
+                                   and proposed_text[occurrence.start() - 1] == wrong_brackets[0]
+                                   and proposed_text[occurrence.end()] == wrong_brackets[1])
                 inside_navigation_path = any(start <= occurrence.start() and occurrence.end() <= end for start, end in (navigation_spans or []))
                 effective_policy = "no_bracket" if inside_navigation_path else item.bracket_policy
                 extra_reasons = ("navigation_path",) if inside_navigation_path else ()
                 effective_reasons = tuple(dict.fromkeys(item.no_bracket_reasons + extra_reasons))
-                if effective_policy == "no_bracket" and wrapped:
+                if effective_policy == "no_bracket" and (wrapped or (brackets == "「」" and wrongly_wrapped)):
                     blocked.append({"source_term": item.source_term, "reason": "forbidden_bracket", "reasons": effective_reasons, "rule_ids": item.rule_ids})
+                elif effective_policy == "wrap" and wrongly_wrapped:
+                    blocked.append({"source_term": item.source_term, "reason": "wrong_bracket_style", "expected": brackets, "rule_ids": item.rule_ids})
                 elif effective_policy == "wrap" and not wrapped:
                     review.append({"source_term": item.source_term, "reason": "missing_required_bracket", "rule_ids": item.rule_ids})
         status = "blocked" if blocked else "human_review" if review else "pass"

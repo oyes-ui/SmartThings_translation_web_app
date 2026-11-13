@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from workbook_incremental_highlight import (  # noqa: E402
     _bare_whitespace_run_cells,
+    _combine_group_terms,
     _harden_workbook_whitespace_runs,
     _next_output_path,
     _term_spans,
@@ -21,6 +22,7 @@ from workbook_incremental_highlight import (  # noqa: E402
     _workbook_text_snapshot,
     render_cell,
 )
+from workbook_mutation_guard import rich_value_signature
 
 
 def _runs(value):
@@ -31,6 +33,55 @@ def _runs(value):
 
 
 class IncrementalHighlightTests(unittest.TestCase):
+    def test_thai_combining_marks_stay_with_base_after_excel_roundtrip(self):
+        text = "เริ่มต้น"
+        for spans in ([[2, 3]], [[1, 2]]):
+            value = render_cell(text, base_font=None, red_spans=spans,
+                                blue_spans=[], color_priority="changes")
+            with tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / "thai.xlsx"
+                book = openpyxl.Workbook()
+                book.active["A1"] = value
+                book.save(path)
+                actual = openpyxl.load_workbook(path, rich_text=True).active["A1"].value
+                self.assertEqual(str(actual), text)
+                import unicodedata
+                for part in actual:
+                    self.assertFalse(unicodedata.category(str(part)[0]).startswith("M"))
+
+    def test_same_text_different_colours_is_not_retained_rendering(self):
+        blue = render_cell("SmartThings", base_font=None, red_spans=[], blue_spans=[[0,11]])
+        red = render_cell("SmartThings", base_font=None, red_spans=[[0,11]], blue_spans=[[0,11]], color_priority="changes")
+        self.assertEqual(str(blue), str(red))
+        self.assertNotEqual(rich_value_signature(blue), rich_value_signature(red))
+
+    def test_second_source_group_keeps_first_group_highlights(self):
+        previous = {"highlighted_terms": ["Samsung"]}
+        terms = _combine_group_terms(["SmartThings"], previous)
+        spans, missing = _term_spans("Samsung SmartThings", terms)
+        value = render_cell("Samsung SmartThings", base_font=None, red_spans=[], blue_spans=spans)
+        self.assertFalse(missing)
+        self.assertTrue(all(color == "000000FF" for _, color in _runs(value)))
+
+    def test_change_priority_survives_round_trip_and_keeps_other_terms_blue(self):
+        text = "SmartThings supports Galaxy"
+        value = render_cell(text, base_font=None, red_spans=[[0, 11]],
+                            blue_spans=[[0, 11], [21, 27]], color_priority="changes")
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "priority.xlsx"
+            wb = openpyxl.Workbook()
+            wb.active["C7"] = value
+            wb.save(path)
+            restored = openpyxl.load_workbook(path, rich_text=True)
+            actual = restored.active["C7"].value
+            self.assertEqual(str(actual), text)
+            self.assertEqual(_runs(actual), [("SmartThings", "00FF0000"),
+                                           (" supports ", None), ("Galaxy", "000000FF")])
+
+    def test_invalid_color_priority_is_rejected(self):
+        with self.assertRaises(ValueError):
+            render_cell("text", base_font=None, red_spans=[], blue_spans=[], color_priority="unknown")
+
     def test_blue_glossary_wins_over_red_change(self):
         value = render_cell(
             "Use SmartThings now", base_font=None,

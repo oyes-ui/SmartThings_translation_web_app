@@ -501,7 +501,9 @@ _DEMO_LANG_CODE = {
     "French": "fr_FR", "French_Belgium": "fr_BE", "French_Canada": "fr_CA",
     "Italian": "it_IT", "Spanish": "es_ES", "Spanish_Colombia": "es_CO",
     "Dutch": "nl_NL", "Swedish": "sv_SE", "Arabic": "ar_SA",
-    "Brazilian Portuguese": "pt_BR", "European Portuguese": "pt_PT",
+    # Brazilian Portuguese output intentionally uses the shared European
+    # Portuguese glossary targets. The language rule remains Brazilian Portuguese.
+    "Brazilian Portuguese": "pt_PT", "European Portuguese": "pt_PT",
     "Russian": "ru_RU", "Turkish": "tr_TR",
     "Simplified Chinese": "zh_CN", "Traditional Chinese": "zh_TW",
     "Polish": "pl_PL", "Vietnamese": "vi_VN", "Thai": "th_TH", "Indonesian": "id_ID"

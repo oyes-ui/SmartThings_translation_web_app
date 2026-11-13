@@ -57,19 +57,36 @@ def resolver_validator(packet: dict[str, Any], glossary: Path, app_root: Path, s
         the packet evidence supplied to later stages.
         """
         card = copy.deepcopy(evidence.get("constraint_card") or {})
+        # Older packets predate the locale-specific bracket field.  Recover it
+        # from the target sheet so replaying a JA packet cannot resurrect the
+        # ASCII-bracket false positive.
+        card.setdefault("brackets", checker.prompt_builder.get_brackets(sheet))
         for term in card.get("terms") or []:
             reasons = term.get("no_bracket_reasons")
             if isinstance(reasons, list):
                 term["no_bracket_reasons"] = tuple(reasons)
         return card
 
+    def active_glossary_context(evidence: dict[str, Any], card: dict[str, Any]) -> dict[str, Any]:
+        """Keep occurrence-inactive terms out of the legacy casing repair input.
+
+        The resolver card already knows the story/cell activation decision.  Passing
+        an inactive term through glossary_context would restore its fixed casing
+        before the resolver can honor that decision.
+        """
+        context = evidence.get("glossary_context") or {}
+        inactive = {term.get("source_term") for term in card.get("terms") or []
+                    if term.get("active") is False}
+        return {term: target for term, target in context.items() if term not in inactive}
+
     def validate(cell: str, after: str) -> dict[str, Any] | None:
         evidence = by_cell.get(cell)
         if not evidence or not after:
             return None
+        card = constraint_card_for_validation(evidence)
         return checker.validate_audit_suggestion(
-            after, constraint_card_for_validation(evidence),
-            glossary_context=evidence.get("glossary_context"),
+            after, card,
+            glossary_context=active_glossary_context(evidence, card),
             row_key=evidence.get("row_type", ""),
         )
 

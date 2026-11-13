@@ -61,6 +61,12 @@ class WorkbookManifestTests(unittest.TestCase):
         edge = diff_spans("Turn on", "on")
         self.assertEqual(edge["red_spans"], [[0, 2]])
 
+    def test_deleted_trailing_space_in_mixed_chinese_marks_only_adjacent_character(self):
+        after = "Galaxy Watch支持使用 SmartThings【卡片】。电视和灯光也能控制。"
+        result = diff_spans(after + " ", after)
+        self.assertEqual(result["deleted_text"], [" "])
+        self.assertEqual(result["red_spans"], [[len(after) - 1, len(after)]])
+
     def test_snapshot_records_independent_layout_style_and_rich_text_fingerprints(self):
         with tempfile.TemporaryDirectory() as tmp:
             book = self._book(tmp)

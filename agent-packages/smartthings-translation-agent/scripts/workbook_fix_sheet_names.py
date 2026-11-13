@@ -13,6 +13,7 @@ workbook_fix_sheet_names.py — 워크북의 시트명만 교정한 사본을 �
       --out 048_fixed.xlsx
 """
 from __future__ import annotations
+from workbook_mutation_guard import save_workbook_atomic
 
 import argparse
 import json
@@ -75,7 +76,7 @@ def main() -> None:
 
     out_path = Path(args.out).expanduser()
     tmp = out_path.with_suffix(out_path.suffix + ".tmp")
-    result["wb"].save(tmp)
+    save_workbook_atomic(result["wb"], tmp, overwrite=True)
     os.replace(tmp, out_path)
 
     summary = {

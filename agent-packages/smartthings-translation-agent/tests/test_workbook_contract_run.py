@@ -22,7 +22,7 @@ import workbook_run as run
 from workbook_contract import (ContractError, InputDrift, atomic_json, capture_authority,
     check_inputs, digest, file_sha256, load_contract, save_contract, validate_contract)
 from workbook_verifier import (VerificationError, facts, diff_facts, verify_artifact, validate_record)
-from workbook_mutation_guard import delete_cols_with_manifest, save_verified_atomic
+from workbook_mutation_guard import delete_cols_with_manifest, save_verified_atomic, save_workbook_atomic
 from workbook_apply_edits import (prepare_edit_contract, apply_edits_contract,
     contract_writer_identity, _build_contract_edits)
 
@@ -39,7 +39,7 @@ def planned(tmp_path):
     sheet.row_dimensions[5].height = 17
     sheet["B12"].border = Border(bottom=Side(style="thin"))
     sheet["E7"].comment = Comment("retain", "reviewer")
-    book.save(source)
+    save_workbook_atomic(book, source)
     book.close()
     edits = [{"sheet": "US", "cell": "C7", "before": " 013 old ", "after": " 013 new "}]
     preview = prepare_edit_contract(source, edits, work_root=tmp_path / "work",
@@ -72,7 +72,7 @@ def candidate(planned, tmp_path, mutate=None):
         if mutate:
             mutate(book)
         path = tmp_path / "candidate.xlsx"
-        book.save(path)
+        save_workbook_atomic(book, path)
         return path
     finally:
         book.close()
@@ -550,3 +550,52 @@ def test_lossy_number_is_rejected_during_plan(planned, tmp_path):
         prepare_edit_contract(planned[0], [{"sheet": "US", "cell": "C7", "after": 12345678901234567}],
             work_root=tmp_path/"lossy", delivery_root=tmp_path/"out", work_id="lossy")
     assert not (tmp_path/"lossy/contract.json").exists()
+
+
+@pytest.mark.parametrize("damage", ["space", "linebreak", "colour"])
+def test_forged_record_cannot_deliver_corrupted_text_or_fonts(planned, tmp_path, damage):
+    contract = load_contract(planned[2])
+    path = candidate(planned, tmp_path)
+    record = verify_artifact(planned[2], "edited", path)
+    book = openpyxl.load_workbook(path, rich_text=True)
+    if damage == "space":
+        book["US"]["C7"] = "013 new "
+    elif damage == "linebreak":
+        book["US"]["C7"] = " 013\nnew "
+    else:
+        book["US"]["D7"].value[0].font.color = "FFFF0000"
+    staged = Path(contract["staging_root"]) / contract["artifacts"][0]["output"]
+    save_workbook_atomic(book, staged)
+    book.close()
+    record["staged_file_sha256"] = file_sha256(staged)  # forged "passed" record
+    with pytest.raises(VerificationError):
+        run.promote_verified(planned[2], {"edited": record})
+    assert not (Path(contract["delivery_root"]) / contract["work_id"]).exists()
+
+
+def test_resume_rejects_unguarded_staged_xml_without_publishing(planned, tmp_path):
+    from zipfile import ZipFile
+    contract = load_contract(planned[2])
+    initial = run.execute_run(planned[2], lambda *_: pytest.fail("No approval"), writer=contract_writer_identity())
+    assert initial["status"] == "awaiting_approval"
+    path = candidate(planned, tmp_path)
+    staged = Path(contract["staging_root"]) / contract["artifacts"][0]["output"]
+    staged.parent.mkdir(parents=True)
+    with ZipFile(path) as source, ZipFile(staged, "w") as target:
+        for info in source.infolist():
+            data = source.read(info.filename)
+            if info.filename.startswith("xl/worksheets/"):
+                data = data.replace(b' xml:space="preserve"', b'')
+            target.writestr(info, data)
+    result = execute(planned, lambda *_: pytest.fail("Unsafe staged input must require review"))
+    assert result["status"] == "blocked"
+    assert result["failures"]["edited"]["kind"] == "workbook_text_safety_failed"
+    assert not (Path(contract["delivery_root"]) / contract["work_id"]).exists()
+
+
+def test_partial_text_safety_record_cannot_authorize_delivery(planned, tmp_path):
+    path = candidate(planned, tmp_path)
+    record = verify_artifact(planned[2], "edited", path)
+    record["text_safety"] = {"status": "passed", "version": 1}
+    with pytest.raises(ContractError, match="independent verification record"):
+        validate_record(planned[2], "edited", path, record)

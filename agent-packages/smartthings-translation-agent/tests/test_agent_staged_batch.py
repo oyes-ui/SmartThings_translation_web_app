@@ -67,6 +67,19 @@ class StagedBatchTests(unittest.TestCase):
                 self.assertTrue(Path(job["work_dir"], "packet.json").is_file())
                 self.assertTrue(Path(job["work_dir"], "cell_prompt.txt").is_file())
 
+    def test_prepare_preserves_scope_in_manifest_and_packet_call(self):
+        seen = []
+        async def fake_build(_workbook, sheet, **kwargs):
+            seen.append(kwargs["cell_range"])
+            return packet(sheet, "scoped")
+        with tempfile.TemporaryDirectory() as raw, patch("agent_staged_batch.build_packet", fake_build):
+            root = Path(raw)
+            manifest = asyncio.run(prepare_batch(root/"story.xlsx", ["DE(독일)"], root/"batch",
+                root/"glossary.csv", root/"app", max_concurrency=1, cell_range="C20:C23"))
+            self.assertEqual(manifest["cell_range"], "C20:C23")
+            self.assertEqual(seen, ["C20:C23"])
+
+
     def test_prepare_rejects_duplicate_language_jobs(self):
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)

@@ -33,6 +33,66 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _app_pipeline as ap
 
 
+def validate_translation_output(
+    source_path: Path,
+    output_path: Path,
+    source_groups: list[dict] | None,
+    source_sheet: str,
+    selected_sheets: list[str] | None,
+    cell_range: str,
+) -> dict:
+    """Read the saved workbook and reject model-error text in translated cells."""
+    from openpyxl import load_workbook
+
+    source = load_workbook(source_path, read_only=True, data_only=True)
+    output = load_workbook(output_path, read_only=True, data_only=True)
+    try:
+        if source_groups is None:
+            targets = selected_sheets or [name for name in source.sheetnames if name != source_sheet]
+            groups = [{"source_sheet": source_sheet, "target_sheets": targets}]
+        else:
+            groups = source_groups
+
+        checked = 0
+        problems: list[str] = []
+        for group in groups:
+            source_name = group["source_sheet"]
+            if source_name not in source.sheetnames:
+                problems.append(f"missing source sheet: {source_name}")
+                continue
+            source_ws = source[source_name]
+            coordinates: set[str] = set()
+            for part in (item.strip() for item in cell_range.split(",")):
+                if not part:
+                    continue
+                cells = source_ws[part]
+                if not isinstance(cells, (tuple, list)):
+                    cells = ((cells,),)
+                elif cells and not isinstance(cells[0], (tuple, list)):
+                    cells = (cells,)
+                for row in cells:
+                    for cell in row:
+                        value = str(cell.value).strip() if cell.value is not None else ""
+                        if value and value.lower() != "x":
+                            coordinates.add(cell.coordinate)
+
+            for target_name in group.get("target_sheets", []):
+                if target_name not in output.sheetnames:
+                    problems.append(f"missing target sheet: {target_name}")
+                    continue
+                target_ws = output[target_name]
+                for coordinate in sorted(coordinates):
+                    checked += 1
+                    value = target_ws[coordinate].value
+                    text = str(value).strip() if value is not None else ""
+                    if not text or text.startswith("[번역 오류]"):
+                        problems.append(f"{target_name}!{coordinate}: {'model error' if text else 'empty'}")
+        return {"checked_cells": checked, "problem_count": len(problems), "problems": problems[:20]}
+    finally:
+        source.close()
+        output.close()
+
+
 async def run_translate(args) -> dict:
     wants_backtranslation = bool(getattr(args, "with_backtranslation", False) or args.backtranslation_lang or args.backtranslation_sheet)
     if wants_backtranslation and args.translate_only:
@@ -75,7 +135,7 @@ async def run_translate(args) -> dict:
     redirect = contextlib.redirect_stdout(init_stdout) if args.json else contextlib.nullcontext()
 
     events: list[dict] = []
-    with redirect:
+    with redirect, ap.guard_external_workbook_saves():
         checker = TranslationChecker(
             max_concurrency=max(1, args.max_concurrency),
             no_backtranslation=not wants_backtranslation,
@@ -119,6 +179,26 @@ async def run_translate(args) -> dict:
                 events.insert(0, {"type": "log", "message": line.strip()})
 
     summary = ap.event_summary(events)
+    if summary["status"] == "ok" and summary.get("excel_path"):
+        validation = validate_translation_output(
+            workbook,
+            Path(summary["excel_path"]),
+            source_groups,
+            source_sheet or args.source_sheet,
+            selected_sheets,
+            args.cell_range,
+        )
+        summary["translation_validation"] = validation
+        if validation["problem_count"]:
+            summary["status"] = "error"
+            summary["errors"].append({
+                "type": "error",
+                "message": (
+                    f"Saved workbook has {validation['problem_count']} invalid translation cells "
+                    f"out of {validation['checked_cells']}: "
+                    + ", ".join(validation["problems"][:5])
+                ),
+            })
     summary.update({
         "artifact_status": "draft",
         "activation_manifest": getattr(args, "activation_manifest", None),
@@ -194,6 +274,8 @@ def main() -> None:
 
     if args.json:
         print(json.dumps(res, ensure_ascii=False, indent=2))
+        if res["status"] != "ok":
+            sys.exit(1)
     else:
         if res["status"] == "ok":
             print("✅ 번역 파이프라인 완료")

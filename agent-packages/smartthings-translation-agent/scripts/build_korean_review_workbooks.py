@@ -184,7 +184,9 @@ def verify_output(path: Path, template_path: Path, source_path: Path, story_numb
             actual = korean[coordinate].value
             if text(actual) != text(expected_value):
                 raise AssertionError(f"텍스트 불일치: {coordinate}")
-            if rich_value_signature(actual) != rich_value_signature(expected_value):
+            if rich_value_signature(actual, korean[coordinate].font) != rich_value_signature(
+                expected_value, korean[coordinate].font
+            ):
                 raise AssertionError(f"리치 텍스트 불일치: {coordinate}")
 
         expected_heights = {7: expected["title_height"], 8: expected["description_height"]}

@@ -49,7 +49,8 @@ class PromptBuilder:
         return None
 
     def get_brackets(self, target_lang: str) -> str:
-        if target_lang and ("Japanese" in target_lang or "일본" in target_lang):
+        canonical = resolve_language_identifier(target_lang or "")
+        if canonical.lower().startswith("japanese") or "일본" in canonical or canonical.lower().startswith("ja_"):
             return "「」"
         return "[]"
 

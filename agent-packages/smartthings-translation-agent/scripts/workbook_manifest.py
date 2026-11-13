@@ -169,6 +169,7 @@ def diff_spans(before: Any, after: Any) -> dict:
     red: list[tuple[int, int]] = []
     deleted: list[str] = []
     has_word_spaces = any(char.isspace() for char in old + new)
+    unsegmented_script = re.compile(r"[\u0e00-\u0e7f\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]")
 
     def deletion_context(position: int) -> None:
         if not new:
@@ -186,7 +187,11 @@ def diff_spans(before: Any, after: Any) -> dict:
             start = left
             while start > 0 and not new[start - 1].isspace():
                 start -= 1
-            red.append((start, left + 1))
+            # Mixed Latin/CJK text can contain spaces elsewhere while the local
+            # script has no word separators. Mark a neighbouring character,
+            # not the entire sentence-sized token, for a deleted space.
+            red.append((left if unsegmented_script.search(new[start:left + 1]) else start,
+                        left + 1))
         right = position
         while right < len(new) and new[right].isspace():
             right += 1
@@ -194,7 +199,7 @@ def diff_spans(before: Any, after: Any) -> dict:
             end = right
             while end < len(new) and not new[end].isspace():
                 end += 1
-            red.append((right, end))
+            red.append((right, right + 1 if unsegmented_script.search(new[right:end]) else end))
 
     # Word/token comparison avoids character-level alignment turning a removed
     # ``on `` into an unhelpful fragment such as ``n o``. Scripts without word

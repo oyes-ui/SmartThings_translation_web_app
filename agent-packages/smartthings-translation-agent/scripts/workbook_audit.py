@@ -72,7 +72,7 @@ async def run_audit(args) -> dict:
     redirect = contextlib.redirect_stdout(init_stdout) if args.json else contextlib.nullcontext()
 
     events: list[dict] = []
-    with redirect:
+    with redirect, ap.guard_external_workbook_saves():
         checker = TranslationChecker(max_concurrency=max(1, args.max_concurrency), model_name=args.audit_model)
         if args.activation_manifest:
             checker.load_activation_manifest(str(Path(args.activation_manifest).expanduser()))

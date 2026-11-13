@@ -104,14 +104,17 @@ class GlossaryChecker:
         constraints = resolver.resolve(source_text, target_lang_code, row_key=row_key,
                                        story=story, cell=cell,
                                        inside_navigation_path=inside_navigation_path)
-        return resolver.card(constraints)
+        return resolver.card(constraints, brackets=self.prompt_builder.get_brackets(target_lang_code))
 
     def validate_constraints(self, target_text: str, constraint_card: dict):
         """Validate a candidate without allowing the candidate to alter rules."""
         from translation_web_app.constraint_resolver import TermConstraint
         constraints = [TermConstraint(**term) for term in constraint_card.get("terms", [])]
         nav_spans = self._get_navigation_path_spans(target_text)
-        return self._constraint_resolver().validate_target(target_text, constraints, navigation_spans=nav_spans)
+        return self._constraint_resolver().validate_target(
+            target_text, constraints, navigation_spans=nav_spans,
+            brackets=constraint_card.get("brackets", "[]"),
+        )
 
     def deterministic_sections(self, source_text: str, target_text: str, target_lang_code: str,
                                target_lang: str, *, row_key: str = "") -> dict:

@@ -53,6 +53,34 @@ class FixedC18FixtureTests(unittest.TestCase):
         self.assertEqual(checker.pending_inactive_candidates(
             "a safe home", story="012", cell="C7", target_lang_code=CO_CODE), [])
 
+    def test_japanese_glossary_wrapper_uses_corner_brackets(self):
+        checker = GlossaryChecker(PromptBuilder())
+        self.assertEqual(checker.prompt_builder.get_brackets("JA"), "「」")
+        self.assertEqual(checker.prompt_builder.get_brackets("JA(일본)"), "「」")
+        checker.glossary = {
+            "펫 돌봄 어시스턴트": {"targets": {"일본": "ペットケアアシスタント"}, "rule": ""},
+        }
+        checker.glossary_map = {"펫 돌봄 어시스턴트": "펫 돌봄 어시스턴트"}
+        checker._compile_glossary_re()
+        card = checker.resolve_constraints("[펫 돌봄 어시스턴트]로 시작", "일본", row_key="description")
+        self.assertEqual(card["brackets"], "「」")
+        self.assertEqual(checker.validate_constraints("「ペットケアアシスタント」で", card)["status"], "pass")
+        wrong = checker.validate_audit_suggestion(
+            "[ペットケアアシスタント]で", card,
+            glossary_context={"펫 돌봄 어시스턴트": "ペットケアアシスタント"}, row_key="description",
+        )
+        self.assertTrue(wrong["blocked"])
+        self.assertEqual(wrong["violations"][0]["reason"], "wrong_bracket_style")
+
+    def test_japanese_title_forbids_both_wrapper_styles(self):
+        checker = GlossaryChecker(PromptBuilder())
+        card = _card("Now brief")
+        card["brackets"] = "「」"
+        card["terms"][0]["bracket_policy"] = "no_bracket"
+        self.assertEqual(checker.validate_constraints("Now brief", card)["status"], "pass")
+        self.assertEqual(checker.validate_constraints("「Now brief」", card)["status"], "blocked")
+        self.assertEqual(checker.validate_constraints("[Now brief]", card)["status"], "blocked")
+
 
 @unittest.skipUnless(os.path.exists(GLOSSARY_CSV), "shipped glossary not available")
 class AuditSuggestionGateTests(unittest.TestCase):

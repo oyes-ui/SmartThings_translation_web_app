@@ -173,7 +173,7 @@ def _cell_map(workbook) -> dict[tuple[str, str], dict[str, Any]]:
         (sheet.title, cell.coordinate): {
             "text": text(cell.value),
             "data_type": cell.data_type,
-            "rich": rich_value_signature(cell.value),
+            "rich": rich_value_signature(cell.value, cell.font),
         }
         for sheet in workbook.worksheets
         for cell in sheet._cells.values()

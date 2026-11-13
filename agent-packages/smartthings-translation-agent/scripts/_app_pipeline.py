@@ -14,6 +14,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from workbook_mutation_guard import guard_external_workbook_saves
 
 
 # app 표준 시트 → 언어 매핑 (rag_db_builder / checker_service 와 동일 키 체계)
@@ -34,7 +35,9 @@ DEFAULT_SHEET_LANGS = {
     "SE(스웨덴)": {"lang": "Swedish", "code": "스웨덴"},
     "AE(아랍에메리트)": {"lang": "Arabic", "code": "아랍에미리트"},
     "PT(포르투갈)": {"lang": "European Portuguese", "code": "포르투갈_포르투갈"},
-    "BR(브라질)": {"lang": "Brazilian Portuguese", "code": "포르투갈_브라질"},
+    # BR output keeps Brazilian Portuguese language rules, but glossary targets
+    # intentionally come from the shared European Portuguese column.
+    "BR(브라질)": {"lang": "Brazilian Portuguese", "code": "포르투갈_포르투갈"},
     "RU(러시아)": {"lang": "Russian", "code": "러시아"},
     "TR(터키)": {"lang": "Turkish", "code": "터키"},
     "CN(중국)": {"lang": "Simplified Chinese", "code": "간체_중국어"},

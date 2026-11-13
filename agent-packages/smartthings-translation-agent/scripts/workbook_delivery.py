@@ -17,7 +17,11 @@ import _app_pipeline as ap
 from workbook_apply_edits import prepare_edit_contract, _build_contract_edits, _load_edits
 from workbook_contract import (atomic_json, capture_authority, canonical, check_inputs,
     digest, file_sha256, load_contract, save_contract, ContractError)
-from workbook_mutation_guard import delete_cols_with_manifest, detailed_workbook_snapshot
+from workbook_mutation_guard import (
+    delete_cols_with_manifest,
+    detailed_workbook_snapshot,
+    prune_right_columns_with_manifest,
+)
 from workbook_verifier import facts, diff_facts
 from workbook_run import execute_run, exclusive_lock
 from workbook_highlight_glossary import highlight_in_memory
@@ -108,7 +112,10 @@ async def _build(contract, final):
         deleted = contract["delivery_request"].get("deleted")
         if deleted:
             for sheet in book:
-                delete_cols_with_manifest(sheet, deleted[0], deleted[1] - deleted[0] + 1)
+                if deleted[1] >= sheet.max_column:
+                    prune_right_columns_with_manifest(sheet, deleted[0] - 1)
+                else:
+                    delete_cols_with_manifest(sheet, deleted[0], deleted[1] - deleted[0] + 1)
         report = None
         if final:
             request = contract["delivery_request"]

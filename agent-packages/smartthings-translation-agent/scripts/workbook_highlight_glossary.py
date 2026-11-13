@@ -100,7 +100,9 @@ def _verify_out_of_scope_rich_text(
             for (_row, _column), cell in ws_before._cells.items():
                 if sheet_name in processed_sheets and _coordinate_in_ranges(cell.coordinate, cell_range):
                     continue
-                if rich_value_signature(cell.value) != rich_value_signature(ws_after[cell.coordinate].value):
+                if rich_value_signature(cell.value, cell.font) != rich_value_signature(
+                    ws_after[cell.coordinate].value, ws_after[cell.coordinate].font
+                ):
                     differences.append(f"{sheet_name}!{cell.coordinate}")
         if differences:
             raise RuntimeError(
@@ -125,7 +127,7 @@ def _restore_out_of_scope_rich_text(
                 if sheet_name in processed_sheets and _coordinate_in_ranges(cell.coordinate, cell_range):
                     continue
                 target = ws_after[cell.coordinate]
-                if rich_value_signature(cell.value) != rich_value_signature(target.value):
+                if rich_value_signature(cell.value, cell.font) != rich_value_signature(target.value, target.font):
                     target.value = clone_rich_value(cell.value)
                     restored.append(f"{sheet_name}!{cell.coordinate}")
 
@@ -193,7 +195,7 @@ async def run_highlight(args) -> dict:
     redirect = contextlib.redirect_stdout(init_stdout) if args.json else contextlib.nullcontext()
 
     events: list[dict] = []
-    with redirect:
+    with redirect, ap.guard_external_workbook_saves():
         checker = TranslationChecker(max_concurrency=max(1, args.max_concurrency), no_backtranslation=True)
         if getattr(args, "activation_manifest", None):
             checker.load_activation_manifest(str(args.activation_manifest))
@@ -346,7 +348,8 @@ async def highlight_in_memory(wb, *, glossary: Path, sheets: list[str], cell_ran
     """
     from translation_web_app.glossary_checks import GlossaryChecker
     from translation_web_app.prompt_builder import PromptBuilder
-    from workbook_incremental_highlight import _relevant_target_terms, _term_spans, render_cell
+    from workbook_incremental_highlight import _font, _relevant_target_terms, _term_spans, render_cell
+    from openpyxl.cell.rich_text import CellRichText, TextBlock
     from workbook_review_apply import _parse_c_range
     start, end = _parse_c_range(cell_range)
     mapping = sheet_langs or ap.DEFAULT_SHEET_LANGS
@@ -381,13 +384,25 @@ async def highlight_in_memory(wb, *, glossary: Path, sheets: list[str], cell_ran
                 if cell.data_type == "f" or (source_cell is not None and source_cell.data_type == "f"):
                     raise ValueError(f"Formula in glossary scope requires a separate plan: {target}!C{row}")
                 text = str(cell.value)
-                if not text or text.lower() == "x":
+                if not text:
                     continue
-                source_text = str(source_cell.value or "") if source_cell else ""
-                terms, excluded = _relevant_target_terms(checker, source_text,
-                    mapping[target]["code"], story=story, cell=cell.coordinate)
-                spans, missing = _term_spans(text, terms)
-                cell.value = render_cell(text, base_font=cell.font, red_spans=[], blue_spans=spans)
+                if text.lower() == "x":
+                    spans, missing, excluded = [], [], []
+                else:
+                    source_text = str(source_cell.value or "") if source_cell else ""
+                    terms, excluded = _relevant_target_terms(checker, source_text,
+                        mapping[target]["code"], story=story, cell=cell.coordinate)
+                    spans, missing = _term_spans(text, terms)
+                rendered = render_cell(text, base_font=cell.font, red_spans=[], blue_spans=spans)
+                if isinstance(rendered, CellRichText):
+                    for part in rendered:
+                        if isinstance(part, TextBlock) and part.font.color is None:
+                            part.font.color = "000000"
+                elif cell.font.color and cell.font.color.type == "rgb" and (
+                    str(cell.font.color.rgb).upper()[-6:] != "000000"
+                ):
+                    rendered = CellRichText(TextBlock(_font(cell.font, "000000"), text))
+                cell.value = rendered
                 if str(cell.value) != text:
                     raise ValueError("Glossary renderer changed text")
                 cells[f"{target}!{cell.coordinate}"] = {"blue_spans": spans, "missing": missing, "excluded": excluded}
