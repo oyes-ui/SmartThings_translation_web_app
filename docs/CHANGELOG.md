@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 ### Added
+- **업무 종료 후 최소 개선 루프**: 기존 outcome·실행 기록으로 종료 상태를 확인하고 작은 번역·도구·진행 교정을 기록. 요청 시 `/st-ask`에서 분석·개선안·후속 검증으로 연결하며 새 명령·백그라운드 실행기는 추가하지 않음.
+- **검수 범위 지정**: 단일 시트와 언어 배치 패킷의 `--cell-range`로 `C7:C28` 내부 범위를 지정하고 패킷 ID·근거·스냅샷에 동일하게 적용.
 - **Gemini 3.8 지원**: 번역 모델·검수 모델 셀렉트에 `Gemini 3.8 Series`(Thinking On/Off) 추가. Vertex AI `publishers/google/models/gemini-3.8-flash` 로 확인된 모델 ID 사용.
 - **`model_pricing.py` (단가 단일 출처)**: 공식 페이지(2026-09-09 확인) 기준 Gemini/OpenAI standard tier 단가를 한 곳에 모음. Gemini 3.6~3.8 Flash 의 도입가(2026-12-31 만료)를 실행 날짜로 자동 전환해, 2027-01-01 이후 추정치가 조용히 절반으로 어긋나지 않게 함.
 
@@ -10,9 +12,14 @@
 - **Vertex 에 없는 죽은 옵션 제거**: `gemini-3-pro-preview`, `gemini-3.1-flash-lite-preview` 는 이 프로젝트 Vertex 모델 목록에 존재하지 않아 선택 시 호출 단계에서 실패하던 옵션이었음(목록에는 `-preview` 접미사 없는 `gemini-3.1-flash-lite` 만 존재).
 
 ### Fixed
+- **Excel 저장·납품 안전성**: 전체 시트의 공백·CR/LF·문자별 폰트·색을 공용 atomic 저장에서 보호하고 납품·재개 시 원시 XML과 계약을 독립 검증. 앱 호출 어댑터도 실행 문맥 안에서 공용 저장에 연결.
+- **하이라이트·감수 열 처리**: 혼합 문자권의 삭제 표시, placeholder의 남은 색, 감수용 오른쪽 열 제거의 보존 검증을 보강.
+- **번역·용어집 검증**: 저장된 번역의 오류 문구·빈 셀을 오류로 반환. 일본어 괄호·비활성 용어 처리를 보완하고 BR 용어집 매핑을 앱·UI·패키지에서 포르투갈 컬럼으로 일치시킴.
 - **비용 추정 단가 오류**: `co_batch_cost_estimate.py` 의 3rd-party aggregator 참고치를 공식값으로 교체. Gemini 3.6 Flash 는 도입가가 아닌 표준가(1.50/7.50)를 써서 현재 시점 기준 약 2배 과다 계상, `gpt-5.2` 는 standard(1.75/14.00) 대신 batch 단가(0.875/7.00)를 써서 약 절반 과소 계상되고 있었음.
 
 ### Changed
+- **에이전트 기본 흐름**: 기본 사용자 명령 6개, 셀→시트→리드 검수, 작업별 배치 설정, draft·검증된 납품본 구분을 사용. 5역할 검수는 deprecated 호환 경로로 유지.
+- **사용 안내 정리**: README·통합 가이드·설치 및 실행 참조 문서를 현재 명령과 지원 범위에 맞춤. 패키지 초기 계획은 이력 문서로 표시.
 - **기본 번역 모델 `gemini-3.6-flash` → `gemini-3.8-flash`**: `ModelHandler.call_gemini`/`generate_content`/`count_tokens`, `TranslationChecker._run_llm_translation`/`run_integrated_pipeline_generator`, `main.StartRequest`, `/api/preview_prompt_blocks`, `TextWorkbookStartRequest` 기본값 일괄 갱신. UI 기본 선택도 Gemini 3.8 Flash (Thinking: On).
 - **Gemini 모델 셀렉트 정리**: Flash 는 3.8 하나만, Pro 는 최신(`gemini-3.1-pro-preview`) 하나만 남기고 3.6/3.5/3.1-flash-lite/3.0-preview/2.5 시리즈를 번역·검수 셀렉트 양쪽에서 제거. optgroup 도 버전 나열 대신 `Gemini Flash` / `Gemini Pro` 로 단순화. GPT 계열은 변경 없음.
 - **agent-package 기본 모델**: `workbook_translate.py`·`batch_co_rollout.py` 의 `--translation-model` 기본값과 `co_batch_cost_estimate.py` 의 `TRANSLATION_MODEL` 을 `gemini-3.8-flash` 로 상향.
@@ -119,7 +126,7 @@
 ### Added
 - **Hybrid RAG Logic**: Implemented a 2-stage retrieval process (Identity Match -> Semantic Similarity) with a user-configurable toggle to bypass 100% matches.
 - **Modular Prompt Architecture**: Redesigned the prompt engine into 7 functional modules: Persona, BX Guidelines, Language Hints, RAG Context, Glossary Rules, Context-Aware Branching, and Format Constraints.
-- **Architectural Documentation**: Created a new [Prompt Architecture Chart](docs/prompt_architecture.html) with a card-based visual diagram matching the GEM prompt style.
+- **Architectural Documentation**: Created a new [Prompt Architecture Chart](prompt_architecture.html) with a card-based visual diagram matching the GEM prompt style.
 - **Model Support**: Added support for Gemini 3.1/3.0 series and GPT-5.4 models.
 
 ### Changed

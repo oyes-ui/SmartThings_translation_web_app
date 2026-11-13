@@ -22,7 +22,7 @@ AI 최종평가를 **1차 후보 목록**으로만 사용하고, 대상 언어�
 ### 공통 준비
 
 1. `workbook_inspect.py --sections`로 대상 시트와 source 시트를 읽어 현재값, story_id, title/description 구조를 확보한다.
-2. **source group을 먼저 잠근다.** 현재 표준 story mapping에서는 `JA/TW`가 KR source, 그 밖의 target이 US source이지만, workbook의 실제 source-group 선언이 우선이다. source가 명시한 UI 활성화·호환 조건은 다른 source group의 문구로 교체하지 않는다.
+2. **source group을 먼저 잠근다.** 기본 매핑은 `KR → US/JA/CN/TW`, 나머지는 승인된 US source지만 workbook의 실제 source-group 선언이 우선이다. source가 명시한 UI 활성화·호환 조건은 다른 source group의 문구로 교체하지 않는다.
 3. source 원문의 bracket occurrence와 실제 glossary를 대조한다. 브랜드, title, bracket 없는 일반명사는 occurrence별로 분리한다.
 
 ### Pass 1 — AI 후보 재판정

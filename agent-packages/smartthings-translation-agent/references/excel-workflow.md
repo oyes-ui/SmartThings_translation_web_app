@@ -195,14 +195,18 @@ python scripts/workbook_review_apply.py <review.xlsx> <approval.json> \
 - 좌표는 `cell`(`"C10"`) 또는 `row`+`col`(`col`은 문자 `"C"`/숫자 `3`) 중 하나.
 - **하나라도 오류면 전체 중단**(부분 적용 방지) → 파일 미생성.
 
-### 안전 보장 (스크립트 내장)
+### 안전 보장 (표준 계약 실행 경로)
 
-- 원본 파일 **수정 안 함**. `<원본>_revised_<타임스탬프>.xlsx` 복사본 생성.
-- `cell.value`만 갱신 → 셀 레벨 폰트/색/병합 등은 보존한다.
-- 단, Excel rich text(셀 내부 일부 글자만 파란색인 glossary 하이라이트)는 보존을 보장하지 않는다. 셀 값을 편집한 뒤 자동 산출본을 납품본으로 쓸 경우, 아래 "Glossary rich text highlight" 절차로 전체 하이라이트를 재생성한다.
-- atomic write: `.tmp` 저장 후 `os.replace()`.
-- 변경 로그 `<...>_revised_<ts>.changes.json` 동시 생성 (old/new 값 포함).
-- **납품본 판정:** `*_revised_*.xlsx`만으로는 납품할 수 없다. `story-apply`의 `final` 경로 또는 전체 delivery scope 재하이라이트와 값 검증을 마친 파일만 최종본으로 안내한다.
+- 원본은 변경하지 않는다. draft는 `verified/<work_id>/`의 버전 사본이며 반환된 `revised` 경로를 안내한다.
+- 값·구조·서식 정본과 허용 diff를 계약에 고정하고 staging 저장 뒤 독립 5축 검증을 수행한다.
+- 공용 저장은 전체 시트의 공백·줄바꿈과 문자별 글꼴·색을 보호한다. 편집 셀의 glossary 하이라이트는
+  draft에서 최종 납품 범위 전체 재생성을 마친 것으로 간주하지 않는다.
+- 저장은 `workbook_mutation_guard.save_verified_atomic` 또는 `save_workbook_atomic`을 거쳐
+  원시 XML 안전성과 재개방 결과를 검증한다. `.tmp`에서 저장·검증한 뒤 원자적으로 승격한다.
+- 반환된 `change_log`·`revision_manifest`·`batch_manifest`를 사용한다. 오래된 타임스탬프 파일명으로 결과를 추측하지 않는다.
+- `/st-edit`는 `artifact_status: draft`다. 납품은 `/st-apply`의 승인 반영·전체 delivery scope와 KR/US
+  재하이라이트·독립 검증을 통과한 `final`과 배치 완료 기록으로 확인한다.
+- [실행 규약](command-execution.md)의 지원 범위를 따른다. 외부 writer나 웹 앱의 모든 독립 저장까지 같은 계약 보장을 적용했다고 설명하지 않는다.
 
 ## Section-level coherence review (섹션 맥락 검토)
 

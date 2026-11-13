@@ -67,9 +67,9 @@ RAG 데이터(`runtime/rag_db/rag_store.db`)만 있으면 **키 없이**:
 
 RAG 사례는 **정답이 아니라 과거 톤·용어 사용 경향의 근거**다. 표현 판단 시 아래 우선순위로 본다:
 
-1. **용어집/기능명 bracket 강제 규칙** — `glossary_manage.py`/`rules-sources.md`의 `GLOSSARY_TERM_RULES` 등 명시적 규칙이 최우선. RAG 사례가 이와 다르면 규칙이 이긴다.
-2. **문법·규칙 위반 여부** — 대상 언어 문법이나 `AUDIT_CHECKLIST_RULES` 위반이 있으면 RAG 톤 일치보다 우선 수정한다.
-3. **RAG 톤 일치 vs BX 자연스러움** — 위 두 가지에 걸리지 않는 표현이면, RAG의 과거 톤 일치와 BX(`BX_STYLE_RULES`) 자연스러움은 **둘 다 참고 신호**이며 우열이 없다. 상충하면 상충 사실을 그대로 알리고 사용자가 선택하게 한다.
+1. **용어집/기능명 bracket 강제 규칙** — 실제 glossary와 `rules/glossary.md`의 런타임 규칙·resolver 판정이 우선한다. 출처는 `rules-sources.md`를 따른다. RAG 사례가 이와 다르면 규칙이 이긴다.
+2. **문법·규칙 위반 여부** — 대상 언어 규칙이나 `rules/audit.md`의 checklist 기준에 위반이 있으면 RAG 톤 일치보다 우선 수정한다.
+3. **RAG 톤 일치 vs BX 자연스러움** — 위 두 가지에 걸리지 않는 표현이면, RAG의 과거 톤 일치와 BX(`rules/bx_style.md`) 자연스러움은 **둘 다 참고 신호**이며 우열이 없다. 상충하면 상충 사실을 그대로 알리고 사용자가 선택하게 한다.
 
 답변할 때는 판단 근거를 `RAG 기준` / `BX 기준` / `용어집 기준` 중 어디서 왔는지 표기한다 (→ `response-patterns.md` A·C-2 템플릿의 "근거" 필드).
 

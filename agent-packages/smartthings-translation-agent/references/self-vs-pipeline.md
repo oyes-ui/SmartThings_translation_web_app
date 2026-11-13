@@ -4,7 +4,7 @@
 
 ## 셀프 모드 — 에이전트가 직접 (크레딧 0, 기본)
 
-에이전트(Claude) 자체가 LLM이므로, 앱의 규칙·용어집·과거 사례를 받아 **직접** 번역/검수한다.
+현재 대화의 에이전트가 앱의 규칙·용어집·과거 사례를 받아 **직접** 번역/검수한다.
 별도 Gemini/GPT 호출이 없으므로 LLM 크레딧이 0이다.
 
 핵심 도구: `scripts/prompt_preview.py` — 앱의 `PromptBuilder` 를 그대로 호출해, 앱이 모델에 보낼 것과
@@ -21,7 +21,7 @@
    ```
 3. **과거 사례 확보** (일관성)
    ```bash
-   python scripts/rag_lookup.py --query "<원문>" --target-lang <코드> --json   # 키 없으면 offline
+   python scripts/rag_lookup.py --query "<원문>" --target-lang <코드> --mode offline --json
    ```
    필요 시 그 결과를 `prompt_preview.py --rag-context "<문자열>"` 로 다시 주입해 프롬프트에 포함.
 4. **에이전트가 직접 번역/검수** — 위 프롬프트·용어·사례를 근거로 결과를 산출하고, 검수는
@@ -33,9 +33,9 @@
 
 ### story 단위 self audit (크레딧 0)
 
-워크북 전체를 LLM 파이프라인에 돌리기 전에, 아래 순서로 크레딧 0 self audit을 먼저 수행한다(→ `commands/st-audit.md`):
+기존 AI 결과를 story 전체에서 재평가하는 요청은 아래 순서로 수행한다(→ `commands/st-story-review.md`). 일반 시트 검수는 `commands/st-inspect.md`의 셀→시트→리드 경로를 따른다:
 
-1. `workbook_inspect.py --sections`로 source와 target의 모든 section을 그룹째 뽑고 workbook의 실제 source group을 확정한다. 표준 story mapping의 `JA/TW → KR`은 적용하되, 개별 workbook의 선언이 우선한다.
+1. `workbook_inspect.py --sections`로 source와 target의 모든 section을 그룹째 뽑고 workbook의 실제 source group을 확정한다. 기본 매핑은 `KR → US/JA/CN/TW`, 나머지는 승인된 US source이며 개별 workbook의 선언이 우선한다.
 2. 기존 AI 후보와 무관하게 각 언어의 story 콘텐츠 셀(C7·C8·C10·C11·C13·C15·C16·C17)을 source↔target으로 **독립 재독해**한다. 의미 주체, 직역투, title 역할, section 연결, 용어/서식을 함께 점검한다.
 3. 독립 재독해와 AI 후보 재판정에서 좁혀진 셀만 `prompt_preview.py --audit`으로 개별 확인한다. `prompt_preview --audit`은 후보 확인 도구이며 story 전체 읽기를 대체하지 않는다.
 4. 표현 통일이 실제 쟁점인 경우에만 RAG를 사용한다. RAG 사례가 없더라도 문법·의미·직역투는 규칙/BX 기준으로 판단한다.
@@ -75,6 +75,10 @@
 
 배치 중에는 읽기 전용 분석과 번역 후보 생성까지만 한다. Excel 적용은 사람 승인 뒤 별도 순차
 작업으로 수행하며, 무제한 병렬화하지 않는다(`max_concurrency`로 제한).
+
+범용 신규 배치는 [작업별 배치 규약](workbook-batch.md)의 prepare/advance/status를 사용한다.
+위 `batch_co_rollout.py`는 기존 결과의 호환 경로다. `error`/`skipped` 재처리에 유료 호출이
+포함되면 비용 승인을 확인한다. 기술적인 resume 가능 여부는 무단 재시도 허가가 아니다.
 
 ## 한눈 비교
 

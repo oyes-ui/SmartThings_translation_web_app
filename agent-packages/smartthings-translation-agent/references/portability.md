@@ -10,11 +10,11 @@
 |-------|------|-----------|-----------|
 | **1** | Excel-only | `openpyxl` 만 (app repo 불필요) | 워크북 분석/수정, section coherence 검토 |
 | **2** | Offline RAG | app repo + `runtime/rag_db/rag_store.db` | + exact/keyword/메타 RAG (**API 키 불필요**, chromadb 미로드) |
-| **3** | Semantic RAG | app repo + venv + `chroma/` + Gemini API key | + 임베딩 유사도 검색 |
-| **4** | Full pipeline | Level 3 + glossary(csv/db) | + 용어집 검증·full app 연계 |
+| **3** | Semantic RAG | Level 2 + `chroma/` + API 인증 | + 임베딩 유사도 검색; 실행용 의존성도 필요 |
+| **4** | Full pipeline | Level 3 + glossary(csv/db) + 앱 venv | + full app 연계 준비 상태 |
 
 - 각 스크립트는 저장 config 또는 `--app-root` 로 app repo 를 해석한다. 자동 탐색은 repo-local 설치용 fallback 이다.
-- Level 1~2 는 API 키 없이 동작한다. Level 3~4 만 키가 필요하다.
+- 레벨은 bootstrap의 파일·인증 존재 확인 결과이며 실제 import·API 호출 성공을 검증한 상태가 아니다. 용어집 조회·하이라이트는 앱 의존성이 있으면 API 키 없이도 가능하다.
 - 다른 skill 에 Python 의존성 해결을 위임하지 않는다. 의존성은 `requirements-excel.txt`/`requirements-rag.txt` 또는 app `requirements.txt` 로 명시 설치한다.
 
 ## 설계 원칙
@@ -29,7 +29,7 @@
 
 | 도구 | 설치 경로 | 비고 |
 |------|-----------|------|
-| **Codex** | repo-local `skills/smartthings-translation-agent/` 또는 `$CODEX_HOME/skills/` | `adapters/codex/agents/openai.yaml` 포함. → `adapters/claude/install-notes.md` 형식의 `adapters/codex` 참고 |
+| **Codex** | 공통 본체는 패키지 루트, 진입 스킬은 `adapters/codex/commands/st-*/` | 아래 “Codex 기본 명령 검색 등록”의 저장소 연결 방식을 사용 |
 | **Claude Code** | `.claude/skills/smartthings-translation-agent/` (project-local) 또는 `~/.claude/skills/` | `adapters/claude/install-notes.md` 참조 |
 | **Antigravity** | `.agents/skills/smartthings-translation-agent/` | `adapters/antigravity/install-notes.md` 참조. ⚠ 이 프로젝트의 `.agent/`(단수)는 app orchestration 런타임이므로 사용 금지 |
 
@@ -68,7 +68,7 @@ pip install -r scripts/requirements-excel.txt
 pip install -r scripts/requirements-rag.txt
 ```
 
-**⚠ 버전 핀 주의**: `chromadb`(현재 1.5.x), `google-genai`(1.73.x)는 메이저 API 변경이 잦다. `requirements-rag.txt`의 상한(`<2`)을 풀고 최신을 설치하면 `get_chroma_collections()` / `embed_content()` 시그니처 불일치로 깨질 수 있다. 받는 사람에게 **이 requirements 파일로 설치**하도록 안내한다.
+**의존성 범위**: 버전 조건은 `scripts/requirements-rag.txt`를 기준으로 설치한다. 문서의 특정 버전을 최신값으로 간주하거나 테스트 없이 상한을 변경하지 않는다.
 
 **디커플링 동작**: `workbook_inspect.py`는 `translation_web_app.rag_db_builder`에서 상수를 재사용하되, 그 모듈(또는 chromadb)이 없으면 로컬 fallback 상수로 동작한다. 즉 **엑셀만 보려는 사람은 `openpyxl`만 설치**하면 되고, src/ 나 RAG 스택이 없어도 분석이 된다.
 
@@ -89,26 +89,20 @@ pip install -r scripts/requirements-rag.txt
 3. 엑셀/용어집/RAG DB 압축 풀어 위 경로에 배치 (재빌드할 거면 엑셀만)
 4. (재빌드 시) `PYTHONPATH=src python -m translation_web_app.rag_db_builder --build-all`
 
-## 설치 방법 (공통)
+## 본체 연결 (공통)
+
+저장소 안에서는 `agent-packages/smartthings-translation-agent/`를 실행 루트로 재사용한다.
+별도로 설치한다면 공통 `SKILL.md`·`references/`·`scripts/`·`commands/`와 필요한 어댑터를 함께 유지한다.
+복사한 설치본은 원본 변경이 자동 반영되지 않으므로 본체와 진입 문서가 같은 버전인지 확인한다.
 
 ```bash
-# 예: Claude Code project-local 설치
-cp -r agent-packages/smartthings-translation-agent .claude/skills/
-
-# 예: Codex repo-local (어댑터 포함)
-cp -r agent-packages/smartthings-translation-agent skills/
-cp agent-packages/smartthings-translation-agent/adapters/codex/agents/openai.yaml \
-   skills/smartthings-translation-agent/agents/openai.yaml
-```
-
-설치 후 skill 폴더에서 아래처럼 app repo 를 한 번 연결한다.
-
-```bash
-cd <installed-skill-folder>
+cd <skill-package-folder>
+python scripts/bootstrap.py --app-root /path/to/SmartThings_translation_web_app --json
 python scripts/bootstrap.py --app-root /path/to/SmartThings_translation_web_app --save
 ```
 
-repo 밖에 설치할 경우 저장된 `app_root` 또는 매 호출의 `--app-root` 가 원본 repo를 가리켜야 한다.
+저장된 `app_root` 또는 매 호출의 `--app-root`가 실제 앱 저장소를 가리켜야 한다.
+[셋업 안내](setup-workflow.md)를 따르며 `.agent/` daemon은 필요 없다.
 
 ## fallback 포인터 (선택)
 

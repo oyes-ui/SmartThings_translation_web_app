@@ -10,7 +10,7 @@ pinned: false
 
 # ✨ SmartThings Translation Web App
 
-**Gemini Pro & GPT-5.4(Audit)를 활용한 다국어 번역 정합성 검수 자동화 도구**
+**다국어 Excel 번역·검수 웹 앱과 SmartThings 번역 에이전트 패키지**
 
 이 웹 애플리케이션은 다국어 엑셀 파일(.xlsx)을 분석하여 번역의 일관성, 용어집(Glossary) 준수 여부, 문맥 상의 오류를 AI로 진단하고 리포트를 생성합니다.
 
@@ -23,13 +23,13 @@ pinned: false
 - **다국어 시트 자동 매핑**: 국가 코드(US, KR, DE 등)를 인식하여 시트별 언어 설정 자동화
 - **다중 소스 그룹 처리**: KR/US 등 여러 원문 시트를 각 타겟 시트 그룹에 매핑하여 검수, 번역+검수, 하이라이트 전용 작업을 한 번에 실행
 - **용어집(Glossary) 검증**: CSV 용어집 기반 정밀 매칭 및 괄호(Bracket) 자동 처리 규칙 적용
-- **V2 Localization Engine**: 브라질/유럽 포르투갈어 및 중국 간체/번체 시장별 완벽 분리 대응
+- **시장별 현지화**: 언어별 규칙과 용어집 매핑을 구분. BR은 브라질 언어 규칙을 유지하며 기본 용어집은 포르투갈 컬럼을 공유
 - **Context-Aware Formatting**: Row Key 기반으로 타이틀/버튼 vs 설명문 맥락을 자동 판정하여 용어집 괄호 처리 최적화
 - **Typography Standards**: 언어별 표준 문장 부호 및 타이포그래피 규칙 자동 적용
 - **Prompt Inspector**: 실시간 프롬프트 조립 상태를 육안으로 확인할 수 있는 전용 디버그 도구 제공
-- **안전한 Excel 수정 흐름**: preview → 사람 승인 → 원본 불변 복사본 적용 → rich text·구조 검증을 분리
-- **시트 단위 에이전트 검수**: `/st-inspect`가 결정론적 용어집 근거와 읽기 전용 수정 제안을 제공하며,
-  필요할 때만 5개 독립 관점의 합의 게이트를 사용
+- **에이전트 Excel 수정·납품**: 승인 범위를 계약에 고정하고 공용 atomic 저장·독립 검증을 거친 버전 사본을 공개. 공백·줄바꿈·문자별 글꼴·색을 검증
+- **시트 단위 에이전트 검수**: 셀 순차 검수 → 시트 일관성 검수 → 리드 통합이 기본. 제안은 읽기 전용이며 5역할 검수는 deprecated 호환 경로
+- **업무 종료·개선 루프**: 기존 outcome과 실행 결과를 확인하고 작은 교정을 기록. 원인 분석·공통 절차 변경·효과 평가는 요청 범위에서 수행
 - **Excel Live 레이어**: ChatGPT for Excel과 Claude for Excel에서 같은 승인 manifest·fallback 정책을 공유
 
 ---
@@ -41,16 +41,44 @@ pinned: false
 1.  **[가이드 01] 통합 사용 가이드**: [user_guide.md](docs/user_guide.md) - 설치, 실행, 워크플로우 및 용어집 활용 (A to Z)
 2.  **[가이드 02] 종합 규칙 모음**: [comprehensive_rules.md](docs/comprehensive_rules.md) - 프롬프트 로직, 국가별 규칙, BX 스타일 등 모든 내부 엔진 규칙 참조
 
-### 번역 에이전트 기본 흐름
+### 번역 에이전트 시작하기
 
-`/st-start`로 연결 상태를 확인한 뒤, 규칙·용어집·RAG 사례는 `/st-ask`, 읽기 전용 언어 시트 검수는
-`/st-inspect`를 사용합니다. 제안은 항상 `pending_approval` manifest로 남으며, 사람이 승인한 항목만
-`/st-apply` 또는 `/st-edit`로 **원본이 아닌 복사본**에 반영합니다. 전체 LLM 번역·검수는 비용이 발생할 수
-있으므로 `/st-pipeline`에서 명시적으로 실행합니다.
+사용자 명령은 [명령 안내](agent-packages/smartthings-translation-agent/commands/README.md)의
+여섯 개가 기본입니다. 파일·언어·하고 싶은 일을 자연어로 전달하면 에이전트가 내부 설정을 준비합니다.
 
-`/st-review`는 `/st-inspect`의 전환 기간 호환 alias입니다. 5개 역할의 병렬 검수는 기본값이 아니라
-`--multi-agent`로 승인한 시트에서만 동작합니다. 한 역할이라도 의견서가 없거나 검수 뒤 셀 값이 변경되면
-자동 수정 제안을 만들지 않고 사람 검토로 보류합니다.
+| 명령 | 용도 |
+| --- | --- |
+| `/st-start` | 연결 상태·현재 작업·다음 단계 |
+| `/st-ask` | 규칙·용어·사례 질문과 업무 후 개선 분석 |
+| `/st-translate` | 소량 직접 번역 또는 승인한 대량 API 번역 |
+| `/st-inspect` | 셀→시트→리드 검수와 승인 대기 제안 |
+| `/st-edit` | 지정한 내용의 수정본(draft) 생성 |
+| `/st-apply` | 승인안을 반영·하이라이트·검증한 납품본 생성 |
+
+번역 에이전트는 **패키지 폴더에서** 시작하고 앱 저장소를 연결합니다.
+
+```bash
+cd agent-packages/smartthings-translation-agent
+python scripts/bootstrap.py --app-root ../.. --json
+# 같은 앱 연결을 이후에도 사용할 때
+python scripts/bootstrap.py --app-root ../.. --save
+```
+
+소량 작업은 별도 번역·검수 API를 호출하지 않는 셀프 모드가 기본입니다. API 번역·검수 및
+semantic RAG는 비용·범위 승인 후 사용합니다. `/st-pipeline`은 호환 명령이며 새 업무는
+`/st-translate`·`/st-inspect`에서 시작합니다.
+
+`/st-inspect`의 제안은 `pending_approval`로 남고 사람 승인 뒤 반영합니다. 계약 실행기가 반환한
+`revised`는 draft, 납품의 `final`은 `verified/<work_id>/` 안의 검증된 배치입니다.
+파일 존재만으로 납품 완료로 보지 않으며 이 보장을 웹 앱의 모든 독립 저장 경로에 확대하지 않습니다.
+
+- [업무 가이드](agent-packages/smartthings-translation-agent/references/workflow-guide.md): 업무별 입력·진행·지원 범위
+- [실행·재개 규약](agent-packages/smartthings-translation-agent/references/command-execution.md): 기존 승인 재사용과 검증된 배치
+- [업무 종료 후 개선 루프](agent-packages/smartthings-translation-agent/references/improvement-loop.md): 자동 기록과 요청 기반 개선
+- [설치·이식성](agent-packages/smartthings-translation-agent/references/portability.md): 공통 본체와 도구별 진입점
+
+“1차 개선 모드”의 전체 자동 연결은 아직 지원 완료가 아닙니다. 개별 검수·승인 반영 경로와
+[현재 지원 경계](agent-packages/smartthings-translation-agent/references/workflow-guide.md#1차-개선-모드)를 확인합니다.
 
 ---
 
@@ -149,14 +177,13 @@ docker run -p 7860:7860 -e GOOGLE_API_KEY="your_key_here" translation-checker
 
 상세한 변경 내역은 [CHANGELOG.md](docs/CHANGELOG.md)에서 확인할 수 있습니다.
 
-### [Unreleased] - 2026-08
-- **Added**: `/st-inspect`의 선택형 5역할 합의 게이트. 역할별 프롬프트·의견서·병합 결과를 분리해
-  독립적인 검토 근거만 수정 제안으로 승격
-- **Safety**: 누락·다른 `packet_id` 의견서는 검수를 `incomplete`로 끝내며, 검수 뒤 셀 값이 바뀐 항목은
-  `source_drift`로 보류
-- **Added**: ChatGPT for Excel과 Claude for Excel이 공통 live manifest 검증기를 사용. live rich text
-  보존을 검증하지 못하면 Delivery Python 복사본 경로로 fallback
-- **Fixed**: disclaimer `* ` 접두 규칙과 용어 활성화 manifest를 번역·하이라이트 경로에 일관되게 적용
+### [Unreleased]
+
+- 기본 명령 6개와 셀→시트→리드 검수, 여러 워크북의 작업별 설정·승인표 흐름을 정리했습니다.
+- 공용 저장의 텍스트·문자 서식 보호와 납품·재개의 독립 검증을 강화했습니다.
+- 검수 셀 범위 지정, 일본어 괄호 판정, BR 용어집 매핑과 저장된 번역의 오류·빈 셀 검증을 보강했습니다.
+- 기존 outcome을 활용한 종료 절차와 작은 번역·진행 오류 기록, 요청 기반 개선 분석을 추가했습니다.
+- 기본 번역 모델과 재시도 처리의 변경 내역은 [Changelog](docs/CHANGELOG.md#unreleased)를 참고합니다.
 
 ### [v1.7.0] - 2026-06-25
 - **Added**: 번역 에이전트 셀프 모드 — `prompt_preview.py` 가 앱과 동일한 프롬프트를 조립해 LLM 크레딧 없이 직접 번역/검수

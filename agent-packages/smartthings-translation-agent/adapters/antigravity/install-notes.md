@@ -1,6 +1,7 @@
 # Antigravity 설치 노트
 
-> 상태: **문서만** (이번 단계는 Codex 우선). Antigravity 활성화 시 아래대로 복사.
+> 공통 패키지를 연결하는 안내다. 현재 환경의 설치 여부는 별도로 확인한다.
+> 기본 명령과 지원 범위는 [명령 안내](../../commands/README.md)·[업무 가이드](../../references/workflow-guide.md)를 따른다.
 
 ## 설치 위치
 
@@ -22,35 +23,24 @@ cp -r agent-packages/smartthings-translation-agent .agents/skills/
 - `adapters/`는 복사 불필요.
 - 패키지 문서는 "Codex가 실행한다" 같은 도구 종속 표현을 피하고 "에이전트"로 통일해, 어느 도구에서 읽어도 자연스럽게 동작하도록 작성됨.
 
-## Slash commands
+## 사용자 명령과 실행 루트
 
-공통 command prompt 원본은 `commands/`에 있다. Antigravity에서 slash command를 지원하는 경우 해당 도구의 commands 폴더로 복사해서 사용한다.
+기본은 `/st-start`, `/st-ask`, `/st-translate`, `/st-inspect`, `/st-edit`, `/st-apply`다.
+고급·호환 명령은 [공통 목록](../../commands/README.md)에서 필요할 때 확인한다.
+명령 진입점도 패키지의 `commands/*.md`로 위임하며 절차를 복제하지 않는다.
+명령 검색을 사용할 수 없는 환경에서는 같은 요청을 자연어로 전달한다.
 
-```text
-/st-help
-/st-setup <app repo path>
-/st-rules <question>
-/st-prompt <text> --target-lang JA
-/st-glossary <search/add/update request>
-/st-glossary-filter <workbook path> BR/RU/CN
-/st-rag <query> --target-lang JA
-/st-ragdb status
-/st-inspect <workbook path> --sheet "JA(일본)"
-/st-sections <workbook path> "JA(일본)"
-/st-highlight <workbook path>
-/st-edit <workbook path> <approved edits>
-/st-textbook <text/spec>
-/st-translate <workbook path> --pipeline
-/st-audit <workbook path> --pipeline
-/st-audit-explain <source> / <translation> / <language>
-/st-review-summary <review files>
-/st-notebooklm <notebook link or question>
-/st-obsidian-report <report topic> <obsidian report dir>
+설치된 패키지 폴더를 실행 루트로 사용하고 앱 저장소를 연결한다.
+
+```bash
+cd <installed-skill-folder>
+python scripts/bootstrap.py --app-root /path/to/SmartThings_translation_web_app --json
+python scripts/bootstrap.py --app-root /path/to/SmartThings_translation_web_app --save
 ```
 
 ## 동작 확인
 
 ```bash
-python .agents/skills/smartthings-translation-agent/scripts/workbook_inspect.py \
+python scripts/workbook_inspect.py \
   <story.xlsx> --json
 ```

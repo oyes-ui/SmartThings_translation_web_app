@@ -36,10 +36,10 @@
 
 | 항목 | 없을 때 안내 |
 |------|--------------|
-| `venv_python` | semantic/full 기능은 의존성 설치 필요. `pip install -r requirements-rag.txt` 또는 app `requirements.txt` 설치를 **승인 후** 안내 |
+| `venv_python` | semantic/full 기능은 의존성 설치 필요. `pip install -r scripts/requirements-rag.txt` 또는 app `requirements.txt` 설치를 **승인 후** 안내 |
 | `rag_store_db` | offline/semantic RAG 제한. RAG DB 전달받거나 `rag_db_builder --build-all`(크레딧 소모, **승인 필요**) |
 | `chroma_dir` | semantic 유사검색 불가. offline(exact/keyword)은 가능 |
-| `api_key_present` | semantic 불가. `.env` 에 본인 `GEMINI_API_KEY` 입력 안내. offline 은 키 없이 가능 |
+| `api_key_present` | semantic 불가. `.env`에 앱이 지원하는 `GEMINI_API_KEY` 또는 `GOOGLE_API_KEY` 인증 설정 안내. offline 은 키 없이 가능 |
 | `glossary_csv`/`glossary_db` | 용어집 기반 검증 제한. CSV 전달/업로드 안내 |
 
 ## 동작 레벨 (bootstrap 이 판정)
@@ -48,8 +48,12 @@
 |-------|------|-----------|
 | 1 Excel-only | openpyxl 만 | 워크북 분석/수정, section coherence |
 | 2 Offline RAG | app_root + `rag_store.db` | + exact/keyword/메타 RAG (키 불필요) |
-| 3 Semantic RAG | + venv + chroma + API key | + 임베딩 유사검색 |
-| 4 Full pipeline | + glossary | + 용어집 검증/full app 연계 |
+| 3 Semantic RAG | + chroma + API 인증 | + 임베딩 유사검색 준비 상태 |
+| 4 Full pipeline | + glossary + 앱 venv | + full app 연계 준비 상태 |
+
+레벨은 파일·인증 존재 확인이며 실제 의존성 import나 API 요청 성공을 보장하지 않는다.
+Level 3의 런타임 의존성과 Level 4의 앱 venv도 확인한다. 용어집 조회·하이라이트는 앱 의존성이
+준비되어 있으면 API 키 없이도 가능하므로 낮은 레벨만으로 모든 앱 기능을 차단하지 않는다.
 
 ## 안전 원칙 (셋업 단계)
 

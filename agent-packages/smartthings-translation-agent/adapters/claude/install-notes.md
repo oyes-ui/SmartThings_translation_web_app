@@ -1,45 +1,38 @@
 # Claude Code 설치 노트
 
-> 상태: **활성** — 이 repo의 `.claude/commands/`에 `/st-*` 명령이 설치돼 있다. 스킬 본체를 `.claude/skills/`로 복사하려면 아래 절차를 따른다.
+공통 본체는 [SKILL.md](../../SKILL.md), 사용자 명령은 [명령 안내](../../commands/README.md)가 정본이다.
+기본 명령은 `st-start`, `st-ask`, `st-translate`, `st-inspect`, `st-edit`, `st-apply`의 여섯 개다.
+고급·호환 명령의 전체 개수나 환경별 설치 상태를 고정해서 안내하지 않는다.
 
-## 설치 위치
+## 이 저장소의 명령 연결
 
-- Project-local: `.claude/skills/smartthings-translation-agent/`
-- User-global: `~/.claude/skills/smartthings-translation-agent/`
+앱 저장소의 `.claude/commands/`는 패키지의 공통 `commands/*.md`를 읽도록 하는 진입 문서다.
+저장소 루트에서 사용하며 실행·승인 절차는 공통 문서에 둔다. 예전 설치본은 공통 문서로
+위임하는지 확인한다. `commands/README.md`는 실행 명령이 아닌 색인이다.
+
+## 본체를 별도로 설치하는 경우
+
+Project-local 예시는 `.claude/skills/smartthings-translation-agent/`, 사용자 전역 예시는
+`~/.claude/skills/smartthings-translation-agent/`다. 설치 대상이 공통 본체를 찾는지 확인하고
+`references/`, `scripts/`, `commands/`를 함께 유지한다. 같은 절차를 여러 위치에서 따로 관리하지 않는다.
+
+설치 후에는 패키지 폴더를 실행 루트로 사용하고 앱 저장소를 명시적으로 연결한다.
 
 ```bash
-cp -r agent-packages/smartthings-translation-agent .claude/skills/
+cd <installed-skill-folder>
+python scripts/bootstrap.py --app-root /path/to/SmartThings_translation_web_app --json
+python scripts/bootstrap.py --app-root /path/to/SmartThings_translation_web_app --save
 ```
 
-## 슬래시 명령어 (`/st-*`)
-
-패키지의 `commands/*.md` 를 Claude Code 명령 디렉터리로 복사하면 `/st-help`, `/st-prompt`,
-`/st-glossary`, `/st-glossary-filter`, `/st-obsidian-report` 등 19개 명령이 활성화된다.
-
-```bash
-# project-local
-cp agent-packages/smartthings-translation-agent/commands/*.md .claude/commands/
-# 또는 user-global
-cp agent-packages/smartthings-translation-agent/commands/*.md ~/.claude/commands/
-```
-
-- 명령 파일은 작게 유지(스크립트 호출 + 참조문서 지시만) → 명령 1개를 실행할 때만 해당 파일이 로드된다.
-- 명령은 `agent-packages/smartthings-translation-agent/scripts/...` 상대 경로로 스크립트를 호출하므로,
-  repo 루트에서 Claude Code 를 실행하는 것을 전제로 한다. 설치 위치가 다르면 명령 파일의 경로를 조정한다.
-- Codex/Antigravity 등 슬래시 명령이 없는 도구에서는 SKILL.md 의 `## 슬래시 명령어` 표로 동일 기능을 인식한다.
-
-## 비고
-
-- Claude Code는 `SKILL.md` + supporting files(`references/`, `scripts/`, `commands/`) 구조를 그대로 지원하므로, 공통 패키지를 변형 없이 복사하면 된다.
-- `adapters/`는 복사할 필요 없음 (Codex 전용 메타데이터).
-- 공통 `SKILL.md`에는 Claude 전용 frontmatter(`allowed-tools` 등)를 넣지 않았다. 필요하면 설치본의 `SKILL.md`에만 추가하고, 공통 본체는 건드리지 않는다.
-- 현재 프로젝트 `.claude/`에는 `settings.local.json`만 있고 `skills/`는 없다 → 새로 생성됨.
+의존성·데이터 전달은 [이식성 안내](../../references/portability.md)를 따른다. daemon은 필요 없다.
 
 ## 동작 확인
 
+`/st-start` 또는 “SmartThings 번역 에이전트 시작해줘”로 연결 상태를 확인한다. 읽기 전용 예시:
+
 ```bash
-# skill 디렉터리에서 스크립트가 src/ 를 찾는지
-python .claude/skills/smartthings-translation-agent/scripts/rag_lookup.py \
-  --query "turn on" --target-lang JA --json
+python scripts/workbook_inspect.py <story.xlsx> --sheet "JA(일본)" --sections --json
 ```
-자연어로는 "이 검수 결과 왜 Needs Revision이야?" 같은 요청으로 트리거 확인.
+
+검수는 [st-inspect](../../commands/st-inspect.md), 승인된 draft·납품·재개는
+[실행 규약](../../references/command-execution.md)을 따른다. 준비 스크립트만 실행했다고 검수가 완료되지는 않는다.

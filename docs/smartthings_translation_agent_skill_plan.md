@@ -1,5 +1,11 @@
 # SmartThings 번역 에이전트 Portable Skill 패키지 계획
 
+> **초기 설계 이력 문서**입니다. 아래의 설치 경로·명령·출력 방식·검증 계획은 당시 제안이며 현재 사용법을 뜻하지 않습니다.
+> 현재 기준은 [스킬 본체](../agent-packages/smartthings-translation-agent/SKILL.md),
+> [명령 안내](../agent-packages/smartthings-translation-agent/commands/README.md),
+> [업무 가이드](../agent-packages/smartthings-translation-agent/references/workflow-guide.md),
+> [설치·이식성](../agent-packages/smartthings-translation-agent/references/portability.md)을 따릅니다.
+
 ## 요약
 
 - 기존 계획을 "Codex 전용 skill"이 아니라 이식 가능한 Agent Skill 패키지와 도구별 어댑터 구조로 확장한다.
